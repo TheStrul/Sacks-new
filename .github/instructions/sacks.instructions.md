@@ -16,9 +16,16 @@ This is a **configuration-driven** Excel file normalization system that converts
 Excel Files → FileDataReader → ConfigurationBasedNormalizer → ProductEntity → (Future: Local Database)
 ```
 
+**📊 Key Insight from DIOR Analysis**: The system successfully processed 4,074 products from the DIOR 2025.xlsx file, revealing the need for a **two-stage processing approach** to handle both product catalog creation and supplier pricing analysis effectively.
+
 ## 📋 Project Goals & Phases
 
 ### Phase 1: Data Normalization Foundation ⚠️ *CURRENT PHASE*
+
+- **COMPLETED**: Initial DIOR file analysis (4,074 products processed successfully)
+- **IN PROGRESS**: Configure two-stage processing workflow
+  - Stage 1: Unified product catalog creation (ignore pricing/stock)
+  - Stage 2: Supplier pricing/stock analysis (link to catalog)
 - Normalize ALL existing supplier files to unified ProductEntity structure
 - Ensure configuration-based approach works for all current suppliers
 - Validate data integrity and completeness
@@ -32,9 +39,60 @@ Excel Files → FileDataReader → ConfigurationBasedNormalizer → ProductEntit
 - Deploy to local PC environment with free database (MySQL/SQLite)
 - Support adding new suppliers via JSON configuration only
 
+## 🎯 Two-Stage Data Processing Workflow
+
+The system operates with **two distinct analysis modes** depending on the business purpose:
+
+### 🗃️ Stage 1: Unified Product Catalog Creation
+
+**Purpose**: Build a master product database with all products from all suppliers
+
+- **Primary Goal**: Product identification and core product attributes
+- **Focus Areas**:
+  - Product Name (standardized)
+  - Category/Family classification
+  - Product specifications (Size, Unit, Capacity, etc.)
+  - Product identification codes (EAN, UPC, etc.)
+- **Explicitly Ignore**:
+  - Pricing information
+  - Stock levels
+  - Supplier-specific reference codes
+  - Commercial/availability data
+- **Output**: Clean, deduplicated unified product catalog
+- **Business Value**: Master data foundation for all downstream processes
+
+### 💰 Stage 2: Supplier Stock & Pricing Analysis
+
+**Purpose**: Track supplier-specific commercial data and link to unified products
+
+- **Primary Goal**: Commercial intelligence and supplier comparison
+- **Focus Areas**:
+  - Current pricing from each supplier
+  - Stock availability levels
+  - Supplier-specific SKUs/item codes
+  - Commercial terms and conditions
+- **Links To**: Stage 1 unified product catalog (via product matching)
+- **Output**: Supplier pricing/stock data with references to master catalog
+- **Business Value**: Price comparison, supplier selection, inventory planning
+
+### 🔄 Processing Mode Selection
+
+When analyzing a file, the system must determine:
+
+- **Mode 1**: "Is this for updating our unified product catalog?"
+- **Mode 2**: "Is this for analyzing supplier stock/pricing offers?"
+
+This distinction affects:
+
+- Which columns are prioritized during processing
+- How data validation is performed
+- What gets stored vs. ignored
+- How duplicate detection works
+
 ## 🏗️ Project-Specific Architecture
 
 ### Configuration-Based Design
+
 - **JSON Configuration over Code**: New suppliers added via JSON, not C# classes
 - **Single Normalizer Pattern**: One `ConfigurationBasedNormalizer` handles all suppliers
 - **Dynamic Properties**: Unlimited custom fields via `Dictionary<string, object?>`
