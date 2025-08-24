@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "*.md": "markdown"
+    },
+    "markdown.preview.openMarkdownLinks": "inEditor",
+    "files.defaultLanguage": "csharp",
+    "dotnet.defaultSolution": "Sacks-New.sln",
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.patterns": {
+        "*.csproj": "$(capture).deps.json,$(capture).runtimeconfig.json,$(capture).runtimeconfig.dev.json,$(capture).dll,$(capture).pdb"
+    },
+    "workbench.startupEditor": "readme",
+    "readme.path": "./PROJECT_INSTRUCTIONS.md"
+}

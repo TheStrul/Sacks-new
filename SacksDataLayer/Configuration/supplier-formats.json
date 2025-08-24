@@ -1,0 +1,98 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2024-12-19T10:00:00Z",
+  "description": "Configuration file for all supplier file formats",
+  "suppliers": [
+    {
+      "name": "DIOR",
+      "description": "DIOR beauty and fragrance products supplier",
+      "detection": {
+        "fileNamePatterns": ["*DIOR*", "*dior*", "*Dior*"],
+        "headerKeywords": ["DIOR", "Dior Product", "Beauty Product", "Parfum", "Commercial Line"],
+        "requiredColumns": ["Product Name", "Price"],
+        "excludePatterns": ["*temp*", "*backup*"],
+        "priority": 10
+      },
+      "columnMappings": {
+        "Product Name": "Name",
+        "Description": "Description",
+        "SKU": "SKU",
+        "Price": "Price",
+        "Category": "Category",
+        "Stock": "StockQuantity",
+        "Active": "IsActive",
+        "Commercial Line": "CommercialLine",
+        "Family": "Family",
+        "Pricing Item Name": "PricingItemName"
+      },
+      "dataTypes": {
+        "Price": {
+          "type": "decimal",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": false,
+          "transformations": ["removeSymbols", "parseDecimal"]
+        },
+        "StockQuantity": {
+          "type": "int",
+          "defaultValue": 0,
+          "allowNull": true,
+          "transformations": ["parseInt"]
+        },
+        "IsActive": {
+          "type": "bool",
+          "defaultValue": true,
+          "allowNull": false,
+          "transformations": ["parseBoolean"]
+        },
+        "Name": {
+          "type": "string",
+          "allowNull": false,
+          "transformations": ["trim"]
+        }
+      },
+      "validation": {
+        "requiredFields": ["Name"],
+        "skipRowsWithoutName": true,
+        "maxErrorsPerFile": 100,
+        "fieldValidations": {
+          "Price": {
+            "numericRange": {
+              "min": 0,
+              "max": 10000
+            }
+          },
+          "Name": {
+            "minLength": 1,
+            "maxLength": 255
+          }
+        }
+      },
+      "transformation": {
+        "headerRowIndex": 0,
+        "dataStartRowIndex": 1,
+        "skipEmptyRows": true,
+        "trimWhitespace": true,
+        "customTransformations": {}
+      },
+      "metadata": {
+        "industry": "Beauty & Cosmetics",
+        "region": "Global",
+        "contact": {
+          "name": "DIOR Data Team",
+          "email": "data@dior.com",
+          "company": "Christian Dior SE"
+        },
+        "fileFrequency": "monthly",
+        "expectedFileSize": "Large (1000+ products)",
+        "notes": [
+          "Files typically contain 4000+ products",
+          "Price format includes currency symbols",
+          "Multiple product categories: Fragrances, Makeup, Skincare"
+        ],
+        "lastUpdated": "2024-12-19T10:00:00Z",
+        "version": "1.0"
+      }
+    }
+  ]
+}
