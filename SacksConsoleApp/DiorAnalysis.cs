@@ -3,6 +3,7 @@ using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Normalizers;
 using SacksDataLayer.FileProcessing.Interfaces;
+using SacksDataLayer.FileProcessing.Models;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using System.Text.Json;
 
@@ -103,32 +104,13 @@ namespace SacksConsoleApp
 
                 if (canHandle)
                 {
-                    Console.WriteLine("\n🔄 Testing normalization process...");
-                    var products = await normalizer.NormalizeAsync(fileData);
-                    var productList = products.ToList();
-                    Console.WriteLine($"   ✅ Products normalized: {productList.Count}");
-                    
-                    if (productList.Any())
-                    {
-                        Console.WriteLine("\n📦 Sample normalized products:");
-                        foreach (var product in productList.Take(3))
-                        {
-                            Console.WriteLine($"   • {product.Name} (SKU: {product.SKU})");
-                            if (product.DynamicProperties.Any())
-                            {
-                                Console.WriteLine($"     Dynamic Properties: {product.DynamicProperties.Count}");
-                                foreach (var prop in product.DynamicProperties.Take(3))
-                                {
-                                    Console.WriteLine($"       {prop.Key}: {prop.Value}");
-                                }
-                                if (product.DynamicProperties.Count > 3)
-                                {
-                                    Console.WriteLine($"       ... and {product.DynamicProperties.Count - 3} more properties");
-                                }
-                            }
-                            Console.WriteLine();
-                        }
-                    }
+                    // Test processing mode recommendation
+                    var recommendedMode = normalizer.RecommendProcessingMode(Path.GetFileName(diorFilePath), fileData.dataRows.Take(5));
+                    Console.WriteLine($"   Recommended processing mode: {recommendedMode}");
+
+                    // Test both processing modes
+                    await TestProcessingMode(normalizer, fileData, ProcessingMode.UnifiedProductCatalog, diorFilePath);
+                    await TestProcessingMode(normalizer, fileData, ProcessingMode.SupplierCommercialData, diorFilePath);
                 }
 
                 Console.WriteLine("\n✅ Analysis completed successfully!");
@@ -142,6 +124,68 @@ namespace SacksConsoleApp
 
             Console.WriteLine("\nPress any key to exit...");
             Console.ReadKey();
+        }
+
+        private static async Task TestProcessingMode(ConfigurationBasedNormalizer normalizer, FileData fileData, ProcessingMode mode, string filePath)
+        {
+            Console.WriteLine($"\n🔄 Testing {mode} mode...");
+            
+            var context = new ProcessingContext
+            {
+                Mode = mode,
+                SourceFileName = Path.GetFileName(filePath),
+                SupplierName = normalizer.SupplierName,
+                ProcessingIntent = $"Testing {mode} processing workflow"
+            };
+
+            var result = await normalizer.NormalizeAsync(fileData, context);
+            
+            Console.WriteLine($"   ✅ Processing completed!");
+            Console.WriteLine($"   📊 Statistics:");
+            Console.WriteLine($"      • Products created: {result.Statistics.ProductsCreated}");
+            Console.WriteLine($"      • Products skipped: {result.Statistics.ProductsSkipped}");
+            Console.WriteLine($"      • Processing time: {result.Statistics.ProcessingTime.TotalMilliseconds:F0}ms");
+            
+            if (mode == ProcessingMode.UnifiedProductCatalog)
+            {
+                Console.WriteLine($"      • Unique products identified: {result.Statistics.UniqueProductsIdentified}");
+                Console.WriteLine($"      • Missing core attributes: {result.Statistics.MissingCoreAttributes}");
+            }
+            else
+            {
+                Console.WriteLine($"      • Pricing records processed: {result.Statistics.PricingRecordsProcessed}");
+                Console.WriteLine($"      • Stock records processed: {result.Statistics.StockRecordsProcessed}");
+                Console.WriteLine($"      • Orphaned commercial records: {result.Statistics.OrphanedCommercialRecords}");
+            }
+
+            if (result.Errors.Any())
+            {
+                Console.WriteLine($"      • Errors: {result.Errors.Count}");
+                foreach (var error in result.Errors.Take(3))
+                {
+                    Console.WriteLine($"        - {error}");
+                }
+            }
+
+            if (result.Products.Any())
+            {
+                Console.WriteLine($"\n   📦 Sample {mode} products:");
+                foreach (var product in result.Products.Take(2))
+                {
+                    Console.WriteLine($"      • {product.Name} (SKU: {product.SKU})");
+                    if (product.DynamicProperties.Any())
+                    {
+                        var relevantProps = mode == ProcessingMode.UnifiedProductCatalog
+                            ? product.DynamicProperties.Where(p => !p.Key.Contains("Price") && !p.Key.Contains("Stock"))
+                            : product.DynamicProperties.Where(p => p.Key.Contains("Price") || p.Key.Contains("Stock"));
+                            
+                        foreach (var prop in relevantProps.Take(3))
+                        {
+                            Console.WriteLine($"         {prop.Key}: {prop.Value}");
+                        }
+                    }
+                }
+            }
         }
     }
 }

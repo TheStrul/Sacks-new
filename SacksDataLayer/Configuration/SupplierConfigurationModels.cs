@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using SacksDataLayer.FileProcessing.Models;
 
 namespace SacksDataLayer.FileProcessing.Configuration
 {
@@ -48,6 +49,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("metadata")]
         public SupplierMetadata Metadata { get; set; } = new();
+
+        [JsonPropertyName("processingModes")]
+        public ProcessingModeConfiguration ProcessingModes { get; set; } = new();
     }
 
     /// <summary>
@@ -210,5 +214,48 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("company")]
         public string? Company { get; set; }
+    }
+
+    /// <summary>
+    /// Configuration for different processing modes
+    /// </summary>
+    public class ProcessingModeConfiguration
+    {
+        [JsonPropertyName("defaultMode")]
+        public ProcessingMode DefaultMode { get; set; } = ProcessingMode.UnifiedProductCatalog;
+
+        [JsonPropertyName("supportedModes")]
+        public List<ProcessingMode> SupportedModes { get; set; } = new() 
+        { 
+            ProcessingMode.UnifiedProductCatalog, 
+            ProcessingMode.SupplierCommercialData 
+        };
+
+        [JsonPropertyName("catalogMode")]
+        public ModeSpecificConfiguration CatalogMode { get; set; } = new();
+
+        [JsonPropertyName("commercialMode")]
+        public ModeSpecificConfiguration CommercialMode { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Mode-specific configuration settings
+    /// </summary>
+    public class ModeSpecificConfiguration
+    {
+        [JsonPropertyName("priorityColumns")]
+        public List<string> PriorityColumns { get; set; } = new();
+
+        [JsonPropertyName("ignoredColumns")]
+        public List<string> IgnoredColumns { get; set; } = new();
+
+        [JsonPropertyName("requiredColumns")]
+        public List<string> RequiredColumns { get; set; } = new();
+
+        [JsonPropertyName("validationRules")]
+        public Dictionary<string, object> ValidationRules { get; set; } = new();
+
+        [JsonPropertyName("transformationRules")]
+        public Dictionary<string, object> TransformationRules { get; set; } = new();
     }
 }

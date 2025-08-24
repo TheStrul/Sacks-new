@@ -1,6 +1,7 @@
 using SacksDataLayer.FileProcessing.Interfaces;
 using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.FileProcessing.Services;
+using SacksDataLayer.FileProcessing.Models;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -16,6 +17,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         private readonly Dictionary<string, Func<string, object?>> _dataTypeConverters;
 
         public string SupplierName => _configuration.Name;
+
+        public IEnumerable<ProcessingMode> SupportedModes => _configuration.ProcessingModes.SupportedModes;
 
         public ConfigurationBasedNormalizer(SupplierConfiguration configuration)
         {
@@ -134,6 +137,183 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         public Dictionary<string, string> GetColumnMapping()
         {
             return new Dictionary<string, string>(_configuration.ColumnMappings);
+        }
+
+        public Dictionary<string, string> GetColumnMapping(ProcessingMode mode = ProcessingMode.UnifiedProductCatalog)
+        {
+            var baseMapping = new Dictionary<string, string>(_configuration.ColumnMappings);
+            
+            // Apply mode-specific column filtering
+            var modeConfig = mode == ProcessingMode.UnifiedProductCatalog 
+                ? _configuration.ProcessingModes.CatalogMode 
+                : _configuration.ProcessingModes.CommercialMode;
+
+            // Remove ignored columns for this mode
+            foreach (var ignoredColumn in modeConfig.IgnoredColumns)
+            {
+                baseMapping.Remove(ignoredColumn);
+            }
+
+            return baseMapping;
+        }
+
+        public ProcessingMode RecommendProcessingMode(string fileName, IEnumerable<RowData> firstFewRows)
+        {
+            // Check file name patterns for commercial data indicators
+            var commercialIndicators = new[] { "price", "stock", "inventory", "offer", "quote", "commercial" };
+            var catalogIndicators = new[] { "catalog", "product", "master", "reference" };
+
+            var fileNameLower = fileName.ToLowerInvariant();
+            
+            if (commercialIndicators.Any(indicator => fileNameLower.Contains(indicator)))
+            {
+                return ProcessingMode.SupplierCommercialData;
+            }
+
+            if (catalogIndicators.Any(indicator => fileNameLower.Contains(indicator)))
+            {
+                return ProcessingMode.UnifiedProductCatalog;
+            }
+
+            // Check header presence for mode detection
+            var headerRow = firstFewRows.FirstOrDefault(r => r.HasData);
+            if (headerRow != null)
+            {
+                var headers = headerRow.Cells.Select(c => c.Value?.Trim()?.ToLowerInvariant() ?? "").ToList();
+                
+                // If file has strong commercial focus, recommend commercial mode
+                var commercialHeaderCount = headers.Count(h => 
+                    h.Contains("price") || h.Contains("stock") || h.Contains("inventory") || 
+                    h.Contains("cost") || h.Contains("offer") || h.Contains("available"));
+
+                var catalogHeaderCount = headers.Count(h => 
+                    h.Contains("name") || h.Contains("description") || h.Contains("category") || 
+                    h.Contains("family") || h.Contains("specification"));
+
+                if (commercialHeaderCount > catalogHeaderCount && commercialHeaderCount >= 2)
+                {
+                    return ProcessingMode.SupplierCommercialData;
+                }
+            }
+
+            // Default to catalog mode
+            return _configuration.ProcessingModes.DefaultMode;
+        }
+
+        public async Task<ProcessingResult> NormalizeAsync(FileData fileData, ProcessingContext context)
+        {
+            var startTime = DateTime.UtcNow;
+            var result = new ProcessingResult
+            {
+                Mode = context.Mode,
+                SourceFile = context.SourceFileName,
+                SupplierName = SupplierName,
+                ProcessedAt = startTime
+            };
+
+            try
+            {
+                var products = new List<ProductEntity>();
+                var statistics = new ProcessingStatistics();
+                var warnings = new List<string>();
+                var errors = new List<string>();
+
+                if (fileData.dataRows.Count == 0)
+                {
+                    result.Statistics = statistics;
+                    return result;
+                }
+
+                // Get mode-specific configuration
+                var modeConfig = context.Mode == ProcessingMode.UnifiedProductCatalog 
+                    ? _configuration.ProcessingModes.CatalogMode 
+                    : _configuration.ProcessingModes.CommercialMode;
+
+                // Find header row
+                var headerRowIndex = _configuration.Transformation.HeaderRowIndex;
+                var headerRow = fileData.dataRows.Skip(headerRowIndex).FirstOrDefault(r => r.HasData);
+                
+                if (headerRow == null)
+                {
+                    errors.Add("No valid header row found");
+                    result.Errors = errors;
+                    return result;
+                }
+
+                // Create mode-specific column mapping
+                var columnIndexes = CreateModeSpecificColumnMapping(headerRow, context.Mode);
+                statistics.TotalRowsProcessed = fileData.dataRows.Count;
+
+                // Process data rows
+                var dataStartIndex = Math.Max(_configuration.Transformation.DataStartRowIndex, headerRow.Index + 1);
+                var dataRows = fileData.dataRows
+                    .Skip(dataStartIndex)
+                    .Where(r => !_configuration.Transformation.SkipEmptyRows || r.HasData);
+
+                foreach (var row in dataRows)
+                {
+                    try
+                    {
+                        var product = await NormalizeModeSpecificRowAsync(row, columnIndexes, context, fileData.FilePath);
+                        if (product != null)
+                        {
+                            if (IsValidProductForMode(product, context.Mode))
+                            {
+                                products.Add(product);
+                                statistics.ProductsCreated++;
+                                
+                                // Update mode-specific statistics
+                                if (context.Mode == ProcessingMode.UnifiedProductCatalog)
+                                {
+                                    statistics.UniqueProductsIdentified++;
+                                }
+                                else
+                                {
+                                    statistics.PricingRecordsProcessed++;
+                                    if (product.DynamicProperties.ContainsKey("StockQuantity"))
+                                    {
+                                        statistics.StockRecordsProcessed++;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                statistics.ProductsSkipped++;
+                                if (context.Mode == ProcessingMode.UnifiedProductCatalog)
+                                {
+                                    statistics.MissingCoreAttributes++;
+                                }
+                                else
+                                {
+                                    statistics.OrphanedCommercialRecords++;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        statistics.ErrorCount++;
+                        errors.Add($"Row {row.Index}: {ex.Message}");
+                    }
+                }
+
+                // Finalize statistics
+                statistics.ProcessingTime = DateTime.UtcNow - startTime;
+                statistics.WarningCount = warnings.Count;
+
+                result.Products = products;
+                result.Statistics = statistics;
+                result.Warnings = warnings;
+                result.Errors = errors;
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                result.Errors.Add($"Processing failed: {ex.Message}");
+                result.Statistics.ProcessingTime = DateTime.UtcNow - startTime;
+                return result;
+            }
         }
 
         private Dictionary<string, int> CreateColumnIndexMapping(RowData headerRow)
@@ -471,6 +651,156 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 "no" or "n" or "false" or "0" or "inactive" or "disabled" or "off" => false,
                 _ => false
             };
+        }
+
+        private Dictionary<string, int> CreateModeSpecificColumnMapping(RowData headerRow, ProcessingMode mode)
+        {
+            var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var modeConfig = mode == ProcessingMode.UnifiedProductCatalog 
+                ? _configuration.ProcessingModes.CatalogMode 
+                : _configuration.ProcessingModes.CommercialMode;
+            
+            for (int i = 0; i < headerRow.Cells.Count; i++)
+            {
+                var columnName = headerRow.Cells[i].Value?.Trim() ?? "";
+                if (!string.IsNullOrEmpty(columnName))
+                {
+                    // Skip ignored columns for this mode
+                    if (modeConfig.IgnoredColumns.Contains(columnName, StringComparer.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    mapping[columnName] = i;
+                }
+            }
+
+            return mapping;
+        }
+
+        private async Task<ProductEntity?> NormalizeModeSpecificRowAsync(RowData row, Dictionary<string, int> columnIndexes, ProcessingContext context, string sourceFile)
+        {
+            try
+            {
+                var product = new ProductEntity();
+                product.SetDynamicProperty("SourceFile", sourceFile);
+                product.SetDynamicProperty("ProcessingMode", context.Mode.ToString());
+                product.SetDynamicProperty("ProcessedAt", context.ProcessingDate);
+
+                var modeConfig = context.Mode == ProcessingMode.UnifiedProductCatalog 
+                    ? _configuration.ProcessingModes.CatalogMode 
+                    : _configuration.ProcessingModes.CommercialMode;
+
+                // Process mapped columns based on mode priorities
+                var columnMappings = GetColumnMapping(context.Mode);
+                foreach (var mapping in columnMappings)
+                {
+                    var sourceColumn = mapping.Key;
+                    var targetProperty = mapping.Value;
+
+                    if (columnIndexes.TryGetValue(sourceColumn, out int columnIndex) && 
+                        columnIndex < row.Cells.Count)
+                    {
+                        var cellValue = row.Cells[columnIndex].Value?.Trim();
+                        
+                        if (!string.IsNullOrEmpty(cellValue))
+                        {
+                            var convertedValue = ConvertValue(cellValue, sourceColumn);
+                            
+                            // Set core properties or dynamic properties based on target
+                            switch (targetProperty.ToLowerInvariant())
+                            {
+                                case "name":
+                                    product.Name = convertedValue?.ToString() ?? "";
+                                    break;
+                                case "description":
+                                    product.Description = convertedValue?.ToString();
+                                    break;
+                                case "sku":
+                                    product.SKU = convertedValue?.ToString();
+                                    break;
+                                default:
+                                    product.SetDynamicProperty(targetProperty, convertedValue);
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+                // Apply mode-specific processing rules
+                if (context.Mode == ProcessingMode.UnifiedProductCatalog)
+                {
+                    // For catalog mode, ensure we have minimum required product info
+                    if (string.IsNullOrEmpty(product.Name))
+                    {
+                        // Try to construct name from available fields
+                        var nameComponents = new List<string>();
+                        
+                        if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
+                            nameComponents.Add(family.ToString()!);
+                        if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
+                            nameComponents.Add(category.ToString()!);
+                        if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
+                            nameComponents.Add(itemName.ToString()!);
+
+                        if (nameComponents.Any())
+                        {
+                            product.Name = string.Join(" - ", nameComponents);
+                        }
+                        else
+                        {
+                            product.Name = "Unknown Product";
+                        }
+                    }
+
+                    // Remove pricing/commercial data in catalog mode
+                    var commercialProps = new[] { "Price", "Stock", "StockQuantity", "Available", "Cost", "Offer" };
+                    foreach (var prop in commercialProps)
+                    {
+                        product.DynamicProperties.Remove(prop);
+                    }
+                }
+                else if (context.Mode == ProcessingMode.SupplierCommercialData)
+                {
+                    // For commercial mode, ensure we have pricing or stock info
+                    var hasCommercialData = product.DynamicProperties.Keys.Any(k => 
+                        k.Contains("Price", StringComparison.OrdinalIgnoreCase) ||
+                        k.Contains("Stock", StringComparison.OrdinalIgnoreCase) ||
+                        k.Contains("Available", StringComparison.OrdinalIgnoreCase));
+
+                    if (!hasCommercialData)
+                    {
+                        return null; // Skip rows without commercial data in commercial mode
+                    }
+
+                    // Add supplier reference
+                    product.SetDynamicProperty("SupplierName", SupplierName);
+                    product.SetDynamicProperty("CommercialDataSource", sourceFile);
+                }
+
+                return product;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to normalize row {row.Index}: {ex.Message}", ex);
+            }
+        }
+
+        private bool IsValidProductForMode(ProductEntity product, ProcessingMode mode)
+        {
+            if (mode == ProcessingMode.UnifiedProductCatalog)
+            {
+                // For catalog mode, require minimum product identification
+                return !string.IsNullOrEmpty(product.Name) && product.Name != "Unknown Product";
+            }
+            else
+            {
+                // For commercial mode, require some commercial data
+                return product.DynamicProperties.Keys.Any(k => 
+                    k.Contains("Price", StringComparison.OrdinalIgnoreCase) ||
+                    k.Contains("Stock", StringComparison.OrdinalIgnoreCase) ||
+                    k.Contains("Available", StringComparison.OrdinalIgnoreCase));
+            }
         }
     }
 }

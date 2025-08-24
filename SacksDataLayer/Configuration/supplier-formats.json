@@ -8,46 +8,89 @@
       "description": "DIOR beauty and fragrance products supplier",
       "detection": {
         "fileNamePatterns": ["*DIOR*", "*dior*", "*Dior*"],
-        "headerKeywords": ["DIOR", "Dior Product", "Beauty Product", "Parfum", "Commercial Line"],
-        "requiredColumns": ["Product Name", "Price"],
+        "headerKeywords": ["DIOR", "Dior Product", "Beauty Product", "Parfum", "Commercial Line", "Pricing Item Name"],
+        "requiredColumns": ["Item Name", "PRICE"],
         "excludePatterns": ["*temp*", "*backup*"],
         "priority": 10
       },
       "columnMappings": {
-        "Product Name": "Name",
-        "Description": "Description",
-        "SKU": "SKU",
-        "Price": "Price",
+        "Item Name": "Name",
+        "Item Code": "SKU",
+        "PRICE": "Price",
         "Category": "Category",
-        "Stock": "StockQuantity",
-        "Active": "IsActive",
+        "Size": "Size",
+        "Unit": "Unit",
+        "EAN": "EAN",
+        "Capacity": "Capacity",
         "Commercial Line": "CommercialLine",
         "Family": "Family",
         "Pricing Item Name": "PricingItemName"
       },
       "dataTypes": {
-        "Price": {
+        "PRICE": {
           "type": "decimal",
           "format": "currency",
           "defaultValue": 0,
           "allowNull": false,
           "transformations": ["removeSymbols", "parseDecimal"]
         },
-        "StockQuantity": {
-          "type": "int",
-          "defaultValue": 0,
-          "allowNull": true,
-          "transformations": ["parseInt"]
-        },
-        "IsActive": {
-          "type": "bool",
-          "defaultValue": true,
-          "allowNull": false,
-          "transformations": ["parseBoolean"]
-        },
         "Name": {
           "type": "string",
           "allowNull": false,
+          "transformations": ["trim"]
+        },
+        "SKU": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 50,
+          "transformations": ["trim", "toUpperCase"]
+        },
+        "Category": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": ["trim"]
+        },
+        "Size": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 50,
+          "transformations": ["trim"]
+        },
+        "Unit": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 20,
+          "transformations": ["trim"]
+        },
+        "EAN": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 20,
+          "transformations": ["trim", "removeSpaces"]
+        },
+        "Capacity": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 50,
+          "transformations": ["trim"]
+        },
+        "CommercialLine": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": ["trim"]
+        },
+        "Family": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": ["trim"]
+        },
+        "PricingItemName": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 255,
           "transformations": ["trim"]
         }
       },
@@ -56,7 +99,7 @@
         "skipRowsWithoutName": true,
         "maxErrorsPerFile": 100,
         "fieldValidations": {
-          "Price": {
+          "PRICE": {
             "numericRange": {
               "min": 0,
               "max": 10000
@@ -65,6 +108,10 @@
           "Name": {
             "minLength": 1,
             "maxLength": 255
+          },
+          "EAN": {
+            "pattern": "^[0-9]{8,13}$",
+            "allowNull": true
           }
         }
       },
