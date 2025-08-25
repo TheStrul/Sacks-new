@@ -26,6 +26,14 @@
         "Family": "Family",
         "Pricing Item Name": "PricingItemName"
       },
+      "propertyClassification": {
+        "coreProductProperties": [
+          "Category", "Size", "Unit", "EAN", "CommercialLine", "Family", "PricingItemName"
+        ],
+        "offerProperties": [
+          "Price", "Capacity"
+        ]
+      },
       "dataTypes": {
         "PRICE": {
           "type": "decimal",

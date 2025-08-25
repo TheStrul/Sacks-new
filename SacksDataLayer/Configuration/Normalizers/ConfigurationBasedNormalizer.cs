@@ -367,7 +367,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         var convertedValue = ConvertValue(targetProperty, rawValue);
                         if (convertedValue != null)
                         {
-                            product.SetDynamicProperty(targetProperty, convertedValue);
+                            // Determine if this is a core product property or offer property
+                            if (_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
+                            {
+                                product.SetOfferProperty(targetProperty, convertedValue);
+                            }
+                            else
+                            {
+                                product.SetDynamicProperty(targetProperty, convertedValue);
+                            }
                         }
                     }
                     else
@@ -380,11 +388,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 // Add unmapped columns as dynamic properties
                 await AddUnmappedPropertiesAsync(product, row, columnIndexes);
 
-                // Add metadata
-                product.SetDynamicProperty("Supplier", SupplierName);
-                product.SetDynamicProperty("ImportDate", DateTime.UtcNow);
-                product.SetDynamicProperty("SourceFile", Path.GetFileName(filePath));
-                product.SetDynamicProperty("SourceRowIndex", row.Index);
+                // Note: No metadata is added to DynamicProperties - they should contain only product attributes
+                // Metadata like SourceFile, ProcessingMode, etc. are handled separately by the processing layer
 
                 return product;
             }
@@ -489,7 +494,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             if (_configuration.DataTypes.TryGetValue(targetProperty, out var dataTypeConfig) &&
                 dataTypeConfig.DefaultValue != null)
             {
-                product.SetDynamicProperty(targetProperty, dataTypeConfig.DefaultValue);
+                // Determine if this is a core product property or offer property
+                if (_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
+                {
+                    product.SetOfferProperty(targetProperty, dataTypeConfig.DefaultValue);
+                }
+                else
+                {
+                    product.SetDynamicProperty(targetProperty, dataTypeConfig.DefaultValue);
+                }
             }
         }
 
@@ -705,14 +718,12 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             return mapping;
         }
 
-        private async Task<ProductEntity?> NormalizeModeSpecificRowAsync(RowData row, Dictionary<string, int> columnIndexes, ProcessingContext context, string sourceFile)
+        private Task<ProductEntity?> NormalizeModeSpecificRowAsync(RowData row, Dictionary<string, int> columnIndexes, ProcessingContext context, string sourceFile)
         {
             try
             {
                 var product = new ProductEntity();
-                product.SetDynamicProperty("SourceFile", sourceFile);
-                product.SetDynamicProperty("ProcessingMode", context.Mode.ToString());
-                product.SetDynamicProperty("ProcessedAt", context.ProcessingDate);
+                // Note: No metadata added to DynamicProperties - they should contain only product attributes
 
                 var modeConfig = context.Mode == ProcessingMode.UnifiedProductCatalog 
                     ? _configuration.ProcessingModes.CatalogMode 
@@ -747,7 +758,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                                     product.SKU = convertedValue?.ToString();
                                     break;
                                 default:
-                                    product.SetDynamicProperty(targetProperty, convertedValue);
+                                    // Determine if this is a core product property or offer property
+                                    if (_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
+                                    {
+                                        product.SetOfferProperty(targetProperty, convertedValue);
+                                    }
+                                    else
+                                    {
+                                        product.SetDynamicProperty(targetProperty, convertedValue);
+                                    }
                                     break;
                             }
                         }
@@ -797,15 +816,13 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
                     if (!hasCommercialData)
                     {
-                        return null; // Skip rows without commercial data in commercial mode
+                        return Task.FromResult<ProductEntity?>(null); // Skip rows without commercial data in commercial mode
                     }
 
-                    // Add supplier reference
-                    product.SetDynamicProperty("SupplierName", SupplierName);
-                    product.SetDynamicProperty("CommercialDataSource", sourceFile);
+                    // Note: No supplier metadata added to DynamicProperties
                 }
 
-                return product;
+                return Task.FromResult<ProductEntity?>(product);
             }
             catch (Exception ex)
             {

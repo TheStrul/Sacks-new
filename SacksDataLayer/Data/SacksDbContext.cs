@@ -52,13 +52,19 @@ namespace SacksDataLayer.Data
                 entity.Property(e => e.SKU)
                       .HasMaxLength(100);
 
-                // Configure DynamicPropertiesJson as JSON column
+                // Configure DynamicPropertiesJson as JSON column (core product attributes)
                 entity.Property(e => e.DynamicPropertiesJson)
                       .HasColumnType("nvarchar(max)")
                       .HasColumnName("DynamicProperties");
 
-                // Configure the DynamicProperties to be ignored by EF (since it's handled by DynamicPropertiesJson)
+                // Configure OfferPropertiesJson as JSON column (supplier-specific data)
+                entity.Property(e => e.OfferPropertiesJson)
+                      .HasColumnType("nvarchar(max)")
+                      .HasColumnName("OfferProperties");
+
+                // Configure the DynamicProperties and OfferProperties to be ignored by EF (since they're handled by JSON properties)
                 entity.Ignore(e => e.DynamicProperties);
+                entity.Ignore(e => e.OfferProperties);
 
                 // Configure timestamps with default values
                 entity.Property(e => e.CreatedAt)

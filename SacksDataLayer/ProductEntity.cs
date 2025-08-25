@@ -45,9 +45,17 @@ namespace SacksDataLayer
 
         /// <summary>
         /// Dynamic properties stored as key-value pairs
-        /// This allows unlimited custom properties to be added to any product
+        /// This allows unlimited custom product properties to be added to any product
+        /// These are core product attributes that don't vary by supplier/offer
         /// </summary>
         public Dictionary<string, object?> DynamicProperties { get; set; } = new Dictionary<string, object?>();
+
+        /// <summary>
+        /// Supplier offer properties stored as key-value pairs
+        /// This contains supplier-specific data like pricing, capacity, availability
+        /// These properties can vary by supplier and time
+        /// </summary>
+        public Dictionary<string, object?> OfferProperties { get; set; } = new Dictionary<string, object?>();
 
         /// <summary>
         /// JSON representation of dynamic properties for database storage
@@ -78,7 +86,35 @@ namespace SacksDataLayer
         }
 
         /// <summary>
-        /// Sets a dynamic property value
+        /// JSON representation of offer properties for database storage
+        /// This property can be mapped to a JSON column in the database
+        /// </summary>
+        public string? OfferPropertiesJson
+        {
+            get => OfferProperties.Count > 0 ? JsonSerializer.Serialize(OfferProperties) : null;
+            set
+            {
+                if (string.IsNullOrEmpty(value))
+                {
+                    OfferProperties = new Dictionary<string, object?>();
+                }
+                else
+                {
+                    try
+                    {
+                        OfferProperties = JsonSerializer.Deserialize<Dictionary<string, object?>>(value) 
+                                          ?? new Dictionary<string, object?>();
+                    }
+                    catch (JsonException)
+                    {
+                        OfferProperties = new Dictionary<string, object?>();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets a dynamic property value (core product attribute)
         /// </summary>
         /// <param name="key">Property name</param>
         /// <param name="value">Property value</param>
@@ -88,6 +124,20 @@ namespace SacksDataLayer
                 throw new ArgumentException("Property key cannot be null or empty", nameof(key));
 
             DynamicProperties[key] = value;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Sets an offer property value (supplier-specific data)
+        /// </summary>
+        /// <param name="key">Property name</param>
+        /// <param name="value">Property value</param>
+        public void SetOfferProperty(string key, object? value)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException("Property key cannot be null or empty", nameof(key));
+
+            OfferProperties[key] = value;
             UpdatedAt = DateTime.UtcNow;
         }
 
@@ -131,7 +181,7 @@ namespace SacksDataLayer
         }
 
         /// <summary>
-        /// Gets a dynamic property value as object
+        /// Gets a dynamic property value as object (core product attribute)
         /// </summary>
         /// <param name="key">Property name</param>
         /// <returns>Property value or null if not found</returns>
@@ -140,6 +190,57 @@ namespace SacksDataLayer
             return string.IsNullOrWhiteSpace(key) || !DynamicProperties.ContainsKey(key) 
                 ? null 
                 : DynamicProperties[key];
+        }
+
+        /// <summary>
+        /// Gets an offer property value
+        /// </summary>
+        /// <typeparam name="T">Expected type of the property value</typeparam>
+        /// <param name="key">Property name</param>
+        /// <returns>Property value or default(T) if not found</returns>
+        public T? GetOfferProperty<T>(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key) || !OfferProperties.ContainsKey(key))
+                return default(T);
+
+            var value = OfferProperties[key];
+            if (value is T directValue)
+                return directValue;
+
+            // Try to convert JSON element to target type
+            if (value is JsonElement jsonElement)
+            {
+                try
+                {
+                    return JsonSerializer.Deserialize<T>(jsonElement.GetRawText());
+                }
+                catch (JsonException)
+                {
+                    return default(T);
+                }
+            }
+
+            // Try direct conversion
+            try
+            {
+                return (T?)Convert.ChangeType(value, typeof(T));
+            }
+            catch
+            {
+                return default(T);
+            }
+        }
+
+        /// <summary>
+        /// Gets an offer property value as object (supplier-specific data)
+        /// </summary>
+        /// <param name="key">Property name</param>
+        /// <returns>Property value or null if not found</returns>
+        public object? GetOfferProperty(string key)
+        {
+            return string.IsNullOrWhiteSpace(key) || !OfferProperties.ContainsKey(key) 
+                ? null 
+                : OfferProperties[key];
         }
 
         /// <summary>

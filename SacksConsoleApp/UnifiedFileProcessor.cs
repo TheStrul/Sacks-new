@@ -47,9 +47,8 @@ namespace SacksConsoleApp
                 
                 // Ensure database is created and up-to-date
                 Console.WriteLine("🔧 Ensuring database exists and is up-to-date...");
-                await context.Database.EnsureDeletedAsync();
-                await context.Database.EnsureCreatedAsync();
-                Console.WriteLine("✅ Database recreated!");
+                await context.Database.MigrateAsync();
+                Console.WriteLine("✅ Database ready!");
 
                 var repository = new ProductsRepository(context);
                 var service = new ProductsService(repository);

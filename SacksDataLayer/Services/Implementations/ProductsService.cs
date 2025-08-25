@@ -387,17 +387,10 @@ namespace SacksDataLayer.Services.Implementations
             string? createdBy = null,
             bool skipDuplicates = true)
         {
-            // Enhance products with processing metadata
-            var enhancedProducts = processingResult.Products.Select(p =>
-            {
-                p.SetDynamicProperty("ProcessingMode", processingResult.Mode.ToString());
-                p.SetDynamicProperty("SourceFile", processingResult.SourceFile);
-                p.SetDynamicProperty("SupplierName", processingResult.SupplierName);
-                p.SetDynamicProperty("ProcessedAt", processingResult.ProcessedAt);
-                return p;
-            });
+            // Note: No metadata enhancement - DynamicProperties should contain only product attributes
+            // Processing metadata is handled separately by the service layer
 
-            return await CreateProductsBulkAsync(enhancedProducts, createdBy, skipDuplicates);
+            return await CreateProductsBulkAsync(processingResult.Products, createdBy, skipDuplicates);
         }
 
         public async Task<ProcessingStatisticsReport> GetProcessingStatisticsAsync(

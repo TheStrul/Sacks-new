@@ -38,6 +38,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("columnMappings")]
         public Dictionary<string, string> ColumnMappings { get; set; } = new();
 
+        [JsonPropertyName("propertyClassification")]
+        public PropertyClassificationConfiguration PropertyClassification { get; set; } = new();
+
         [JsonPropertyName("dataTypes")]
         public Dictionary<string, DataTypeConfiguration> DataTypes { get; set; } = new();
 
@@ -257,5 +260,17 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("transformationRules")]
         public Dictionary<string, object> TransformationRules { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Configuration for classifying properties as core product vs offer-specific
+    /// </summary>
+    public class PropertyClassificationConfiguration
+    {
+        [JsonPropertyName("coreProductProperties")]
+        public List<string> CoreProductProperties { get; set; } = new();
+
+        [JsonPropertyName("offerProperties")]
+        public List<string> OfferProperties { get; set; } = new();
     }
 }
