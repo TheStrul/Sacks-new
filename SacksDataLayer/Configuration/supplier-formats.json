@@ -97,6 +97,7 @@
       "validation": {
         "requiredFields": ["Name"],
         "skipRowsWithoutName": true,
+        "skipHeaderRows": true,
         "maxErrorsPerFile": 100,
         "fieldValidations": {
           "PRICE": {

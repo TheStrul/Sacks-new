@@ -24,8 +24,7 @@ namespace SacksDataLayer.Repositories.Implementations
 
         public async Task<ProductEntity?> GetByIdAsync(int id, bool includeDeleted = false)
         {
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
-            return await query.FirstOrDefaultAsync(p => p.Id == id);
+            return await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<ProductEntity?> GetBySKUAsync(string sku, bool includeDeleted = false)
@@ -33,20 +32,17 @@ namespace SacksDataLayer.Repositories.Implementations
             if (string.IsNullOrWhiteSpace(sku))
                 return null;
 
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
-            return await query.FirstOrDefaultAsync(p => p.SKU == sku);
+            return await _context.Products.FirstOrDefaultAsync(p => p.SKU == sku);
         }
 
         public async Task<IEnumerable<ProductEntity>> GetAllAsync(bool includeDeleted = false)
         {
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
-            return await query.ToListAsync();
+            return await _context.Products.ToListAsync();
         }
 
         public async Task<IEnumerable<ProductEntity>> GetPagedAsync(int skip, int take, bool includeDeleted = false)
         {
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
-            return await query
+            return await _context.Products
                 .OrderBy(p => p.CreatedAt)
                 .Skip(skip)
                 .Take(take)
@@ -58,8 +54,8 @@ namespace SacksDataLayer.Repositories.Implementations
             if (product == null)
                 throw new ArgumentNullException(nameof(product));
 
-            product.CreatedBy = createdBy;
             product.CreatedAt = DateTime.UtcNow;
+            product.UpdatedAt = DateTime.UtcNow;
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
@@ -80,7 +76,7 @@ namespace SacksDataLayer.Repositories.Implementations
             existingProduct.Description = product.Description;
             existingProduct.SKU = product.SKU;
             existingProduct.DynamicPropertiesJson = product.DynamicPropertiesJson;
-            existingProduct.UpdateModified(modifiedBy);
+            existingProduct.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return existingProduct;
@@ -92,14 +88,14 @@ namespace SacksDataLayer.Repositories.Implementations
             if (product == null)
                 return false;
 
-            product.SoftDelete(deletedBy);
+            _context.Products.Remove(product);
             await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> HardDeleteAsync(int id)
         {
-            var product = await _context.ProductsWithDeleted.FirstOrDefaultAsync(p => p.Id == id);
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
             if (product == null)
                 return false;
 
@@ -108,15 +104,10 @@ namespace SacksDataLayer.Repositories.Implementations
             return true;
         }
 
-        public async Task<bool> RestoreAsync(int id)
+        public Task<bool> RestoreAsync(int id)
         {
-            var product = await _context.ProductsWithDeleted.FirstOrDefaultAsync(p => p.Id == id);
-            if (product == null || !product.IsDeleted)
-                return false;
-
-            product.Restore();
-            await _context.SaveChangesAsync();
-            return true;
+            // Since we removed soft delete functionality, this method just returns false
+            return Task.FromResult(false);
         }
 
         #endregion
@@ -125,7 +116,7 @@ namespace SacksDataLayer.Repositories.Implementations
 
         public async Task<IEnumerable<ProductEntity>> FindAsync(Expression<Func<ProductEntity, bool>> predicate, bool includeDeleted = false)
         {
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
+            var query = _context.Products;
             return await query.Where(predicate).ToListAsync();
         }
 
@@ -134,7 +125,7 @@ namespace SacksDataLayer.Repositories.Implementations
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return Enumerable.Empty<ProductEntity>();
 
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
+            var query = _context.Products;
             return await query
                 .Where(p => EF.Functions.Like(p.Name, $"%{searchTerm}%"))
                 .ToListAsync();
@@ -142,7 +133,7 @@ namespace SacksDataLayer.Repositories.Implementations
 
         public async Task<IEnumerable<ProductEntity>> GetByProcessingModeAsync(ProcessingMode mode, bool includeDeleted = false)
         {
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
+            var query = _context.Products;
             var modeString = mode.ToString();
             
             return await query
@@ -156,7 +147,7 @@ namespace SacksDataLayer.Repositories.Implementations
             if (string.IsNullOrWhiteSpace(sourceFile))
                 return Enumerable.Empty<ProductEntity>();
 
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
+            var query = _context.Products;
             
             return await query
                 .Where(p => p.DynamicPropertiesJson != null && 
@@ -169,7 +160,7 @@ namespace SacksDataLayer.Repositories.Implementations
             if (string.IsNullOrWhiteSpace(propertyKey))
                 return Enumerable.Empty<ProductEntity>();
 
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
+            var query = _context.Products;
             
             if (propertyValue == null)
             {
@@ -204,8 +195,8 @@ namespace SacksDataLayer.Repositories.Implementations
 
             foreach (var product in productList)
             {
-                product.CreatedBy = createdBy;
                 product.CreatedAt = now;
+                product.UpdatedAt = now;
             }
 
             _context.Products.AddRange(productList);
@@ -235,7 +226,7 @@ namespace SacksDataLayer.Repositories.Implementations
                     existingProduct.Description = product.Description;
                     existingProduct.SKU = product.SKU;
                     existingProduct.DynamicPropertiesJson = product.DynamicPropertiesJson;
-                    existingProduct.UpdateModified(modifiedBy);
+                    existingProduct.UpdatedAt = DateTime.UtcNow;
                 }
             }
 
@@ -253,11 +244,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 .Where(p => idList.Contains(p.Id))
                 .ToListAsync();
 
-            foreach (var product in products)
-            {
-                product.SoftDelete(deletedBy);
-            }
-
+            _context.Products.RemoveRange(products);
             await _context.SaveChangesAsync();
             return products.Count;
         }
@@ -268,16 +255,14 @@ namespace SacksDataLayer.Repositories.Implementations
 
         public async Task<int> GetCountAsync(bool includeDeleted = false)
         {
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
-            return await query.CountAsync();
+            return await _context.Products.CountAsync();
         }
 
         public async Task<int> GetCountByProcessingModeAsync(ProcessingMode mode, bool includeDeleted = false)
         {
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
             var modeString = mode.ToString();
             
-            return await query
+            return await _context.Products
                 .Where(p => p.DynamicPropertiesJson != null && 
                            p.DynamicPropertiesJson.Contains($"\"ProcessingMode\":\"{modeString}\""))
                 .CountAsync();
@@ -285,7 +270,7 @@ namespace SacksDataLayer.Repositories.Implementations
 
         public async Task<Dictionary<ProcessingMode, int>> GetProcessingStatisticsAsync(string? sourceFile = null, bool includeDeleted = false)
         {
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
+            IQueryable<ProductEntity> query = _context.Products;
             
             if (!string.IsNullOrWhiteSpace(sourceFile))
             {
@@ -328,7 +313,7 @@ namespace SacksDataLayer.Repositories.Implementations
 
         public async Task<IEnumerable<ProductEntity>> GetByCreatedDateRangeAsync(DateTime startDate, DateTime endDate, bool includeDeleted = false)
         {
-            var query = includeDeleted ? _context.ProductsWithDeleted : _context.Products;
+            var query = _context.Products;
             return await query
                 .Where(p => p.CreatedAt >= startDate && p.CreatedAt <= endDate)
                 .OrderBy(p => p.CreatedAt)

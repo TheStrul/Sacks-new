@@ -529,6 +529,10 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             var validation = _configuration.Validation;
 
+            // Skip rows that look like headers (e.g., "Item Name", "Item Code")
+            if (IsHeaderRow(product))
+                return false;
+
             // Check required fields
             foreach (var requiredField in validation.RequiredFields)
             {
@@ -552,6 +556,29 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
 
             return true;
+        }
+
+        private bool IsHeaderRow(ProductEntity product)
+        {
+            // Check if product name/SKU matches known column headers
+            var headerKeywords = new[] { "Item Name", "Item Code", "PRICE", "Category", "Family", "Commercial Line", "Pricing Item Name", "Size", "Unit", "EAN", "Capacity" };
+            
+            if (headerKeywords.Any(keyword => string.Equals(product.Name, keyword, StringComparison.OrdinalIgnoreCase) ||
+                                               string.Equals(product.SKU, keyword, StringComparison.OrdinalIgnoreCase)))
+                return true;
+
+            // Check if multiple dynamic properties contain header-like values
+            var headerMatches = 0;
+            foreach (var prop in product.DynamicProperties)
+            {
+                if (headerKeywords.Any(keyword => string.Equals(prop.Value?.ToString(), keyword, StringComparison.OrdinalIgnoreCase)))
+                {
+                    headerMatches++;
+                }
+            }
+
+            // If more than 50% of properties match header keywords, it's likely a header row
+            return headerMatches > product.DynamicProperties.Count / 2 && headerMatches >= 3;
         }
 
         private bool ValidateField(ProductEntity product, string fieldName, FieldValidation validation)

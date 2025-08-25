@@ -38,12 +38,8 @@ namespace SacksDataLayer.Data
                 entity.HasIndex(e => e.CreatedAt)
                       .HasDatabaseName("IX_Products_CreatedAt");
 
-                entity.HasIndex(e => e.IsDeleted)
-                      .HasDatabaseName("IX_Products_IsDeleted");
-
-                // Composite index for soft delete queries
-                entity.HasIndex(e => new { e.IsDeleted, e.CreatedAt })
-                      .HasDatabaseName("IX_Products_IsDeleted_CreatedAt");
+                entity.HasIndex(e => e.UpdatedAt)
+                      .HasDatabaseName("IX_Products_UpdatedAt");
 
                 // Property configurations
                 entity.Property(e => e.Name)
@@ -54,15 +50,6 @@ namespace SacksDataLayer.Data
                       .HasMaxLength(2000);
 
                 entity.Property(e => e.SKU)
-                      .HasMaxLength(100);
-
-                entity.Property(e => e.CreatedBy)
-                      .HasMaxLength(100);
-
-                entity.Property(e => e.ModifiedBy)
-                      .HasMaxLength(100);
-
-                entity.Property(e => e.DeletedBy)
                       .HasMaxLength(100);
 
                 // Configure DynamicPropertiesJson as JSON column
@@ -77,12 +64,9 @@ namespace SacksDataLayer.Data
                 entity.Property(e => e.CreatedAt)
                       .HasDefaultValueSql("GETUTCDATE()");
 
-                entity.Property(e => e.IsDeleted)
-                      .HasDefaultValue(false);
+                entity.Property(e => e.UpdatedAt)
+                      .HasDefaultValueSql("GETUTCDATE()");
             });
-
-            // Global query filter to exclude soft deleted entities by default
-            modelBuilder.Entity<ProductEntity>().HasQueryFilter(e => !e.IsDeleted);
         }
 
         /// <summary>
@@ -108,7 +92,7 @@ namespace SacksDataLayer.Data
         /// </summary>
         private void UpdateAuditFields()
         {
-            var entries = ChangeTracker.Entries<Entity>()
+            var entries = ChangeTracker.Entries<ProductEntity>()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
 
             foreach (var entry in entries)
@@ -116,17 +100,13 @@ namespace SacksDataLayer.Data
                 if (entry.State == EntityState.Added)
                 {
                     entry.Entity.CreatedAt = DateTime.UtcNow;
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
                 }
                 else if (entry.State == EntityState.Modified)
                 {
-                    entry.Entity.UpdateModified();
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
                 }
             }
         }
-
-        /// <summary>
-        /// Gets products including soft deleted ones
-        /// </summary>
-        public IQueryable<ProductEntity> ProductsWithDeleted => Products.IgnoreQueryFilters();
     }
 }
