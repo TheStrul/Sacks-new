@@ -705,7 +705,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         
                         if (!string.IsNullOrEmpty(cellValue))
                         {
-                            var convertedValue = ConvertValue(cellValue, sourceColumn);
+                            var convertedValue = ConvertValue(targetProperty, cellValue);
                             
                             // Set core properties or dynamic properties based on target
                             switch (targetProperty.ToLowerInvariant())

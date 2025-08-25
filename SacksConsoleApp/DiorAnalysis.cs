@@ -4,7 +4,11 @@ using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Normalizers;
 using SacksDataLayer.FileProcessing.Interfaces;
 using SacksDataLayer.FileProcessing.Models;
+using SacksDataLayer.Data;
+using SacksDataLayer.Repositories.Implementations;
+using SacksDataLayer.Services.Implementations;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
 namespace SacksConsoleApp

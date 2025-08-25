@@ -13,6 +13,19 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
+  </ItemGroup>
+
+  <!-- Copy configuration and input files to output directory -->
+  <ItemGroup>
+    <None Include="..\SacksDataLayer\Configuration\supplier-formats.json">
+      <Link>Configuration\supplier-formats.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\SacksDataLayer\Inputs\*.xlsx">
+      <Link>Inputs\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

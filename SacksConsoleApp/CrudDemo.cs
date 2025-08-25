@@ -16,9 +16,10 @@ namespace SacksConsoleApp
         {
             Console.WriteLine("=== Products CRUD Functionality Demo ===\n");
 
-            // Setup in-memory database for demo
+            // Setup SQL Server database connection
+            var connectionString = @"Server=(localdb)\mssqllocaldb;Database=SacksProductsDb;Trusted_Connection=true;MultipleActiveResultSets=true";
             var options = new DbContextOptionsBuilder<SacksDbContext>()
-                .UseInMemoryDatabase(databaseName: "SacksCrudDemo")
+                .UseSqlServer(connectionString)
                 .Options;
 
             await using var context = new SacksDbContext(options);

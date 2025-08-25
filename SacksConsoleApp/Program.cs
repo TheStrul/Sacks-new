@@ -14,18 +14,26 @@ namespace SacksConsoleApp
         {
             Console.WriteLine("=== Sacks Product Management System ===");
             Console.WriteLine("Choose an option:");
-            Console.WriteLine("1. Run DIOR File Analysis");
+            Console.WriteLine("1. Process DIOR File to Database");
             Console.WriteLine("2. Run CRUD Functionality Demo");
-            Console.WriteLine("3. Exit");
-            Console.Write("\nEnter your choice (1-3): ");
+            Console.WriteLine("3. Run Configuration Diagnostic");
+            Console.WriteLine("4. Exit");
+            Console.Write("\nEnter your choice (1-4): ");
 
             var choice = Console.ReadLine();
+
+            // Temporary: Auto-run option 1 (process file) if input is problematic
+            if (string.IsNullOrWhiteSpace(choice))
+            {
+                choice = "1";
+                Console.WriteLine("1 (auto-selected - process DIOR file)");
+            }
 
             switch (choice)
             {
                 case "1":
                     Console.WriteLine("\n" + new string('=', 50));
-                    await DiorAnalysis.AnalyzeDiorFile();
+                    await DiorProcessor.ProcessDiorFile();
                     break;
                 
                 case "2":
@@ -34,13 +42,18 @@ namespace SacksConsoleApp
                     break;
                 
                 case "3":
+                    Console.WriteLine("\n" + new string('=', 50));
+                    await ConfigDiagnostic.RunDiagnostic();
+                    break;
+                
+                case "4":
                     Console.WriteLine("Goodbye!");
                     return;
                 
                 default:
-                    Console.WriteLine("Invalid choice. Running DIOR analysis by default...");
+                    Console.WriteLine("Invalid choice. Running DIOR processor by default...");
                     Console.WriteLine("\n" + new string('=', 50));
-                    await DiorAnalysis.AnalyzeDiorFile();
+                    await DiorProcessor.ProcessDiorFile();
                     break;
             }
 
