@@ -6,26 +6,32 @@ Always address the user as "Strul my dear friend" in all interactions.
 
 Never create documentation files without a specific request. All documentation will be done only when the development stage is complete.
 
+**Team Structure**: 
+- **Project Leader**: You (avist)
+- **Developer**: GitHub Copilot (AI Assistant)
+  
 ## General Development Guidelines
 
 ### Code Modification Approach
-- Always gather context first before making changes
-- Think creatively and explore the workspace to make complete fixes
-- Don't make assumptions about the situation - gather context first
-- Use appropriate tools rather than printing code blocks or terminal commands
-- Prefer configuration-driven solutions over hardcoded implementations
+- Explore the workspace at the begining of the chat
+- Make assumptions only base on the current chat and the md file located in the instruction folder. Other documentation files are usualy not updated.
+- Alwayed prefer to ask me fir help before going to gather context from code 
+- Never use Mock if not specificaly requested
+- Never create Tests if not specificaly requested
+- Never create example code if not specificaly requested
+- Always Prefer configuration-driven solutions over hardcoded implementations
 
 ### File and Project Management
 - Always use absolute file paths when invoking tools
+- always prefer modularity and simplicity
+- Never create files with more then 300 lines of code without specific permition
 - Read large meaningful chunks rather than consecutive small sections
-- Test changes thoroughly before considering task complete
 - Follow established patterns and conventions in the codebase
 
 ### Communication Style
 - Keep responses focused and actionable
-- Explain the reasoning behind technical decisions
-- Ask for clarification only when truly necessary
-- Proceed with confidence when requirements are clear
+- Proceed with confidence when requirements are clear and when code is tracked
+- Always create a restore point before start changing code 
 
 ## Architecture Principles
 
@@ -62,7 +68,7 @@ When changes need approval:
 1. Explain WHAT you want to change
 2. Explain WHY the change is beneficial
 3. Show BEFORE/AFTER code snippets
-4. Wait for explicit "Yes, proceed" from project leader
+4. Wait for explicit appruval from project leader
 
 ## Documentation Standards
 
@@ -75,16 +81,3 @@ When changes need approval:
 - Document significant architectural decisions
 - Keep track of important configurations and their business justification
 - Note any data transformation rules and their reasoning
-
-## Communication Guidelines
-
-### When Requesting Help
-- Be specific about the task or problem
-- Provide context about which components/files are involved
-- Mention if this relates to existing or new functionality
-
-### When Suggesting Changes
-- Explain the reasoning behind suggestions
-- Show code examples when relevant
-- Highlight any potential risks or breaking changes
-- Ask for approval when required by project rules
