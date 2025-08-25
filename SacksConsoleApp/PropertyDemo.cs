@@ -48,18 +48,27 @@ namespace SacksConsoleApp
 
             Console.WriteLine();
 
-            // Show OfferProperties (Supplier-Specific Data)
-            Console.WriteLine("💰 OfferProperties (Supplier-Specific Data):");
-            if (product.OfferProperties.Any())
+            // Show OfferProducts (Supplier-Specific Data)
+            Console.WriteLine("💰 OfferProducts (Supplier-Specific Data):");
+            if (product.OfferProducts.Any())
             {
-                foreach (var prop in product.OfferProperties)
+                foreach (var offerProduct in product.OfferProducts)
                 {
-                    Console.WriteLine($"   • {prop.Key}: {prop.Value}");
+                    Console.WriteLine($"   • Supplier: {offerProduct.Offer?.Supplier?.Name ?? "Unknown"}");
+                    Console.WriteLine($"     Offer: {offerProduct.Offer?.OfferName ?? "Unnamed Offer"}");
+                    Console.WriteLine($"     Price: {offerProduct.Price:C}, Capacity: {offerProduct.Capacity}");
+                    if (offerProduct.ProductProperties.Any())
+                    {
+                        foreach (var prop in offerProduct.ProductProperties)
+                        {
+                            Console.WriteLine($"     {prop.Key}: {prop.Value}");
+                        }
+                    }
                 }
             }
             else
             {
-                Console.WriteLine("   (No offer properties)");
+                Console.WriteLine("   (No supplier offers)");
             }
 
             Console.WriteLine();

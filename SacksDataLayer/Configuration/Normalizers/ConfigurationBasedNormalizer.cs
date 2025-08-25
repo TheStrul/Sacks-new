@@ -367,12 +367,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         var convertedValue = ConvertValue(targetProperty, rawValue);
                         if (convertedValue != null)
                         {
-                            // Determine if this is a core product property or offer property
-                            if (_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
-                            {
-                                product.SetOfferProperty(targetProperty, convertedValue);
-                            }
-                            else
+                            // Only set core product properties on the product entity
+                            // Offer properties will be handled separately by the processor
+                            if (!_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
                             {
                                 product.SetDynamicProperty(targetProperty, convertedValue);
                             }
@@ -495,11 +492,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 dataTypeConfig.DefaultValue != null)
             {
                 // Determine if this is a core product property or offer property
-                if (_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
-                {
-                    product.SetOfferProperty(targetProperty, dataTypeConfig.DefaultValue);
-                }
-                else
+                // Only set core product properties default values
+                // Offer properties will be handled separately
+                if (!_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
                 {
                     product.SetDynamicProperty(targetProperty, dataTypeConfig.DefaultValue);
                 }
@@ -758,12 +753,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                                     product.SKU = convertedValue?.ToString();
                                     break;
                                 default:
-                                    // Determine if this is a core product property or offer property
-                                    if (_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
-                                    {
-                                        product.SetOfferProperty(targetProperty, convertedValue);
-                                    }
-                                    else
+                                    // Only set core product properties  
+                                    // Offer properties will be handled separately
+                                    if (!_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
                                     {
                                         product.SetDynamicProperty(targetProperty, convertedValue);
                                     }
@@ -845,6 +837,36 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     k.Contains("Stock", StringComparison.OrdinalIgnoreCase) ||
                     k.Contains("Available", StringComparison.OrdinalIgnoreCase));
             }
+        }
+
+        /// <summary>
+        /// Extracts offer properties from a row for creating SupplierOffer entities
+        /// </summary>
+        public Dictionary<string, object?> ExtractOfferProperties(RowData row, Dictionary<string, int> columnIndexes)
+        {
+            var offerProperties = new Dictionary<string, object?>();
+
+            foreach (var mapping in _configuration.ColumnMappings)
+            {
+                var sourceColumn = mapping.Key;
+                var targetProperty = mapping.Value;
+
+                // Only process offer properties
+                if (_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
+                {
+                    var rawValue = GetCellValue(row, columnIndexes, sourceColumn);
+                    if (!string.IsNullOrEmpty(rawValue))
+                    {
+                        var convertedValue = ConvertValue(targetProperty, rawValue);
+                        if (convertedValue != null)
+                        {
+                            offerProperties[targetProperty] = convertedValue;
+                        }
+                    }
+                }
+            }
+
+            return offerProperties;
         }
     }
 }

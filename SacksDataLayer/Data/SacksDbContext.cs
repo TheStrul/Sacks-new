@@ -17,6 +17,21 @@ namespace SacksDataLayer.Data
         /// </summary>
         public DbSet<ProductEntity> Products { get; set; }
 
+        /// <summary>
+        /// Suppliers table
+        /// </summary>
+        public DbSet<SupplierEntity> Suppliers { get; set; }
+
+        /// <summary>
+        /// Supplier offers table
+        /// </summary>
+        public DbSet<SupplierOfferEntity> SupplierOffers { get; set; }
+
+        /// <summary>
+        /// Offer products junction table
+        /// </summary>
+        public DbSet<OfferProductEntity> OfferProducts { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -57,14 +72,8 @@ namespace SacksDataLayer.Data
                       .HasColumnType("nvarchar(max)")
                       .HasColumnName("DynamicProperties");
 
-                // Configure OfferPropertiesJson as JSON column (supplier-specific data)
-                entity.Property(e => e.OfferPropertiesJson)
-                      .HasColumnType("nvarchar(max)")
-                      .HasColumnName("OfferProperties");
-
-                // Configure the DynamicProperties and OfferProperties to be ignored by EF (since they're handled by JSON properties)
+                // Configure the DynamicProperties to be ignored by EF (since it's handled by JSON property)
                 entity.Ignore(e => e.DynamicProperties);
-                entity.Ignore(e => e.OfferProperties);
 
                 // Configure timestamps with default values
                 entity.Property(e => e.CreatedAt)
@@ -72,6 +81,141 @@ namespace SacksDataLayer.Data
 
                 entity.Property(e => e.UpdatedAt)
                       .HasDefaultValueSql("GETUTCDATE()");
+            });
+
+            // Configure SupplierEntity
+            modelBuilder.Entity<SupplierEntity>(entity =>
+            {
+                // Primary key
+                entity.HasKey(e => e.Id);
+
+                // Index configurations
+                entity.HasIndex(e => e.Name)
+                      .IsUnique()
+                      .HasDatabaseName("IX_Suppliers_Name");
+
+                // Property configurations
+                entity.Property(e => e.Name)
+                      .IsRequired()
+                      .HasMaxLength(100);
+
+                entity.Property(e => e.Description)
+                      .HasMaxLength(500);
+
+                entity.Property(e => e.Industry)
+                      .HasMaxLength(100);
+
+                entity.Property(e => e.Region)
+                      .HasMaxLength(100);
+
+                entity.Property(e => e.ContactName)
+                      .HasMaxLength(255);
+
+                entity.Property(e => e.ContactEmail)
+                      .HasMaxLength(255);
+
+                entity.Property(e => e.Company)
+                      .HasMaxLength(255);
+
+                entity.Property(e => e.FileFrequency)
+                      .HasMaxLength(50);
+
+                entity.Property(e => e.Notes)
+                      .HasColumnType("nvarchar(max)");
+            });
+
+            // Configure SupplierOfferEntity
+            modelBuilder.Entity<SupplierOfferEntity>(entity =>
+            {
+                // Primary key
+                entity.HasKey(e => e.Id);
+
+                // Index configurations
+                entity.HasIndex(e => e.SupplierId)
+                      .HasDatabaseName("IX_SupplierOffers_Supplier");
+
+                entity.HasIndex(e => e.IsActive)
+                      .HasDatabaseName("IX_SupplierOffers_IsActive");
+
+                entity.HasIndex(e => e.ValidFrom)
+                      .HasDatabaseName("IX_SupplierOffers_ValidFrom");
+
+                entity.HasIndex(e => e.ValidTo)
+                      .HasDatabaseName("IX_SupplierOffers_ValidTo");
+
+                // Property configurations
+                entity.Property(e => e.OfferName)
+                      .HasMaxLength(255);
+
+                entity.Property(e => e.Description)
+                      .HasMaxLength(500);
+
+                entity.Property(e => e.Currency)
+                      .HasMaxLength(20);
+
+                entity.Property(e => e.OfferType)
+                      .HasMaxLength(100);
+
+                entity.Property(e => e.Version)
+                      .HasMaxLength(50);
+
+                // Foreign key relationships
+                entity.HasOne(e => e.Supplier)
+                      .WithMany(s => s.Offers)
+                      .HasForeignKey(e => e.SupplierId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Configure OfferProductEntity (Junction Table)
+            modelBuilder.Entity<OfferProductEntity>(entity =>
+            {
+                // Primary key
+                entity.HasKey(e => e.Id);
+
+                // Index configurations
+                entity.HasIndex(e => new { e.OfferId, e.ProductId })
+                      .HasDatabaseName("IX_OfferProducts_Offer_Product");
+
+                entity.HasIndex(e => e.IsAvailable)
+                      .HasDatabaseName("IX_OfferProducts_IsAvailable");
+
+                // Property configurations
+                entity.Property(e => e.Price)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.Discount)
+                      .HasColumnType("decimal(18,4)");
+
+                entity.Property(e => e.ListPrice)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.Capacity)
+                      .HasMaxLength(50);
+
+                entity.Property(e => e.UnitOfMeasure)
+                      .HasMaxLength(50);
+
+                entity.Property(e => e.Notes)
+                      .HasMaxLength(255);
+
+                // Configure ProductPropertiesJson as JSON column
+                entity.Property(e => e.ProductPropertiesJson)
+                      .HasColumnType("nvarchar(max)")
+                      .HasColumnName("ProductProperties");
+
+                // Configure the ProductProperties to be ignored by EF (since it's handled by JSON property)
+                entity.Ignore(e => e.ProductProperties);
+
+                // Foreign key relationships
+                entity.HasOne(e => e.Offer)
+                      .WithMany(o => o.OfferProducts)
+                      .HasForeignKey(e => e.OfferId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Product)
+                      .WithMany(p => p.OfferProducts)
+                      .HasForeignKey(e => e.ProductId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
         }
 
@@ -98,10 +242,10 @@ namespace SacksDataLayer.Data
         /// </summary>
         private void UpdateAuditFields()
         {
-            var entries = ChangeTracker.Entries<ProductEntity>()
+            var productEntries = ChangeTracker.Entries<ProductEntity>()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
 
-            foreach (var entry in entries)
+            foreach (var entry in productEntries)
             {
                 if (entry.State == EntityState.Added)
                 {
@@ -112,6 +256,15 @@ namespace SacksDataLayer.Data
                 {
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
                 }
+            }
+
+            // Handle OfferProductEntity serialization before saving
+            var offerProductEntries = ChangeTracker.Entries<OfferProductEntity>()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
+
+            foreach (var entry in offerProductEntries)
+            {
+                entry.Entity.SerializeProductProperties();
             }
         }
     }
