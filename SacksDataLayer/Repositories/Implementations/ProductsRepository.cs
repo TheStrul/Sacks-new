@@ -4,12 +4,11 @@ using SacksDataLayer.Data;
 using SacksDataLayer.FileProcessing.Models;
 using SacksDataLayer.Repositories.Interfaces;
 using System.Linq.Expressions;
-using System.Text.Json;
 
 namespace SacksDataLayer.Repositories.Implementations
 {
     /// <summary>
-    /// Entity Framework implementation of IProductsRepository
+    /// Repository implementation for managing products
     /// </summary>
     public class ProductsRepository : IProductsRepository
     {
@@ -20,32 +19,38 @@ namespace SacksDataLayer.Repositories.Implementations
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        #region Basic CRUD Operations
-
-        public async Task<ProductEntity?> GetByIdAsync(int id, bool includeDeleted = false)
+        public async Task<ProductEntity?> GetByIdAsync(int id)
         {
-            return await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+            return await _context.Products
+                .Include(p => p.OfferProducts)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        public async Task<ProductEntity?> GetBySKUAsync(string sku, bool includeDeleted = false)
+        public async Task<ProductEntity?> GetBySKUAsync(string sku)
         {
             if (string.IsNullOrWhiteSpace(sku))
                 return null;
 
-            return await _context.Products.FirstOrDefaultAsync(p => p.SKU == sku);
+            return await _context.Products
+                .Include(p => p.OfferProducts)
+                .FirstOrDefaultAsync(p => p.SKU == sku);
         }
 
-        public async Task<IEnumerable<ProductEntity>> GetAllAsync(bool includeDeleted = false)
-        {
-            return await _context.Products.ToListAsync();
-        }
-
-        public async Task<IEnumerable<ProductEntity>> GetPagedAsync(int skip, int take, bool includeDeleted = false)
+        public async Task<IEnumerable<ProductEntity>> GetAllAsync()
         {
             return await _context.Products
-                .OrderBy(p => p.CreatedAt)
-                .Skip(skip)
-                .Take(take)
+                .Include(p => p.OfferProducts)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<ProductEntity>> GetByNameAsync(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return Enumerable.Empty<ProductEntity>();
+
+            return await _context.Products
+                .Include(p => p.OfferProducts)
+                .Where(p => p.Name.Contains(name))
                 .ToListAsync();
         }
 
@@ -55,8 +60,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 throw new ArgumentNullException(nameof(product));
 
             product.CreatedAt = DateTime.UtcNow;
-            product.UpdatedAt = DateTime.UtcNow;
-
+            
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
             return product;
@@ -67,24 +71,24 @@ namespace SacksDataLayer.Repositories.Implementations
             if (product == null)
                 throw new ArgumentNullException(nameof(product));
 
-            var existingProduct = await _context.Products.FirstOrDefaultAsync(p => p.Id == product.Id);
+            var existingProduct = await _context.Products.FindAsync(product.Id);
             if (existingProduct == null)
                 throw new InvalidOperationException($"Product with ID {product.Id} not found");
 
-            // Update properties
+            // Update basic properties
             existingProduct.Name = product.Name;
             existingProduct.Description = product.Description;
             existingProduct.SKU = product.SKU;
-            existingProduct.DynamicPropertiesJson = product.DynamicPropertiesJson;
             existingProduct.UpdatedAt = DateTime.UtcNow;
+            existingProduct.DynamicProperties = product.DynamicProperties;
 
             await _context.SaveChangesAsync();
             return existingProduct;
         }
 
-        public async Task<bool> SoftDeleteAsync(int id, string? deletedBy = null)
+        public async Task<bool> DeleteAsync(int id)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+            var product = await _context.Products.FindAsync(id);
             if (product == null)
                 return false;
 
@@ -93,236 +97,199 @@ namespace SacksDataLayer.Repositories.Implementations
             return true;
         }
 
-        public async Task<bool> HardDeleteAsync(int id)
+        public async Task<bool> ExistsAsync(int id)
         {
-            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
-            if (product == null)
+            return await _context.Products.AnyAsync(p => p.Id == id);
+        }
+
+        public async Task<bool> SKUExistsAsync(string sku)
+        {
+            if (string.IsNullOrWhiteSpace(sku))
                 return false;
 
-            _context.Products.Remove(product);
+            return await _context.Products.AnyAsync(p => p.SKU == sku);
+        }
+
+        public async Task<IEnumerable<ProductEntity>> BulkCreateAsync(IEnumerable<ProductEntity> products)
+        {
+            if (products == null || !products.Any())
+                return Enumerable.Empty<ProductEntity>();
+
+            var productsToAdd = products.ToList();
+            foreach (var product in productsToAdd)
+            {
+                product.CreatedAt = DateTime.UtcNow;
+            }
+
+            _context.Products.AddRange(productsToAdd);
             await _context.SaveChangesAsync();
-            return true;
+            return productsToAdd;
         }
 
-        public Task<bool> RestoreAsync(int id)
-        {
-            // Since we removed soft delete functionality, this method just returns false
-            return Task.FromResult(false);
-        }
-
-        #endregion
-
-        #region Advanced Query Operations
-
-        public async Task<IEnumerable<ProductEntity>> FindAsync(Expression<Func<ProductEntity, bool>> predicate, bool includeDeleted = false)
-        {
-            var query = _context.Products;
-            return await query.Where(predicate).ToListAsync();
-        }
-
-        public async Task<IEnumerable<ProductEntity>> SearchByNameAsync(string searchTerm, bool includeDeleted = false)
+        public async Task<IEnumerable<ProductEntity>> SearchAsync(string searchTerm)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return Enumerable.Empty<ProductEntity>();
 
-            var query = _context.Products;
-            return await query
-                .Where(p => EF.Functions.Like(p.Name, $"%{searchTerm}%"))
+            var lowerSearchTerm = searchTerm.ToLower();
+            return await _context.Products
+                .Include(p => p.OfferProducts)
+                .Where(p => 
+                    p.Name.ToLower().Contains(lowerSearchTerm) ||
+                    (p.Description != null && p.Description.ToLower().Contains(lowerSearchTerm)) ||
+                    (p.SKU != null && p.SKU.ToLower().Contains(lowerSearchTerm)))
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<ProductEntity>> GetByProcessingModeAsync(ProcessingMode mode, bool includeDeleted = false)
+        // Additional interface methods
+        public async Task<IEnumerable<ProductEntity>> GetPagedAsync(int skip, int take)
         {
-            var query = _context.Products;
-            var modeString = mode.ToString();
-            
-            return await query
-                .Where(p => p.DynamicPropertiesJson != null && 
-                           p.DynamicPropertiesJson.Contains($"\"ProcessingMode\":\"{modeString}\""))
+            return await _context.Products
+                .Include(p => p.OfferProducts)
+                .Skip(skip)
+                .Take(take)
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<ProductEntity>> GetBySourceFileAsync(string sourceFile, bool includeDeleted = false)
+        public async Task<IEnumerable<ProductEntity>> FindAsync(Expression<Func<ProductEntity, bool>> predicate)
+        {
+            return await _context.Products
+                .Include(p => p.OfferProducts)
+                .Where(predicate)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<ProductEntity>> SearchByNameAsync(string searchTerm)
+        {
+            return await GetByNameAsync(searchTerm); // Reuse existing implementation
+        }
+
+        public async Task<IEnumerable<ProductEntity>> GetByProcessingModeAsync(ProcessingMode mode)
+        {
+            var modeString = mode.ToString();
+            return await _context.Products
+                .Include(p => p.OfferProducts)
+                .Where(p => p.DynamicPropertiesJson != null && p.DynamicPropertiesJson.Contains($"ProcessingMode\":\"{modeString}\""))
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<ProductEntity>> GetBySourceFileAsync(string sourceFile)
         {
             if (string.IsNullOrWhiteSpace(sourceFile))
                 return Enumerable.Empty<ProductEntity>();
 
-            var query = _context.Products;
-            
-            return await query
-                .Where(p => p.DynamicPropertiesJson != null && 
-                           p.DynamicPropertiesJson.Contains($"\"SourceFile\":\"{sourceFile}\""))
+            return await _context.Products
+                .Include(p => p.OfferProducts)
+                .Where(p => p.DynamicPropertiesJson != null && p.DynamicPropertiesJson.Contains($"SourceFile\":\"{sourceFile}\""))
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<ProductEntity>> SearchByDynamicPropertyAsync(string propertyKey, object? propertyValue = null, bool includeDeleted = false)
+        public async Task<IEnumerable<ProductEntity>> SearchByDynamicPropertyAsync(string propertyKey, object? propertyValue = null)
         {
             if (string.IsNullOrWhiteSpace(propertyKey))
                 return Enumerable.Empty<ProductEntity>();
 
-            var query = _context.Products;
-            
+            var query = _context.Products.Include(p => p.OfferProducts);
+
             if (propertyValue == null)
             {
-                // Search for products that have the property key
                 return await query
-                    .Where(p => p.DynamicPropertiesJson != null && 
-                               p.DynamicPropertiesJson.Contains($"\"{propertyKey}\""))
+                    .Where(p => p.DynamicPropertiesJson != null && p.DynamicPropertiesJson.Contains($"\"{propertyKey}\""))
                     .ToListAsync();
             }
             else
             {
-                // Search for products that have the property key with specific value
-                var valueJson = JsonSerializer.Serialize(propertyValue);
+                var valueString = propertyValue.ToString();
                 return await query
-                    .Where(p => p.DynamicPropertiesJson != null && 
-                               p.DynamicPropertiesJson.Contains($"\"{propertyKey}\":{valueJson}"))
+                    .Where(p => p.DynamicPropertiesJson != null && p.DynamicPropertiesJson.Contains($"\"{propertyKey}\":\"{valueString}\""))
                     .ToListAsync();
             }
         }
 
-        #endregion
-
-        #region Bulk Operations
-
         public async Task<IEnumerable<ProductEntity>> CreateBulkAsync(IEnumerable<ProductEntity> products, string? createdBy = null)
         {
-            if (products == null)
-                throw new ArgumentNullException(nameof(products));
-
-            var productList = products.ToList();
-            var now = DateTime.UtcNow;
-
-            foreach (var product in productList)
-            {
-                product.CreatedAt = now;
-                product.UpdatedAt = now;
-            }
-
-            _context.Products.AddRange(productList);
-            await _context.SaveChangesAsync();
-            return productList;
+            return await BulkCreateAsync(products); // Reuse existing implementation
         }
 
         public async Task<IEnumerable<ProductEntity>> UpdateBulkAsync(IEnumerable<ProductEntity> products, string? modifiedBy = null)
         {
-            if (products == null)
-                throw new ArgumentNullException(nameof(products));
+            if (products == null || !products.Any())
+                return Enumerable.Empty<ProductEntity>();
 
-            var productList = products.ToList();
-            var productIds = productList.Select(p => p.Id).ToList();
-            
-            var existingProducts = await _context.Products
-                .Where(p => productIds.Contains(p.Id))
-                .ToListAsync();
-
-            var existingProductsDict = existingProducts.ToDictionary(p => p.Id);
-
-            foreach (var product in productList)
+            var productsToUpdate = products.ToList();
+            foreach (var product in productsToUpdate)
             {
-                if (existingProductsDict.TryGetValue(product.Id, out var existingProduct))
-                {
-                    existingProduct.Name = product.Name;
-                    existingProduct.Description = product.Description;
-                    existingProduct.SKU = product.SKU;
-                    existingProduct.DynamicPropertiesJson = product.DynamicPropertiesJson;
-                    existingProduct.UpdatedAt = DateTime.UtcNow;
-                }
+                product.UpdatedAt = DateTime.UtcNow;
+                _context.Products.Update(product);
             }
 
             await _context.SaveChangesAsync();
-            return existingProducts;
+            return productsToUpdate;
         }
 
-        public async Task<int> SoftDeleteBulkAsync(IEnumerable<int> ids, string? deletedBy = null)
+        public async Task<int> DeleteBulkAsync(IEnumerable<int> ids)
         {
-            if (ids == null)
+            if (ids == null || !ids.Any())
                 return 0;
 
-            var idList = ids.ToList();
-            var products = await _context.Products
-                .Where(p => idList.Contains(p.Id))
+            var idsToDelete = ids.ToList();
+            var productsToDelete = await _context.Products
+                .Where(p => idsToDelete.Contains(p.Id))
                 .ToListAsync();
 
-            _context.Products.RemoveRange(products);
+            _context.Products.RemoveRange(productsToDelete);
             await _context.SaveChangesAsync();
-            return products.Count;
+            return productsToDelete.Count;
         }
 
-        #endregion
-
-        #region Statistics and Analytics
-
-        public async Task<int> GetCountAsync(bool includeDeleted = false)
+        public async Task<int> GetCountAsync()
         {
             return await _context.Products.CountAsync();
         }
 
-        public async Task<int> GetCountByProcessingModeAsync(ProcessingMode mode, bool includeDeleted = false)
+        public async Task<int> GetCountByProcessingModeAsync(ProcessingMode mode)
         {
             var modeString = mode.ToString();
-            
             return await _context.Products
-                .Where(p => p.DynamicPropertiesJson != null && 
-                           p.DynamicPropertiesJson.Contains($"\"ProcessingMode\":\"{modeString}\""))
-                .CountAsync();
+                .CountAsync(p => p.DynamicPropertiesJson != null && p.DynamicPropertiesJson.Contains($"ProcessingMode\":\"{modeString}\""));
         }
 
-        public async Task<Dictionary<ProcessingMode, int>> GetProcessingStatisticsAsync(string? sourceFile = null, bool includeDeleted = false)
+        public async Task<Dictionary<ProcessingMode, int>> GetProcessingStatisticsAsync(string? sourceFile = null)
         {
-            IQueryable<ProductEntity> query = _context.Products;
-            
+            var query = _context.Products.AsQueryable();
+
             if (!string.IsNullOrWhiteSpace(sourceFile))
             {
-                query = query.Where(p => p.DynamicPropertiesJson != null && 
-                                        p.DynamicPropertiesJson.Contains($"\"SourceFile\":\"{sourceFile}\""));
+                query = query.Where(p => p.DynamicPropertiesJson != null && p.DynamicPropertiesJson.Contains($"SourceFile\":\"{sourceFile}\""));
             }
 
             var products = await query.ToListAsync();
-            var statistics = new Dictionary<ProcessingMode, int>();
-
-            foreach (ProcessingMode mode in Enum.GetValues<ProcessingMode>())
+            
+            var statistics = new Dictionary<ProcessingMode, int>
             {
-                statistics[mode] = 0;
-            }
+                { ProcessingMode.UnifiedProductCatalog, 0 },
+                { ProcessingMode.SupplierCommercialData, 0 }
+            };
 
             foreach (var product in products)
             {
-                if (product.DynamicPropertiesJson != null)
+                if (product.DynamicProperties.TryGetValue("ProcessingMode", out var modeValue) && 
+                    Enum.TryParse<ProcessingMode>(modeValue?.ToString(), out var mode))
                 {
-                    try
-                    {
-                        var dynamicProps = JsonSerializer.Deserialize<Dictionary<string, object>>(product.DynamicPropertiesJson);
-                        if (dynamicProps?.TryGetValue("ProcessingMode", out var modeValue) == true)
-                        {
-                            if (Enum.TryParse<ProcessingMode>(modeValue.ToString(), out var mode))
-                            {
-                                statistics[mode]++;
-                            }
-                        }
-                    }
-                    catch (JsonException)
-                    {
-                        // Skip malformed JSON
-                    }
+                    statistics[mode]++;
                 }
             }
 
             return statistics;
         }
 
-        public async Task<IEnumerable<ProductEntity>> GetByCreatedDateRangeAsync(DateTime startDate, DateTime endDate, bool includeDeleted = false)
+        public async Task<IEnumerable<ProductEntity>> GetByCreatedDateRangeAsync(DateTime startDate, DateTime endDate)
         {
-            var query = _context.Products;
-            return await query
+            return await _context.Products
+                .Include(p => p.OfferProducts)
                 .Where(p => p.CreatedAt >= startDate && p.CreatedAt <= endDate)
-                .OrderBy(p => p.CreatedAt)
                 .ToListAsync();
         }
-
-        #endregion
-
-        #region Transaction Support
 
         public async Task<IDbContextTransaction> BeginTransactionAsync()
         {
@@ -333,7 +300,5 @@ namespace SacksDataLayer.Repositories.Implementations
         {
             return await _context.SaveChangesAsync();
         }
-
-        #endregion
     }
 }

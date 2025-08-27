@@ -14,33 +14,29 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// Gets a product by its ID
         /// </summary>
         /// <param name="id">Product ID</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Product entity or null if not found</returns>
-        Task<ProductEntity?> GetByIdAsync(int id, bool includeDeleted = false);
+        Task<ProductEntity?> GetByIdAsync(int id);
 
         /// <summary>
         /// Gets a product by its SKU
         /// </summary>
         /// <param name="sku">Product SKU</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Product entity or null if not found</returns>
-        Task<ProductEntity?> GetBySKUAsync(string sku, bool includeDeleted = false);
+        Task<ProductEntity?> GetBySKUAsync(string sku);
 
         /// <summary>
-        /// Gets all products with optional filtering
+        /// Gets all products
         /// </summary>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Collection of products</returns>
-        Task<IEnumerable<ProductEntity>> GetAllAsync(bool includeDeleted = false);
+        Task<IEnumerable<ProductEntity>> GetAllAsync();
 
         /// <summary>
         /// Gets products with pagination
         /// </summary>
         /// <param name="skip">Number of records to skip</param>
         /// <param name="take">Number of records to take</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Paginated collection of products</returns>
-        Task<IEnumerable<ProductEntity>> GetPagedAsync(int skip, int take, bool includeDeleted = false);
+        Task<IEnumerable<ProductEntity>> GetPagedAsync(int skip, int take);
 
         /// <summary>
         /// Creates a new product
@@ -59,26 +55,11 @@ namespace SacksDataLayer.Repositories.Interfaces
         Task<ProductEntity> UpdateAsync(ProductEntity product, string? modifiedBy = null);
 
         /// <summary>
-        /// Soft deletes a product
-        /// </summary>
-        /// <param name="id">Product ID to delete</param>
-        /// <param name="deletedBy">User performing the deletion</param>
-        /// <returns>True if deletion was successful</returns>
-        Task<bool> SoftDeleteAsync(int id, string? deletedBy = null);
-
-        /// <summary>
-        /// Hard deletes a product (permanent removal)
+        /// Deletes a product (permanent removal)
         /// </summary>
         /// <param name="id">Product ID to delete</param>
         /// <returns>True if deletion was successful</returns>
-        Task<bool> HardDeleteAsync(int id);
-
-        /// <summary>
-        /// Restores a soft deleted product
-        /// </summary>
-        /// <param name="id">Product ID to restore</param>
-        /// <returns>True if restoration was successful</returns>
-        Task<bool> RestoreAsync(int id);
+        Task<bool> DeleteAsync(int id);
 
         #endregion
 
@@ -88,42 +69,37 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// Finds products matching the specified criteria
         /// </summary>
         /// <param name="predicate">Search criteria</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Collection of matching products</returns>
-        Task<IEnumerable<ProductEntity>> FindAsync(Expression<Func<ProductEntity, bool>> predicate, bool includeDeleted = false);
+        Task<IEnumerable<ProductEntity>> FindAsync(Expression<Func<ProductEntity, bool>> predicate);
 
         /// <summary>
         /// Searches products by name (case-insensitive partial match)
         /// </summary>
         /// <param name="searchTerm">Search term</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Collection of matching products</returns>
-        Task<IEnumerable<ProductEntity>> SearchByNameAsync(string searchTerm, bool includeDeleted = false);
+        Task<IEnumerable<ProductEntity>> SearchByNameAsync(string searchTerm);
 
         /// <summary>
         /// Gets products by processing mode
         /// </summary>
         /// <param name="mode">Processing mode</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Collection of products processed in the specified mode</returns>
-        Task<IEnumerable<ProductEntity>> GetByProcessingModeAsync(ProcessingMode mode, bool includeDeleted = false);
+        Task<IEnumerable<ProductEntity>> GetByProcessingModeAsync(ProcessingMode mode);
 
         /// <summary>
         /// Gets products by supplier source file
         /// </summary>
         /// <param name="sourceFile">Source file name or path</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Collection of products from the specified source</returns>
-        Task<IEnumerable<ProductEntity>> GetBySourceFileAsync(string sourceFile, bool includeDeleted = false);
+        Task<IEnumerable<ProductEntity>> GetBySourceFileAsync(string sourceFile);
 
         /// <summary>
         /// Searches products by dynamic property
         /// </summary>
         /// <param name="propertyKey">Dynamic property key</param>
         /// <param name="propertyValue">Dynamic property value (optional)</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Collection of products with the specified dynamic property</returns>
-        Task<IEnumerable<ProductEntity>> SearchByDynamicPropertyAsync(string propertyKey, object? propertyValue = null, bool includeDeleted = false);
+        Task<IEnumerable<ProductEntity>> SearchByDynamicPropertyAsync(string propertyKey, object? propertyValue = null);
 
         #endregion
 
@@ -146,12 +122,11 @@ namespace SacksDataLayer.Repositories.Interfaces
         Task<IEnumerable<ProductEntity>> UpdateBulkAsync(IEnumerable<ProductEntity> products, string? modifiedBy = null);
 
         /// <summary>
-        /// Soft deletes multiple products in a single transaction
+        /// Deletes multiple products in a single transaction
         /// </summary>
         /// <param name="ids">Product IDs to delete</param>
-        /// <param name="deletedBy">User performing the deletion</param>
         /// <returns>Number of products successfully deleted</returns>
-        Task<int> SoftDeleteBulkAsync(IEnumerable<int> ids, string? deletedBy = null);
+        Task<int> DeleteBulkAsync(IEnumerable<int> ids);
 
         #endregion
 
@@ -160,34 +135,30 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// <summary>
         /// Gets total count of products
         /// </summary>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Total product count</returns>
-        Task<int> GetCountAsync(bool includeDeleted = false);
+        Task<int> GetCountAsync();
 
         /// <summary>
         /// Gets count of products by processing mode
         /// </summary>
         /// <param name="mode">Processing mode</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Product count for the specified mode</returns>
-        Task<int> GetCountByProcessingModeAsync(ProcessingMode mode, bool includeDeleted = false);
+        Task<int> GetCountByProcessingModeAsync(ProcessingMode mode);
 
         /// <summary>
         /// Gets processing statistics for products
         /// </summary>
         /// <param name="sourceFile">Optional source file filter</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Processing statistics</returns>
-        Task<Dictionary<ProcessingMode, int>> GetProcessingStatisticsAsync(string? sourceFile = null, bool includeDeleted = false);
+        Task<Dictionary<ProcessingMode, int>> GetProcessingStatisticsAsync(string? sourceFile = null);
 
         /// <summary>
         /// Gets products created within a date range
         /// </summary>
         /// <param name="startDate">Start date (inclusive)</param>
         /// <param name="endDate">End date (inclusive)</param>
-        /// <param name="includeDeleted">Whether to include soft deleted products</param>
         /// <returns>Collection of products created in the date range</returns>
-        Task<IEnumerable<ProductEntity>> GetByCreatedDateRangeAsync(DateTime startDate, DateTime endDate, bool includeDeleted = false);
+        Task<IEnumerable<ProductEntity>> GetByCreatedDateRangeAsync(DateTime startDate, DateTime endDate);
 
         #endregion
 

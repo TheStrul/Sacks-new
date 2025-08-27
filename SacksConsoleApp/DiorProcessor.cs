@@ -429,11 +429,11 @@ namespace SacksConsoleApp
                 Console.WriteLine($"      • Processing time: {stopwatch.ElapsedMilliseconds}ms");
                 
                 // Get total count from database
-                var totalProducts = await repository.GetCountAsync(false);
+                var totalProducts = await repository.GetCountAsync();
                 Console.WriteLine($"      • Total products in database: {totalProducts}");
                 
                 // Debug: Show all products in database
-                var allProducts = await repository.GetAllAsync(false);
+                var allProducts = await repository.GetAllAsync();
                 Console.WriteLine($"      📋 Products in database:");
                 var dbProductList = allProducts.ToList();
                 for (int i = 0; i < Math.Min(dbProductList.Count, 5); i++)

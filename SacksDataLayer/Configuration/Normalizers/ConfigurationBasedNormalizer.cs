@@ -800,18 +800,32 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 }
                 else if (context.Mode == ProcessingMode.SupplierCommercialData)
                 {
-                    // For commercial mode, ensure we have pricing or stock info
-                    var hasCommercialData = product.DynamicProperties.Keys.Any(k => 
-                        k.Contains("Price", StringComparison.OrdinalIgnoreCase) ||
-                        k.Contains("Stock", StringComparison.OrdinalIgnoreCase) ||
-                        k.Contains("Available", StringComparison.OrdinalIgnoreCase));
-
-                    if (!hasCommercialData)
+                    // For commercial mode, be more permissive - we'll validate commercial data in the service layer
+                    // For now, just ensure we have a valid product with SKU and name
+                    if (string.IsNullOrEmpty(product.Name))
                     {
-                        return Task.FromResult<ProductEntity?>(null); // Skip rows without commercial data in commercial mode
+                        // Try to construct name from available fields
+                        var nameComponents = new List<string>();
+                        
+                        if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
+                            nameComponents.Add(family.ToString()!);
+                        if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
+                            nameComponents.Add(category.ToString()!);
+                        if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
+                            nameComponents.Add(itemName.ToString()!);
+
+                        if (nameComponents.Any())
+                        {
+                            product.Name = string.Join(" - ", nameComponents);
+                        }
+                        else
+                        {
+                            product.Name = "Unknown Product";
+                        }
                     }
 
-                    // Note: No supplier metadata added to DynamicProperties
+                    // Note: Keep all data including pricing - we'll separate core vs offer properties in the service layer
+                    // Don't filter out commercial data here
                 }
 
                 return Task.FromResult<ProductEntity?>(product);
@@ -831,11 +845,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
             else
             {
-                // For commercial mode, require some commercial data
-                return product.DynamicProperties.Keys.Any(k => 
-                    k.Contains("Price", StringComparison.OrdinalIgnoreCase) ||
-                    k.Contains("Stock", StringComparison.OrdinalIgnoreCase) ||
-                    k.Contains("Available", StringComparison.OrdinalIgnoreCase));
+                // For commercial mode, require valid product with SKU (we'll handle commercial data validation in service layer)
+                return !string.IsNullOrEmpty(product.Name) && product.Name != "Unknown Product" && !string.IsNullOrEmpty(product.SKU);
             }
         }
 

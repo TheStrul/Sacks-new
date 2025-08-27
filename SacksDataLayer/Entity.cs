@@ -28,21 +28,6 @@
         public string? ModifiedBy { get; set; }
 
         /// <summary>
-        /// Indicates whether the entity is soft deleted
-        /// </summary>
-        public bool IsDeleted { get; set; } = false;
-
-        /// <summary>
-        /// Date and time when the entity was soft deleted
-        /// </summary>
-        public DateTime? DeletedAt { get; set; }
-
-        /// <summary>
-        /// User who soft deleted this entity
-        /// </summary>
-        public string? DeletedBy { get; set; }
-
-        /// <summary>
         /// Updates the modification timestamp and user
         /// </summary>
         /// <param name="modifiedBy">User making the modification</param>
@@ -50,27 +35,6 @@
         {
             ModifiedAt = DateTime.UtcNow;
             ModifiedBy = modifiedBy;
-        }
-
-        /// <summary>
-        /// Soft deletes the entity
-        /// </summary>
-        /// <param name="deletedBy">User performing the deletion</param>
-        public virtual void SoftDelete(string? deletedBy = null)
-        {
-            IsDeleted = true;
-            DeletedAt = DateTime.UtcNow;
-            DeletedBy = deletedBy;
-        }
-
-        /// <summary>
-        /// Restores a soft deleted entity
-        /// </summary>
-        public virtual void Restore()
-        {
-            IsDeleted = false;
-            DeletedAt = null;
-            DeletedBy = null;
         }
 
         /// <summary>

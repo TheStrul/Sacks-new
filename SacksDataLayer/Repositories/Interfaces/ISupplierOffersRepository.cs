@@ -2,6 +2,7 @@ namespace SacksDataLayer.Repositories.Interfaces;
 
 public interface ISupplierOffersRepository
 {
+    Task<SupplierOfferEntity?> GetByIdAsync(int id);
     Task<SupplierOfferEntity?> GetActiveOfferAsync(int productId, int supplierId);
     Task<SupplierOfferEntity> CreateAsync(SupplierOfferEntity offer);
     Task<SupplierOfferEntity> UpdateAsync(SupplierOfferEntity offer);

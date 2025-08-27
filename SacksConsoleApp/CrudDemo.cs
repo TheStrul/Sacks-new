@@ -144,7 +144,7 @@ namespace SacksConsoleApp
         private static async Task DemoSearchOperations(ProductsService service)
         {
             // Search by name
-            var searchResults = await service.SearchProductsAsync(searchTerm: "DIOR");
+            var searchResults = await service.SearchProductsByNameAsync("DIOR");
             Console.WriteLine($"   🔍 Search for 'DIOR': {searchResults.Count()} results");
             
             foreach (var product in searchResults)
@@ -152,9 +152,9 @@ namespace SacksConsoleApp
                 Console.WriteLine($"      • {product.Name}");
             }
 
-            // Search by category (dynamic property)
-            var fragranceProducts = await service.SearchProductsAsync();
-            var fragrances = fragranceProducts.Where(p => 
+            // Get all products and filter by category (dynamic property)
+            var (allProducts, _) = await service.GetProductsAsync(pageNumber: 1, pageSize: 1000);
+            var fragrances = allProducts.Where(p => 
                 p.GetDynamicProperty<string>("Category") == "Fragrance");
             
             Console.WriteLine($"   🌸 Fragrance products: {fragrances.Count()}");
@@ -279,9 +279,9 @@ namespace SacksConsoleApp
             Console.WriteLine($"      • Source: demo-suppliers.xlsx");
             Console.WriteLine($"      • Products saved: {successCount}");
 
-            // Verify processing mode assignment
-            var modeProducts = await service.GetProductsByModeAsync(ProcessingMode.UnifiedProductCatalog);
-            Console.WriteLine($"      • Total catalog products: {modeProducts.Count()}");
+            // Verify total products after processing
+            var totalProducts = await service.GetProductCountAsync();
+            Console.WriteLine($"      • Total products in system: {totalProducts}");
         }
 
         private static async Task DemoDeleteOperations(ProductsService service)
@@ -290,63 +290,39 @@ namespace SacksConsoleApp
             var productToDelete = await service.GetProductBySKUAsync("DEMO-001");
             if (productToDelete != null)
             {
-                Console.WriteLine($"   🗑️ Soft deleting: {productToDelete.Name}");
-                var deleted = await service.DeleteProductAsync(productToDelete.Id, "DemoUser");
+                Console.WriteLine($"   🗑️ Deleting: {productToDelete.Name}");
+                var deleted = await service.DeleteProductAsync(productToDelete.Id);
                 Console.WriteLine($"      Result: {(deleted ? "Success" : "Failed")}");
 
-                // Verify it's gone from normal queries
+                // Verify it's gone from queries
                 var checkDeleted = await service.GetProductBySKUAsync("DEMO-001");
-                Console.WriteLine($"      Visible in normal query: {checkDeleted != null}");
-
-                // But still exists with includeDeleted
-                var stillExists = await service.GetProductBySKUAsync("DEMO-001", includeDeleted: true);
-                Console.WriteLine($"      Still exists (soft deleted): {stillExists != null}");
-
-                // Restore it
-                if (stillExists != null)
-                {
-                    Console.WriteLine($"   ♻️ Restoring: {stillExists.Name}");
-                    var restored = await service.RestoreProductAsync(stillExists.Id);
-                    Console.WriteLine($"      Restore result: {(restored ? "Success" : "Failed")}");
-                }
+                Console.WriteLine($"      Product exists after deletion: {checkDeleted != null}");
+            }
+            else
+            {
+                Console.WriteLine("   ⚠️ No DEMO-001 product found to delete");
             }
         }
 
         private static async Task DemoStatistics(ProductsService service)
         {
             var stats = await service.GetProcessingStatisticsAsync();
+            var totalCount = await service.GetProductCountAsync();
             
             Console.WriteLine($"   📈 Processing Statistics:");
-            Console.WriteLine($"      • Total products: {stats.TotalProducts}");
-            Console.WriteLine($"      • Deleted products: {stats.DeletedProducts}");
+            Console.WriteLine($"      • Total products: {totalCount}");
             
-            if (stats.OldestProduct.HasValue && stats.NewestProduct.HasValue)
+            if (stats.Any())
             {
-                Console.WriteLine($"      • Date range: {stats.OldestProduct:yyyy-MM-dd} to {stats.NewestProduct:yyyy-MM-dd}");
-            }
-
-            Console.WriteLine($"      • Products by mode:");
-            foreach (var modeStats in stats.ProductsByMode)
-            {
-                Console.WriteLine($"        - {modeStats.Key}: {modeStats.Value}");
-            }
-
-            if (stats.ProductsBySource.Any())
-            {
-                Console.WriteLine($"      • Products by source:");
-                foreach (var sourceStats in stats.ProductsBySource)
+                Console.WriteLine($"      • Statistics breakdown:");
+                foreach (var stat in stats)
                 {
-                    Console.WriteLine($"        - {sourceStats.Key}: {sourceStats.Value}");
+                    Console.WriteLine($"        - {stat.Key}: {stat.Value}");
                 }
             }
-
-            if (stats.TopDynamicProperties.Any())
+            else
             {
-                Console.WriteLine($"      • Top dynamic properties:");
-                foreach (var propStats in stats.TopDynamicProperties.Take(5))
-                {
-                    Console.WriteLine($"        - {propStats.Key}: {propStats.Value} products");
-                }
+                Console.WriteLine($"      • No detailed statistics available yet");
             }
         }
     }
