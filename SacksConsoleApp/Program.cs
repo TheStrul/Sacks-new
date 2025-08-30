@@ -14,12 +14,15 @@ namespace SacksConsoleApp
         {
             Console.WriteLine("=== Sacks Product Management System ===");
             Console.WriteLine("Choose an option:");
-            Console.WriteLine("1. Process File to Database (Auto-detect supplier)");
-            Console.WriteLine("2. Run CRUD Functionality Demo");
-            Console.WriteLine("3. Run Configuration Diagnostic");
-            Console.WriteLine("4. Exit");
-            Console.Write("\nEnter your choice (1-4): ");
-
+            Console.WriteLine("1. 📁 Process Excel files (Unified File Processor)");
+            Console.WriteLine("2. 🧪 CRUD Operations Demo");
+            Console.WriteLine("3. 🔧 Configuration Diagnostic");
+            Console.WriteLine("4. 🚀 Phase 2 Relational Architecture Test (NEW!)");
+            Console.WriteLine("5. 🗄️ Phase 2 Database Test (NEW!)");
+            Console.WriteLine("6. 📊 DIOR Analysis");
+            Console.WriteLine("7. Exit");
+            Console.Write("Enter your choice (1-7): ");
+            
             var choice = Console.ReadLine();
 
             // Temporary: Auto-run option 1 (process file) if input is problematic
@@ -74,6 +77,21 @@ namespace SacksConsoleApp
                     break;
                 
                 case "4":
+                    Console.WriteLine("\n" + new string('=', 50));
+                    await Phase2RelationalTest.RunPhase2TestAsync();
+                    break;
+                
+                case "5":
+                    Console.WriteLine("\n" + new string('=', 50));
+                    await Phase2DatabaseTest.RunDatabaseTestAsync();
+                    break;
+                
+                case "6":
+                    Console.WriteLine("\n" + new string('=', 50));
+                    await DiorAnalysis.AnalyzeDiorFile();
+                    break;
+                
+                case "7":
                     Console.WriteLine("Goodbye!");
                     return;
                 
@@ -88,7 +106,7 @@ namespace SacksConsoleApp
                         var defaultFiles = Directory.GetFiles(defaultInputsPath, "*.xlsx")
                                             .Where(f => !Path.GetFileName(f).StartsWith("~")) // Skip temp files
                                             .ToArray();
-                        
+                
                         if (defaultFiles.Length > 0)
                         {
                             var firstFile = defaultFiles.First();

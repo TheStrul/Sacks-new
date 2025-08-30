@@ -2,6 +2,7 @@ using SacksDataLayer.FileProcessing.Interfaces;
 using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Models;
+using SacksDataLayer.Configuration.Normalizers;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using System.Globalization;
 using System.Text.RegularExpressions;
@@ -213,7 +214,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
             try
             {
-                var products = new List<ProductEntity>();
+                var normalizationResults = new List<NormalizationResult>();
                 var statistics = new ProcessingStatistics();
                 var warnings = new List<string>();
                 var errors = new List<string>();
@@ -222,6 +223,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 {
                     result.Statistics = statistics;
                     return result;
+                }
+
+                // Create supplier offer metadata for this processing session
+                SupplierOfferEntity? supplierOffer = null;
+                if (context.Mode == ProcessingMode.SupplierCommercialData)
+                {
+                    supplierOffer = CreateSupplierOfferFromContext(context);
+                    result.SupplierOffer = supplierOffer;
+                    statistics.SupplierOffersCreated = 1;
                 }
 
                 // Get mode-specific configuration
@@ -254,12 +264,14 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 {
                     try
                     {
-                        var product = await NormalizeModeSpecificRowAsync(row, columnIndexes, context, fileData.FilePath);
-                        if (product != null)
+                        var normalizationResult = await NormalizeRowToRelationalEntitiesAsync(
+                            row, columnIndexes, context, fileData.FilePath, supplierOffer);
+                        
+                        if (normalizationResult != null)
                         {
-                            if (IsValidProductForMode(product, context.Mode))
+                            if (IsValidNormalizationResultForMode(normalizationResult, context.Mode))
                             {
-                                products.Add(product);
+                                normalizationResults.Add(normalizationResult);
                                 statistics.ProductsCreated++;
                                 
                                 // Update mode-specific statistics
@@ -270,7 +282,11 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                                 else
                                 {
                                     statistics.PricingRecordsProcessed++;
-                                    if (product.DynamicProperties.ContainsKey("StockQuantity"))
+                                    if (normalizationResult.HasOfferProperties)
+                                    {
+                                        statistics.OfferProductsCreated++;
+                                    }
+                                    if (normalizationResult.OfferProperties.ContainsKey("StockQuantity"))
                                     {
                                         statistics.StockRecordsProcessed++;
                                     }
@@ -301,7 +317,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 statistics.ProcessingTime = DateTime.UtcNow - startTime;
                 statistics.WarningCount = warnings.Count;
 
-                result.Products = products;
+                result.NormalizationResults = normalizationResults;
                 result.Statistics = statistics;
                 result.Warnings = warnings;
                 result.Errors = errors;
@@ -836,20 +852,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
         }
 
-        private bool IsValidProductForMode(ProductEntity product, ProcessingMode mode)
-        {
-            if (mode == ProcessingMode.UnifiedProductCatalog)
-            {
-                // For catalog mode, require minimum product identification
-                return !string.IsNullOrEmpty(product.Name) && product.Name != "Unknown Product";
-            }
-            else
-            {
-                // For commercial mode, require valid product with SKU (we'll handle commercial data validation in service layer)
-                return !string.IsNullOrEmpty(product.Name) && product.Name != "Unknown Product" && !string.IsNullOrEmpty(product.SKU);
-            }
-        }
-
         /// <summary>
         /// Extracts offer properties from a row for creating SupplierOffer entities
         /// </summary>
@@ -878,6 +880,236 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
 
             return offerProperties;
+        }
+
+        /// <summary>
+        /// Creates a SupplierOffer entity from processing context
+        /// </summary>
+        private SupplierOfferEntity CreateSupplierOfferFromContext(ProcessingContext context)
+        {
+            return new SupplierOfferEntity
+            {
+                OfferName = $"{SupplierName} - {context.SourceFileName}",
+                Description = $"Offer created from file: {context.SourceFileName}",
+                Currency = "USD", // Default currency, could be extracted from config or context
+                ValidFrom = context.ProcessingDate,
+                ValidTo = context.ProcessingDate.AddYears(1), // Default 1 year validity
+                IsActive = true,
+                OfferType = "File Import",
+                Version = "1.0",
+                CreatedAt = context.ProcessingDate
+            };
+        }
+
+        /// <summary>
+        /// Normalizes a single row into relational entities (ProductEntity + OfferProductEntity)
+        /// </summary>
+        private async Task<NormalizationResult?> NormalizeRowToRelationalEntitiesAsync(
+            RowData row, 
+            Dictionary<string, int> columnIndexes, 
+            ProcessingContext context, 
+            string sourceFile,
+            SupplierOfferEntity? supplierOffer)
+        {
+            try
+            {
+                var product = new ProductEntity();
+                var normalizationResult = new NormalizationResult
+                {
+                    RowIndex = row.Index,
+                    ProcessingMode = context.Mode,
+                    SupplierOffer = supplierOffer
+                };
+
+                var modeConfig = context.Mode == ProcessingMode.UnifiedProductCatalog 
+                    ? _configuration.ProcessingModes.CatalogMode 
+                    : _configuration.ProcessingModes.CommercialMode;
+
+                // Process mapped columns with property classification
+                var columnMappings = GetColumnMapping(context.Mode);
+                var offerProperties = new Dictionary<string, object?>();
+                
+                foreach (var mapping in columnMappings)
+                {
+                    var sourceColumn = mapping.Key;
+                    var targetProperty = mapping.Value;
+
+                    if (columnIndexes.TryGetValue(sourceColumn, out int columnIndex) && 
+                        columnIndex < row.Cells.Count)
+                    {
+                        var cellValue = row.Cells[columnIndex].Value?.Trim();
+                        
+                        if (!string.IsNullOrEmpty(cellValue))
+                        {
+                            var convertedValue = ConvertValue(targetProperty, cellValue);
+                            
+                            // Set core properties or collect offer properties based on classification
+                            switch (targetProperty.ToLowerInvariant())
+                            {
+                                case "name":
+                                    product.Name = convertedValue?.ToString() ?? "";
+                                    break;
+                                case "description":
+                                    product.Description = convertedValue?.ToString();
+                                    break;
+                                case "sku":
+                                    product.SKU = convertedValue?.ToString();
+                                    break;
+                                default:
+                                    // Classify property as core product or offer property
+                                    if (_configuration.PropertyClassification.CoreProductProperties.Contains(targetProperty, StringComparer.OrdinalIgnoreCase))
+                                    {
+                                        // Core product property - goes to ProductEntity.DynamicProperties
+                                        product.SetDynamicProperty(targetProperty, convertedValue);
+                                    }
+                                    else if (_configuration.PropertyClassification.OfferProperties.Contains(targetProperty, StringComparer.OrdinalIgnoreCase))
+                                    {
+                                        // Offer property - goes to OfferProductEntity
+                                        offerProperties[targetProperty] = convertedValue;
+                                    }
+                                    else
+                                    {
+                                        // Unmapped property - default to core product property for backward compatibility
+                                        product.SetDynamicProperty(targetProperty, convertedValue);
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                }
+
+                // Apply mode-specific processing rules
+                if (context.Mode == ProcessingMode.UnifiedProductCatalog)
+                {
+                    // For catalog mode, ensure we have minimum required product info
+                    if (string.IsNullOrEmpty(product.Name))
+                    {
+                        product.Name = ConstructProductNameFromProperties(product);
+                    }
+
+                    // Remove any pricing/commercial data that might have been added
+                    var commercialProps = new[] { "Price", "Stock", "StockQuantity", "Available", "Cost", "Offer" };
+                    foreach (var prop in commercialProps)
+                    {
+                        product.DynamicProperties.Remove(prop);
+                    }
+                    
+                    normalizationResult.HasOfferProperties = false;
+                }
+                else if (context.Mode == ProcessingMode.SupplierCommercialData)
+                {
+                    // For commercial mode, create OfferProduct entity if we have offer properties
+                    if (offerProperties.Count > 0 && supplierOffer != null)
+                    {
+                        var offerProduct = CreateOfferProductEntity(offerProperties, supplierOffer);
+                        normalizationResult.OfferProduct = offerProduct;
+                        normalizationResult.HasOfferProperties = true;
+                        normalizationResult.OfferProperties = offerProperties;
+                    }
+
+                    // Ensure we have a valid product name
+                    if (string.IsNullOrEmpty(product.Name))
+                    {
+                        product.Name = ConstructProductNameFromProperties(product);
+                    }
+                }
+
+                normalizationResult.Product = product;
+                return await Task.FromResult(normalizationResult);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to normalize row {row.Index}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Creates an OfferProduct entity from offer properties
+        /// </summary>
+        private OfferProductEntity CreateOfferProductEntity(Dictionary<string, object?> offerProperties, SupplierOfferEntity supplierOffer)
+        {
+            var offerProduct = new OfferProductEntity
+            {
+                IsAvailable = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // Map standard offer properties to OfferProduct entity properties
+            foreach (var prop in offerProperties)
+            {
+                switch (prop.Key.ToLowerInvariant())
+                {
+                    case "price":
+                        if (decimal.TryParse(prop.Value?.ToString(), out decimal price))
+                            offerProduct.Price = price;
+                        break;
+                    case "capacity":
+                        offerProduct.Capacity = prop.Value?.ToString();
+                        break;
+                    case "discount":
+                        if (decimal.TryParse(prop.Value?.ToString(), out decimal discount))
+                            offerProduct.Discount = discount;
+                        break;
+                    case "listprice":
+                        if (decimal.TryParse(prop.Value?.ToString(), out decimal listPrice))
+                            offerProduct.ListPrice = listPrice;
+                        break;
+                    case "unitofmeasure":
+                        offerProduct.UnitOfMeasure = prop.Value?.ToString();
+                        break;
+                    case "minimumorderquantity":
+                        if (int.TryParse(prop.Value?.ToString(), out int minQty))
+                            offerProduct.MinimumOrderQuantity = minQty;
+                        break;
+                    case "maximumorderquantity":
+                        if (int.TryParse(prop.Value?.ToString(), out int maxQty))
+                            offerProduct.MaximumOrderQuantity = maxQty;
+                        break;
+                    default:
+                        // Store as dynamic property in JSON
+                        offerProduct.SetProductProperty(prop.Key, prop.Value);
+                        break;
+                }
+            }
+
+            return offerProduct;
+        }
+
+        /// <summary>
+        /// Constructs a product name from available properties when name is missing
+        /// </summary>
+        private string ConstructProductNameFromProperties(ProductEntity product)
+        {
+            var nameComponents = new List<string>();
+            
+            if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
+                nameComponents.Add(family.ToString()!);
+            if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
+                nameComponents.Add(category.ToString()!);
+            if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
+                nameComponents.Add(itemName.ToString()!);
+
+            return nameComponents.Any() ? string.Join(" - ", nameComponents) : "Unknown Product";
+        }
+
+        /// <summary>
+        /// Validates a normalization result for the specified processing mode
+        /// </summary>
+        private bool IsValidNormalizationResultForMode(NormalizationResult normalizationResult, ProcessingMode mode)
+        {
+            if (mode == ProcessingMode.UnifiedProductCatalog)
+            {
+                // For catalog mode, require minimum product identification
+                return !string.IsNullOrEmpty(normalizationResult.Product.Name) && 
+                       normalizationResult.Product.Name != "Unknown Product";
+            }
+            else
+            {
+                // For commercial mode, require valid product with SKU
+                return !string.IsNullOrEmpty(normalizationResult.Product.Name) && 
+                       normalizationResult.Product.Name != "Unknown Product" && 
+                       !string.IsNullOrEmpty(normalizationResult.Product.SKU);
+            }
         }
     }
 }

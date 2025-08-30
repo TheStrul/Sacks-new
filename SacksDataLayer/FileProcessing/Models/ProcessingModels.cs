@@ -19,12 +19,27 @@ namespace SacksDataLayer.FileProcessing.Models
     }
 
     /// <summary>
-    /// Represents the result of processing with mode-specific insights
+    /// Represents the result of processing with mode-specific insights and relational entities
     /// </summary>
     public class ProcessingResult
     {
         public ProcessingMode Mode { get; set; }
-        public IEnumerable<ProductEntity> Products { get; set; } = new List<ProductEntity>();
+        
+        /// <summary>
+        /// Legacy property for backward compatibility - returns products from NormalizationResults
+        /// </summary>
+        public IEnumerable<ProductEntity> Products => NormalizationResults.Select(nr => nr.Product);
+        
+        /// <summary>
+        /// New relational results containing ProductEntity, SupplierOffer, and OfferProduct data
+        /// </summary>
+        public IEnumerable<SacksDataLayer.Configuration.Normalizers.NormalizationResult> NormalizationResults { get; set; } = new List<SacksDataLayer.Configuration.Normalizers.NormalizationResult>();
+        
+        /// <summary>
+        /// Supplier offer metadata (one per file processing session)
+        /// </summary>
+        public SupplierOfferEntity? SupplierOffer { get; set; }
+        
         public ProcessingStatistics Statistics { get; set; } = new();
         public List<string> Warnings { get; set; } = new();
         public List<string> Errors { get; set; } = new();
@@ -49,11 +64,13 @@ namespace SacksDataLayer.FileProcessing.Models
         public int DuplicateProductsDetected { get; set; }
         public int MissingCoreAttributes { get; set; }
         
-        // Stage 2 specific metrics
+        // Stage 2 specific metrics - Enhanced for relational architecture
         public int PricingRecordsProcessed { get; set; }
         public int StockRecordsProcessed { get; set; }
         public int ProductLinksEstablished { get; set; }
         public int OrphanedCommercialRecords { get; set; }
+        public int OfferProductsCreated { get; set; }
+        public int SupplierOffersCreated { get; set; }
         
         public TimeSpan ProcessingTime { get; set; }
     }
@@ -73,5 +90,10 @@ namespace SacksDataLayer.FileProcessing.Models
         /// User-specified intent for this processing session
         /// </summary>
         public string ProcessingIntent { get; set; } = string.Empty;
+        
+        /// <summary>
+        /// Optional offer metadata for commercial processing
+        /// </summary>
+        public SupplierOfferEntity? SupplierOffer { get; set; }
     }
 }

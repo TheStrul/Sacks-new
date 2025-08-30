@@ -60,7 +60,7 @@ namespace SacksConsoleApp
 
                 // Initialize services
                 var productsService = new ProductsService(productsRepository);
-                var suppliersService = new SacksDataLayer.Services.Implementations.SuppliersService(suppliersRepository);
+                var suppliersService = new SuppliersService(suppliersRepository);
                 var supplierOffersService = new SupplierOffersService(supplierOffersRepository, suppliersRepository);
                 var offerProductsService = new OfferProductsService(offerProductsRepository, supplierOffersRepository, productsRepository);
 
