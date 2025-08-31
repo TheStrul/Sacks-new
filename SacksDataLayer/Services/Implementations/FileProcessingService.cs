@@ -1,8 +1,6 @@
-using SacksDataLayer;
 using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Normalizers;
-using SacksDataLayer.FileProcessing.Interfaces;
 using SacksDataLayer.FileProcessing.Models;
 using SacksDataLayer.Data;
 using SacksDataLayer.Repositories.Implementations;
@@ -16,12 +14,39 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
-namespace SacksConsoleApp
+namespace SacksDataLayer.Services.Implementations
 {
-    public class UnifiedFileProcessor
+    /// <summary>
+    /// Service implementation for unified file processing operations
+    /// </summary>
+    public class FileProcessingService : IFileProcessingService
     {
-        public static async Task ProcessFileAsync(string filePath)
+        private readonly SacksDbContext _context;
+        private readonly IProductsService _productsService;
+        private readonly ISuppliersService _suppliersService;
+        private readonly ISupplierOffersService _supplierOffersService;
+        private readonly IOfferProductsService _offerProductsService;
+
+        public FileProcessingService(
+            SacksDbContext context,
+            IProductsService productsService,
+            ISuppliersService suppliersService,
+            ISupplierOffersService supplierOffersService,
+            IOfferProductsService offerProductsService)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _productsService = productsService ?? throw new ArgumentNullException(nameof(productsService));
+            _suppliersService = suppliersService ?? throw new ArgumentNullException(nameof(suppliersService));
+            _supplierOffersService = supplierOffersService ?? throw new ArgumentNullException(nameof(supplierOffersService));
+            _offerProductsService = offerProductsService ?? throw new ArgumentNullException(nameof(offerProductsService));
+        }
+
+        /// <summary>
+        /// Processes a file (Excel, CSV, etc.) and imports data based on supplier configuration
+        /// </summary>
+        public async Task ProcessFileAsync(string filePath)
         {
             Console.WriteLine("=== Unified File Processing ===\n");
 
@@ -36,31 +61,10 @@ namespace SacksConsoleApp
 
                 Console.WriteLine($"📁 Processing file: {Path.GetFileName(filePath)}");
 
-                // Using MariaDB with Pomelo provider
-                string connectionString = @"Server=localhost;Port=3306;Database=SacksProductsDb;Uid=root;Pwd=;";
-                var optionsBuilder = new DbContextOptionsBuilder<SacksDbContext>();
-                optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
-
-                var options = optionsBuilder.Options;
-
-                await using var context = new SacksDbContext(options);
-                
                 // Ensure database is created (dev environment)
                 Console.WriteLine("🔧 Ensuring database exists and is up-to-date...");
-                await context.Database.EnsureCreatedAsync();
+                await _context.Database.EnsureCreatedAsync();
                 Console.WriteLine("✅ Database ready!");
-
-                // Initialize repositories
-                var productsRepository = new ProductsRepository(context);
-                var suppliersRepository = new SuppliersRepository(context);
-                var supplierOffersRepository = new SupplierOffersRepository(context);
-                var offerProductsRepository = new OfferProductsRepository(context);
-
-                // Initialize services
-                var productsService = new ProductsService(productsRepository);
-                var suppliersService = new SuppliersService(suppliersRepository);
-                var supplierOffersService = new SupplierOffersService(supplierOffersRepository, suppliersRepository);
-                var offerProductsService = new OfferProductsService(offerProductsRepository, supplierOffersRepository, productsRepository);
 
                 // Initialize file processing services
                 var configPath = FindConfigurationFile();
@@ -123,8 +127,7 @@ namespace SacksConsoleApp
                 Console.WriteLine("\n🔄 Processing file as Supplier Offer...\n");
 
                 // Process as SupplierOffer (suppliers + offers + offer-products)
-                await ProcessSupplierOfferToDatabase(normalizer, fileData, filePath, 
-                    suppliersService, supplierOffersService, offerProductsService, productsService, supplierConfig);
+                await ProcessSupplierOfferToDatabase(normalizer, fileData, filePath, supplierConfig);
 
                 Console.WriteLine("\n✅ File processing completed successfully!");
                 
@@ -136,7 +139,7 @@ namespace SacksConsoleApp
             }
         }
 
-        private static async Task<SupplierConfiguration?> DetectSupplierAsync(SupplierConfigurationManager configManager, string fileName)
+        private async Task<SupplierConfiguration?> DetectSupplierAsync(SupplierConfigurationManager configManager, string fileName)
         {
             try
             {
@@ -164,16 +167,10 @@ namespace SacksConsoleApp
             }
         }
 
-
-
-        private static async Task ProcessSupplierOfferToDatabase(
+        private async Task ProcessSupplierOfferToDatabase(
             ConfigurationBasedNormalizer normalizer,
             FileData fileData,
             string filePath,
-            ISuppliersService suppliersService,
-            ISupplierOffersService supplierOffersService,
-            IOfferProductsService offerProductsService,
-            ProductsService productsService,
             SupplierConfiguration supplierConfig)
         {
             try
@@ -191,7 +188,7 @@ namespace SacksConsoleApp
 
                 // Step 1: Create or get supplier
                 Console.WriteLine($"   🏢 Creating/finding supplier: {supplierConfig.Name}");
-                var supplier = await suppliersService.CreateOrGetSupplierFromConfigAsync(
+                var supplier = await _suppliersService.CreateOrGetSupplierFromConfigAsync(
                     supplierConfig.Name,
                     supplierConfig.Description,
                     supplierConfig.Metadata?.Industry,
@@ -202,7 +199,7 @@ namespace SacksConsoleApp
 
                 // Step 2: Create new offer for this file processing session
                 Console.WriteLine($"   📋 Creating offer for file: {Path.GetFileName(filePath)}");
-                var offer = await supplierOffersService.CreateOfferFromFileAsync(
+                var offer = await _supplierOffersService.CreateOfferFromFileAsync(
                     supplier.Id,
                     Path.GetFileName(filePath),
                     context.ProcessingDate,
@@ -257,7 +254,7 @@ namespace SacksConsoleApp
                                 }
 
                                 // Step 3a: Ensure product exists (create or update core product data)
-                                var existingProduct = await productsService.GetProductBySKUAsync(productData.SKU);
+                                var existingProduct = await _productsService.GetProductBySKUAsync(productData.SKU);
                                 ProductEntity product;
 
                                 if (existingProduct != null)
@@ -292,7 +289,7 @@ namespace SacksConsoleApp
 
                                     if (needsUpdate)
                                     {
-                                        await productsService.UpdateProductAsync(existingProduct);
+                                        await _productsService.UpdateProductAsync(existingProduct);
                                         productsUpdated++;
                                     }
                                     product = existingProduct;
@@ -317,7 +314,7 @@ namespace SacksConsoleApp
                                         }
                                     }
 
-                                    product = await productsService.CreateProductAsync(newProduct);
+                                    product = await _productsService.CreateProductAsync(newProduct);
                                     productsCreated++;
                                     if (productsCreated <= 10)
                                     {
@@ -338,7 +335,7 @@ namespace SacksConsoleApp
                                 }
 
                                 // Create or update offer-product relationship
-                                var offerProduct = await offerProductsService.CreateOrUpdateOfferProductAsync(
+                                var offerProduct = await _offerProductsService.CreateOrUpdateOfferProductAsync(
                                     offer.Id,
                                     product.Id,
                                     offerProperties,
@@ -423,7 +420,5 @@ namespace SacksConsoleApp
 
             throw new FileNotFoundException("Configuration file 'supplier-formats.json' not found in any of the expected locations.");
         }
-
-
     }
 }
