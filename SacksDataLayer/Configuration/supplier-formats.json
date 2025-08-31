@@ -34,18 +34,6 @@
           "Price", "Capacity"
         ]
       },
-      "processingModes": {
-        "supportedModes": ["unifiedProductCatalog", "supplierCommercialData"],
-        "defaultMode": "unifiedProductCatalog",
-        "catalogMode": {
-          "ignoredColumns": ["PRICE", "Capacity"],
-          "priorityColumns": ["Item Name", "Category", "Family", "Size"]
-        },
-        "commercialMode": {
-          "ignoredColumns": [],
-          "priorityColumns": ["Item Name", "Item Code", "PRICE", "Capacity"]
-        }
-      },
       "dataTypes": {
         "PRICE": {
           "type": "decimal",

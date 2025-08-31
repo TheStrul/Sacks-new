@@ -13,33 +13,33 @@ namespace SacksConsoleApp
         static async Task Main(string[] args)
         {
             Console.WriteLine("=== Sacks Product Management System ===");
-            Console.WriteLine("🚀 Analyzing All Inputs...");
-            Console.WriteLine("\n" + new string('=', 50));
+            Console.WriteLine();
 
-            // Ensure LocalDB database exists so it appears in Visual Studio's SQL Server Object Explorer
-            try
+            // Check if command line argument for clearing database
+            if (args.Length > 0 && args[0].Equals("clear", StringComparison.OrdinalIgnoreCase))
             {
-                var localDbConnection = "Server=(localdb)\\mssqllocaldb;Database=SacksProductsDb;Trusted_Connection=True;";
-                var optionsBuilder = new DbContextOptionsBuilder<SacksDbContext>();
-                optionsBuilder.UseSqlServer(localDbConnection);
-
-                using (var ctx = new SacksDbContext(optionsBuilder.Options))
+                // First check connection
+                var isConnected = await ClearDatabase.CheckDatabaseConnectionAsync();
+                if (isConnected)
                 {
-                    // Ensure database is created (safe for development); this will create database and tables
-                    if (ctx.Database.EnsureCreated())
+                    Console.WriteLine();
+                    Console.Write("⚠️  Are you sure you want to clear ALL data from the database? (y/N): ");
+                    var confirmation = Console.ReadLine();
+                    
+                    if (confirmation?.ToLower() == "y" || confirmation?.ToLower() == "yes")
                     {
-                        Console.WriteLine("LocalDB database 'SacksProductsDb' created (or schema initialized).");
+                        await ClearDatabase.ClearAllDataAsync();
                     }
                     else
                     {
-                        Console.WriteLine("LocalDB database 'SacksProductsDb' already exists.");
+                        Console.WriteLine("Operation cancelled.");
                     }
                 }
+                return;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to initialize LocalDB database: {ex.Message}");
-            }
+
+            Console.WriteLine("🚀 Analyzing All Inputs...");
+            Console.WriteLine("\n" + new string('=', 50));
 
             // Get the solution directory using a robust method that works from both VS and command line
             var inputsPath = FindInputsFolder();

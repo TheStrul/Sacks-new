@@ -80,13 +80,6 @@ namespace SacksDataLayer.Repositories.Interfaces
         Task<IEnumerable<ProductEntity>> SearchByNameAsync(string searchTerm);
 
         /// <summary>
-        /// Gets products by processing mode
-        /// </summary>
-        /// <param name="mode">Processing mode</param>
-        /// <returns>Collection of products processed in the specified mode</returns>
-        Task<IEnumerable<ProductEntity>> GetByProcessingModeAsync(ProcessingMode mode);
-
-        /// <summary>
         /// Gets products by supplier source file
         /// </summary>
         /// <param name="sourceFile">Source file name or path</param>
@@ -139,19 +132,6 @@ namespace SacksDataLayer.Repositories.Interfaces
         Task<int> GetCountAsync();
 
         /// <summary>
-        /// Gets count of products by processing mode
-        /// </summary>
-        /// <param name="mode">Processing mode</param>
-        /// <returns>Product count for the specified mode</returns>
-        Task<int> GetCountByProcessingModeAsync(ProcessingMode mode);
-
-        /// <summary>
-        /// Gets processing statistics for products
-        /// </summary>
-        /// <param name="sourceFile">Optional source file filter</param>
-        /// <returns>Processing statistics</returns>
-        Task<Dictionary<ProcessingMode, int>> GetProcessingStatisticsAsync(string? sourceFile = null);
-
         /// <summary>
         /// Gets products created within a date range
         /// </summary>

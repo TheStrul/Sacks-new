@@ -36,11 +36,12 @@ namespace SacksConsoleApp
 
                 Console.WriteLine($"📁 Processing file: {Path.GetFileName(filePath)}");
 
-                // Setup MySQL database connection
-                var connectionString = @"Server=localhost;Port=3306;Database=SacksProductsDb;Uid=root;Pwd=;";
-                var options = new DbContextOptionsBuilder<SacksDbContext>()
-                    .UseMySQL(connectionString)
-                    .Options;
+                // Using MariaDB with Pomelo provider
+                string connectionString = @"Server=localhost;Port=3306;Database=SacksProductsDb;Uid=root;Pwd=;";
+                var optionsBuilder = new DbContextOptionsBuilder<SacksDbContext>();
+                optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+
+                var options = optionsBuilder.Options;
 
                 await using var context = new SacksDbContext(options);
                 

@@ -164,15 +164,6 @@ namespace SacksDataLayer.Repositories.Implementations
             return await GetByNameAsync(searchTerm); // Reuse existing implementation
         }
 
-        public async Task<IEnumerable<ProductEntity>> GetByProcessingModeAsync(ProcessingMode mode)
-        {
-            var modeString = mode.ToString();
-            return await _context.Products
-                .Include(p => p.OfferProducts)
-                .Where(p => p.DynamicPropertiesJson != null && p.DynamicPropertiesJson.Contains($"ProcessingMode\":\"{modeString}\""))
-                .ToListAsync();
-        }
-
         public async Task<IEnumerable<ProductEntity>> GetBySourceFileAsync(string sourceFile)
         {
             if (string.IsNullOrWhiteSpace(sourceFile))
@@ -245,42 +236,6 @@ namespace SacksDataLayer.Repositories.Implementations
         public async Task<int> GetCountAsync()
         {
             return await _context.Products.CountAsync();
-        }
-
-        public async Task<int> GetCountByProcessingModeAsync(ProcessingMode mode)
-        {
-            var modeString = mode.ToString();
-            return await _context.Products
-                .CountAsync(p => p.DynamicPropertiesJson != null && p.DynamicPropertiesJson.Contains($"ProcessingMode\":\"{modeString}\""));
-        }
-
-        public async Task<Dictionary<ProcessingMode, int>> GetProcessingStatisticsAsync(string? sourceFile = null)
-        {
-            var query = _context.Products.AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(sourceFile))
-            {
-                query = query.Where(p => p.DynamicPropertiesJson != null && p.DynamicPropertiesJson.Contains($"SourceFile\":\"{sourceFile}\""));
-            }
-
-            var products = await query.ToListAsync();
-            
-            var statistics = new Dictionary<ProcessingMode, int>
-            {
-                { ProcessingMode.UnifiedProductCatalog, 0 },
-                { ProcessingMode.SupplierCommercialData, 0 }
-            };
-
-            foreach (var product in products)
-            {
-                if (product.DynamicProperties.TryGetValue("ProcessingMode", out var modeValue) && 
-                    Enum.TryParse<ProcessingMode>(modeValue?.ToString(), out var mode))
-                {
-                    statistics[mode]++;
-                }
-            }
-
-            return statistics;
         }
 
         public async Task<IEnumerable<ProductEntity>> GetByCreatedDateRangeAsync(DateTime startDate, DateTime endDate)

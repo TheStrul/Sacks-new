@@ -181,15 +181,9 @@ namespace SacksDataLayer.Services.Implementations
             return await _repository.GetCountAsync();
         }
 
-        public async Task<Dictionary<string, int>> GetProcessingStatisticsAsync()
+        public async Task<int> GetTotalCountAsync()
         {
-            var processingStats = await _repository.GetProcessingStatisticsAsync();
-            
-            // Convert ProcessingMode enum keys to string keys
-            return processingStats.ToDictionary(
-                kvp => kvp.Key.ToString(), 
-                kvp => kvp.Value
-            );
+            return await _repository.GetCountAsync();
         }
     }
 }

@@ -35,9 +35,4 @@ public class NormalizationResult
     /// Row processing metadata for debugging and validation
     /// </summary>
     public int RowIndex { get; set; }
-    
-    /// <summary>
-    /// Indicates the processing mode used for this normalization
-    /// </summary>
-    public SacksDataLayer.FileProcessing.Models.ProcessingMode ProcessingMode { get; set; }
 }

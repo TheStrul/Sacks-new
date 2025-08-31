@@ -71,11 +71,6 @@ namespace SacksDataLayer.Services.Interfaces
         /// </summary>
         Task<int> GetProductCountAsync();
 
-        /// <summary>
-        /// Gets processing statistics
-        /// </summary>
-        Task<Dictionary<string, int>> GetProcessingStatisticsAsync();
-
         #endregion
     }
 }

@@ -1,22 +1,5 @@
 namespace SacksDataLayer.FileProcessing.Models
 {
-    /// <summary>
-    /// Defines the two processing modes for file analysis
-    /// </summary>
-    public enum ProcessingMode
-    {
-        /// <summary>
-        /// Stage 1: Focus on product identification and core attributes for unified catalog
-        /// Ignores pricing, stock, and supplier-specific codes
-        /// </summary>
-        UnifiedProductCatalog,
-
-        /// <summary>
-        /// Stage 2: Focus on commercial data (pricing, stock) linked to unified products
-        /// Prioritizes supplier-specific pricing and availability information
-        /// </summary>
-        SupplierCommercialData
-    }
 
     /// <summary>
     /// Represents the result of processing with supplier offer insights and relational entities
