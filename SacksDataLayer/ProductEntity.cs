@@ -23,10 +23,10 @@ namespace SacksDataLayer
         public string? Description { get; set; }
 
         /// <summary>
-        /// Product SKU (Stock Keeping Unit)
+        /// Product EAN (European Article Number)
         /// </summary>
         [StringLength(100)]
-        public string? SKU { get; set; }
+        public string EAN { get; set; } = string.Empty;
 
         /// <summary>
         /// Dynamic properties stored as key-value pairs

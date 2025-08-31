@@ -38,6 +38,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("columnMappings")]
         public Dictionary<string, string> ColumnMappings { get; set; } = new();
 
+        [JsonPropertyName("columnIndexMappings")]
+        public Dictionary<string, string> ColumnIndexMappings { get; set; } = new();
+
         [JsonPropertyName("propertyClassification")]
         public PropertyClassificationConfiguration PropertyClassification { get; set; } = new();
 
@@ -62,18 +65,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
     {
         [JsonPropertyName("fileNamePatterns")]
         public List<string> FileNamePatterns { get; set; } = new();
-
-        [JsonPropertyName("headerKeywords")]
-        public List<string> HeaderKeywords { get; set; } = new();
-
-        [JsonPropertyName("requiredColumns")]
-        public List<string> RequiredColumns { get; set; } = new();
-
-        [JsonPropertyName("excludePatterns")]
-        public List<string> ExcludePatterns { get; set; } = new();
-
-        [JsonPropertyName("priority")]
-        public int Priority { get; set; } = 0;
     }
 
     /// <summary>
@@ -102,50 +93,11 @@ namespace SacksDataLayer.FileProcessing.Configuration
     /// </summary>
     public class ValidationConfiguration
     {
-        [JsonPropertyName("requiredFields")]
-        public List<string> RequiredFields { get; set; } = new();
+        [JsonPropertyName("dataStartRowIndex")]
+        public int DataStartRowIndex { get; set; } = 1; // 1-based index (Excel row number)
 
-        [JsonPropertyName("skipRowsWithoutName")]
-        public bool SkipRowsWithoutName { get; set; } = true;
-
-        [JsonPropertyName("maxErrorsPerFile")]
-        public int MaxErrorsPerFile { get; set; } = 100;
-
-        [JsonPropertyName("fieldValidations")]
-        public Dictionary<string, FieldValidation> FieldValidations { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Field-specific validation rules
-    /// </summary>
-    public class FieldValidation
-    {
-        [JsonPropertyName("minLength")]
-        public int? MinLength { get; set; }
-
-        [JsonPropertyName("maxLength")]
-        public int? MaxLength { get; set; }
-
-        [JsonPropertyName("pattern")]
-        public string? Pattern { get; set; } // Regex pattern
-
-        [JsonPropertyName("allowedValues")]
-        public List<string>? AllowedValues { get; set; }
-
-        [JsonPropertyName("numericRange")]
-        public NumericRange? NumericRange { get; set; }
-    }
-
-    /// <summary>
-    /// Numeric range validation
-    /// </summary>
-    public class NumericRange
-    {
-        [JsonPropertyName("min")]
-        public decimal? Min { get; set; }
-
-        [JsonPropertyName("max")]
-        public decimal? Max { get; set; }
+        [JsonPropertyName("expectedColumnCount")]
+        public int ExpectedColumnCount { get; set; } = 0;
     }
 
     /// <summary>
@@ -164,6 +116,18 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("trimWhitespace")]
         public bool TrimWhitespace { get; set; } = true;
+
+        [JsonPropertyName("subtitleRowHandling")]
+        public SubtitleRowHandlingConfiguration? SubtitleRowHandling { get; set; }
+
+        [JsonPropertyName("skipRowsWithMergedCells")]
+        public bool SkipRowsWithMergedCells { get; set; } = false;
+
+        [JsonPropertyName("useColumnIndexMapping")]
+        public bool UseColumnIndexMapping { get; set; } = false;
+
+        [JsonPropertyName("ignoreHeaderRow")]
+        public bool IgnoreHeaderRow { get; set; } = false;
 
         [JsonPropertyName("customTransformations")]
         public Dictionary<string, string> CustomTransformations { get; set; } = new();
@@ -229,5 +193,50 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("offerProperties")]
         public List<string> OfferProperties { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Configuration for handling subtitle rows in Excel files
+    /// </summary>
+    public class SubtitleRowHandlingConfiguration
+    {
+        [JsonPropertyName("enabled")]
+        public bool Enabled { get; set; } = false;
+
+        [JsonPropertyName("action")]
+        public string Action { get; set; } = "skip"; // "skip" or "parse"
+
+        [JsonPropertyName("detectionRules")]
+        public List<SubtitleDetectionRule> DetectionRules { get; set; } = new();
+
+        [JsonPropertyName("fallbackAction")]
+        public string FallbackAction { get; set; } = "skip"; // "skip" or "ignore"
+    }
+
+    /// <summary>
+    /// Rule for detecting and parsing specific types of subtitle rows
+    /// </summary>
+    public class SubtitleDetectionRule
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [JsonPropertyName("detectionMethod")]
+        public string DetectionMethod { get; set; } = "columnCount"; // "columnCount", "pattern", "hybrid"
+
+        [JsonPropertyName("expectedColumnCount")]
+        public int ExpectedColumnCount { get; set; } = 1;
+
+        [JsonPropertyName("columnIndexMappings")]
+        public Dictionary<string, string> ColumnIndexMappings { get; set; } = new();
+
+        [JsonPropertyName("applyToSubsequentRows")]
+        public bool ApplyToSubsequentRows { get; set; } = true;
+
+        [JsonPropertyName("validationPatterns")]
+        public List<string> ValidationPatterns { get; set; } = new();
     }
 }

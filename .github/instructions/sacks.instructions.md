@@ -27,7 +27,7 @@ Excel Files → FileDataReader → ConfigurationBasedNormalizer → Relational E
 
 #### 1. **ProductEntity** - Core Product Data
 ```csharp
-- Id, Name, Description, SKU
+- Id, Name, Description, EAN
 - DynamicProperties (JSON) - core product attributes only
 - Navigation: OfferProducts collection
 ```

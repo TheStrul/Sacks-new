@@ -43,9 +43,9 @@ namespace SacksDataLayer.Data
                 entity.HasKey(e => e.Id);
 
                 // Index configurations for common queries
-                entity.HasIndex(e => e.SKU)
+                entity.HasIndex(e => e.EAN)
                       .IsUnique(false)
-                      .HasDatabaseName("IX_Products_SKU");
+                      .HasDatabaseName("IX_Products_EAN");
 
                 entity.HasIndex(e => e.Name)
                       .HasDatabaseName("IX_Products_Name");
@@ -64,7 +64,7 @@ namespace SacksDataLayer.Data
                 entity.Property(e => e.Description)
                       .HasMaxLength(2000);
 
-                entity.Property(e => e.SKU)
+                entity.Property(e => e.EAN)
                       .HasMaxLength(100);
 
                 // Configure DynamicPropertiesJson as JSON column (core product attributes)

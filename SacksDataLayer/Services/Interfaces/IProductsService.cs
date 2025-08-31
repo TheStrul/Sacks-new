@@ -13,9 +13,9 @@ namespace SacksDataLayer.Services.Interfaces
         Task<ProductEntity?> GetProductAsync(int id);
 
         /// <summary>
-        /// Gets a product by its SKU
+        /// Gets a product by its EAN
         /// </summary>
-        Task<ProductEntity?> GetProductBySKUAsync(string sku);
+        Task<ProductEntity?> GetProductByEANAsync(string ean);
 
         /// <summary>
         /// Gets products with pagination
@@ -52,7 +52,7 @@ namespace SacksDataLayer.Services.Interfaces
         Task<IEnumerable<ProductEntity>> GetProductsBySourceFileAsync(string sourceFile);
 
         /// <summary>
-        /// Creates or updates a product based on SKU
+        /// Creates or updates a product based on EAN
         /// </summary>
         Task<ProductEntity> CreateOrUpdateProductAsync(ProductEntity product, string? userContext = null);
 

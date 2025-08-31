@@ -47,14 +47,13 @@ namespace SacksDataLayer.FileProcessing.Services
         }
 
         /// <summary>
-        /// Gets all supplier configurations ordered by priority (highest first)
+        /// Gets all supplier configurations ordered by name
         /// </summary>
         public async Task<List<SupplierConfiguration>> GetSupplierConfigurationsByPriorityAsync()
         {
             var config = await GetConfigurationAsync();
             return config.Suppliers
-                .OrderByDescending(s => s.Detection.Priority)
-                .ThenBy(s => s.Name)
+                .OrderBy(s => s.Name)
                 .ToList();
         }
 
@@ -134,17 +133,17 @@ namespace SacksDataLayer.FileProcessing.Services
                     ValidateSupplier(supplier, result, supplierNames);
                 }
 
-                // Check for duplicate priorities (warning only)
-                var priorities = config.Suppliers
-                    .Where(s => s.Detection.Priority > 1)
-                    .GroupBy(s => s.Detection.Priority)
-                    .Where(g => g.Count() > 1);
+                // Remove priority-based validation since Priority no longer exists
+                // var priorities = config.Suppliers
+                //     .Where(s => s.Detection.Priority > 1)
+                //     .GroupBy(s => s.Detection.Priority)
+                //     .Where(g => g.Count() > 1);
 
-                foreach (var group in priorities)
-                {
-                    var suppliers = string.Join(", ", group.Select(s => s.Name));
-                    result.AddWarning($"Multiple suppliers have priority {group.Key}: {suppliers}");
-                }
+                // foreach (var group in priorities)
+                // {
+                //     var suppliers = string.Join(", ", group.Select(s => s.Name));
+                //     result.AddWarning($"Multiple suppliers have priority {group.Key}: {suppliers}");
+                // }
 
                 result.IsValid = !result.Errors.Any();
                 result.AddInfo($"Validated {config.Suppliers.Count} supplier configurations");
@@ -267,15 +266,14 @@ namespace SacksDataLayer.FileProcessing.Services
                 Description = "Default configuration for unknown suppliers",
                 Detection = new DetectionConfiguration
                 {
-                    FileNamePatterns = new List<string> { "*" },
-                    Priority = 1
+                    FileNamePatterns = new List<string> { "*" }
                 },
                 ColumnMappings = new Dictionary<string, string>
                 {
                     { "Product Name", "Name" },
                     { "Name", "Name" },
                     { "Description", "Description" },
-                    { "SKU", "SKU" },
+                    { "EAN", "EAN" },
                     { "Price", "Price" },
                     { "Category", "Category" }
                 },
@@ -286,8 +284,8 @@ namespace SacksDataLayer.FileProcessing.Services
                 },
                 Validation = new ValidationConfiguration
                 {
-                    RequiredFields = new List<string> { "Name" },
-                    SkipRowsWithoutName = true
+                    DataStartRowIndex = 2,
+                    ExpectedColumnCount = 10
                 },
                 Transformation = new TransformationConfiguration
                 {
@@ -305,7 +303,6 @@ namespace SacksDataLayer.FileProcessing.Services
             config.Name = name;
             config.Description = $"Sample configuration for {name}";
             config.Detection.FileNamePatterns = new List<string> { $"*{name}*" };
-            config.Detection.Priority = 5;
             return config;
         }
 
@@ -333,7 +330,7 @@ namespace SacksDataLayer.FileProcessing.Services
             {
                 result.AddError($"Supplier '{supplier.Name}' missing detection configuration");
             }
-            else if (!supplier.Detection.FileNamePatterns.Any() && !supplier.Detection.HeaderKeywords.Any())
+            else if (!supplier.Detection.FileNamePatterns.Any())
             {
                 result.AddWarning($"Supplier '{supplier.Name}' has no detection patterns");
             }

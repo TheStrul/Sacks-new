@@ -103,23 +103,17 @@ namespace SacksDataLayer.Services.Implementations
                 var fileHeaders = headerRow.Cells.Select(c => c.Value?.Trim()).Where(h => !string.IsNullOrWhiteSpace(h)).ToList();
                 Console.WriteLine($"📋 Found {fileHeaders.Count} columns: {string.Join(", ", fileHeaders.Take(5))}{(fileHeaders.Count > 5 ? "..." : "")}");
 
-                // Verify required columns exist
-                Console.WriteLine($"\n🔍 Validating required columns:");
-                var missingColumns = new List<string>();
-                foreach (var required in supplierConfig.Detection.RequiredColumns)
+                // Simple validation - just check column count if specified
+                Console.WriteLine($"\n🔍 Validating file structure:");
+                if (supplierConfig.Validation.ExpectedColumnCount > 0)
                 {
-                    var found = fileHeaders.Any(h => string.Equals(h, required, StringComparison.OrdinalIgnoreCase));
-                    var status = found ? "✓" : "❌";
-                    Console.WriteLine($"   {status} {required}");
+                    var status = fileHeaders.Count == supplierConfig.Validation.ExpectedColumnCount ? "✓" : "❌";
+                    Console.WriteLine($"   {status} Expected {supplierConfig.Validation.ExpectedColumnCount} columns, found {fileHeaders.Count}");
                     
-                    if (!found)
-                        missingColumns.Add(required);
-                }
-
-                if (missingColumns.Any())
-                {
-                    Console.WriteLine($"❌ Missing required columns: {string.Join(", ", missingColumns)}");
-                    return;
+                    if (fileHeaders.Count != supplierConfig.Validation.ExpectedColumnCount)
+                    {
+                        Console.WriteLine($"⚠️  Column count mismatch. Expected {supplierConfig.Validation.ExpectedColumnCount}, found {fileHeaders.Count}");
+                    }
                 }
 
                 // Initialize normalizer and process file
@@ -145,8 +139,8 @@ namespace SacksDataLayer.Services.Implementations
             {
                 var allConfigs = await configManager.GetConfigurationAsync();
                 
-                // Find supplier with matching filename pattern
-                foreach (var supplier in allConfigs.Suppliers.OrderByDescending(s => s.Detection.Priority))
+                // Find supplier with matching filename pattern (no priority ordering since Priority was removed)
+                foreach (var supplier in allConfigs.Suppliers)
                 {
                     foreach (var pattern in supplier.Detection.FileNamePatterns)
                     {
@@ -245,16 +239,16 @@ namespace SacksDataLayer.Services.Implementations
                         {
                             try
                             {
-                                // Skip products without SKU
-                                if (string.IsNullOrWhiteSpace(productData.SKU))
+                                // Skip products without EAN
+                                if (string.IsNullOrWhiteSpace(productData.EAN))
                                 {
                                     errors++;
-                                    Console.WriteLine($"   ❌ Skipping record without SKU: {productData.Name}");
+                                    Console.WriteLine($"   ❌ Skipping record without EAN: {productData.Name}");
                                     continue;
                                 }
 
                                 // Step 3a: Ensure product exists (create or update core product data)
-                                var existingProduct = await _productsService.GetProductBySKUAsync(productData.SKU);
+                                var existingProduct = await _productsService.GetProductByEANAsync(productData.EAN);
                                 ProductEntity product;
 
                                 if (existingProduct != null)
@@ -301,7 +295,7 @@ namespace SacksDataLayer.Services.Implementations
                                     {
                                         Name = productData.Name,
                                         Description = productData.Description,
-                                        SKU = productData.SKU
+                                        EAN = productData.EAN
                                     };
 
                                     // Add core product properties only
@@ -318,7 +312,7 @@ namespace SacksDataLayer.Services.Implementations
                                     productsCreated++;
                                     if (productsCreated <= 10)
                                     {
-                                        Console.WriteLine($"   ➕ Created product: {product.SKU} - {product.Name}");
+                                        Console.WriteLine($"   ➕ Created product: {product.EAN} - {product.Name}");
                                     }
                                 }
 
@@ -346,7 +340,7 @@ namespace SacksDataLayer.Services.Implementations
                                     offerProductsCreated++;
                                     if (offerProductsCreated <= 10)
                                     {
-                                        Console.WriteLine($"   🔗 Created offer-product: {product.SKU} -> Offer {offer.Id}");
+                                        Console.WriteLine($"   🔗 Created offer-product: {product.EAN} -> Offer {offer.Id}");
                                     }
                                 }
                                 else // Was updated
@@ -359,7 +353,7 @@ namespace SacksDataLayer.Services.Implementations
                                 errors++;
                                 if (errors <= 5) // Only show first 5 errors to avoid spam
                                 {
-                                    Console.WriteLine($"   ❌ Error processing {productData.SKU}: {ex.Message}");
+                                    Console.WriteLine($"   ❌ Error processing {productData.EAN}: {ex.Message}");
                                 }
                                 
                                 // Add a small delay after errors to reduce pressure

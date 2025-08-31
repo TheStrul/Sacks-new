@@ -26,14 +26,14 @@ namespace SacksDataLayer.Repositories.Implementations
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        public async Task<ProductEntity?> GetBySKUAsync(string sku)
+        public async Task<ProductEntity?> GetByEANAsync(string ean)
         {
-            if (string.IsNullOrWhiteSpace(sku))
+            if (string.IsNullOrWhiteSpace(ean))
                 return null;
 
             return await _context.Products
                 .Include(p => p.OfferProducts)
-                .FirstOrDefaultAsync(p => p.SKU == sku);
+                .FirstOrDefaultAsync(p => p.EAN == ean);
         }
 
         public async Task<IEnumerable<ProductEntity>> GetAllAsync()
@@ -78,7 +78,7 @@ namespace SacksDataLayer.Repositories.Implementations
             // Update basic properties
             existingProduct.Name = product.Name;
             existingProduct.Description = product.Description;
-            existingProduct.SKU = product.SKU;
+            existingProduct.EAN = product.EAN;
             existingProduct.ModifiedAt = DateTime.UtcNow;
             existingProduct.DynamicProperties = product.DynamicProperties;
 
@@ -102,12 +102,12 @@ namespace SacksDataLayer.Repositories.Implementations
             return await _context.Products.AnyAsync(p => p.Id == id);
         }
 
-        public async Task<bool> SKUExistsAsync(string sku)
+        public async Task<bool> EANExistsAsync(string ean)
         {
-            if (string.IsNullOrWhiteSpace(sku))
+            if (string.IsNullOrWhiteSpace(ean))
                 return false;
 
-            return await _context.Products.AnyAsync(p => p.SKU == sku);
+            return await _context.Products.AnyAsync(p => p.EAN == ean);
         }
 
         public async Task<IEnumerable<ProductEntity>> BulkCreateAsync(IEnumerable<ProductEntity> products)
@@ -137,7 +137,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 .Where(p => 
                     p.Name.ToLower().Contains(lowerSearchTerm) ||
                     (p.Description != null && p.Description.ToLower().Contains(lowerSearchTerm)) ||
-                    (p.SKU != null && p.SKU.ToLower().Contains(lowerSearchTerm)))
+                    (p.EAN != null && p.EAN.ToLower().Contains(lowerSearchTerm)))
                 .ToListAsync();
         }
 

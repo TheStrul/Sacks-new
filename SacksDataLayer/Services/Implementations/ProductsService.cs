@@ -21,9 +21,9 @@ namespace SacksDataLayer.Services.Implementations
             return await _repository.GetByIdAsync(id);
         }
 
-        public async Task<ProductEntity?> GetProductBySKUAsync(string sku)
+        public async Task<ProductEntity?> GetProductByEANAsync(string ean)
         {
-            return await _repository.GetBySKUAsync(sku);
+            return await _repository.GetByEANAsync(ean);
         }
 
         public async Task<(IEnumerable<ProductEntity> Products, int TotalCount)> GetProductsAsync(int pageNumber = 1, int pageSize = 50)
@@ -48,12 +48,12 @@ namespace SacksDataLayer.Services.Implementations
             if (string.IsNullOrWhiteSpace(product.Name))
                 throw new ArgumentException("Product name is required", nameof(product.Name));
 
-            // Check for duplicate SKU if provided
-            if (!string.IsNullOrWhiteSpace(product.SKU))
+            // Check for duplicate EAN if provided
+            if (!string.IsNullOrWhiteSpace(product.EAN))
             {
-                var existingProduct = await _repository.GetBySKUAsync(product.SKU);
+                var existingProduct = await _repository.GetByEANAsync(product.EAN);
                 if (existingProduct != null)
-                    throw new InvalidOperationException($"Product with SKU '{product.SKU}' already exists");
+                    throw new InvalidOperationException($"Product with EAN '{product.EAN}' already exists");
             }
 
             return await _repository.CreateAsync(product, createdBy);
@@ -73,12 +73,12 @@ namespace SacksDataLayer.Services.Implementations
             if (existingProduct == null)
                 throw new InvalidOperationException($"Product with ID {product.Id} not found");
 
-            // Check for duplicate SKU if changed
-            if (!string.IsNullOrWhiteSpace(product.SKU) && product.SKU != existingProduct.SKU)
+            // Check for duplicate EAN if changed
+            if (!string.IsNullOrWhiteSpace(product.EAN) && product.EAN != existingProduct.EAN)
             {
-                var duplicateProduct = await _repository.GetBySKUAsync(product.SKU);
+                var duplicateProduct = await _repository.GetByEANAsync(product.EAN);
                 if (duplicateProduct != null)
-                    throw new InvalidOperationException($"Product with SKU '{product.SKU}' already exists");
+                    throw new InvalidOperationException($"Product with EAN '{product.EAN}' already exists");
             }
 
             return await _repository.UpdateAsync(product, modifiedBy);
@@ -106,10 +106,10 @@ namespace SacksDataLayer.Services.Implementations
 
             ProductEntity? existingProduct = null;
             
-            // Try to find existing product by SKU
-            if (!string.IsNullOrWhiteSpace(product.SKU))
+            // Try to find existing product by EAN
+            if (!string.IsNullOrWhiteSpace(product.EAN))
             {
-                existingProduct = await _repository.GetBySKUAsync(product.SKU);
+                existingProduct = await _repository.GetByEANAsync(product.EAN);
             }
 
             if (existingProduct != null)
@@ -142,10 +142,10 @@ namespace SacksDataLayer.Services.Implementations
                 {
                     ProductEntity? existingProduct = null;
                     
-                    // Try to find existing product by SKU
-                    if (!string.IsNullOrWhiteSpace(product.SKU))
+                    // Try to find existing product by EAN
+                    if (!string.IsNullOrWhiteSpace(product.EAN))
                     {
-                        existingProduct = await _repository.GetBySKUAsync(product.SKU);
+                        existingProduct = await _repository.GetByEANAsync(product.EAN);
                     }
 
                     if (existingProduct != null)
@@ -168,7 +168,7 @@ namespace SacksDataLayer.Services.Implementations
                 catch (Exception ex)
                 {
                     // Log error but continue with other products
-                    Console.WriteLine($"Error processing product {product.Name} (SKU: {product.SKU}): {ex.Message}");
+                    Console.WriteLine($"Error processing product {product.Name} (EAN: {product.EAN}): {ex.Message}");
                     errors++;
                 }
             }

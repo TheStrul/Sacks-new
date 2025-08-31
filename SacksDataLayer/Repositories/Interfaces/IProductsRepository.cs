@@ -18,11 +18,11 @@ namespace SacksDataLayer.Repositories.Interfaces
         Task<ProductEntity?> GetByIdAsync(int id);
 
         /// <summary>
-        /// Gets a product by its SKU
+        /// Gets a product by its EAN
         /// </summary>
-        /// <param name="sku">Product SKU</param>
+        /// <param name="ean">Product EAN</param>
         /// <returns>Product entity or null if not found</returns>
-        Task<ProductEntity?> GetBySKUAsync(string sku);
+        Task<ProductEntity?> GetByEANAsync(string ean);
 
         /// <summary>
         /// Gets all products
@@ -78,6 +78,13 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// <param name="searchTerm">Search term</param>
         /// <returns>Collection of matching products</returns>
         Task<IEnumerable<ProductEntity>> SearchByNameAsync(string searchTerm);
+
+        /// <summary>
+        /// Checks if a product with the specified EAN exists
+        /// </summary>
+        /// <param name="ean">Product EAN</param>
+        /// <returns>True if a product with the EAN exists</returns>
+        Task<bool> EANExistsAsync(string ean);
 
         /// <summary>
         /// Gets products by supplier source file

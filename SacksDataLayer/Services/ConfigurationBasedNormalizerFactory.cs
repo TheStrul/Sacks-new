@@ -121,10 +121,11 @@ namespace SacksDataLayer.FileProcessing.Services
                 LastCacheUpdate = _lastCacheUpdate
             };
 
-            // Group by priority
-            stats.SuppliersByPriority = config.Suppliers
-                .GroupBy(s => s.Detection.Priority)
-                .ToDictionary(g => g.Key, g => g.Select(s => s.Name).ToList());
+            // Group by name (since priority no longer exists)
+            stats.SuppliersByPriority = new Dictionary<int, List<string>>
+            {
+                { 1, config.Suppliers.Select(s => s.Name).ToList() }
+            };
 
             // Group by industry
             stats.SuppliersByIndustry = config.Suppliers
@@ -146,18 +147,14 @@ namespace SacksDataLayer.FileProcessing.Services
                 Description = $"Auto-generated configuration for {supplierName}",
                 Detection = new DetectionConfiguration
                 {
-                    FileNamePatterns = new List<string> { $"*{supplierName}*" },
-                    HeaderKeywords = new List<string> { supplierName },
-                    RequiredColumns = new List<string>(),
-                    Priority = 5
+                    FileNamePatterns = new List<string> { $"*{supplierName}*" }
                 },
                 ColumnMappings = GenerateColumnMappings(columnNames),
                 DataTypes = GenerateDataTypes(columnNames),
                 Validation = new ValidationConfiguration
                 {
-                    RequiredFields = new List<string> { "Name" },
-                    SkipRowsWithoutName = true,
-                    MaxErrorsPerFile = 100
+                    DataStartRowIndex = 2,
+                    ExpectedColumnCount = columnNames.Count
                 },
                 Transformation = new TransformationConfiguration
                 {
@@ -201,7 +198,7 @@ namespace SacksDataLayer.FileProcessing.Services
             {
                 { "Name", new[] { "name", "product name", "title", "item name", "product title", "product" } },
                 { "Description", new[] { "description", "desc", "details", "summary", "product description" } },
-                { "SKU", new[] { "sku", "code", "product code", "item code", "id", "product id" } },
+                { "EAN", new[] { "sku", "code", "product code", "item code", "id", "product id" } },
                 { "Price", new[] { "price", "cost", "unit price", "list price", "retail price", "msrp" } },
                 { "Category", new[] { "category", "type", "group", "classification", "product category" } },
                 { "StockQuantity", new[] { "stock", "quantity", "inventory", "available", "on hand", "qty" } },

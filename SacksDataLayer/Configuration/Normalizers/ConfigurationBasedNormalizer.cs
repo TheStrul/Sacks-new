@@ -29,72 +29,38 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             var detection = _configuration.Detection;
 
-            // Check exclude patterns first
-            if (detection.ExcludePatterns.Any(pattern => IsPatternMatch(fileName, pattern)))
-            {
-                return false;
-            }
+            // Convert filename to lowercase for pattern matching
+            var lowerFileName = fileName.ToLowerInvariant();
 
-            // Check filename patterns
-            if (detection.FileNamePatterns.Any(pattern => IsPatternMatch(fileName, pattern)))
-            {
-                return true;
-            }
-
-            // Check header keywords
-            if (detection.HeaderKeywords.Any())
-            {
-                var headerRow = firstFewRows.FirstOrDefault(r => r.HasData);
-                if (headerRow != null)
-                {
-                    var headers = headerRow.Cells.Select(c => c.Value?.Trim() ?? "").ToList();
-                    var hasKeyword = detection.HeaderKeywords.Any(keyword =>
-                        headers.Any(h => h.Contains(keyword, StringComparison.OrdinalIgnoreCase)));
-                    
-                    if (hasKeyword)
-                        return true;
-                }
-            }
-
-            // Check required columns
-            if (detection.RequiredColumns.Any())
-            {
-                var headerRow = firstFewRows.FirstOrDefault(r => r.HasData);
-                if (headerRow != null)
-                {
-                    var headers = headerRow.Cells.Select(c => c.Value?.Trim() ?? "").ToList();
-                    var hasRequiredColumns = detection.RequiredColumns.All(required =>
-                        headers.Any(h => string.Equals(h, required, StringComparison.OrdinalIgnoreCase)));
-                    
-                    if (hasRequiredColumns)
-                        return true;
-                }
-            }
-
-            return false;
+            // Check filename patterns against lowercase filename
+            return detection.FileNamePatterns.Any(pattern => 
+                IsPatternMatch(lowerFileName, pattern.ToLowerInvariant()));
         }
 
         public async Task<IEnumerable<ProductEntity>> NormalizeAsync(FileData fileData)
         {
             var products = new List<ProductEntity>();
-            var errorCount = 0;
-            var maxErrors = _configuration.Validation.MaxErrorsPerFile;
 
             if (fileData.dataRows.Count == 0)
                 return products;
 
-            // Find header row based on configuration
-            var headerRowIndex = _configuration.Transformation.HeaderRowIndex;
-            var headerRow = fileData.dataRows.Skip(headerRowIndex).FirstOrDefault(r => r.HasData);
-            
-            if (headerRow == null)
+            // Validate that we have the expected number of columns in the first row
+            var firstRow = fileData.dataRows.FirstOrDefault(r => r.HasData);
+            if (firstRow == null)
                 return products;
 
-            // Create column index mapping
-            var columnIndexes = CreateColumnMapping(headerRow);
+            if (_configuration.Validation.ExpectedColumnCount > 0 && 
+                firstRow.Cells.Count != _configuration.Validation.ExpectedColumnCount)
+            {
+                throw new InvalidOperationException(
+                    $"Expected {_configuration.Validation.ExpectedColumnCount} columns but found {firstRow.Cells.Count}");
+            }
 
-            // Process data rows starting from configured index
-            var dataStartIndex = Math.Max(_configuration.Transformation.DataStartRowIndex, headerRow.Index + 1);
+            // Create column mapping using Excel column indexes
+            var columnIndexes = CreateColumnIndexMapping();
+
+            // Process data rows starting from configured index (convert from 1-based to 0-based)
+            var dataStartIndex = _configuration.Validation.DataStartRowIndex - 1;
             var dataRows = fileData.dataRows
                 .Skip(dataStartIndex)
                 .Where(r => !_configuration.Transformation.SkipEmptyRows || r.HasData);
@@ -106,27 +72,13 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     var product = await NormalizeRowAsync(row, columnIndexes, fileData.FilePath);
                     if (product != null)
                     {
-                        // Validate the product
-                        if (IsValidProduct(product))
-                        {
-                            products.Add(product);
-                        }
-                        else if (_configuration.Validation.SkipRowsWithoutName)
-                        {
-                            continue; // Skip invalid products silently
-                        }
+                        products.Add(product);
                     }
                 }
                 catch (Exception ex)
                 {
-                    errorCount++;
                     Console.WriteLine($"Error processing row {row.Index}: {ex.Message}");
-                    
-                    if (errorCount >= maxErrors)
-                    {
-                        Console.WriteLine($"Reached maximum error limit ({maxErrors}). Stopping processing.");
-                        break;
-                    }
+                    // Continue processing other rows instead of stopping
                 }
             }
 
@@ -135,12 +87,14 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
         public Dictionary<string, string> GetColumnMapping()
         {
-            return new Dictionary<string, string>(_configuration.ColumnMappings);
+            // Return the Excel column-based mappings
+            return new Dictionary<string, string>(_configuration.ColumnIndexMappings);
         }
 
         public Dictionary<string, string> GetColumnMapping(ProcessingContext context)
         {
-            return new Dictionary<string, string>(_configuration.ColumnMappings);
+            // Return the Excel column-based mappings
+            return new Dictionary<string, string>(_configuration.ColumnIndexMappings);
         }
 
         public async Task<ProcessingResult> NormalizeAsync(FileData fileData, ProcessingContext context)
@@ -254,13 +208,57 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             
-            for (int i = 0; i < headerRow.Cells.Count; i++)
+            // Create mapping using Excel column letters or numeric indices
+            foreach (var indexMapping in _configuration.ColumnIndexMappings)
             {
-                var columnName = headerRow.Cells[i].Value?.Trim() ?? "";
-                if (!string.IsNullOrEmpty(columnName))
+                int columnIndex;
+                
+                // Try to parse as Excel column letter (A, B, C, etc.) or numeric index
+                if (IsExcelColumnLetter(indexMapping.Key))
                 {
-                    mapping[columnName] = i;
+                    columnIndex = ConvertExcelColumnToIndex(indexMapping.Key);
                 }
+                else if (int.TryParse(indexMapping.Key, out int numericIndex))
+                {
+                    columnIndex = numericIndex;
+                }
+                else
+                {
+                    continue; // Skip invalid column references
+                }
+
+                var targetProperty = indexMapping.Value;
+                mapping[targetProperty] = columnIndex;
+            }
+
+            return mapping;
+        }
+
+        private Dictionary<string, int> CreateColumnIndexMapping()
+        {
+            var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            
+            // Create mapping using Excel column letters to 0-based indices
+            foreach (var indexMapping in _configuration.ColumnIndexMappings)
+            {
+                int columnIndex;
+                
+                // Convert Excel column letter (A, B, C, etc.) to 0-based index
+                if (IsExcelColumnLetter(indexMapping.Key))
+                {
+                    columnIndex = ConvertExcelColumnToIndex(indexMapping.Key);
+                }
+                else if (int.TryParse(indexMapping.Key, out int numericIndex))
+                {
+                    columnIndex = numericIndex;
+                }
+                else
+                {
+                    continue; // Skip invalid column references
+                }
+
+                var targetProperty = indexMapping.Value;
+                mapping[targetProperty] = columnIndex;
             }
 
             return mapping;
@@ -272,17 +270,17 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
             try
             {
-                // Map core properties (Name, Description, SKU)
+                // Map core properties (Name, Description, EAN)
                 product.Name = GetMappedValue(row, columnIndexes, "Name") ?? "Unknown Product";
                 product.Description = GetMappedValue(row, columnIndexes, "Description");
-                product.SKU = GetMappedValue(row, columnIndexes, "SKU");
+                product.EAN = GetMappedValue(row, columnIndexes, "EAN") ?? "";
 
                 // Apply transformations to core properties
                 if (_configuration.Transformation.TrimWhitespace)
                 {
                     product.Name = product.Name?.Trim() ?? "";
                     product.Description = product.Description?.Trim();
-                    product.SKU = product.SKU?.Trim();
+                    product.EAN = product.EAN?.Trim() ?? "";
                 }
 
                 // Process all mapped columns as dynamic properties
@@ -292,7 +290,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     var targetProperty = mapping.Value;
                     
                     // Skip core properties as they're already handled
-                    if (targetProperty is "Name" or "Description" or "SKU")
+                    if (targetProperty is "Name" or "Description" or "EAN")
                         continue;
 
                     var rawValue = GetCellValue(row, columnIndexes, sourceColumn);
@@ -469,44 +467,17 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
         private bool IsValidProduct(ProductEntity product)
         {
-            var validation = _configuration.Validation;
-
-            // Skip rows that look like headers (e.g., "Item Name", "Item Code")
-            if (IsHeaderRow(product))
-                return false;
-
-            // Check required fields
-            foreach (var requiredField in validation.RequiredFields)
-            {
-                if (requiredField == "Name")
-                {
-                    if (string.IsNullOrWhiteSpace(product.Name))
-                        return false;
-                }
-                else
-                {
-                    if (!product.HasDynamicProperty(requiredField))
-                        return false;
-                }
-            }
-
-            // Apply field validations
-            foreach (var fieldValidation in validation.FieldValidations)
-            {
-                if (!ValidateField(product, fieldValidation.Key, fieldValidation.Value))
-                    return false;
-            }
-
-            return true;
+            // Simple validation - just check that the product has a name
+            return !string.IsNullOrWhiteSpace(product.Name);
         }
 
         private bool IsHeaderRow(ProductEntity product)
         {
-            // Check if product name/SKU matches known column headers
+            // Check if product name/EAN matches known column headers
             var headerKeywords = new[] { "Item Name", "Item Code", "PRICE", "Category", "Family", "Commercial Line", "Pricing Item Name", "Size", "Unit", "EAN", "Capacity" };
             
             if (headerKeywords.Any(keyword => string.Equals(product.Name, keyword, StringComparison.OrdinalIgnoreCase) ||
-                                               string.Equals(product.SKU, keyword, StringComparison.OrdinalIgnoreCase)))
+                                               string.Equals(product.EAN, keyword, StringComparison.OrdinalIgnoreCase)))
                 return true;
 
             // Check if multiple dynamic properties contain header-like values
@@ -521,49 +492,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
             // If more than 50% of properties match header keywords, it's likely a header row
             return headerMatches > product.DynamicProperties.Count / 2 && headerMatches >= 3;
-        }
-
-        private bool ValidateField(ProductEntity product, string fieldName, FieldValidation validation)
-        {
-            object? value = fieldName == "Name" ? product.Name : product.GetDynamicProperty(fieldName);
-            
-            if (value == null)
-                return true; // Allow null values (handled by required fields check)
-
-            var stringValue = value.ToString() ?? "";
-
-            // Length validations
-            if (validation.MinLength.HasValue && stringValue.Length < validation.MinLength.Value)
-                return false;
-            
-            if (validation.MaxLength.HasValue && stringValue.Length > validation.MaxLength.Value)
-                return false;
-
-            // Pattern validation
-            if (!string.IsNullOrEmpty(validation.Pattern))
-            {
-                if (!Regex.IsMatch(stringValue, validation.Pattern))
-                    return false;
-            }
-
-            // Allowed values validation
-            if (validation.AllowedValues?.Any() == true)
-            {
-                if (!validation.AllowedValues.Contains(stringValue, StringComparer.OrdinalIgnoreCase))
-                    return false;
-            }
-
-            // Numeric range validation
-            if (validation.NumericRange != null && decimal.TryParse(stringValue, out decimal numValue))
-            {
-                if (validation.NumericRange.Min.HasValue && numValue < validation.NumericRange.Min.Value)
-                    return false;
-                
-                if (validation.NumericRange.Max.HasValue && numValue > validation.NumericRange.Max.Value)
-                    return false;
-            }
-
-            return true;
         }
 
         private bool IsPatternMatch(string input, string pattern)
@@ -655,8 +583,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                                 case "description":
                                     product.Description = convertedValue?.ToString();
                                     break;
-                                case "sku":
-                                    product.SKU = convertedValue?.ToString();
+                                case "ean":
+                                    product.EAN = convertedValue?.ToString() ?? "";
                                     break;
                                 default:
                                     // Only set core product properties  
@@ -671,7 +599,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     }
                 }
 
-                // For supplier offers, ensure we have a valid product with SKU and name
+                // For supplier offers, ensure we have a valid product with EAN and name
                 if (string.IsNullOrEmpty(product.Name))
                 {
                     // Try to construct name from available fields
@@ -799,8 +727,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                                 case "description":
                                     product.Description = convertedValue?.ToString();
                                     break;
-                                case "sku":
-                                    product.SKU = convertedValue?.ToString();
+                                case "ean":
+                                    product.EAN = convertedValue?.ToString() ?? "";
                                     break;
                                 default:
                                     // Classify property as core product or offer property
@@ -923,10 +851,45 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// </summary>
         private bool IsValidNormalizationResult(NormalizationResult normalizationResult)
         {
-            // For supplier offers, require valid product with SKU
+            // For supplier offers, require valid product with EAN
             return !string.IsNullOrEmpty(normalizationResult.Product.Name) && 
                    normalizationResult.Product.Name != "Unknown Product" && 
-                   !string.IsNullOrEmpty(normalizationResult.Product.SKU);
+                   !string.IsNullOrEmpty(normalizationResult.Product.EAN);
+        }
+
+        /// <summary>
+        /// Checks if a string represents an Excel column letter format (A, B, C, AA, AB, etc.)
+        /// </summary>
+        private bool IsExcelColumnLetter(string columnReference)
+        {
+            if (string.IsNullOrWhiteSpace(columnReference))
+                return false;
+
+            return columnReference.All(c => char.IsLetter(c) && char.IsUpper(c));
+        }
+
+        /// <summary>
+        /// Converts Excel column letters to zero-based column index
+        /// A=0, B=1, C=2, ..., Z=25, AA=26, AB=27, etc.
+        /// </summary>
+        private int ConvertExcelColumnToIndex(string columnLetter)
+        {
+            if (string.IsNullOrWhiteSpace(columnLetter))
+                throw new ArgumentException("Column letter cannot be null or empty", nameof(columnLetter));
+
+            columnLetter = columnLetter.ToUpperInvariant();
+            int result = 0;
+
+            for (int i = 0; i < columnLetter.Length; i++)
+            {
+                char c = columnLetter[i];
+                if (c < 'A' || c > 'Z')
+                    throw new ArgumentException($"Invalid column letter: {columnLetter}", nameof(columnLetter));
+
+                result = result * 26 + (c - 'A' + 1);
+            }
+
+            return result - 1; // Convert to zero-based index
         }
     }
 }
