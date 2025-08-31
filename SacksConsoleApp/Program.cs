@@ -4,8 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using SacksConsoleApp;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using SacksDataLayer.Configuration;
 using SacksDataLayer.Data;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Services.Implementations;
@@ -16,17 +20,50 @@ namespace SacksConsoleApp
 {
     class Program
     {
+        private static IConfiguration? _configuration;
+        private static ILogger<Program>? _logger;
+
         static async Task Main(string[] args)
         {
             Console.WriteLine("=== Sacks Product Management System ===");
             Console.WriteLine();
 
-            // Setup dependency injection
-            var services = ConfigureServices();
-            var serviceProvider = services.BuildServiceProvider();
-
             try
             {
+                // Build configuration
+                _configuration = BuildConfiguration();
+
+                // Setup dependency injection with configuration and logging
+                var services = ConfigureServices(_configuration);
+                var serviceProvider = services.BuildServiceProvider();
+
+                // Get logger
+                _logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                _logger.LogInformation("Application starting...");
+
+                // Test database connection first
+                var connectionService = serviceProvider.GetRequiredService<IDatabaseConnectionService>();
+                var (isAvailable, message, exception) = await connectionService.TestConnectionAsync();
+
+                if (!isAvailable)
+                {
+                    Console.WriteLine($"⚠️  Database Connection Issue: {message}");
+                    _logger.LogWarning("Database connection failed: {Message}", message);
+                    
+                    if (exception != null)
+                    {
+                        _logger.LogError(exception, "Database connection error details");
+                    }
+                    
+                    Console.WriteLine("🔧 Please check your database configuration in appsettings.json");
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey();
+                    return;
+                }
+
+                Console.WriteLine($"✅ {message}");
+                _logger.LogInformation("Database connection successful");
+
                 // Check if command line argument for clearing database
                 if (args.Length > 0 && args[0].Equals("clear", StringComparison.OrdinalIgnoreCase))
                 {
@@ -36,20 +73,73 @@ namespace SacksConsoleApp
 
                 await ProcessInputFiles(serviceProvider);
             }
-            finally
+            catch (Exception ex)
             {
-                serviceProvider.Dispose();
+                Console.WriteLine($"❌ Fatal error: {ex.Message}");
+                _logger?.LogCritical(ex, "Fatal application error");
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey();
             }
         }
 
-        private static ServiceCollection ConfigureServices()
+        private static IConfiguration BuildConfiguration()
+        {
+            var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+            
+            // Get the directory where the executable is running from (contains appsettings.json)
+            var basePath = AppContext.BaseDirectory;
+            
+            return new ConfigurationBuilder()
+                .SetBasePath(basePath)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .Build();
+        }
+
+        private static ServiceCollection ConfigureServices(IConfiguration configuration)
         {
             var services = new ServiceCollection();
 
-            // Add DbContext
+            // Add configuration as singleton
+            services.AddSingleton<IConfiguration>(configuration);
+
+            // Add logging
+            services.AddLogging(builder =>
+            {
+                builder.AddConfiguration(configuration.GetSection("Logging"));
+                builder.AddConsole();
+            });
+
+            // Add configuration options
+            services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
+
+            // Get connection string from configuration
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new InvalidOperationException("DefaultConnection string is not configured in appsettings.json");
+            }
+
+            // Add DbContext with configuration-based connection string
             services.AddDbContext<SacksDbContext>(options =>
-                options.UseMySql("Server=localhost;Database=SacksDB;User=sacks_user;Password=sacks_password;",
-                    new MySqlServerVersion(new Version(10, 11, 0))));
+            {
+                var dbSettings = configuration.GetSection("DatabaseSettings").Get<DatabaseSettings>() ?? new DatabaseSettings();
+                
+                options.UseMySql(connectionString, new MySqlServerVersion(new Version(10, 11, 0)), mysqlOptions =>
+                {
+                    if (dbSettings.RetryOnFailure)
+                    {
+                        mysqlOptions.EnableRetryOnFailure(dbSettings.MaxRetryCount);
+                    }
+                    mysqlOptions.CommandTimeout(dbSettings.CommandTimeout);
+                });
+
+                if (dbSettings.EnableSensitiveDataLogging)
+                {
+                    options.EnableSensitiveDataLogging();
+                }
+            });
 
             // Add repositories
             services.AddScoped<IProductsRepository, ProductsRepository>();
@@ -66,6 +156,7 @@ namespace SacksConsoleApp
             // Add application services
             services.AddScoped<IDatabaseManagementService, DatabaseManagementService>();
             services.AddScoped<IFileProcessingService, FileProcessingService>();
+            services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
 
             return services;
         }
