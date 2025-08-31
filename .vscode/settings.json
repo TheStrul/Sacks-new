@@ -10,5 +10,18 @@
         "*.csproj": "$(capture).deps.json,$(capture).runtimeconfig.json,$(capture).runtimeconfig.dev.json,$(capture).dll,$(capture).pdb"
     },
     "workbench.startupEditor": "readme",
-    "readme.path": "./PROJECT_INSTRUCTIONS.md"
+    "readme.path": "./PROJECT_INSTRUCTIONS.md",
+    "sqltools.connections": [
+        {
+            "name": "MySQL Sacks Database",
+            "driver": "MySQL",
+            "server": "localhost",
+            "port": 3306,
+            "database": "sacksproductsdb",
+            "username": "root",
+            "password": "",
+            "connectionTimeout": 30000,
+            "previewLimit": 50
+        }
+    ]
 }

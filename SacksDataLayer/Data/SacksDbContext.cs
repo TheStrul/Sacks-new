@@ -69,18 +69,18 @@ namespace SacksDataLayer.Data
 
                 // Configure DynamicPropertiesJson as JSON column (core product attributes)
                 entity.Property(e => e.DynamicPropertiesJson)
-                      .HasColumnType("nvarchar(max)")
+                      .HasColumnType("JSON")
                       .HasColumnName("DynamicProperties");
 
                 // Configure the DynamicProperties to be ignored by EF (since it's handled by JSON property)
                 entity.Ignore(e => e.DynamicProperties);
 
-                // Configure timestamps with default values
+                // Configure timestamps with default values (MySQL compatible)
                 entity.Property(e => e.CreatedAt)
-                      .HasDefaultValueSql("GETUTCDATE()");
+                      .HasDefaultValueSql("UTC_TIMESTAMP()");
 
                 entity.Property(e => e.UpdatedAt)
-                      .HasDefaultValueSql("GETUTCDATE()");
+                      .HasDefaultValueSql("UTC_TIMESTAMP()");
             });
 
             // Configure SupplierEntity
@@ -121,7 +121,7 @@ namespace SacksDataLayer.Data
                       .HasMaxLength(50);
 
                 entity.Property(e => e.Notes)
-                      .HasColumnType("nvarchar(max)");
+                      .HasColumnType("TEXT");
             });
 
             // Configure SupplierOfferEntity
@@ -200,7 +200,7 @@ namespace SacksDataLayer.Data
 
                 // Configure ProductPropertiesJson as JSON column
                 entity.Property(e => e.ProductPropertiesJson)
-                      .HasColumnType("nvarchar(max)")
+                      .HasColumnType("JSON")
                       .HasColumnName("ProductProperties");
 
                 // Configure the ProductProperties to be ignored by EF (since it's handled by JSON property)

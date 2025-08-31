@@ -16,14 +16,10 @@ namespace SacksDataLayer.Infrastructure
             
             // Use a default connection string for migrations with retry logic
             // This will be overridden in actual application with proper connection string
-            optionsBuilder.UseSqlServer(
-                "Server=(localdb)\\mssqllocaldb;Database=SacksProductsDb;Trusted_Connection=true;TrustServerCertificate=true;",
+            optionsBuilder.UseMySQL(
+                "Server=localhost;Port=3306;Database=SacksProductsDb;Uid=root;Pwd=;",
                 options => {
                     options.MigrationsAssembly("SacksDataLayer");
-                    options.EnableRetryOnFailure(
-                        maxRetryCount: 5,
-                        maxRetryDelay: TimeSpan.FromSeconds(30),
-                        errorNumbersToAdd: null);
                 });
 
             return new SacksDbContext(optionsBuilder.Options);

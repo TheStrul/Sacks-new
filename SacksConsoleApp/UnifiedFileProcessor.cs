@@ -36,20 +36,17 @@ namespace SacksConsoleApp
 
                 Console.WriteLine($"📁 Processing file: {Path.GetFileName(filePath)}");
 
-                // Setup SQL Server database connection with retry logic
-                var connectionString = @"Server=(localdb)\mssqllocaldb;Database=SacksProductsDb;Trusted_Connection=true;MultipleActiveResultSets=true";
+                // Setup MySQL database connection
+                var connectionString = @"Server=localhost;Port=3306;Database=SacksProductsDb;Uid=root;Pwd=;";
                 var options = new DbContextOptionsBuilder<SacksDbContext>()
-                    .UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure(
-                        maxRetryCount: 5,
-                        maxRetryDelay: TimeSpan.FromSeconds(30),
-                        errorNumbersToAdd: null))
+                    .UseMySQL(connectionString)
                     .Options;
 
                 await using var context = new SacksDbContext(options);
                 
-                // Ensure database is created and up-to-date
+                // Ensure database is created (dev environment)
                 Console.WriteLine("🔧 Ensuring database exists and is up-to-date...");
-                await context.Database.MigrateAsync();
+                await context.Database.EnsureCreatedAsync();
                 Console.WriteLine("✅ Database ready!");
 
                 // Initialize repositories

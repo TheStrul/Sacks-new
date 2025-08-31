@@ -13,18 +13,18 @@ Never create documentation files without a specific request. All documentation w
 ## General Development Guidelines
 
 ### Code Modification Approach
-- Explore the workspace at the begining of the chat
-- Make assumptions only base on the current chat and the md file located in the instruction folder. Other documentation files are usualy not updated.
-- Alwayed prefer to ask me fir help before going to gather context from code 
-- Never use Mock if not specificaly requested
-- Never create Tests if not specificaly requested
-- Never create example code if not specificaly requested
+- Explore the workspace at the beginning of the chat
+- Make assumptions only based on the current chat and the md file located in the instruction folder. Other documentation files are usually not updated.
+- Always prefer to ask me for help before going to gather context from code
+- Never use Mock if not specifically requested
+- Never create Tests if not specifically requested
+- Never create example code if not specifically requested
 - Always Prefer configuration-driven solutions over hardcoded implementations
 
 ### File and Project Management
 - Always use absolute file paths when invoking tools
 - always prefer modularity and simplicity
-- Never create files with more then 300 lines of code without specific permition
+- Never create files with more than 300 lines of code without specific permission
 - Read large meaningful chunks rather than consecutive small sections
 - Follow established patterns and conventions in the codebase
 
@@ -68,7 +68,7 @@ When changes need approval:
 1. Explain WHAT you want to change
 2. Explain WHY the change is beneficial
 3. Show BEFORE/AFTER code snippets
-4. Wait for explicit appruval from project leader
+4. Wait for explicit approval from project leader
 
 ## Documentation Standards
 
