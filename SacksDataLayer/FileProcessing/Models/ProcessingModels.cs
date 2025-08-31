@@ -19,12 +19,10 @@ namespace SacksDataLayer.FileProcessing.Models
     }
 
     /// <summary>
-    /// Represents the result of processing with mode-specific insights and relational entities
+    /// Represents the result of processing with supplier offer insights and relational entities
     /// </summary>
     public class ProcessingResult
     {
-        public ProcessingMode Mode { get; set; }
-        
         /// <summary>
         /// Legacy property for backward compatibility - returns products from NormalizationResults
         /// </summary>
@@ -80,7 +78,6 @@ namespace SacksDataLayer.FileProcessing.Models
     /// </summary>
     public class ProcessingContext
     {
-        public ProcessingMode Mode { get; set; }
         public string SourceFileName { get; set; } = string.Empty;
         public string SupplierName { get; set; } = string.Empty;
         public DateTime ProcessingDate { get; set; } = DateTime.UtcNow;

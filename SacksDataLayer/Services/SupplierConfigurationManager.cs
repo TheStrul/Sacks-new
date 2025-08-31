@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using SacksDataLayer.FileProcessing.Configuration;
 
 namespace SacksDataLayer.FileProcessing.Services
@@ -21,7 +22,8 @@ namespace SacksDataLayer.FileProcessing.Services
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = true,
                 AllowTrailingCommas = true,
-                PropertyNameCaseInsensitive = true
+                PropertyNameCaseInsensitive = true,
+                Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
             };
         }
 

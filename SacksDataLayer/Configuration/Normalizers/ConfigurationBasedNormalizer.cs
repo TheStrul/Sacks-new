@@ -19,8 +19,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
         public string SupplierName => _configuration.Name;
 
-        public IEnumerable<ProcessingMode> SupportedModes => _configuration.ProcessingModes.SupportedModes;
-
         public ConfigurationBasedNormalizer(SupplierConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -93,7 +91,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 return products;
 
             // Create column index mapping
-            var columnIndexes = CreateColumnIndexMapping(headerRow);
+            var columnIndexes = CreateColumnMapping(headerRow);
 
             // Process data rows starting from configured index
             var dataStartIndex = Math.Max(_configuration.Transformation.DataStartRowIndex, headerRow.Index + 1);
@@ -140,65 +138,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             return new Dictionary<string, string>(_configuration.ColumnMappings);
         }
 
-        public Dictionary<string, string> GetColumnMapping(ProcessingMode mode = ProcessingMode.UnifiedProductCatalog)
+        public Dictionary<string, string> GetColumnMapping(ProcessingContext context)
         {
-            var baseMapping = new Dictionary<string, string>(_configuration.ColumnMappings);
-            
-            // Apply mode-specific column filtering
-            var modeConfig = mode == ProcessingMode.UnifiedProductCatalog 
-                ? _configuration.ProcessingModes.CatalogMode 
-                : _configuration.ProcessingModes.CommercialMode;
-
-            // Remove ignored columns for this mode
-            foreach (var ignoredColumn in modeConfig.IgnoredColumns)
-            {
-                baseMapping.Remove(ignoredColumn);
-            }
-
-            return baseMapping;
-        }
-
-        public ProcessingMode RecommendProcessingMode(string fileName, IEnumerable<RowData> firstFewRows)
-        {
-            // Check file name patterns for commercial data indicators
-            var commercialIndicators = new[] { "price", "stock", "inventory", "offer", "quote", "commercial" };
-            var catalogIndicators = new[] { "catalog", "product", "master", "reference" };
-
-            var fileNameLower = fileName.ToLowerInvariant();
-            
-            if (commercialIndicators.Any(indicator => fileNameLower.Contains(indicator)))
-            {
-                return ProcessingMode.SupplierCommercialData;
-            }
-
-            if (catalogIndicators.Any(indicator => fileNameLower.Contains(indicator)))
-            {
-                return ProcessingMode.UnifiedProductCatalog;
-            }
-
-            // Check header presence for mode detection
-            var headerRow = firstFewRows.FirstOrDefault(r => r.HasData);
-            if (headerRow != null)
-            {
-                var headers = headerRow.Cells.Select(c => c.Value?.Trim()?.ToLowerInvariant() ?? "").ToList();
-                
-                // If file has strong commercial focus, recommend commercial mode
-                var commercialHeaderCount = headers.Count(h => 
-                    h.Contains("price") || h.Contains("stock") || h.Contains("inventory") || 
-                    h.Contains("cost") || h.Contains("offer") || h.Contains("available"));
-
-                var catalogHeaderCount = headers.Count(h => 
-                    h.Contains("name") || h.Contains("description") || h.Contains("category") || 
-                    h.Contains("family") || h.Contains("specification"));
-
-                if (commercialHeaderCount > catalogHeaderCount && commercialHeaderCount >= 2)
-                {
-                    return ProcessingMode.SupplierCommercialData;
-                }
-            }
-
-            // Default to catalog mode
-            return _configuration.ProcessingModes.DefaultMode;
+            return new Dictionary<string, string>(_configuration.ColumnMappings);
         }
 
         public async Task<ProcessingResult> NormalizeAsync(FileData fileData, ProcessingContext context)
@@ -206,7 +148,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             var startTime = DateTime.UtcNow;
             var result = new ProcessingResult
             {
-                Mode = context.Mode,
                 SourceFile = context.SourceFileName,
                 SupplierName = SupplierName,
                 ProcessedAt = startTime
@@ -226,18 +167,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 }
 
                 // Create supplier offer metadata for this processing session
-                SupplierOfferEntity? supplierOffer = null;
-                if (context.Mode == ProcessingMode.SupplierCommercialData)
-                {
-                    supplierOffer = CreateSupplierOfferFromContext(context);
+                SupplierOfferEntity supplierOffer = CreateSupplierOfferFromContext(context);
                     result.SupplierOffer = supplierOffer;
                     statistics.SupplierOffersCreated = 1;
-                }
-
-                // Get mode-specific configuration
-                var modeConfig = context.Mode == ProcessingMode.UnifiedProductCatalog 
-                    ? _configuration.ProcessingModes.CatalogMode 
-                    : _configuration.ProcessingModes.CommercialMode;
 
                 // Find header row
                 var headerRowIndex = _configuration.Transformation.HeaderRowIndex;
@@ -250,8 +182,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     return result;
                 }
 
-                // Create mode-specific column mapping
-                var columnIndexes = CreateModeSpecificColumnMapping(headerRow, context.Mode);
+                // Create column mapping for supplier offers
+                var columnIndexes = CreateColumnMapping(headerRow);
                 statistics.TotalRowsProcessed = fileData.dataRows.Count;
 
                 // Process data rows
@@ -269,40 +201,26 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         
                         if (normalizationResult != null)
                         {
-                            if (IsValidNormalizationResultForMode(normalizationResult, context.Mode))
+                            if (IsValidNormalizationResult(normalizationResult))
                             {
                                 normalizationResults.Add(normalizationResult);
                                 statistics.ProductsCreated++;
                                 
-                                // Update mode-specific statistics
-                                if (context.Mode == ProcessingMode.UnifiedProductCatalog)
+                                // Update supplier offer statistics
+                                statistics.PricingRecordsProcessed++;
+                                if (normalizationResult.HasOfferProperties)
                                 {
-                                    statistics.UniqueProductsIdentified++;
+                                    statistics.OfferProductsCreated++;
                                 }
-                                else
+                                if (normalizationResult.OfferProperties.ContainsKey("StockQuantity"))
                                 {
-                                    statistics.PricingRecordsProcessed++;
-                                    if (normalizationResult.HasOfferProperties)
-                                    {
-                                        statistics.OfferProductsCreated++;
-                                    }
-                                    if (normalizationResult.OfferProperties.ContainsKey("StockQuantity"))
-                                    {
-                                        statistics.StockRecordsProcessed++;
-                                    }
+                                    statistics.StockRecordsProcessed++;
                                 }
                             }
                             else
                             {
                                 statistics.ProductsSkipped++;
-                                if (context.Mode == ProcessingMode.UnifiedProductCatalog)
-                                {
-                                    statistics.MissingCoreAttributes++;
-                                }
-                                else
-                                {
-                                    statistics.OrphanedCommercialRecords++;
-                                }
+                                statistics.OrphanedCommercialRecords++;
                             }
                         }
                     }
@@ -332,7 +250,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
         }
 
-        private Dictionary<string, int> CreateColumnIndexMapping(RowData headerRow)
+        private Dictionary<string, int> CreateColumnMapping(RowData headerRow)
         {
             var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             
@@ -704,31 +622,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             };
         }
 
-        private Dictionary<string, int> CreateModeSpecificColumnMapping(RowData headerRow, ProcessingMode mode)
-        {
-            var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            var modeConfig = mode == ProcessingMode.UnifiedProductCatalog 
-                ? _configuration.ProcessingModes.CatalogMode 
-                : _configuration.ProcessingModes.CommercialMode;
-            
-            for (int i = 0; i < headerRow.Cells.Count; i++)
-            {
-                var columnName = headerRow.Cells[i].Value?.Trim() ?? "";
-                if (!string.IsNullOrEmpty(columnName))
-                {
-                    // Skip ignored columns for this mode
-                    if (modeConfig.IgnoredColumns.Contains(columnName, StringComparer.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    mapping[columnName] = i;
-                }
-            }
-
-            return mapping;
-        }
-
         private Task<ProductEntity?> NormalizeModeSpecificRowAsync(RowData row, Dictionary<string, int> columnIndexes, ProcessingContext context, string sourceFile)
         {
             try
@@ -736,12 +629,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 var product = new ProductEntity();
                 // Note: No metadata added to DynamicProperties - they should contain only product attributes
 
-                var modeConfig = context.Mode == ProcessingMode.UnifiedProductCatalog 
-                    ? _configuration.ProcessingModes.CatalogMode 
-                    : _configuration.ProcessingModes.CommercialMode;
 
                 // Process mapped columns based on mode priorities
-                var columnMappings = GetColumnMapping(context.Mode);
+                var columnMappings = GetColumnMapping();
                 foreach (var mapping in columnMappings)
                 {
                     var sourceColumn = mapping.Key;
@@ -781,68 +671,30 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     }
                 }
 
-                // Apply mode-specific processing rules
-                if (context.Mode == ProcessingMode.UnifiedProductCatalog)
+                // For supplier offers, ensure we have a valid product with SKU and name
+                if (string.IsNullOrEmpty(product.Name))
                 {
-                    // For catalog mode, ensure we have minimum required product info
-                    if (string.IsNullOrEmpty(product.Name))
-                    {
-                        // Try to construct name from available fields
-                        var nameComponents = new List<string>();
-                        
-                        if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
-                            nameComponents.Add(family.ToString()!);
-                        if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
-                            nameComponents.Add(category.ToString()!);
-                        if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
-                            nameComponents.Add(itemName.ToString()!);
+                    // Try to construct name from available fields
+                    var nameComponents = new List<string>();
+                    
+                    if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
+                        nameComponents.Add(family.ToString()!);
+                    if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
+                        nameComponents.Add(category.ToString()!);
+                    if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
+                        nameComponents.Add(itemName.ToString()!);
 
-                        if (nameComponents.Any())
-                        {
-                            product.Name = string.Join(" - ", nameComponents);
-                        }
-                        else
-                        {
-                            product.Name = "Unknown Product";
-                        }
+                    if (nameComponents.Any())
+                    {
+                        product.Name = string.Join(" - ", nameComponents);
                     }
-
-                    // Remove pricing/commercial data in catalog mode
-                    var commercialProps = new[] { "Price", "Stock", "StockQuantity", "Available", "Cost", "Offer" };
-                    foreach (var prop in commercialProps)
+                    else
                     {
-                        product.DynamicProperties.Remove(prop);
+                        product.Name = "Unknown Product";
                     }
                 }
-                else if (context.Mode == ProcessingMode.SupplierCommercialData)
-                {
-                    // For commercial mode, be more permissive - we'll validate commercial data in the service layer
-                    // For now, just ensure we have a valid product with SKU and name
-                    if (string.IsNullOrEmpty(product.Name))
-                    {
-                        // Try to construct name from available fields
-                        var nameComponents = new List<string>();
-                        
-                        if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
-                            nameComponents.Add(family.ToString()!);
-                        if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
-                            nameComponents.Add(category.ToString()!);
-                        if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
-                            nameComponents.Add(itemName.ToString()!);
 
-                        if (nameComponents.Any())
-                        {
-                            product.Name = string.Join(" - ", nameComponents);
-                        }
-                        else
-                        {
-                            product.Name = "Unknown Product";
-                        }
-                    }
-
-                    // Note: Keep all data including pricing - we'll separate core vs offer properties in the service layer
-                    // Don't filter out commercial data here
-                }
+                // Note: Keep all data including pricing - we'll separate core vs offer properties in the service layer
 
                 return Task.FromResult<ProductEntity?>(product);
             }
@@ -917,16 +769,11 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 var normalizationResult = new NormalizationResult
                 {
                     RowIndex = row.Index,
-                    ProcessingMode = context.Mode,
                     SupplierOffer = supplierOffer
                 };
 
-                var modeConfig = context.Mode == ProcessingMode.UnifiedProductCatalog 
-                    ? _configuration.ProcessingModes.CatalogMode 
-                    : _configuration.ProcessingModes.CommercialMode;
-
                 // Process mapped columns with property classification
-                var columnMappings = GetColumnMapping(context.Mode);
+                var columnMappings = GetColumnMapping(context);
                 var offerProperties = new Dictionary<string, object?>();
                 
                 foreach (var mapping in columnMappings)
@@ -978,40 +825,19 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     }
                 }
 
-                // Apply mode-specific processing rules
-                if (context.Mode == ProcessingMode.UnifiedProductCatalog)
+                // For supplier offers, create OfferProduct entity if we have offer properties
+                if (offerProperties.Count > 0 && supplierOffer != null)
                 {
-                    // For catalog mode, ensure we have minimum required product info
-                    if (string.IsNullOrEmpty(product.Name))
-                    {
-                        product.Name = ConstructProductNameFromProperties(product);
-                    }
-
-                    // Remove any pricing/commercial data that might have been added
-                    var commercialProps = new[] { "Price", "Stock", "StockQuantity", "Available", "Cost", "Offer" };
-                    foreach (var prop in commercialProps)
-                    {
-                        product.DynamicProperties.Remove(prop);
-                    }
-                    
-                    normalizationResult.HasOfferProperties = false;
+                    var offerProduct = CreateOfferProductEntity(offerProperties, supplierOffer);
+                    normalizationResult.OfferProduct = offerProduct;
+                    normalizationResult.HasOfferProperties = true;
+                    normalizationResult.OfferProperties = offerProperties;
                 }
-                else if (context.Mode == ProcessingMode.SupplierCommercialData)
-                {
-                    // For commercial mode, create OfferProduct entity if we have offer properties
-                    if (offerProperties.Count > 0 && supplierOffer != null)
-                    {
-                        var offerProduct = CreateOfferProductEntity(offerProperties, supplierOffer);
-                        normalizationResult.OfferProduct = offerProduct;
-                        normalizationResult.HasOfferProperties = true;
-                        normalizationResult.OfferProperties = offerProperties;
-                    }
 
-                    // Ensure we have a valid product name
-                    if (string.IsNullOrEmpty(product.Name))
-                    {
-                        product.Name = ConstructProductNameFromProperties(product);
-                    }
+                // Ensure we have a valid product name
+                if (string.IsNullOrEmpty(product.Name))
+                {
+                    product.Name = ConstructProductNameFromProperties(product);
                 }
 
                 normalizationResult.Product = product;
@@ -1093,23 +919,14 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         }
 
         /// <summary>
-        /// Validates a normalization result for the specified processing mode
+        /// Validates a normalization result for supplier offers
         /// </summary>
-        private bool IsValidNormalizationResultForMode(NormalizationResult normalizationResult, ProcessingMode mode)
+        private bool IsValidNormalizationResult(NormalizationResult normalizationResult)
         {
-            if (mode == ProcessingMode.UnifiedProductCatalog)
-            {
-                // For catalog mode, require minimum product identification
-                return !string.IsNullOrEmpty(normalizationResult.Product.Name) && 
-                       normalizationResult.Product.Name != "Unknown Product";
-            }
-            else
-            {
-                // For commercial mode, require valid product with SKU
-                return !string.IsNullOrEmpty(normalizationResult.Product.Name) && 
-                       normalizationResult.Product.Name != "Unknown Product" && 
-                       !string.IsNullOrEmpty(normalizationResult.Product.SKU);
-            }
+            // For supplier offers, require valid product with SKU
+            return !string.IsNullOrEmpty(normalizationResult.Product.Name) && 
+                   normalizationResult.Product.Name != "Unknown Product" && 
+                   !string.IsNullOrEmpty(normalizationResult.Product.SKU);
         }
     }
 }

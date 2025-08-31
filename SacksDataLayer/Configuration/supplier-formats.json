@@ -35,8 +35,8 @@
         ]
       },
       "processingModes": {
-        "supportedModes": ["UnifiedProductCatalog", "SupplierCommercialData"],
-        "defaultMode": "UnifiedProductCatalog",
+        "supportedModes": ["unifiedProductCatalog", "supplierCommercialData"],
+        "defaultMode": "unifiedProductCatalog",
         "catalogMode": {
           "ignoredColumns": ["PRICE", "Capacity"],
           "priorityColumns": ["Item Name", "Category", "Family", "Size"]
