@@ -53,8 +53,8 @@ namespace SacksDataLayer.Data
                 entity.HasIndex(e => e.CreatedAt)
                       .HasDatabaseName("IX_Products_CreatedAt");
 
-                entity.HasIndex(e => e.UpdatedAt)
-                      .HasDatabaseName("IX_Products_UpdatedAt");
+                entity.HasIndex(e => e.ModifiedAt)
+                      .HasDatabaseName("IX_Products_ModifiedAt");
 
                 // Property configurations
                 entity.Property(e => e.Name)
@@ -79,7 +79,7 @@ namespace SacksDataLayer.Data
                 entity.Property(e => e.CreatedAt)
                       .HasDefaultValueSql("UTC_TIMESTAMP()");
 
-                entity.Property(e => e.UpdatedAt)
+                entity.Property(e => e.ModifiedAt)
                       .HasDefaultValueSql("UTC_TIMESTAMP()");
             });
 
@@ -250,11 +250,11 @@ namespace SacksDataLayer.Data
                 if (entry.State == EntityState.Added)
                 {
                     entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    entry.Entity.ModifiedAt = DateTime.UtcNow;
                 }
                 else if (entry.State == EntityState.Modified)
                 {
-                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    entry.Entity.ModifiedAt = DateTime.UtcNow;
                 }
             }
 

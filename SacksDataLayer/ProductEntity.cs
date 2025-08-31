@@ -7,13 +7,8 @@ namespace SacksDataLayer
     /// <summary>
     /// Product entity with support for unlimited dynamic properties
     /// </summary>
-    public class ProductEntity
+    public class ProductEntity : Entity
     {
-        /// <summary>
-        /// Primary key identifier
-        /// </summary>
-        public int Id { get; set; }
-
         /// <summary>
         /// Product name
         /// </summary>
@@ -32,16 +27,6 @@ namespace SacksDataLayer
         /// </summary>
         [StringLength(100)]
         public string? SKU { get; set; }
-
-        /// <summary>
-        /// Date and time when the product was created
-        /// </summary>
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        /// <summary>
-        /// Date and time when the product was last updated
-        /// </summary>
-        public DateTime? UpdatedAt { get; set; }
 
         /// <summary>
         /// Dynamic properties stored as key-value pairs
@@ -94,7 +79,7 @@ namespace SacksDataLayer
                 throw new ArgumentException("Property key cannot be null or empty", nameof(key));
 
             DynamicProperties[key] = value;
-            UpdatedAt = DateTime.UtcNow;
+            ModifiedAt = DateTime.UtcNow;
         }
 
         /// <summary>
@@ -160,7 +145,7 @@ namespace SacksDataLayer
 
             var removed = DynamicProperties.Remove(key);
             if (removed)
-                UpdatedAt = DateTime.UtcNow;
+                ModifiedAt = DateTime.UtcNow;
             
             return removed;
         }
@@ -192,7 +177,7 @@ namespace SacksDataLayer
             if (DynamicProperties.Count > 0)
             {
                 DynamicProperties.Clear();
-                UpdatedAt = DateTime.UtcNow;
+                ModifiedAt = DateTime.UtcNow;
             }
         }
 
@@ -212,7 +197,7 @@ namespace SacksDataLayer
                     DynamicProperties[kvp.Key] = kvp.Value;
                 }
             }
-            UpdatedAt = DateTime.UtcNow;
+            ModifiedAt = DateTime.UtcNow;
         }
 
         /// <summary>

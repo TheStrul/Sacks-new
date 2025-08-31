@@ -105,7 +105,7 @@ namespace SacksDataLayer.Repositories.Implementations
             existingOfferProduct.Notes = offerProduct.Notes;
             existingOfferProduct.IsAvailable = offerProduct.IsAvailable;
             existingOfferProduct.ProductProperties = offerProduct.ProductProperties;
-            existingOfferProduct.UpdateModified(offerProduct.ModifiedBy);
+            existingOfferProduct.UpdateModified();
 
             await _context.SaveChangesAsync();
             return existingOfferProduct;

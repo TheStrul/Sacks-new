@@ -59,7 +59,6 @@ namespace SacksDataLayer.Services.Implementations
             if (product == null)
                 throw new InvalidOperationException($"Product with ID {offerProduct.ProductId} not found");
 
-            offerProduct.CreatedBy = createdBy;
             return await _repository.CreateAsync(offerProduct);
         }
 
@@ -73,7 +72,6 @@ namespace SacksDataLayer.Services.Implementations
             if (existingOfferProduct == null)
                 throw new InvalidOperationException($"Offer-product with ID {offerProduct.Id} not found");
 
-            offerProduct.ModifiedBy = modifiedBy;
             return await _repository.UpdateAsync(offerProduct);
         }
 
@@ -89,7 +87,6 @@ namespace SacksDataLayer.Services.Implementations
             {
                 // Update existing relationship
                 existingOfferProduct.ProductPropertiesJson = offerPropertiesJson;
-                existingOfferProduct.ModifiedBy = createdBy;
                 return await UpdateOfferProductAsync(existingOfferProduct, createdBy);
             }
             else
@@ -99,8 +96,7 @@ namespace SacksDataLayer.Services.Implementations
                 {
                     OfferId = offerId,
                     ProductId = productId,
-                    ProductPropertiesJson = offerPropertiesJson,
-                    CreatedBy = createdBy
+                    ProductPropertiesJson = offerPropertiesJson
                 };
 
                 return await CreateOfferProductAsync(newOfferProduct, createdBy);
@@ -116,7 +112,6 @@ namespace SacksDataLayer.Services.Implementations
             {
                 try
                 {
-                    offerProduct.CreatedBy = createdBy;
                     var result = await CreateOfferProductAsync(offerProduct, createdBy);
                     results.Add(result);
                 }
@@ -176,7 +171,6 @@ namespace SacksDataLayer.Services.Implementations
                 return false;
 
             offerProduct.IsAvailable = isAvailable;
-            offerProduct.ModifiedBy = modifiedBy;
             await _repository.UpdateAsync(offerProduct);
             return true;
         }

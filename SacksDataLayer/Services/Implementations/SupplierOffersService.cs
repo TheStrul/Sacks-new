@@ -49,7 +49,6 @@ namespace SacksDataLayer.Services.Implementations
             if (supplier == null)
                 throw new InvalidOperationException($"Supplier with ID {offer.SupplierId} not found");
 
-            offer.CreatedBy = createdBy;
             return await _repository.CreateAsync(offer);
         }
 
@@ -63,7 +62,6 @@ namespace SacksDataLayer.Services.Implementations
             if (existingOffer == null)
                 throw new InvalidOperationException($"Offer with ID {offer.Id} not found");
 
-            offer.ModifiedBy = modifiedBy;
             return await _repository.UpdateAsync(offer);
         }
 
@@ -86,8 +84,7 @@ namespace SacksDataLayer.Services.Implementations
                 ValidTo = null, // No expiration for file imports
                 IsActive = true,
                 OfferType = offerType,
-                Version = processingDate.ToString("yyyy-MM-dd HH:mm"),
-                CreatedBy = createdBy ?? "System"
+                Version = processingDate.ToString("yyyy-MM-dd HH:mm")
             };
 
             return await _repository.CreateAsync(offer);
@@ -100,8 +97,7 @@ namespace SacksDataLayer.Services.Implementations
                 return false;
 
             offer.IsActive = false;
-            offer.ModifiedBy = modifiedBy;
-            offer.UpdateModified(modifiedBy);
+            offer.UpdateModified();
 
             await _repository.UpdateAsync(offer);
             return true;

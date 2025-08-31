@@ -79,7 +79,7 @@ namespace SacksDataLayer.Repositories.Implementations
             existingProduct.Name = product.Name;
             existingProduct.Description = product.Description;
             existingProduct.SKU = product.SKU;
-            existingProduct.UpdatedAt = DateTime.UtcNow;
+            existingProduct.ModifiedAt = DateTime.UtcNow;
             existingProduct.DynamicProperties = product.DynamicProperties;
 
             await _context.SaveChangesAsync();
@@ -210,7 +210,7 @@ namespace SacksDataLayer.Repositories.Implementations
             var productsToUpdate = products.ToList();
             foreach (var product in productsToUpdate)
             {
-                product.UpdatedAt = DateTime.UtcNow;
+                product.ModifiedAt = DateTime.UtcNow;
                 _context.Products.Update(product);
             }
 

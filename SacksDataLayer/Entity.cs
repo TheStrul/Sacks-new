@@ -18,23 +18,11 @@
         public DateTime? ModifiedAt { get; set; }
 
         /// <summary>
-        /// User who created this entity
+        /// Updates the modification timestamp
         /// </summary>
-        public string? CreatedBy { get; set; }
-
-        /// <summary>
-        /// User who last modified this entity
-        /// </summary>
-        public string? ModifiedBy { get; set; }
-
-        /// <summary>
-        /// Updates the modification timestamp and user
-        /// </summary>
-        /// <param name="modifiedBy">User making the modification</param>
-        public virtual void UpdateModified(string? modifiedBy = null)
+        public virtual void UpdateModified()
         {
             ModifiedAt = DateTime.UtcNow;
-            ModifiedBy = modifiedBy;
         }
 
         /// <summary>

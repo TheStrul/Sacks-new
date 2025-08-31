@@ -68,7 +68,6 @@ namespace SacksDataLayer.Services.Implementations
             if (existingSupplier != null)
                 throw new InvalidOperationException($"Supplier with name '{supplier.Name}' already exists");
 
-            supplier.CreatedBy = createdBy;
             supplier.CreatedAt = DateTime.UtcNow;
 
             return await _suppliersRepository.CreateAsync(supplier);
@@ -97,7 +96,7 @@ namespace SacksDataLayer.Services.Implementations
             if (nameConflict != null && nameConflict.Id != supplier.Id)
                 throw new InvalidOperationException($"Another supplier with name '{supplier.Name}' already exists");
 
-            supplier.UpdateModified(modifiedBy);
+            supplier.UpdateModified();
 
             return await _suppliersRepository.UpdateAsync(supplier);
         }
@@ -126,7 +125,6 @@ namespace SacksDataLayer.Services.Implementations
                 Description = description,
                 Industry = industry,
                 Region = region,
-                CreatedBy = createdBy,
                 CreatedAt = DateTime.UtcNow
             };
 
