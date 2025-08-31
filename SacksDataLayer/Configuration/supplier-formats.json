@@ -14,7 +14,7 @@
         "C": "Family",
         "D": "CommercialLine",
         "F": "PricingItemName",
-        "G": "EAN",
+        "G": "ItemCode",
         "H": "Name",
         "J": "Size",
         "L": "Unit",
@@ -24,7 +24,7 @@
       },
       "propertyClassification": {
         "coreProductProperties": [
-          "EAN", "Category", "Family", "CommercialLine", "PricingItemName", "Size"
+          "EAN", "Category", "Family", "CommercialLine", "PricingItemName", "Size", "ItemCode"
         ],
         "offerProperties": [
           "Price", "Capacity"
@@ -66,6 +66,12 @@
           "allowNull": true,
           "maxLength": 20,
           "transformations": ["trim", "removeSpaces"]
+        },
+        "ItemCode": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 20,
+          "transformations": ["trim"]
         },
         "Capacity": {
           "type": "string",

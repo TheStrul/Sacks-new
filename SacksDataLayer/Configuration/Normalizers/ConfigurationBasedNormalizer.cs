@@ -709,7 +709,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     var sourceColumn = mapping.Key;
                     var targetProperty = mapping.Value;
 
-                    if (columnIndexes.TryGetValue(sourceColumn, out int columnIndex) && 
+                    if (columnIndexes.TryGetValue(targetProperty, out int columnIndex) && 
                         columnIndex < row.Cells.Count)
                     {
                         var cellValue = row.Cells[columnIndex].Value?.Trim();
