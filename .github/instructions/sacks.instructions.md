@@ -1,5 +1,13 @@
 # Sacks Product Normalization System - Complete Instructions
 
+## ⚠️ IMPORTANT DATABASE NOTICE
+
+**NO MIGRATIONS NEEDED UNTIL PRODUCTION IS ANNOUNCED!**
+
+- Database will be auto-created on first run
+- All migration files have been removed
+- Infrastructure is aligned for automatic database creation
+
 ## 🎯 Project Overview
 
 **Purpose**: Inventory management and supplier integration system that normalizes Excel files from different suppliers into a unified relational structure for data managers and business analysts.

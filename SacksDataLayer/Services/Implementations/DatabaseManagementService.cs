@@ -22,6 +22,8 @@ namespace SacksDataLayer.Services.Implementations
 
         /// <summary>
         /// Clears all data from all tables in the correct order (respecting foreign key constraints)
+        /// <summary>
+        /// Clears all data from all tables in the correct order (respecting foreign key constraints)
         /// </summary>
         public async Task<DatabaseOperationResult> ClearAllDataAsync()
         {
@@ -30,33 +32,15 @@ namespace SacksDataLayer.Services.Implementations
 
             try
             {
-                // Ensure database exists
+                // Drop and recreate database to ensure schema alignment
+                await _context.Database.EnsureDeletedAsync();
                 await _context.Database.EnsureCreatedAsync();
 
-                // Clear all tables in the correct order (respecting foreign key constraints)
-                // Delete OfferProducts first (has foreign keys to both Offers and Products)
-                var offerProductsDeleted = await _context.Database.ExecuteSqlRawAsync("DELETE FROM OfferProducts");
-                result.DeletedCounts["OfferProducts"] = offerProductsDeleted;
-
-                // Delete SupplierOffers (has foreign key to Suppliers)
-                var supplierOffersDeleted = await _context.Database.ExecuteSqlRawAsync("DELETE FROM SupplierOffers");
-                result.DeletedCounts["SupplierOffers"] = supplierOffersDeleted;
-
-                // Delete Products (no foreign key dependencies)
-                var productsDeleted = await _context.Database.ExecuteSqlRawAsync("DELETE FROM Products");
-                result.DeletedCounts["Products"] = productsDeleted;
-
-                // Delete Suppliers (no foreign key dependencies after offers are deleted)
-                var suppliersDeleted = await _context.Database.ExecuteSqlRawAsync("DELETE FROM Suppliers");
-                result.DeletedCounts["Suppliers"] = suppliersDeleted;
-
-                // Reset auto-increment counters
-                await ResetAutoIncrementCountersInternalAsync();
+                result.Success = true;
+                result.Message = "Database recreated successfully! All tables are now empty with correct schema.";
 
                 stopwatch.Stop();
                 result.ElapsedMilliseconds = stopwatch.ElapsedMilliseconds;
-                result.Success = true;
-                result.Message = "Database cleared successfully! All tables are now empty.";
 
                 return result;
             }
@@ -65,7 +49,7 @@ namespace SacksDataLayer.Services.Implementations
                 stopwatch.Stop();
                 result.ElapsedMilliseconds = stopwatch.ElapsedMilliseconds;
                 result.Success = false;
-                result.Message = $"Error clearing database: {ex.Message}";
+                result.Message = $"Error recreating database: {ex.Message}";
                 result.Errors.Add(ex.Message);
 
                 return result;
