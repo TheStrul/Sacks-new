@@ -88,7 +88,7 @@ namespace SacksConsoleApp
                         await RunDatabaseOperationsAsync(serviceProvider);
                         break;
                     case "3":
-                        await EnhancedLoggingDemo.RunDemoAsync();
+                        await QuickLoggingDemo.RunQuickDemoAsync();
                         break;
                     case "4":
                         Console.WriteLine("Goodbye!");
