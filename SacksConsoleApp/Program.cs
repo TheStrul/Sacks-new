@@ -32,6 +32,13 @@ namespace SacksConsoleApp
 
             try
             {
+                // Check if we want to run normalization tests first
+                if (args.Length > 0 && args[0].Equals("test-normalization", StringComparison.OrdinalIgnoreCase))
+                {
+                    await NormalizationTestRunner.RunTestsAsync();
+                    return;
+                }
+
                 // Build configuration
                 _configuration = BuildConfiguration();
 
@@ -43,6 +50,54 @@ namespace SacksConsoleApp
                 _logger = serviceProvider.GetRequiredService<ILogger<Program>>();
                 _logger.LogInformation("Application starting...");
 
+                // Show main menu
+                await ShowMainMenuAsync(serviceProvider);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Fatal error: {ex.Message}");
+                if (_logger != null)
+                {
+                    _logger.LogCritical(ex, "Fatal application error");
+                }
+                Environment.Exit(1);
+            }
+        }
+
+        private static async Task ShowMainMenuAsync(ServiceProvider serviceProvider)
+        {
+            while (true)
+            {
+                Console.WriteLine("\n📋 Choose an option:");
+                Console.WriteLine("1. Test Property Normalization System");
+                Console.WriteLine("2. Run Database Operations");
+                Console.WriteLine("3. Exit");
+                Console.Write("Enter your choice (1-3): ");
+
+                var choice = Console.ReadLine();
+                
+                switch (choice)
+                {
+                    case "1":
+                        await NormalizationTestRunner.RunTestsAsync();
+                        break;
+                    case "2":
+                        await RunDatabaseOperationsAsync(serviceProvider);
+                        break;
+                    case "3":
+                        Console.WriteLine("Goodbye!");
+                        return;
+                    default:
+                        Console.WriteLine("Invalid choice. Please try again.");
+                        break;
+                }
+            }
+        }
+
+        private static async Task RunDatabaseOperationsAsync(ServiceProvider serviceProvider)
+        {
+            try
+            {
                 // Test database connection first
                 var connectionService = serviceProvider.GetRequiredService<IDatabaseConnectionService>();
                 var (isAvailable, message, exception) = await connectionService.TestConnectionAsync();
@@ -50,11 +105,11 @@ namespace SacksConsoleApp
                 if (!isAvailable)
                 {
                     Console.WriteLine($"⚠️  Database Connection Issue: {message}");
-                    _logger.LogWarning("Database connection failed: {Message}", message);
+                    _logger?.LogWarning("Database connection failed: {Message}", message);
                     
                     if (exception != null)
                     {
-                        _logger.LogError(exception, "Database connection error details");
+                        _logger?.LogError(exception, "Database connection error details");
                     }
                     
                     Console.WriteLine("🔧 Please check your database configuration in appsettings.json");
@@ -64,7 +119,7 @@ namespace SacksConsoleApp
                 }
 
                 Console.WriteLine($"✅ {message}");
-                _logger.LogInformation("Database connection successful");
+                _logger?.LogInformation("Database connection successful");
 
                 // Show interactive menu
                 await ShowInteractiveMenu(serviceProvider);
