@@ -156,6 +156,50 @@ namespace SacksDataLayer.FileProcessing.Services
             return result;
         }
 
+        /// <summary>
+        /// Auto-detects supplier configuration from file path/name
+        /// </summary>
+        public async Task<SupplierConfiguration?> DetectSupplierFromFileAsync(string filePath)
+        {
+            var fileName = Path.GetFileName(filePath);
+            var config = await GetConfigurationAsync();
+
+            // Try to match against each supplier's file name patterns
+            foreach (var supplier in config.Suppliers)
+            {
+                if (supplier.Detection?.FileNamePatterns?.Any() == true)
+                {
+                    foreach (var pattern in supplier.Detection.FileNamePatterns)
+                    {
+                        if (IsFileNameMatch(fileName, pattern))
+                        {
+                            return supplier;
+                        }
+                    }
+                }
+            }
+
+            // Return null if no match found (caller should handle this)
+            return null;
+        }
+
+        /// <summary>
+        /// Checks if a file name matches a pattern (supports wildcards)
+        /// </summary>
+        private bool IsFileNameMatch(string fileName, string pattern)
+        {
+            if (string.IsNullOrWhiteSpace(pattern) || string.IsNullOrWhiteSpace(fileName))
+                return false;
+
+            // Convert pattern to regex
+            var regexPattern = pattern
+                .Replace("*", ".*")
+                .Replace("?", ".");
+
+            return System.Text.RegularExpressions.Regex.IsMatch(fileName, regexPattern, 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+
 
         private async Task EnsureConfigurationLoadedAsync()
         {
