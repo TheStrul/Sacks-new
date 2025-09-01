@@ -27,6 +27,14 @@ namespace SacksDataLayer.Services.Implementations
             return await _repository.GetByEANAsync(ean, CancellationToken.None);
         }
 
+        /// <summary>
+        /// 🚀 PERFORMANCE: Get multiple products by EANs in a single database call
+        /// </summary>
+        public async Task<Dictionary<string, ProductEntity>> GetProductsByEANsBulkAsync(IEnumerable<string> eans)
+        {
+            return await _repository.GetByEANsBulkAsync(eans, CancellationToken.None);
+        }
+
         public async Task<(IEnumerable<ProductEntity> Products, int TotalCount)> GetProductsAsync(int pageNumber = 1, int pageSize = 50)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -175,6 +183,66 @@ namespace SacksDataLayer.Services.Implementations
             }
 
             return (created, updated, errors);
+        }
+
+        /// <summary>
+        /// 🚀 PERFORMANCE OPTIMIZED: Bulk create/update with minimal database calls
+        /// </summary>
+        public async Task<(int Created, int Updated, int Errors)> BulkCreateOrUpdateProductsOptimizedAsync(
+            IEnumerable<ProductEntity> products, string? userContext = null)
+        {
+            if (products == null || !products.Any())
+                return (0, 0, 0);
+
+            var productList = products.ToList();
+            var eans = productList.Where(p => !string.IsNullOrWhiteSpace(p.EAN)).Select(p => p.EAN).ToList();
+            
+            // 🚀 SINGLE BULK QUERY instead of N individual queries
+            var existingProducts = await _repository.GetByEANsBulkAsync(eans, CancellationToken.None);
+            
+            var productsToCreate = new List<ProductEntity>();
+            var productsToUpdate = new List<ProductEntity>();
+            int errors = 0;
+
+            foreach (var product in productList)
+            {
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(product.EAN) && existingProducts.TryGetValue(product.EAN, out var existingProduct))
+                    {
+                        // Update existing product
+                        existingProduct.Name = product.Name;
+                        existingProduct.Description = product.Description;
+                        existingProduct.DynamicProperties = product.DynamicProperties;
+                        existingProduct.ModifiedAt = DateTime.UtcNow;
+                        productsToUpdate.Add(existingProduct);
+                    }
+                    else
+                    {
+                        // Create new product
+                        product.CreatedAt = DateTime.UtcNow;
+                        productsToCreate.Add(product);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing product {product.Name} (EAN: {product.EAN}): {ex.Message}");
+                    errors++;
+                }
+            }
+
+            // 🚀 BULK OPERATIONS instead of individual saves
+            if (productsToCreate.Any())
+            {
+                await _repository.CreateBulkAsync(productsToCreate, userContext, CancellationToken.None);
+            }
+            
+            if (productsToUpdate.Any())
+            {
+                await _repository.UpdateBulkAsync(productsToUpdate, userContext, CancellationToken.None);
+            }
+
+            return (productsToCreate.Count, productsToUpdate.Count, errors);
         }
 
         public async Task<int> GetProductCountAsync()

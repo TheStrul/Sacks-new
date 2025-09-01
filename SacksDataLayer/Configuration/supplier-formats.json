@@ -193,6 +193,133 @@
         "lastUpdated": "2025-08-31T10:00:00Z",
         "version": "2.0"
       }
+    },
+    {
+      "name": "UNLIMITED",
+      "description": "UNLIMITED perfume and fragrance products supplier",
+      "detection": {
+        "fileNamePatterns": ["UNLIMITED*.xlsx", "UNLIMITED*.xls"]
+      },
+      "columnIndexMappings": {
+        "A": "EAN",
+        "B": "Reference",
+        "C": "Brand",
+        "D": "Name",
+        "E": "Category",
+        "F": "Type",
+        "G": "InStock",
+        "H": "PriceAED",
+        "I": "PriceUSD",
+        "J": "Order"
+      },
+      "propertyClassification": {
+        "coreProductProperties": [
+          "EAN", "Reference", "Brand", "Name", "Category", "Type"
+        ],
+        "offerProperties": [
+          "PriceAED", "PriceUSD", "InStock"
+        ]
+      },
+      "dataTypes": {
+        "PriceAED": {
+          "type": "decimal",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": false,
+          "transformations": ["removeSymbols", "parseDecimal"]
+        },
+        "PriceUSD": {
+          "type": "decimal",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": false,
+          "transformations": ["removeSymbols", "parseDecimal"]
+        },
+        "Name": {
+          "type": "string",
+          "allowNull": false,
+          "maxLength": 500,
+          "transformations": ["trim"]
+        },
+        "Brand": {
+          "type": "string",
+          "allowNull": false,
+          "maxLength": 100,
+          "transformations": ["trim"]
+        },
+        "Category": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": ["trim"]
+        },
+        "Type": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 50,
+          "transformations": ["trim"]
+        },
+        "EAN": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 20,
+          "transformations": ["trim", "removeSpaces"]
+        },
+        "Reference": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 50,
+          "transformations": ["trim"]
+        },
+        "InStock": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 20,
+          "transformations": ["trim"]
+        },
+        "Order": {
+          "type": "string",
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": ["trim"]
+        }
+      },
+      "validation": {
+        "dataStartRowIndex": 2,
+        "expectedColumnCount": 10
+      },
+      "transformation": {
+        "skipEmptyRows": true,
+        "trimWhitespace": true,
+        "subtitleRowHandling": {
+          "enabled": false
+        },
+        "skipRowsWithMergedCells": false,
+        "customTransformations": {}
+      },
+      "metadata": {
+        "industry": "Perfume & Fragrance",
+        "region": "Middle East",
+        "contact": {
+          "name": "UNLIMITED Data Team",
+          "email": "data@unlimited.com",
+          "company": "UNLIMITED"
+        },
+        "fileFrequency": "monthly",
+        "expectedFileSize": "Large (6000+ products)",
+        "notes": [
+          "Files typically contain 6000+ perfume and fragrance products",
+          "Dual pricing in AED (local) and USD currencies",
+          "Product categories include PERFUME, TESTER types",
+          "Stock levels indicated in IN STOCK column",
+          "Data processing starts from Excel row 2 (dataStartRowIndex: 2), row 1 contains headers",
+          "Fixed column structure: A=EAN CODE, B=REFERENCE, C=BRAND, D=PRODUCT NAME, E=CATEGORY, F=TYPE, G=IN STOCK, H=PRICE (AED), I=PRICE (USD), J=ORDER",
+          "Brand names include ACQUA DI PARMA, AMOUROUD, and many others",
+          "Product names are detailed with volume specifications (e.g., 100ML, 180ML)"
+        ],
+        "lastUpdated": "2025-09-01T12:00:00Z",
+        "version": "1.0"
+      }
     }
   ]
 }

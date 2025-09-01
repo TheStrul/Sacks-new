@@ -30,6 +30,14 @@ namespace SacksDataLayer.Repositories.Interfaces
         Task<ProductEntity?> GetByEANAsync(string ean, CancellationToken cancellationToken);
 
         /// <summary>
+        /// 🚀 PERFORMANCE: Gets multiple products by their EANs in a single query to avoid N+1 problem
+        /// </summary>
+        /// <param name="eans">Collection of EANs to lookup</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Dictionary mapping EAN to ProductEntity</returns>
+        Task<Dictionary<string, ProductEntity>> GetByEANsBulkAsync(IEnumerable<string> eans, CancellationToken cancellationToken);
+
+        /// <summary>
         /// Gets all products
         /// </summary>
         /// <param name="cancellationToken">Cancellation token</param>

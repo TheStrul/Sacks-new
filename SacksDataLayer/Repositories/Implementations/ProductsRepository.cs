@@ -33,8 +33,28 @@ namespace SacksDataLayer.Repositories.Implementations
                 return null;
 
             return await _context.Products
-                .Include(p => p.OfferProducts)
+                .AsNoTracking() // 🚀 Performance: Read-only query optimization
                 .FirstOrDefaultAsync(p => p.EAN == ean, cancellationToken);
+        }
+
+        /// <summary>
+        /// 🚀 PERFORMANCE OPTIMIZATION: Bulk lookup by EANs to avoid N+1 queries
+        /// </summary>
+        public async Task<Dictionary<string, ProductEntity>> GetByEANsBulkAsync(IEnumerable<string> eans, CancellationToken cancellationToken)
+        {
+            if (eans == null || !eans.Any())
+                return new Dictionary<string, ProductEntity>();
+
+            var eanList = eans.Where(e => !string.IsNullOrWhiteSpace(e)).Distinct().ToList();
+            if (!eanList.Any())
+                return new Dictionary<string, ProductEntity>();
+
+            var products = await _context.Products
+                .AsNoTracking() // 🚀 Performance: Read-only query optimization
+                .Where(p => eanList.Contains(p.EAN))
+                .ToListAsync(cancellationToken);
+
+            return products.ToDictionary(p => p.EAN, p => p);
         }
 
         public async Task<IEnumerable<ProductEntity>> GetAllAsync(CancellationToken cancellationToken)

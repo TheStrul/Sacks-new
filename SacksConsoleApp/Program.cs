@@ -71,6 +71,7 @@ namespace SacksConsoleApp
                     return;
                 }
 
+                // Process files with our optimized implementation
                 await ProcessInputFiles(serviceProvider);
             }
             catch (Exception ex)

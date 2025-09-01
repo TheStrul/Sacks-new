@@ -15,9 +15,14 @@ namespace SacksDataLayer.Services.Interfaces
         Task<ProductEntity?> GetProductAsync(int id);
 
         /// <summary>
-        /// Gets a product by its EAN
+        /// Gets a product by EAN
         /// </summary>
         Task<ProductEntity?> GetProductByEANAsync(string ean);
+
+        /// <summary>
+        /// 🚀 PERFORMANCE: Gets multiple products by EANs in a single database call
+        /// </summary>
+        Task<Dictionary<string, ProductEntity>> GetProductsByEANsBulkAsync(IEnumerable<string> eans);
 
         /// <summary>
         /// Gets products with pagination
@@ -62,6 +67,12 @@ namespace SacksDataLayer.Services.Interfaces
         /// Bulk creates or updates products
         /// </summary>
         Task<(int Created, int Updated, int Errors)> BulkCreateOrUpdateProductsAsync(
+            IEnumerable<ProductEntity> products, string? userContext = null);
+
+        /// <summary>
+        /// 🚀 PERFORMANCE OPTIMIZED: Bulk create/update with minimal database calls
+        /// </summary>
+        Task<(int Created, int Updated, int Errors)> BulkCreateOrUpdateProductsOptimizedAsync(
             IEnumerable<ProductEntity> products, string? userContext = null);
 
         #endregion

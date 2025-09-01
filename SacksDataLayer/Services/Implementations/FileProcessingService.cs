@@ -223,7 +223,8 @@ namespace SacksDataLayer.Services.Implementations
                 int errors = 0;
 
                 // Process products and create offer-product relationships
-                const int batchSize = 50;
+                // 🚀 PERFORMANCE OPTIMIZATION: Use larger batches and bulk operations
+                const int batchSize = 500; // Increased from 50 to 500
                 var productList = result.Products.ToList();
                 var totalBatches = (int)Math.Ceiling((double)productList.Count / batchSize);
 
@@ -233,139 +234,29 @@ namespace SacksDataLayer.Services.Implementations
 
                     for (int batchIndex = 0; batchIndex < totalBatches; batchIndex++)
                     {
-                        var batch = productList.Skip(batchIndex * batchSize).Take(batchSize);
-                        Console.WriteLine($"   📦 Processing batch {batchIndex + 1}/{totalBatches}...");
+                        var batch = productList.Skip(batchIndex * batchSize).Take(batchSize).ToList();
+                        Console.WriteLine($"   📦 Processing batch {batchIndex + 1}/{totalBatches} ({batch.Count} items)...");
 
-                        foreach (var productData in batch)
+                        try
                         {
-                            try
-                            {
-                                // Skip products without EAN
-                                if (string.IsNullOrWhiteSpace(productData.EAN))
-                                {
-                                    errors++;
-                                    Console.WriteLine($"   ❌ Skipping record without EAN: {productData.Name}");
-                                    continue;
-                                }
-
-                                // Step 3a: Ensure product exists (create or update core product data)
-                                var existingProduct = await _productsService.GetProductByEANAsync(productData.EAN);
-                                ProductEntity product;
-
-                                if (existingProduct != null)
-                                {
-                                    // Update existing product with core properties only
-                                    bool needsUpdate = false;
-                                    if (existingProduct.Name != productData.Name)
-                                    {
-                                        existingProduct.Name = productData.Name;
-                                        needsUpdate = true;
-                                    }
-                                    if (existingProduct.Description != productData.Description)
-                                    {
-                                        existingProduct.Description = productData.Description;
-                                        needsUpdate = true;
-                                    }
-
-                                    // Update core product properties (not offer properties)
-                                    var coreProperties = supplierConfig.PropertyClassification?.CoreProductProperties ?? new List<string>();
-                                    foreach (var dynProp in productData.DynamicProperties)
-                                    {
-                                        if (coreProperties.Contains(dynProp.Key, StringComparer.OrdinalIgnoreCase))
-                                        {
-                                            var existingValue = existingProduct.GetDynamicProperty<object>(dynProp.Key);
-                                            if (!object.Equals(existingValue, dynProp.Value))
-                                            {
-                                                existingProduct.SetDynamicProperty(dynProp.Key, dynProp.Value);
-                                                needsUpdate = true;
-                                            }
-                                        }
-                                    }
-
-                                    if (needsUpdate)
-                                    {
-                                        await _productsService.UpdateProductAsync(existingProduct);
-                                        productsUpdated++;
-                                    }
-                                    product = existingProduct;
-                                }
-                                else
-                                {
-                                    // Create new product with core properties only
-                                    var newProduct = new ProductEntity
-                                    {
-                                        Name = productData.Name,
-                                        Description = productData.Description,
-                                        EAN = productData.EAN
-                                    };
-
-                                    // Add core product properties only
-                                    var coreProperties = supplierConfig.PropertyClassification?.CoreProductProperties ?? new List<string>();
-                                    foreach (var dynProp in productData.DynamicProperties)
-                                    {
-                                        if (coreProperties.Contains(dynProp.Key, StringComparer.OrdinalIgnoreCase))
-                                        {
-                                            newProduct.SetDynamicProperty(dynProp.Key, dynProp.Value);
-                                        }
-                                    }
-
-                                    product = await _productsService.CreateProductAsync(newProduct);
-                                    productsCreated++;
-                                    if (productsCreated <= 10)
-                                    {
-                                        Console.WriteLine($"   ➕ Created product: {product.EAN} - {product.Name}");
-                                    }
-                                }
-
-                                // Step 3b: Extract offer properties and create offer-product relationship
-                                var offerProperties = new Dictionary<string, object?>();
-                                var offerPropertyNames = supplierConfig.PropertyClassification?.OfferProperties ?? new List<string>();
-                                
-                                foreach (var dynProp in productData.DynamicProperties)
-                                {
-                                    if (offerPropertyNames.Contains(dynProp.Key, StringComparer.OrdinalIgnoreCase))
-                                    {
-                                        offerProperties[dynProp.Key] = dynProp.Value;
-                                    }
-                                }
-
-                                // Create or update offer-product relationship
-                                var offerProduct = await _offerProductsService.CreateOrUpdateOfferProductAsync(
-                                    offer.Id,
-                                    product.Id,
-                                    offerProperties,
-                                    "FileProcessor");
-
-                                if (offerProduct.CreatedAt == offerProduct.ModifiedAt) // Was created
-                                {
-                                    offerProductsCreated++;
-                                    if (offerProductsCreated <= 10)
-                                    {
-                                        Console.WriteLine($"   🔗 Created offer-product: {product.EAN} -> Offer {offer.Id}");
-                                    }
-                                }
-                                else // Was updated
-                                {
-                                    offerProductsUpdated++;
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                errors++;
-                                if (errors <= 5) // Only show first 5 errors to avoid spam
-                                {
-                                    Console.WriteLine($"   ❌ Error processing {productData.EAN}: {ex.Message}");
-                                }
-                                
-                                // Add a small delay after errors to reduce pressure
-                                await Task.Delay(100);
-                            }
+                            // 🚀 PERFORMANCE: Process entire batch with optimized bulk operations
+                            var batchResults = await ProcessProductBatchOptimizedAsync(batch, offer, supplierConfig);
+                            productsCreated += batchResults.productsCreated;
+                            productsUpdated += batchResults.productsUpdated;
+                            offerProductsCreated += batchResults.offerProductsCreated;
+                            offerProductsUpdated += batchResults.offerProductsUpdated;
+                            errors += batchResults.errors;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"   ❌ Error processing batch {batchIndex + 1}: {ex.Message}");
+                            errors += batch.Count; // Count all items in failed batch as errors
                         }
 
-                        // Small delay between batches to reduce database pressure
+                        // Reduced delay between batches
                         if (batchIndex < totalBatches - 1)
                         {
-                            await Task.Delay(200);
+                            await Task.Delay(50); // Reduced from 200ms to 50ms
                         }
                     }
                 }
@@ -393,6 +284,132 @@ namespace SacksDataLayer.Services.Implementations
                 Console.WriteLine($"   ❌ Failed to process Supplier Offer: {ex.Message}");
                 Console.WriteLine($"   Stack trace: {ex.StackTrace}");
             }
+        }
+
+        /// <summary>
+        /// 🚀 PERFORMANCE OPTIMIZED: Process a batch of products using bulk operations
+        /// </summary>
+        private async Task<(int productsCreated, int productsUpdated, int offerProductsCreated, int offerProductsUpdated, int errors)> ProcessProductBatchOptimizedAsync(
+            List<ProductEntity> batch, 
+            SupplierOfferEntity offer, 
+            SupplierConfiguration supplierConfig)
+        {
+            int productsCreated = 0, productsUpdated = 0, offerProductsCreated = 0, offerProductsUpdated = 0, errors = 0;
+
+            // Filter out products without EAN
+            var validProducts = batch.Where(p => !string.IsNullOrWhiteSpace(p.EAN)).ToList();
+            var invalidCount = batch.Count - validProducts.Count;
+            errors += invalidCount;
+
+            if (invalidCount > 0)
+            {
+                Console.WriteLine($"   ⚠️  Skipped {invalidCount} records without valid EAN");
+            }
+
+            if (!validProducts.Any())
+                return (productsCreated, productsUpdated, offerProductsCreated, offerProductsUpdated, errors);
+
+            // Step 1: Prepare products for bulk create/update
+            var coreProperties = supplierConfig.PropertyClassification?.CoreProductProperties ?? new List<string>();
+            var productsForBulkOperation = new List<ProductEntity>();
+
+            foreach (var productData in validProducts)
+            {
+                var productEntity = new ProductEntity
+                {
+                    Name = productData.Name,
+                    Description = productData.Description,
+                    EAN = productData.EAN
+                };
+
+                // Add core product properties only
+                foreach (var dynProp in productData.DynamicProperties)
+                {
+                    if (coreProperties.Contains(dynProp.Key, StringComparer.OrdinalIgnoreCase))
+                    {
+                        productEntity.SetDynamicProperty(dynProp.Key, dynProp.Value);
+                    }
+                }
+
+                productsForBulkOperation.Add(productEntity);
+            }
+
+            // Step 2: 🚀 BULK OPERATION - Create/Update all products in batch
+            var (created, updated, bulkErrors) = await _productsService.BulkCreateOrUpdateProductsOptimizedAsync(
+                productsForBulkOperation, "FileProcessor");
+
+            productsCreated += created;
+            productsUpdated += updated;
+            errors += bulkErrors;
+
+            if (created > 0 && productsCreated <= 20)
+            {
+                Console.WriteLine($"   ➕ Bulk created {created} products");
+            }
+            if (updated > 0 && productsUpdated <= 20)
+            {
+                Console.WriteLine($"   🔄 Bulk updated {updated} products");
+            }
+
+            // Step 3: 🚀 OPTIMIZED BULK OFFER-PRODUCT PROCESSING
+            var offerPropertyNames = supplierConfig.PropertyClassification?.OfferProperties ?? new List<string>();
+            
+            if (validProducts.Any() && offerPropertyNames.Any())
+            {
+                // 🚀 PERFORMANCE: Get all products with single bulk lookup
+                var eans = validProducts.Select(p => p.EAN).ToList();
+                var productLookup = await _productsService.GetProductsByEANsBulkAsync(eans);
+
+                // Prepare offer-products for bulk processing
+                var offerProductsToProcess = new List<(int ProductId, Dictionary<string, object?> OfferProperties)>();
+
+                foreach (var productData in validProducts)
+                {
+                    if (productLookup.TryGetValue(productData.EAN, out var product))
+                    {
+                        var offerProperties = new Dictionary<string, object?>();
+                        foreach (var dynProp in productData.DynamicProperties)
+                        {
+                            if (offerPropertyNames.Contains(dynProp.Key, StringComparer.OrdinalIgnoreCase))
+                            {
+                                offerProperties[dynProp.Key] = dynProp.Value;
+                            }
+                        }
+                        offerProductsToProcess.Add((product.Id, offerProperties));
+                    }
+                }
+
+                // Process offer-products sequentially to avoid DbContext concurrency issues
+                // 🚀 PERFORMANCE: Still optimized with bulk product lookup above
+                foreach (var (productId, offerProperties) in offerProductsToProcess)
+                {
+                    try
+                    {
+                        var offerProduct = await _offerProductsService.CreateOrUpdateOfferProductAsync(
+                            offer.Id, productId, offerProperties, "FileProcessor");
+
+                        if (offerProduct.CreatedAt == offerProduct.ModifiedAt)
+                            offerProductsCreated++;
+                        else
+                            offerProductsUpdated++;
+                    }
+                    catch (Exception ex)
+                    {
+                        errors++;
+                        if (errors <= 3)
+                        {
+                            Console.WriteLine($"   ❌ Error creating offer-product: {ex.Message}");
+                        }
+                    }
+                }
+
+                if (offerProductsCreated > 0)
+                    Console.WriteLine($"   🔗 Bulk created {offerProductsCreated} offer-products");
+                if (offerProductsUpdated > 0)
+                    Console.WriteLine($"   🔄 Bulk updated {offerProductsUpdated} offer-products");
+            }
+
+            return (productsCreated, productsUpdated, offerProductsCreated, offerProductsUpdated, errors);
         }
 
         private static string FindConfigurationFile()
