@@ -1,4 +1,4 @@
-using SacksDataLayer.FileProcessing.Models;
+﻿using SacksDataLayer.FileProcessing.Models;
 using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
@@ -19,12 +19,12 @@ namespace SacksDataLayer.Services.Implementations
 
         public async Task<ProductEntity?> GetProductAsync(int id)
         {
-            return await _repository.GetByIdAsync(id);
+            return await _repository.GetByIdAsync(id, CancellationToken.None);
         }
 
         public async Task<ProductEntity?> GetProductByEANAsync(string ean)
         {
-            return await _repository.GetByEANAsync(ean);
+            return await _repository.GetByEANAsync(ean, CancellationToken.None);
         }
 
         public async Task<(IEnumerable<ProductEntity> Products, int TotalCount)> GetProductsAsync(int pageNumber = 1, int pageSize = 50)
@@ -34,8 +34,8 @@ namespace SacksDataLayer.Services.Implementations
             if (pageSize > 1000) pageSize = 1000; // Limit max page size
 
             var skip = (pageNumber - 1) * pageSize;
-            var products = await _repository.GetPagedAsync(skip, pageSize);
-            var totalCount = await _repository.GetCountAsync();
+            var products = await _repository.GetPagedAsync(skip, pageSize, CancellationToken.None);
+            var totalCount = await _repository.GetCountAsync(CancellationToken.None);
 
             return (products, totalCount);
         }
@@ -47,17 +47,17 @@ namespace SacksDataLayer.Services.Implementations
 
             // Validate required fields
             if (string.IsNullOrWhiteSpace(product.Name))
-                throw new ArgumentException("Product name is required", nameof(product.Name));
+                throw new ArgumentException("Product name is required", nameof(product));
 
             // Check for duplicate EAN if provided
             if (!string.IsNullOrWhiteSpace(product.EAN))
             {
-                var existingProduct = await _repository.GetByEANAsync(product.EAN);
+                var existingProduct = await _repository.GetByEANAsync(product.EAN, CancellationToken.None);
                 if (existingProduct != null)
                     throw new InvalidOperationException($"Product with EAN '{product.EAN}' already exists");
             }
 
-            return await _repository.CreateAsync(product, createdBy);
+            return await _repository.CreateAsync(product, createdBy, CancellationToken.None);
         }
 
         public async Task<ProductEntity> UpdateProductAsync(ProductEntity product, string? modifiedBy = null)
@@ -67,37 +67,37 @@ namespace SacksDataLayer.Services.Implementations
 
             // Validate required fields
             if (string.IsNullOrWhiteSpace(product.Name))
-                throw new ArgumentException("Product name is required", nameof(product.Name));
+                throw new ArgumentException("Product name is required", nameof(product));
 
             // Check if product exists
-            var existingProduct = await _repository.GetByIdAsync(product.Id);
+            var existingProduct = await _repository.GetByIdAsync(product.Id, CancellationToken.None);
             if (existingProduct == null)
                 throw new InvalidOperationException($"Product with ID {product.Id} not found");
 
             // Check for duplicate EAN if changed
             if (!string.IsNullOrWhiteSpace(product.EAN) && product.EAN != existingProduct.EAN)
             {
-                var duplicateProduct = await _repository.GetByEANAsync(product.EAN);
+                var duplicateProduct = await _repository.GetByEANAsync(product.EAN, CancellationToken.None);
                 if (duplicateProduct != null)
                     throw new InvalidOperationException($"Product with EAN '{product.EAN}' already exists");
             }
 
-            return await _repository.UpdateAsync(product, modifiedBy);
+            return await _repository.UpdateAsync(product, modifiedBy, CancellationToken.None);
         }
 
         public async Task<bool> DeleteProductAsync(int id)
         {
-            return await _repository.DeleteAsync(id);
+            return await _repository.DeleteAsync(id, CancellationToken.None);
         }
 
         public async Task<IEnumerable<ProductEntity>> SearchProductsByNameAsync(string searchTerm)
         {
-            return await _repository.SearchByNameAsync(searchTerm);
+            return await _repository.SearchByNameAsync(searchTerm, CancellationToken.None);
         }
 
         public async Task<IEnumerable<ProductEntity>> GetProductsBySourceFileAsync(string sourceFile)
         {
-            return await _repository.GetBySourceFileAsync(sourceFile);
+            return await _repository.GetBySourceFileAsync(sourceFile, CancellationToken.None);
         }
 
         public async Task<ProductEntity> CreateOrUpdateProductAsync(ProductEntity product, string? userContext = null)
@@ -110,7 +110,7 @@ namespace SacksDataLayer.Services.Implementations
             // Try to find existing product by EAN
             if (!string.IsNullOrWhiteSpace(product.EAN))
             {
-                existingProduct = await _repository.GetByEANAsync(product.EAN);
+                existingProduct = await _repository.GetByEANAsync(product.EAN, CancellationToken.None);
             }
 
             if (existingProduct != null)
@@ -146,7 +146,7 @@ namespace SacksDataLayer.Services.Implementations
                     // Try to find existing product by EAN
                     if (!string.IsNullOrWhiteSpace(product.EAN))
                     {
-                        existingProduct = await _repository.GetByEANAsync(product.EAN);
+                        existingProduct = await _repository.GetByEANAsync(product.EAN, CancellationToken.None);
                     }
 
                     if (existingProduct != null)
@@ -179,12 +179,12 @@ namespace SacksDataLayer.Services.Implementations
 
         public async Task<int> GetProductCountAsync()
         {
-            return await _repository.GetCountAsync();
+            return await _repository.GetCountAsync(CancellationToken.None);
         }
 
         public async Task<int> GetTotalCountAsync()
         {
-            return await _repository.GetCountAsync();
+            return await _repository.GetCountAsync(CancellationToken.None);
         }
     }
 }

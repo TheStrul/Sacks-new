@@ -1,4 +1,4 @@
-using SacksDataLayer.FileProcessing.Models;
+﻿using SacksDataLayer.FileProcessing.Models;
 using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
@@ -21,23 +21,23 @@ namespace SacksDataLayer.Services.Implementations
 
         public async Task<SupplierOfferEntity?> GetOfferAsync(int id)
         {
-            return await _repository.GetByIdAsync(id);
+            return await _repository.GetByIdAsync(id, CancellationToken.None);
         }
 
         public async Task<IEnumerable<SupplierOfferEntity>> GetOffersBySupplierAsync(int supplierId)
         {
-            return await _repository.GetBySupplierIdAsync(supplierId);
+            return await _repository.GetBySupplierIdAsync(supplierId, CancellationToken.None);
         }
 
         public async Task<IEnumerable<SupplierOfferEntity>> GetActiveOffersBySupplierAsync(int supplierId)
         {
-            var offers = await _repository.GetBySupplierIdAsync(supplierId);
+            var offers = await _repository.GetBySupplierIdAsync(supplierId, CancellationToken.None);
             return offers.Where(o => o.IsActive);
         }
 
         public async Task<IEnumerable<SupplierOfferEntity>> GetOffersByProductAsync(int productId)
         {
-            return await _repository.GetByProductIdAsync(productId);
+            return await _repository.GetByProductIdAsync(productId, CancellationToken.None);
         }
 
         public async Task<SupplierOfferEntity> CreateOfferAsync(SupplierOfferEntity offer, string? createdBy = null)
@@ -46,11 +46,11 @@ namespace SacksDataLayer.Services.Implementations
             await ValidateOfferAsync(offer);
 
             // Verify supplier exists
-            var supplier = await _suppliersRepository.GetByIdAsync(offer.SupplierId);
+            var supplier = await _suppliersRepository.GetByIdAsync(offer.SupplierId, CancellationToken.None);
             if (supplier == null)
                 throw new InvalidOperationException($"Supplier with ID {offer.SupplierId} not found");
 
-            return await _repository.CreateAsync(offer);
+            return await _repository.CreateAsync(offer, CancellationToken.None);
         }
 
         public async Task<SupplierOfferEntity> UpdateOfferAsync(SupplierOfferEntity offer, string? modifiedBy = null)
@@ -59,11 +59,11 @@ namespace SacksDataLayer.Services.Implementations
             await ValidateOfferAsync(offer);
 
             // Check if offer exists
-            var existingOffer = await _repository.GetByIdAsync(offer.Id);
+            var existingOffer = await _repository.GetByIdAsync(offer.Id, CancellationToken.None);
             if (existingOffer == null)
                 throw new InvalidOperationException($"Offer with ID {offer.Id} not found");
 
-            return await _repository.UpdateAsync(offer);
+            return await _repository.UpdateAsync(offer, CancellationToken.None);
         }
 
         public async Task<SupplierOfferEntity> CreateOfferFromFileAsync(int supplierId, string fileName, 
@@ -71,7 +71,7 @@ namespace SacksDataLayer.Services.Implementations
             string? createdBy = null)
         {
             // Verify supplier exists
-            var supplier = await _suppliersRepository.GetByIdAsync(supplierId);
+            var supplier = await _suppliersRepository.GetByIdAsync(supplierId, CancellationToken.None);
             if (supplier == null)
                 throw new InvalidOperationException($"Supplier with ID {supplierId} not found");
 
@@ -88,19 +88,19 @@ namespace SacksDataLayer.Services.Implementations
                 Version = processingDate.ToString("yyyy-MM-dd HH:mm")
             };
 
-            return await _repository.CreateAsync(offer);
+            return await _repository.CreateAsync(offer, CancellationToken.None);
         }
 
         public async Task<bool> DeactivateOfferAsync(int offerId, string? modifiedBy = null)
         {
-            var offer = await _repository.GetByIdAsync(offerId);
+            var offer = await _repository.GetByIdAsync(offerId, CancellationToken.None);
             if (offer == null)
                 return false;
 
             offer.IsActive = false;
             offer.UpdateModified();
 
-            await _repository.UpdateAsync(offer);
+            await _repository.UpdateAsync(offer, CancellationToken.None);
             return true;
         }
 
@@ -108,7 +108,7 @@ namespace SacksDataLayer.Services.Implementations
         {
             try
             {
-                await _repository.DeleteAsync(id);
+                await _repository.DeleteAsync(id, CancellationToken.None);
                 return true;
             }
             catch
@@ -148,22 +148,22 @@ namespace SacksDataLayer.Services.Implementations
                 throw new ArgumentNullException(nameof(offer));
 
             if (offer.SupplierId <= 0)
-                throw new ArgumentException("Valid supplier ID is required", nameof(offer.SupplierId));
+                throw new ArgumentException("Valid supplier ID is required", nameof(offer));
 
             if (!string.IsNullOrEmpty(offer.OfferName) && offer.OfferName.Length > 255)
-                throw new ArgumentException("Offer name cannot exceed 255 characters", nameof(offer.OfferName));
+                throw new ArgumentException("Offer name cannot exceed 255 characters", nameof(offer));
 
             if (!string.IsNullOrEmpty(offer.Description) && offer.Description.Length > 500)
-                throw new ArgumentException("Offer description cannot exceed 500 characters", nameof(offer.Description));
+                throw new ArgumentException("Offer description cannot exceed 500 characters", nameof(offer));
 
             if (!string.IsNullOrEmpty(offer.Currency) && offer.Currency.Length > 20)
-                throw new ArgumentException("Currency cannot exceed 20 characters", nameof(offer.Currency));
+                throw new ArgumentException("Currency cannot exceed 20 characters", nameof(offer));
 
             if (!string.IsNullOrEmpty(offer.OfferType) && offer.OfferType.Length > 100)
-                throw new ArgumentException("Offer type cannot exceed 100 characters", nameof(offer.OfferType));
+                throw new ArgumentException("Offer type cannot exceed 100 characters", nameof(offer));
 
             if (!string.IsNullOrEmpty(offer.Version) && offer.Version.Length > 50)
-                throw new ArgumentException("Version cannot exceed 50 characters", nameof(offer.Version));
+                throw new ArgumentException("Version cannot exceed 50 characters", nameof(offer));
 
             if (offer.ValidFrom.HasValue && offer.ValidTo.HasValue && offer.ValidFrom > offer.ValidTo)
                 throw new ArgumentException("Valid from date cannot be later than valid to date");

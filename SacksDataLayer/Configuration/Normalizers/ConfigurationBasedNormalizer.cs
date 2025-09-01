@@ -1,4 +1,4 @@
-using SacksDataLayer.FileProcessing.Interfaces;
+﻿using SacksDataLayer.FileProcessing.Interfaces;
 using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Models;
@@ -28,6 +28,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
         public bool CanHandle(string fileName, IEnumerable<RowData> firstFewRows)
         {
+            ArgumentNullException.ThrowIfNull(fileName);
+            
             var detection = _configuration.Detection;
 
             // Convert filename to lowercase for pattern matching
@@ -40,13 +42,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
         public async Task<IEnumerable<ProductEntity>> NormalizeAsync(FileData fileData)
         {
+            ArgumentNullException.ThrowIfNull(fileData);
+            
             var products = new List<ProductEntity>();
 
-            if (fileData.dataRows.Count == 0)
+            if (fileData.DataRows.Count == 0)
                 return products;
 
             // Validate that we have the expected number of columns in the first row
-            var firstRow = fileData.dataRows.FirstOrDefault(r => r.HasData);
+            var firstRow = fileData.DataRows.FirstOrDefault(r => r.HasData);
             if (firstRow == null)
                 return products;
 
@@ -62,7 +66,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
             // Process data rows starting from configured index (convert from 1-based to 0-based)
             var dataStartIndex = _configuration.Validation.DataStartRowIndex - 1;
-            var dataRows = fileData.dataRows
+            var dataRows = fileData.DataRows
                 .Skip(dataStartIndex)
                 .Where(r => !_configuration.Transformation.SkipEmptyRows || r.HasData);
 
@@ -100,6 +104,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
         public async Task<ProcessingResult> NormalizeAsync(FileData fileData, ProcessingContext context)
         {
+            ArgumentNullException.ThrowIfNull(fileData);
+            ArgumentNullException.ThrowIfNull(context);
+            
             var startTime = DateTime.UtcNow;
             var result = new ProcessingResult
             {
@@ -115,7 +122,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 var warnings = new List<string>();
                 var errors = new List<string>();
 
-                if (fileData.dataRows.Count == 0)
+                if (fileData.DataRows.Count == 0)
                 {
                     result.Statistics = statistics;
                     return result;
@@ -128,7 +135,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
                 // Find header row
                 var headerRowIndex = _configuration.Transformation.HeaderRowIndex;
-                var headerRow = fileData.dataRows.Skip(headerRowIndex).FirstOrDefault(r => r.HasData);
+                var headerRow = fileData.DataRows.Skip(headerRowIndex).FirstOrDefault(r => r.HasData);
                 
                 if (headerRow == null)
                 {
@@ -139,11 +146,11 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
                 // Create column mapping for supplier offers
                 var columnIndexes = CreateColumnMapping(headerRow);
-                statistics.TotalRowsProcessed = fileData.dataRows.Count;
+                statistics.TotalRowsProcessed = fileData.DataRows.Count;
 
                 // Process data rows
                 var dataStartIndex = Math.Max(_configuration.Transformation.DataStartRowIndex, headerRow.Index + 1);
-                var dataRows = fileData.dataRows
+                var dataRows = fileData.DataRows
                     .Skip(dataStartIndex)
                     .Where(r => !_configuration.Transformation.SkipEmptyRows || r.HasData);
 
@@ -638,6 +645,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// </summary>
         public Dictionary<string, object?> ExtractOfferProperties(RowData row, Dictionary<string, int> columnIndexes)
         {
+            ArgumentNullException.ThrowIfNull(row);
+            ArgumentNullException.ThrowIfNull(columnIndexes);
+            
             var offerProperties = new Dictionary<string, object?>();
 
             foreach (var mapping in _configuration.ColumnMappings)

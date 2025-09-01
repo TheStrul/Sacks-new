@@ -1,4 +1,4 @@
-using SacksDataLayer.FileProcessing.Models;
+﻿using SacksDataLayer.FileProcessing.Models;
 using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
@@ -27,22 +27,22 @@ namespace SacksDataLayer.Services.Implementations
 
         public async Task<OfferProductEntity?> GetOfferProductAsync(int id)
         {
-            return await _repository.GetByIdAsync(id);
+            return await _repository.GetByIdAsync(id, CancellationToken.None);
         }
 
         public async Task<IEnumerable<OfferProductEntity>> GetOfferProductsByOfferAsync(int offerId)
         {
-            return await _repository.GetByOfferIdAsync(offerId);
+            return await _repository.GetByOfferIdAsync(offerId, CancellationToken.None);
         }
 
         public async Task<IEnumerable<OfferProductEntity>> GetOfferProductsByProductAsync(int productId)
         {
-            return await _repository.GetByProductIdAsync(productId);
+            return await _repository.GetByProductIdAsync(productId, CancellationToken.None);
         }
 
         public async Task<OfferProductEntity?> GetOfferProductAsync(int offerId, int productId)
         {
-            return await _repository.GetByOfferAndProductAsync(offerId, productId);
+            return await _repository.GetByOfferAndProductAsync(offerId, productId, CancellationToken.None);
         }
 
         public async Task<OfferProductEntity> CreateOfferProductAsync(OfferProductEntity offerProduct, string? createdBy = null)
@@ -51,16 +51,16 @@ namespace SacksDataLayer.Services.Implementations
             await ValidateOfferProductAsync(offerProduct);
 
             // Verify offer exists
-            var offer = await _offersRepository.GetByIdAsync(offerProduct.OfferId);
+            var offer = await _offersRepository.GetByIdAsync(offerProduct.OfferId, CancellationToken.None);
             if (offer == null)
                 throw new InvalidOperationException($"Offer with ID {offerProduct.OfferId} not found");
 
             // Verify product exists
-            var product = await _productsRepository.GetByIdAsync(offerProduct.ProductId);
+            var product = await _productsRepository.GetByIdAsync(offerProduct.ProductId, CancellationToken.None);
             if (product == null)
                 throw new InvalidOperationException($"Product with ID {offerProduct.ProductId} not found");
 
-            return await _repository.CreateAsync(offerProduct);
+            return await _repository.CreateAsync(offerProduct, CancellationToken.None);
         }
 
         public async Task<OfferProductEntity> UpdateOfferProductAsync(OfferProductEntity offerProduct, string? modifiedBy = null)
@@ -69,18 +69,18 @@ namespace SacksDataLayer.Services.Implementations
             await ValidateOfferProductAsync(offerProduct);
 
             // Check if offer-product exists
-            var existingOfferProduct = await _repository.GetByIdAsync(offerProduct.Id);
+            var existingOfferProduct = await _repository.GetByIdAsync(offerProduct.Id, CancellationToken.None);
             if (existingOfferProduct == null)
                 throw new InvalidOperationException($"Offer-product with ID {offerProduct.Id} not found");
 
-            return await _repository.UpdateAsync(offerProduct);
+            return await _repository.UpdateAsync(offerProduct, CancellationToken.None);
         }
 
         public async Task<OfferProductEntity> CreateOrUpdateOfferProductAsync(int offerId, int productId,
             Dictionary<string, object?> offerProperties, string? createdBy = null)
         {
             // Try to find existing offer-product relationship
-            var existingOfferProduct = await _repository.GetByOfferAndProductAsync(offerId, productId);
+            var existingOfferProduct = await _repository.GetByOfferAndProductAsync(offerId, productId, CancellationToken.None);
 
             var offerPropertiesJson = JsonSerializer.Serialize(offerProperties);
 
@@ -107,6 +107,8 @@ namespace SacksDataLayer.Services.Implementations
         public async Task<IEnumerable<OfferProductEntity>> BulkCreateOfferProductsAsync(
             IEnumerable<OfferProductEntity> offerProducts, string? createdBy = null)
         {
+            ArgumentNullException.ThrowIfNull(offerProducts);
+            
             var results = new List<OfferProductEntity>();
 
             foreach (var offerProduct in offerProducts)
@@ -131,7 +133,7 @@ namespace SacksDataLayer.Services.Implementations
         {
             try
             {
-                await _repository.DeleteAsync(id);
+                await _repository.DeleteAsync(id, CancellationToken.None);
                 return true;
             }
             catch
@@ -167,12 +169,12 @@ namespace SacksDataLayer.Services.Implementations
 
         public async Task<bool> SetAvailabilityAsync(int id, bool isAvailable, string? modifiedBy = null)
         {
-            var offerProduct = await _repository.GetByIdAsync(id);
+            var offerProduct = await _repository.GetByIdAsync(id, CancellationToken.None);
             if (offerProduct == null)
                 return false;
 
             offerProduct.IsAvailable = isAvailable;
-            await _repository.UpdateAsync(offerProduct);
+            await _repository.UpdateAsync(offerProduct, CancellationToken.None);
             return true;
         }
 
@@ -182,10 +184,10 @@ namespace SacksDataLayer.Services.Implementations
                 throw new ArgumentNullException(nameof(offerProduct));
 
             if (offerProduct.OfferId <= 0)
-                throw new ArgumentException("Valid offer ID is required", nameof(offerProduct.OfferId));
+                throw new ArgumentException("Valid offer ID is required", nameof(offerProduct));
 
             if (offerProduct.ProductId <= 0)
-                throw new ArgumentException("Valid product ID is required", nameof(offerProduct.ProductId));
+                throw new ArgumentException("Valid product ID is required", nameof(offerProduct));
 
             // Additional business validation can be added here
             await Task.CompletedTask; // Placeholder for async validation

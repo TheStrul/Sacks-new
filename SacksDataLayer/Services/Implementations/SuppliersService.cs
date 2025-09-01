@@ -1,7 +1,8 @@
-using SacksDataLayer.Services.Interfaces;
+﻿using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace SacksDataLayer.Services.Implementations
 {
@@ -22,7 +23,7 @@ namespace SacksDataLayer.Services.Implementations
         /// </summary>
         public async Task<SupplierEntity?> GetSupplierAsync(int id)
         {
-            return await _suppliersRepository.GetByIdAsync(id);
+            return await _suppliersRepository.GetByIdAsync(id, CancellationToken.None);
         }
 
         /// <summary>
@@ -33,7 +34,7 @@ namespace SacksDataLayer.Services.Implementations
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Supplier name cannot be null or empty", nameof(name));
 
-            return await _suppliersRepository.GetByNameAsync(name);
+            return await _suppliersRepository.GetByNameAsync(name, CancellationToken.None);
         }
 
         /// <summary>
@@ -47,8 +48,8 @@ namespace SacksDataLayer.Services.Implementations
             if (pageSize > 100) pageSize = 100; // Max page size
 
             var skip = (pageNumber - 1) * pageSize;
-            var suppliers = await _suppliersRepository.GetPagedAsync(skip, pageSize);
-            var totalCount = await _suppliersRepository.GetCountAsync();
+            var suppliers = await _suppliersRepository.GetPagedAsync(skip, pageSize, CancellationToken.None);
+            var totalCount = await _suppliersRepository.GetCountAsync(CancellationToken.None);
 
             return (suppliers, totalCount);
         }
@@ -65,13 +66,13 @@ namespace SacksDataLayer.Services.Implementations
                 throw new ArgumentException("Supplier name is required", nameof(supplier));
 
             // Check if supplier with the same name already exists
-            var existingSupplier = await _suppliersRepository.GetByNameAsync(supplier.Name);
+            var existingSupplier = await _suppliersRepository.GetByNameAsync(supplier.Name, CancellationToken.None);
             if (existingSupplier != null)
                 throw new InvalidOperationException($"Supplier with name '{supplier.Name}' already exists");
 
             supplier.CreatedAt = DateTime.UtcNow;
 
-            return await _suppliersRepository.CreateAsync(supplier);
+            return await _suppliersRepository.CreateAsync(supplier, CancellationToken.None);
         }
 
         /// <summary>
@@ -88,18 +89,18 @@ namespace SacksDataLayer.Services.Implementations
             if (string.IsNullOrWhiteSpace(supplier.Name))
                 throw new ArgumentException("Supplier name is required", nameof(supplier));
 
-            var existingSupplier = await _suppliersRepository.GetByIdAsync(supplier.Id);
+            var existingSupplier = await _suppliersRepository.GetByIdAsync(supplier.Id, CancellationToken.None);
             if (existingSupplier == null)
                 throw new InvalidOperationException($"Supplier with ID {supplier.Id} not found");
 
             // Check if another supplier with the same name exists (excluding current supplier)
-            var nameConflict = await _suppliersRepository.GetByNameAsync(supplier.Name);
+            var nameConflict = await _suppliersRepository.GetByNameAsync(supplier.Name, CancellationToken.None);
             if (nameConflict != null && nameConflict.Id != supplier.Id)
                 throw new InvalidOperationException($"Another supplier with name '{supplier.Name}' already exists");
 
             supplier.UpdateModified();
 
-            return await _suppliersRepository.UpdateAsync(supplier);
+            return await _suppliersRepository.UpdateAsync(supplier, CancellationToken.None);
         }
 
         /// <summary>
@@ -113,7 +114,7 @@ namespace SacksDataLayer.Services.Implementations
                 throw new ArgumentException("Supplier name cannot be null or empty", nameof(supplierName));
 
             // Try to get existing supplier first
-            var existingSupplier = await _suppliersRepository.GetByNameAsync(supplierName);
+            var existingSupplier = await _suppliersRepository.GetByNameAsync(supplierName, CancellationToken.None);
             if (existingSupplier != null)
             {
                 return existingSupplier;
@@ -129,7 +130,7 @@ namespace SacksDataLayer.Services.Implementations
                 CreatedAt = DateTime.UtcNow
             };
 
-            return await _suppliersRepository.CreateAsync(newSupplier);
+            return await _suppliersRepository.CreateAsync(newSupplier, CancellationToken.None);
         }
 
         /// <summary>
@@ -140,11 +141,11 @@ namespace SacksDataLayer.Services.Implementations
             if (id <= 0)
                 throw new ArgumentException("Supplier ID must be greater than 0", nameof(id));
 
-            var supplier = await _suppliersRepository.GetByIdAsync(id);
+            var supplier = await _suppliersRepository.GetByIdAsync(id, CancellationToken.None);
             if (supplier == null)
                 return false;
 
-            return await _suppliersRepository.DeleteAsync(id);
+            return await _suppliersRepository.DeleteAsync(id, CancellationToken.None);
         }
 
         /// <summary>
@@ -155,7 +156,7 @@ namespace SacksDataLayer.Services.Implementations
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return Enumerable.Empty<SupplierEntity>();
 
-            return await _suppliersRepository.SearchAsync(searchTerm);
+            return await _suppliersRepository.SearchAsync(searchTerm, CancellationToken.None);
         }
     }
 }

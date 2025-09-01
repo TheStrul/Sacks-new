@@ -13,23 +13,62 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.github\instructions\sacks.instructions.md = .github\instructions\sacks.instructions.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SacksDataLayer.Tests", "tests\SacksDataLayer.Tests\SacksDataLayer.Tests.csproj", "{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Debug|x64.Build.0 = Debug|Any CPU
+		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Debug|x86.Build.0 = Debug|Any CPU
 		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Release|x64.ActiveCfg = Release|Any CPU
+		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Release|x64.Build.0 = Release|Any CPU
+		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Release|x86.ActiveCfg = Release|Any CPU
+		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Release|x86.Build.0 = Release|Any CPU
 		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|x64.Build.0 = Debug|Any CPU
+		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|x86.Build.0 = Debug|Any CPU
 		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|x64.ActiveCfg = Release|Any CPU
+		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|x64.Build.0 = Release|Any CPU
+		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|x86.ActiveCfg = Release|Any CPU
+		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|x86.Build.0 = Release|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Debug|x64.Build.0 = Debug|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Debug|x86.Build.0 = Debug|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Release|x64.ActiveCfg = Release|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Release|x64.Build.0 = Release|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Release|x86.ActiveCfg = Release|Any CPU
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B13DAFD7-8FE3-4B31-85A2-6039AE7C3BBA} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {83BDD922-EBEF-4B1E-AB9C-1FA380CFB57B}

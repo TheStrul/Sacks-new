@@ -1,4 +1,4 @@
-using SacksDataLayer.FileProcessing.Configuration;
+﻿using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Normalizers;
 using SacksDataLayer.FileProcessing.Models;
@@ -94,7 +94,7 @@ namespace SacksDataLayer.Services.Implementations
                 
                 // Get file headers and validate
                 var headerRowIndex = supplierConfig.Transformation?.HeaderRowIndex ?? 0;
-                var headerRow = fileData.dataRows.Skip(headerRowIndex).FirstOrDefault(r => r.HasData);
+                var headerRow = fileData.DataRows.Skip(headerRowIndex).FirstOrDefault(r => r.HasData);
                 if (headerRow == null)
                 {
                     Console.WriteLine("❌ No header row found in file!");

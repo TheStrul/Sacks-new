@@ -18,7 +18,7 @@ using SacksDataLayer.Repositories.Implementations;
 
 namespace SacksConsoleApp
 {
-    class Program
+    sealed class Program
     {
         private static IConfiguration? _configuration;
         private static ILogger<Program>? _logger;

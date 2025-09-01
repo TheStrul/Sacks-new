@@ -36,7 +36,7 @@
                         break;
                 }
 
-                fileData.RowCount = fileData.dataRows.Count;
+                fileData.RowCount = fileData.DataRows.Count;
                 return fileData;
             }
             catch (Exception ex)
@@ -62,7 +62,7 @@
                     rowData.Cells.Add(cellData);
                 }
 
-                fileData.dataRows.Add(rowData);
+                fileData.DataRows.Add(rowData);
                 rowIndex++;
             }
         }
@@ -106,7 +106,7 @@
                         rowData.Cells.Add(cellData);
                     }
 
-                    fileData.dataRows.Add(rowData);
+                    fileData.DataRows.Add(rowData);
                     rowIndex++;
                     rowsInCurrentWorksheet++;
                 }

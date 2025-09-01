@@ -141,6 +141,8 @@ namespace SacksDataLayer.FileProcessing.Services
         /// </summary>
         public SupplierConfiguration CreateDefaultConfiguration(string supplierName, List<string> columnNames)
         {
+            ArgumentNullException.ThrowIfNull(columnNames);
+            
             var config = new SupplierConfiguration
             {
                 Name = supplierName,

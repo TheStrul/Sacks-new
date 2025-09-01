@@ -35,6 +35,8 @@ namespace SacksDataLayer.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            ArgumentNullException.ThrowIfNull(modelBuilder);
+            
             base.OnModelCreating(modelBuilder);
 
             // Configure ProductEntity
