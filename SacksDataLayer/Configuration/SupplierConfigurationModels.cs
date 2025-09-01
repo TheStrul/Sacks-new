@@ -81,6 +81,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("allowNull")]
         public bool AllowNull { get; set; } = true;
 
+        [JsonPropertyName("maxLength")]
+        public int? MaxLength { get; set; }
+
         [JsonPropertyName("transformations")]
         public List<string> Transformations { get; set; } = new(); // e.g., "trim", "lowercase", "removeSymbols"
     }
@@ -95,6 +98,12 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("expectedColumnCount")]
         public int ExpectedColumnCount { get; set; } = 0;
+
+        [JsonPropertyName("requiredFields")]
+        public List<string> RequiredFields { get; set; } = new();
+
+        [JsonPropertyName("uniqueFields")]
+        public List<string> UniqueFields { get; set; } = new();
     }
 
     /// <summary>
@@ -149,6 +158,12 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("expectedFileSize")]
         public string? ExpectedFileSize { get; set; }
+
+        [JsonPropertyName("currency")]
+        public string? Currency { get; set; }
+
+        [JsonPropertyName("timezone")]
+        public string? Timezone { get; set; }
 
         [JsonPropertyName("notes")]
         public List<string> Notes { get; set; } = new();

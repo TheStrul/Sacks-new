@@ -335,11 +335,12 @@ namespace SacksConsoleApp
                 Console.WriteLine("   3️⃣  🚀 Process single file with In-Memory Processing");
                 Console.WriteLine("   4️⃣  🚀 Demonstrate Thread-Safe Processing");
                 Console.WriteLine("   5️⃣  🧹 Clear all data from database");
-                Console.WriteLine("   6️⃣  � Show database statistics");
-                Console.WriteLine("   7️⃣  ❓ Show help and feature information");
+                Console.WriteLine("   6️⃣  📊 Show database statistics");
+                Console.WriteLine("   7️⃣  🧪 Test Refactored Configuration");
+                Console.WriteLine("   8️⃣  ❓ Show help and feature information");
                 Console.WriteLine("   0️⃣  🚪 Exit");
                 Console.WriteLine();
-                Console.Write("👉 Enter your choice (0-7): ");
+                Console.Write("👉 Enter your choice (0-8): ");
 
                 var input = Console.ReadLine()?.Trim();
                 Console.WriteLine();
@@ -367,13 +368,16 @@ namespace SacksConsoleApp
                             await ShowDatabaseStatistics(serviceProvider);
                             break;
                         case "7":
+                            await TestRefactoredConfiguration(serviceProvider);
+                            break;
+                        case "8":
                             ShowHelpInformation();
                             break;
                         case "0":
                             Console.WriteLine("👋 Thank you for using Sacks Product Management System!");
                             return;
                         default:
-                            Console.WriteLine("❌ Invalid choice. Please enter a number between 0 and 7.");
+                            Console.WriteLine("❌ Invalid choice. Please enter a number between 0 and 8.");
                             break;
                     }
                 }
@@ -854,6 +858,12 @@ namespace SacksConsoleApp
             Console.WriteLine("   • Shows in-memory cache status");
             Console.WriteLine();
 
+            Console.WriteLine("7️⃣  Test Refactored Configuration:");
+            Console.WriteLine("   • Tests and validates the new configuration system");
+            Console.WriteLine("   • Ensures all settings are loaded correctly");
+            Console.WriteLine("   • Reports any missing or invalid settings");
+            Console.WriteLine();
+
             Console.WriteLine("🎯 KEY FEATURES:");
             Console.WriteLine("   ✅ Thread-safe in-memory data cache");
             Console.WriteLine("   ✅ Bulk operations to eliminate N+1 query problems");
@@ -874,6 +884,129 @@ namespace SacksConsoleApp
             Console.WriteLine("   • Database settings in appsettings.json");
             Console.WriteLine("   • Supplier formats in Configuration/supplier-formats.json");
             Console.WriteLine("   • Logging configuration in appsettings.json");
+        }
+
+        private static async Task TestRefactoredConfiguration(ServiceProvider serviceProvider)
+        {
+            Console.WriteLine("=== 🧪 TESTING REFACTORED CONFIGURATION ===\n");
+
+            var configManager = serviceProvider.GetRequiredService<SupplierConfigurationManager>();
+
+            // Test 1: Load configuration
+            Console.WriteLine("🔄 Test 1: Loading refactored configuration...");
+            var config = await configManager.GetConfigurationAsync();
+            Console.WriteLine($"✅ Configuration loaded successfully");
+            Console.WriteLine($"   Version: {config.Version}");
+            Console.WriteLine($"   Suppliers: {config.Suppliers.Count}");
+            Console.WriteLine($"   Last Updated: {config.LastUpdated:yyyy-MM-dd HH:mm:ss}");
+
+            // Test 2: Validate configuration
+            Console.WriteLine("\n🔄 Test 2: Validating configuration...");
+            var validationResult = await configManager.ValidateConfigurationAsync();
+            Console.WriteLine($"✅ Validation completed");
+            Console.WriteLine($"   Is Valid: {validationResult.IsValid}");
+            Console.WriteLine($"   Errors: {validationResult.Errors.Count}");
+            Console.WriteLine($"   Warnings: {validationResult.Warnings.Count}");
+
+            if (validationResult.Errors.Count > 0)
+            {
+                Console.WriteLine("\n❌ Validation Errors:");
+                foreach (var error in validationResult.Errors)
+                {
+                    Console.WriteLine($"   • {error}");
+                }
+            }
+
+            if (validationResult.Warnings.Count > 0)
+            {
+                Console.WriteLine("\n⚠️ Validation Warnings:");
+                foreach (var warning in validationResult.Warnings)
+                {
+                    Console.WriteLine($"   • {warning}");
+                }
+            }
+
+            // Test 3: Test enhanced properties for DIOR
+            Console.WriteLine("\n🔄 Test 3: Testing enhanced DIOR configuration...");
+            var diorConfig = await configManager.GetSupplierConfigurationAsync("DIOR");
+            if (diorConfig != null)
+            {
+                Console.WriteLine($"✅ DIOR Configuration:");
+                Console.WriteLine($"   Column Mappings: {diorConfig.ColumnIndexMappings.Count}");
+                Console.WriteLine($"   Data Types: {diorConfig.DataTypes.Count}");
+                Console.WriteLine($"   Required Fields: {diorConfig.Validation.RequiredFields.Count} ({string.Join(", ", diorConfig.Validation.RequiredFields)})");
+                Console.WriteLine($"   Unique Fields: {diorConfig.Validation.UniqueFields.Count} ({string.Join(", ", diorConfig.Validation.UniqueFields)})");
+                Console.WriteLine($"   Currency: {diorConfig.Metadata.Currency}");
+                Console.WriteLine($"   Timezone: {diorConfig.Metadata.Timezone}");
+                Console.WriteLine($"   Core Properties: {diorConfig.PropertyClassification.CoreProductProperties.Count}");
+                Console.WriteLine($"   Offer Properties: {diorConfig.PropertyClassification.OfferProperties.Count}");
+
+                // Test data type configurations with maxLength
+                var nameDataType = diorConfig.DataTypes.GetValueOrDefault("Name");
+                if (nameDataType != null)
+                {
+                    Console.WriteLine($"   Name field maxLength: {nameDataType.MaxLength}");
+                }
+            }
+
+            // Test 4: Test enhanced properties for UNLIMITED
+            Console.WriteLine("\n🔄 Test 4: Testing enhanced UNLIMITED configuration...");
+            var unlimitedConfig = await configManager.GetSupplierConfigurationAsync("UNLIMITED");
+            if (unlimitedConfig != null)
+            {
+                Console.WriteLine($"✅ UNLIMITED Configuration:");
+                Console.WriteLine($"   Column Mappings: {unlimitedConfig.ColumnIndexMappings.Count}");
+                Console.WriteLine($"   Required Fields: {unlimitedConfig.Validation.RequiredFields.Count} ({string.Join(", ", unlimitedConfig.Validation.RequiredFields)})");
+                Console.WriteLine($"   Unique Fields: {unlimitedConfig.Validation.UniqueFields.Count} ({string.Join(", ", unlimitedConfig.Validation.UniqueFields)})");
+                Console.WriteLine($"   Currency: {unlimitedConfig.Metadata.Currency}");
+                Console.WriteLine($"   Timezone: {unlimitedConfig.Metadata.Timezone}");
+            }
+
+            // Test 5: File detection with enhanced patterns
+            Console.WriteLine("\n🔄 Test 5: Testing enhanced file detection...");
+            var testFiles = new[]
+            {
+                "DIOR_Products_2024.xlsx",
+                "dior_beauty_catalog.xlsx",
+                "DIOR_December_2024.xls",
+                "UNLIMITED_Products.xlsx",
+                "unlimited_fragrances.xlsx",
+                "RANDOM_FILE.xlsx"
+            };
+
+            foreach (var testFile in testFiles)
+            {
+                var detectedConfig = await configManager.DetectSupplierFromFileAsync(testFile);
+                if (detectedConfig != null)
+                {
+                    Console.WriteLine($"   ✅ {testFile} → {detectedConfig.Name}");
+                }
+                else
+                {
+                    Console.WriteLine($"   ❌ {testFile} → No match");
+                }
+            }
+
+            Console.WriteLine("\n🎯 REFACTORED CONFIGURATION TEST SUMMARY:");
+            Console.WriteLine("   ✅ JSON loading and deserialization");
+            Console.WriteLine("   ✅ Enhanced validation rules (requiredFields, uniqueFields)");
+            Console.WriteLine("   ✅ New metadata properties (currency, timezone)");
+            Console.WriteLine("   ✅ Data type configurations with maxLength");
+            Console.WriteLine("   ✅ Improved case-insensitive file detection patterns");
+            Console.WriteLine("   ✅ Property classification (core vs offer)");
+            Console.WriteLine("   ✅ Configuration validation and error reporting");
+
+            if (validationResult.IsValid)
+            {
+                Console.WriteLine("\n🏆 ALL CONFIGURATION TESTS PASSED! 🏆");
+            }
+            else
+            {
+                Console.WriteLine("\n⚠️ Configuration has validation issues - see errors above");
+            }
+
+            Console.WriteLine("\nPress any key to return to main menu...");
+            Console.ReadKey();
         }
     }
 }

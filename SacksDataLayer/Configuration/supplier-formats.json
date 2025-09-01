@@ -1,17 +1,17 @@
 {
-  "version": "1.0",
-  "lastUpdated": "2024-12-19T10:00:00Z",
-  "description": "Configuration file for all supplier file formats",
+  "version": "2.1",
+  "lastUpdated": "2024-12-19T15:30:00Z",
+  "description": "Refactored configuration file for all supplier file formats - optimized for .NET 9",
   "suppliers": [
     {
       "name": "DIOR",
       "description": "DIOR beauty and fragrance products supplier",
       "detection": {
-        "fileNamePatterns": ["DIOR*.xlsx"]
+        "fileNamePatterns": ["DIOR*.xlsx", "dior*.xlsx", "DIOR*.xls", "dior*.xls"]
       },
       "columnIndexMappings": {
         "A": "Category",
-        "C": "Gender",
+        "C": "Gender", 
         "D": "Line",
         "F": "Description",
         "G": "Ref",
@@ -24,23 +24,24 @@
       },
       "propertyClassification": {
         "coreProductProperties": [
-          "Category", "Gender", "Line", "Size","Unit"
+          "Category", "Gender", "Line", "Size", "Unit", "EAN", "Name", "Description"
         ],
         "offerProperties": [
           "Price", "Capacity", "Ref"
         ]
       },
       "dataTypes": {
-        "PRICE": {
+        "Price": {
           "type": "decimal",
           "format": "currency",
-          "defaultValue": 0,
+          "defaultValue": 0.0,
           "allowNull": false,
           "transformations": ["removeSymbols", "parseDecimal"]
         },
         "Name": {
           "type": "string",
           "allowNull": false,
+          "maxLength": 500,
           "transformations": ["trim"]
         },
         "Category": {
@@ -56,10 +57,10 @@
           "transformations": ["trim"]
         },
         "Unit": {
-          "type": "number",
+          "type": "string",
           "allowNull": true,
-          "defaultValue": 0,
-          "transformations": ["trim", "parseDecimal"]
+          "maxLength": 20,
+          "transformations": ["trim"]
         },
         "EAN": {
           "type": "string",
@@ -70,13 +71,13 @@
         "Ref": {
           "type": "string",
           "allowNull": true,
-          "maxLength": 20,
+          "maxLength": 50,
           "transformations": ["trim"]
         },
         "Capacity": {
-          "type": "number",
+          "type": "decimal",
           "allowNull": true,
-          "defaultValue": 0,
+          "defaultValue": 0.0,
           "transformations": ["trim", "parseDecimal"]
         },
         "Line": {
@@ -88,23 +89,26 @@
         "Gender": {
           "type": "string",
           "allowNull": true,
-          "maxLength": 100,
+          "maxLength": 20,
           "transformations": ["trim"]
         },
         "Description": {
           "type": "string",
           "allowNull": true,
-          "maxLength": 255,
+          "maxLength": 1000,
           "transformations": ["trim"]
         }
       },
       "validation": {
         "dataStartRowIndex": 5,
-        "expectedColumnCount": 11
+        "expectedColumnCount": 15,
+        "requiredFields": ["Name", "EAN"],
+        "uniqueFields": ["EAN"]
       },
       "transformation": {
         "skipEmptyRows": true,
         "trimWhitespace": true,
+        "skipRowsWithMergedCells": true,
         "subtitleRowHandling": {
           "enabled": true,
           "action": "parse",
@@ -125,7 +129,7 @@
               ]
             },
             {
-              "name": "SectionHeaderRow", 
+              "name": "SectionHeaderRow",
               "description": "Rows that define product sections",
               "detectionMethod": "columnCount",
               "expectedColumnCount": 2,
@@ -143,7 +147,7 @@
             {
               "name": "ManufacturerRow",
               "description": "Rows that define manufacturer info",
-              "detectionMethod": "columnCount", 
+              "detectionMethod": "columnCount",
               "expectedColumnCount": 3,
               "columnIndexMappings": {
                 "A": "ManufacturerName",
@@ -160,8 +164,10 @@
           ],
           "fallbackAction": "skip"
         },
-        "skipRowsWithMergedCells": true,
-        "customTransformations": {}
+        "customTransformations": {
+          "normalizeGender": "standard",
+          "normalizeCategory": "standard"
+        }
       },
       "metadata": {
         "industry": "Beauty & Cosmetics",
@@ -172,27 +178,28 @@
           "company": "Christian Dior SE"
         },
         "fileFrequency": "monthly",
-        "expectedFileSize": "Large (1000+ products)",
+        "expectedFileSize": "Large (4000+ products)",
+        "currency": "EUR",
+        "timezone": "Europe/Paris",
         "notes": [
-          "Files typically contain 4000+ products",
-          "Price format includes currency symbols", 
-          "Multiple product categories: Fragrances, Makeup, Skincare",
-          "Uses Excel column letters (A, B, C, etc.) for user-friendly mapping",
-          "Column positions are fixed: A=Name, B=EAN, C=Price, L=Description",
-          "Data processing starts from Excel row 2 (dataStartRowIndex: 1), row 1 is typically headers",
+          "Files typically contain 4000+ products across multiple categories",
+          "Price format includes currency symbols that need removal",
+          "Multiple product categories: Fragrances, Makeup, Skincare, Beauty Products",
+          "Excel column mapping: A=Category, C=Gender, D=Line, F=Description, G=Ref, H=Name, J=Size, L=Unit, M=EAN, N=Capacity, O=Price",
+          "Data processing starts from Excel row 5 (dataStartRowIndex: 5), rows 1-4 are headers/metadata",
           "Subtitle rows are detected by column count and parsed using specific column mappings",
           "Each subtitle type has its own columnIndexMappings and expectedColumnCount",
-          "Example: Single column rows (A=Category), Two column rows (A=SectionType, B=Value)"
+          "Supports category hierarchy through subtitle parsing"
         ],
-        "lastUpdated": "2025-08-31T10:00:00Z",
-        "version": "2.0"
+        "lastUpdated": "2024-12-19T15:30:00Z",
+        "version": "2.1"
       }
     },
     {
       "name": "UNLIMITED",
       "description": "UNLIMITED perfume and fragrance products supplier",
       "detection": {
-        "fileNamePatterns": ["UNLIMITED*.xlsx", "UNLIMITED*.xls"]
+        "fileNamePatterns": ["UNLIMITED*.xlsx", "unlimited*.xlsx", "UNLIMITED*.xls", "unlimited*.xls"]
       },
       "columnIndexMappings": {
         "A": "EAN",
@@ -211,21 +218,21 @@
           "EAN", "Reference", "Brand", "Name", "Category", "Type"
         ],
         "offerProperties": [
-          "PriceAED", "PriceUSD", "InStock"
+          "PriceAED", "PriceUSD", "InStock", "Order"
         ]
       },
       "dataTypes": {
         "PriceAED": {
           "type": "decimal",
           "format": "currency",
-          "defaultValue": 0,
+          "defaultValue": 0.0,
           "allowNull": false,
           "transformations": ["removeSymbols", "parseDecimal"]
         },
         "PriceUSD": {
-          "type": "decimal",
+          "type": "decimal", 
           "format": "currency",
-          "defaultValue": 0,
+          "defaultValue": 0.0,
           "allowNull": false,
           "transformations": ["removeSymbols", "parseDecimal"]
         },
@@ -280,16 +287,21 @@
       },
       "validation": {
         "dataStartRowIndex": 2,
-        "expectedColumnCount": 10
+        "expectedColumnCount": 10,
+        "requiredFields": ["Name", "Brand"],
+        "uniqueFields": ["EAN", "Reference"]
       },
       "transformation": {
         "skipEmptyRows": true,
         "trimWhitespace": true,
+        "skipRowsWithMergedCells": false,
         "subtitleRowHandling": {
           "enabled": false
         },
-        "skipRowsWithMergedCells": false,
-        "customTransformations": {}
+        "customTransformations": {
+          "normalizeBrand": "standard",
+          "normalizeStockStatus": "standard"
+        }
       },
       "metadata": {
         "industry": "Perfume & Fragrance",
@@ -301,18 +313,21 @@
         },
         "fileFrequency": "monthly",
         "expectedFileSize": "Large (6000+ products)",
+        "currency": "AED,USD", 
+        "timezone": "Asia/Dubai",
         "notes": [
           "Files typically contain 6000+ perfume and fragrance products",
           "Dual pricing in AED (local) and USD currencies",
-          "Product categories include PERFUME, TESTER types",
-          "Stock levels indicated in IN STOCK column",
+          "Product categories include PERFUME, TESTER, EAU DE TOILETTE, EAU DE PARFUM",
+          "Stock levels indicated in IN STOCK column with values like 'IN STOCK', 'OUT OF STOCK'",
           "Data processing starts from Excel row 2 (dataStartRowIndex: 2), row 1 contains headers",
           "Fixed column structure: A=EAN CODE, B=REFERENCE, C=BRAND, D=PRODUCT NAME, E=CATEGORY, F=TYPE, G=IN STOCK, H=PRICE (AED), I=PRICE (USD), J=ORDER",
-          "Brand names include ACQUA DI PARMA, AMOUROUD, and many others",
-          "Product names are detailed with volume specifications (e.g., 100ML, 180ML)"
+          "Brand names include ACQUA DI PARMA, AMOUROUD, CREED, TOM FORD, and many others",
+          "Product names are detailed with volume specifications (e.g., 100ML, 180ML, 250ML)",
+          "Reference codes are supplier-specific product identifiers"
         ],
-        "lastUpdated": "2025-09-01T12:00:00Z",
-        "version": "1.0"
+        "lastUpdated": "2024-12-19T15:30:00Z",
+        "version": "2.1"
       }
     }
   ]
