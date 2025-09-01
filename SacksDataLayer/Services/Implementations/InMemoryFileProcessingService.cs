@@ -21,6 +21,7 @@ namespace SacksDataLayer.Services.Implementations
         private readonly IFileDataReader _fileDataReader;
         private readonly SupplierConfigurationManager _configManager;
         private readonly ConfigurationBasedNormalizerFactory _configBasedNormalizerFactory;
+        private static int _debugRowCounter = 0;
 
         public InMemoryFileProcessingService(
             IInMemoryDataService inMemoryDataService,
@@ -218,6 +219,7 @@ namespace SacksDataLayer.Services.Implementations
             SupplierConfiguration supplierConfig,
             InMemoryProcessingResult result)
         {
+            _debugRowCounter = 0; // Reset debug counter for each file
             int productCreateCount = 0, productUpdateCount = 0;
             int offerProductCreateCount = 0, offerProductUpdateCount = 0;
 
@@ -249,7 +251,6 @@ namespace SacksDataLayer.Services.Implementations
         }
 
         /// <summary>
-        /// <summary>
         /// Maps a file row to product data with proper property classification
         /// </summary>
         private ProductData? MapRowToProduct(RowData row, SupplierConfiguration supplierConfig)
@@ -257,6 +258,22 @@ namespace SacksDataLayer.Services.Implementations
             try
             {
                 var productData = new ProductData();
+                
+                // 🔍 Debug ALL columns for first few rows to find where price data actually is
+                if (_debugRowCounter < 3)
+                {
+                    Console.WriteLine($"   🔍 ROW {_debugRowCounter + 1} - ALL COLUMNS:");
+                    foreach (var column in new[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T" })
+                    {
+                        var value = GetCellValueByColumnName(row, column);
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            Console.WriteLine($"      {column}: '{value}'");
+                        }
+                    }
+                    Console.WriteLine("   ──────────────────────────────────────");
+                }
+                _debugRowCounter++;
 
                 // Process using column index mappings (Excel columns: A, B, C, etc.)
                 foreach (var indexMapping in supplierConfig.ColumnIndexMappings)
@@ -265,6 +282,20 @@ namespace SacksDataLayer.Services.Implementations
                     var propertyName = indexMapping.Value;       // e.g., "Category", "EAN"
                     
                     var cellValue = GetCellValueByColumnName(row, columnReference);
+                    
+                    // Debug logging specifically for Price column to see raw values
+                    if (propertyName?.ToLower() == "price")
+                    {
+                        Console.WriteLine($"   💰 Column {columnReference} (Price) RAW: '{cellValue}' | Length: {cellValue?.Length ?? 0} | IsNullOrEmpty: {string.IsNullOrEmpty(cellValue)} | IsWhiteSpace: {string.IsNullOrWhiteSpace(cellValue)}");
+                        
+                        // Show character codes to see if there are hidden characters
+                        if (!string.IsNullOrEmpty(cellValue))
+                        {
+                            var chars = string.Join(", ", cellValue.Select(c => $"'{c}'({(int)c})"));
+                            Console.WriteLine($"      Character analysis: {chars}");
+                        }
+                    }
+                    
                     if (!string.IsNullOrWhiteSpace(cellValue))
                     {
                         switch (propertyName?.ToLower())
@@ -485,25 +516,16 @@ namespace SacksDataLayer.Services.Implementations
         /// </summary>
         private void UpdateOfferProductProperties(OfferProductEntity offerProduct, Dictionary<string, object?> offerProperties)
         {
-            // Debug: Show what offer properties we received
-            Console.WriteLine($"   🔍 Offer properties received: {string.Join(", ", offerProperties.Keys)}");
-            
             // Set dedicated columns for specific properties
             if (offerProperties.TryGetValue("Price", out var priceValue) && 
                 decimal.TryParse(priceValue?.ToString(), out var price))
             {
                 offerProduct.Price = price;
-                Console.WriteLine($"   💰 Set Price: {price}");
-            }
-            else
-            {
-                Console.WriteLine($"   ⚠️  Price not found or invalid. PriceValue: {priceValue}");
             }
 
             if (offerProperties.TryGetValue("Capacity", out var capacityValue))
             {
                 offerProduct.Capacity = capacityValue?.ToString();
-                Console.WriteLine($"   📏 Set Capacity: {capacityValue}");
             }
 
             // Store remaining offer properties in ProductPropertiesJson
@@ -525,6 +547,20 @@ namespace SacksDataLayer.Services.Implementations
             // Use negative IDs to avoid conflicts with existing data
             // Database will assign proper IDs on save
             return -(int)(DateTime.UtcNow.Ticks % int.MaxValue);
+        }
+
+        /// <summary>
+        /// Converts 0-based column index to Excel column letter (0=A, 1=B, ..., 25=Z, 26=AA, etc.)
+        /// </summary>
+        private static string ConvertToColumnLetter(int columnIndex)
+        {
+            string result = string.Empty;
+            while (columnIndex >= 0)
+            {
+                result = (char)('A' + (columnIndex % 26)) + result;
+                columnIndex = (columnIndex / 26) - 1;
+            }
+            return result;
         }
 
         /// <summary>
