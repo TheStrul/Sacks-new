@@ -30,13 +30,6 @@ namespace SacksConsoleApp
             Console.WriteLine("=== Sacks Product Management System ===");
             Console.WriteLine();
 
-            // Show usage if help requested
-            if (args.Length > 0 && (args[0].Equals("help", StringComparison.OrdinalIgnoreCase) || args[0] == "?" || args[0] == "-h"))
-            {
-                ShowUsage();
-                return;
-            }
-
             try
             {
                 // Build configuration
@@ -73,36 +66,8 @@ namespace SacksConsoleApp
                 Console.WriteLine($"✅ {message}");
                 _logger.LogInformation("Database connection successful");
 
-                // Check if command line argument for clearing database
-                if (args.Length > 0 && args[0].Equals("clear", StringComparison.OrdinalIgnoreCase))
-                {
-                    await HandleDatabaseClearCommand(serviceProvider);
-                    return;
-                }
-
-                // Check if command line argument for thread-safe demo
-                if (args.Length > 0 && args[0].Equals("threadsafe", StringComparison.OrdinalIgnoreCase))
-                {
-                    await DemonstrateThreadSafeProcessing(serviceProvider);
-                    return;
-                }
-
-                // Check if command line argument for ultimate performance in-memory processing
-                if (args.Length > 0 && args[0].Equals("inmemory", StringComparison.OrdinalIgnoreCase))
-                {
-                    await DemonstrateInMemoryProcessing(serviceProvider, args);
-                    return;
-                }
-
-                // Check if command line argument for in-memory processing all files
-                if (args.Length > 0 && args[0].Equals("inmemoryall", StringComparison.OrdinalIgnoreCase))
-                {
-                    await ProcessAllFilesInMemory(serviceProvider);
-                    return;
-                }
-
-                // Process files with our optimized implementation
-                await ProcessInputFiles(serviceProvider);
+                // Show interactive menu
+                await ShowInteractiveMenu(serviceProvider);
             }
             catch (Exception ex)
             {
@@ -279,25 +244,78 @@ namespace SacksConsoleApp
             }
         }
 
-        private static void ShowUsage()
+        /// <summary>
+        /// Shows an interactive menu for user to choose operations
+        /// </summary>
+        private static async Task ShowInteractiveMenu(ServiceProvider serviceProvider)
         {
-            Console.WriteLine("📖 USAGE:");
-            Console.WriteLine("   dotnet run                    - Process all Excel files in Inputs folder");
-            Console.WriteLine("   dotnet run clear             - Clear all data from database");
-            Console.WriteLine("   dotnet run threadsafe        - 🚀 Demonstrate thread-safe in-memory processing");
-            Console.WriteLine("   dotnet run inmemory [file]    - 🚀 ULTIMATE: Process file with in-memory operations & save once");
-            Console.WriteLine("   dotnet run inmemoryall        - 🚀 ULTIMATE: Process ALL files with in-memory operations");
-            Console.WriteLine("   dotnet run help              - Show this help message");
-            Console.WriteLine();
-            Console.WriteLine("🚀 NEW FEATURES:");
-            Console.WriteLine("   • Thread-safe in-memory data cache for high-performance processing");
-            Console.WriteLine("   • Bulk operations to eliminate N+1 query problems");
-            Console.WriteLine("   • Optimized batch processing with larger batch sizes");
-            Console.WriteLine("   • Safe parallel processing without DbContext concurrency issues");
-            Console.WriteLine("   • 🚀 ULTIMATE: In-memory processing with single database save at end");
-            Console.WriteLine();
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadKey();
+            while (true)
+            {
+                Console.WriteLine("\n" + new string('=', 70));
+                Console.WriteLine("🎯 SACKS PRODUCT MANAGEMENT SYSTEM - MAIN MENU");
+                Console.WriteLine(new string('=', 70));
+                Console.WriteLine();
+                Console.WriteLine("📋 Please choose an option:");
+                Console.WriteLine();
+                Console.WriteLine("   1️⃣  Process all Excel files (Standard Processing)");
+                Console.WriteLine("   2️⃣  🚀 Process all files with In-Memory Processing (ULTIMATE PERFORMANCE)");
+                Console.WriteLine("   3️⃣  🚀 Process single file with In-Memory Processing");
+                Console.WriteLine("   4️⃣  🚀 Demonstrate Thread-Safe Processing");
+                Console.WriteLine("   5️⃣  🧹 Clear all data from database");
+                Console.WriteLine("   6️⃣  � Show database statistics");
+                Console.WriteLine("   7️⃣  ❓ Show help and feature information");
+                Console.WriteLine("   0️⃣  🚪 Exit");
+                Console.WriteLine();
+                Console.Write("👉 Enter your choice (0-7): ");
+
+                var input = Console.ReadLine()?.Trim();
+                Console.WriteLine();
+
+                try
+                {
+                    switch (input)
+                    {
+                        case "1":
+                            await ProcessInputFiles(serviceProvider);
+                            break;
+                        case "2":
+                            await ProcessAllFilesInMemory(serviceProvider);
+                            break;
+                        case "3":
+                            await DemonstrateInMemoryProcessing(serviceProvider);
+                            break;
+                        case "4":
+                            await DemonstrateThreadSafeProcessing(serviceProvider);
+                            break;
+                        case "5":
+                            await HandleDatabaseClearCommand(serviceProvider);
+                            break;
+                        case "6":
+                            await ShowDatabaseStatistics(serviceProvider);
+                            break;
+                        case "7":
+                            ShowHelpInformation();
+                            break;
+                        case "0":
+                            Console.WriteLine("👋 Thank you for using Sacks Product Management System!");
+                            return;
+                        default:
+                            Console.WriteLine("❌ Invalid choice. Please enter a number between 0 and 7.");
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error executing option: {ex.Message}");
+                    _logger?.LogError(ex, "Error executing menu option {Option}", input);
+                }
+
+                if (input != "0")
+                {
+                    Console.WriteLine("\nPress any key to return to main menu...");
+                    Console.ReadKey();
+                }
+            }
         }
 
         private static async Task DemonstrateThreadSafeProcessing(ServiceProvider serviceProvider)
@@ -397,15 +415,12 @@ namespace SacksConsoleApp
                 Console.WriteLine($"❌ Error during demonstration: {ex.Message}");
                 Console.WriteLine($"   Stack trace: {ex.StackTrace}");
             }
-
-            Console.WriteLine("\nPress any key to exit...");
-            Console.ReadKey();
         }
 
         /// <summary>
         /// 🚀 ULTIMATE PERFORMANCE: Demonstrates in-memory file processing with single database save
         /// </summary>
-        private static async Task DemonstrateInMemoryProcessing(ServiceProvider serviceProvider, string[] args)
+        private static async Task DemonstrateInMemoryProcessing(ServiceProvider serviceProvider)
         {
             try
             {
@@ -413,63 +428,45 @@ namespace SacksConsoleApp
 
                 var inMemoryService = serviceProvider.GetRequiredService<IInMemoryFileProcessingService>();
 
-                // Determine which file to process
-                string? filePath = null;
-                
-                if (args.Length > 1)
+                // Get available files
+                var inputsPath = FindInputsFolder();
+                if (!Directory.Exists(inputsPath))
                 {
-                    // Use specified file
-                    filePath = args[1];
-                    if (!File.Exists(filePath))
-                    {
-                        // Try relative path from Inputs folder
-                        var inputsPath = FindInputsFolder();
-                        if (!string.IsNullOrEmpty(inputsPath))
-                        {
-                            filePath = Path.Combine(inputsPath, args[1]);
-                            if (!File.Exists(filePath))
-                            {
-                                Console.WriteLine($"❌ File not found: {args[1]}");
-                                Console.WriteLine("Available files in Inputs folder:");
-                                var availableFiles = Directory.GetFiles(inputsPath, "*.xlsx");
-                                foreach (var file in availableFiles)
-                                {
-                                    Console.WriteLine($"   • {Path.GetFileName(file)}");
-                                }
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"❌ File not found: {args[1]}");
-                            return;
-                        }
-                    }
-                }
-                else
-                {
-                    // Use first available file from Inputs folder
-                    var inputsPath = FindInputsFolder();
-                    if (!string.IsNullOrEmpty(inputsPath))
-                    {
-                        var excelFiles = Directory.GetFiles(inputsPath, "*.xlsx");
-                        if (excelFiles.Length > 0)
-                        {
-                            filePath = excelFiles[0];
-                            Console.WriteLine($"📁 Using first available file: {Path.GetFileName(filePath)}");
-                        }
-                    }
-                }
-
-                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                {
-                    Console.WriteLine("❌ No Excel file found to process");
-                    Console.WriteLine("Usage: dotnet run inmemory [filename.xlsx]");
+                    Console.WriteLine($"❌ Inputs folder not found: {inputsPath}");
                     return;
                 }
 
+                var excelFiles = Directory.GetFiles(inputsPath, "*.xlsx")
+                                          .Where(f => !Path.GetFileName(f).StartsWith("~"))
+                                          .ToArray();
+
+                if (excelFiles.Length == 0)
+                {
+                    Console.WriteLine("❌ No Excel files found in Inputs folder.");
+                    return;
+                }
+
+                // Show available files and let user choose
+                Console.WriteLine("📁 Available Excel files:");
+                for (int i = 0; i < excelFiles.Length; i++)
+                {
+                    Console.WriteLine($"   {i + 1}. {Path.GetFileName(excelFiles[i])}");
+                }
+                Console.WriteLine();
+                Console.Write($"👉 Choose a file to process (1-{excelFiles.Length}): ");
+
+                var input = Console.ReadLine()?.Trim();
+                if (!int.TryParse(input, out int choice) || choice < 1 || choice > excelFiles.Length)
+                {
+                    Console.WriteLine("❌ Invalid choice. Operation cancelled.");
+                    return;
+                }
+
+                var selectedFile = excelFiles[choice - 1];
+                Console.WriteLine($"📄 Processing: {Path.GetFileName(selectedFile)}\n");
+
                 // Process the file using in-memory processing
-                var result = await inMemoryService.ProcessFileInMemoryAsync(filePath);
+                var result = await inMemoryService.ProcessFileInMemoryAsync(selectedFile);
 
                 if (result.Success)
                 {
@@ -499,9 +496,6 @@ namespace SacksConsoleApp
                 Console.WriteLine($"❌ Error during in-memory processing demonstration: {ex.Message}");
                 Console.WriteLine($"   Stack trace: {ex.StackTrace}");
             }
-
-            Console.WriteLine("\nPress any key to exit...");
-            Console.ReadKey();
         }
 
         private static async Task ProcessInputFiles(ServiceProvider serviceProvider)
@@ -538,9 +532,6 @@ namespace SacksConsoleApp
             {
                 Console.WriteLine("❌ Inputs folder not found.");
             }
-
-            Console.WriteLine("\nPress any key to exit...");
-            Console.ReadKey();
         }
 
         private static string FindInputsFolder()
@@ -686,8 +677,130 @@ namespace SacksConsoleApp
             }
 
             Console.WriteLine("\n🎉 Batch processing complete!");
-            Console.WriteLine("\nPress any key to exit...");
-            Console.ReadKey();
+        }
+
+        /// <summary>
+        /// Shows current database statistics
+        /// </summary>
+        private static async Task ShowDatabaseStatistics(ServiceProvider serviceProvider)
+        {
+            try
+            {
+                Console.WriteLine("=== 📊 DATABASE STATISTICS ===\n");
+
+                var databaseService = serviceProvider.GetRequiredService<IDatabaseManagementService>();
+                var connectionResult = await databaseService.CheckConnectionAsync();
+
+                if (!connectionResult.CanConnect)
+                {
+                    Console.WriteLine($"❌ {connectionResult.Message}");
+                    return;
+                }
+
+                Console.WriteLine($"✅ {connectionResult.Message}");
+                Console.WriteLine($"🔗 {connectionResult.ServerInfo}");
+                Console.WriteLine();
+
+                Console.WriteLine("📊 Current table status:");
+                var totalRecords = 0;
+                foreach (var (table, count) in connectionResult.TableCounts.OrderBy(x => x.Key))
+                {
+                    Console.WriteLine($"   📋 {table}: {count:N0} records");
+                    totalRecords += count;
+                }
+
+                Console.WriteLine($"\n📈 Total records across all tables: {totalRecords:N0}");
+                
+                // Show memory cache statistics if available
+                try
+                {
+                    var inMemoryService = serviceProvider.GetRequiredService<IInMemoryDataService>();
+                    var cacheStats = inMemoryService.GetCacheStats();
+                    
+                    Console.WriteLine("\n🧠 In-Memory Cache Status:");
+                    Console.WriteLine($"   📦 Cached Products: {cacheStats.Products:N0}");
+                    Console.WriteLine($"   🏢 Cached Suppliers: {cacheStats.Suppliers:N0}");
+                    Console.WriteLine($"   📋 Cached Offers: {cacheStats.Offers:N0}");
+                    Console.WriteLine($"   🔗 Cached Offer-Products: {cacheStats.OfferProducts:N0}");
+                    Console.WriteLine($"   ⏰ Last Loaded: {(cacheStats.LastLoaded == default ? "Never" : cacheStats.LastLoaded.ToString("yyyy-MM-dd HH:mm:ss"))}");
+                }
+                catch
+                {
+                    Console.WriteLine("\n🧠 In-Memory Cache: Not loaded");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error retrieving database statistics: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Shows help information and feature details
+        /// </summary>
+        private static void ShowHelpInformation()
+        {
+            Console.WriteLine("=== ❓ HELP & FEATURE INFORMATION ===\n");
+            
+            Console.WriteLine("🚀 PROCESSING OPTIONS:");
+            Console.WriteLine();
+            Console.WriteLine("1️⃣  Standard Processing:");
+            Console.WriteLine("   • Traditional database operations");
+            Console.WriteLine("   • Processes all Excel files in sequence");
+            Console.WriteLine("   • Good for small to medium datasets");
+            Console.WriteLine();
+            
+            Console.WriteLine("2️⃣  🚀 In-Memory Processing (ALL FILES):");
+            Console.WriteLine("   • ULTIMATE PERFORMANCE - loads all data into memory once");
+            Console.WriteLine("   • Processes all files with maximum speed");
+            Console.WriteLine("   • Single database transaction at the end");
+            Console.WriteLine("   • Best for large batch operations");
+            Console.WriteLine();
+            
+            Console.WriteLine("3️⃣  🚀 In-Memory Processing (SINGLE FILE):");
+            Console.WriteLine("   • Choose specific file to process");
+            Console.WriteLine("   • Same ultra-fast processing as option 2");
+            Console.WriteLine("   • Perfect for testing or selective processing");
+            Console.WriteLine();
+            
+            Console.WriteLine("4️⃣  🚀 Thread-Safe Processing Demo:");
+            Console.WriteLine("   • Demonstrates concurrent data access");
+            Console.WriteLine("   • Shows thread-safe in-memory operations");
+            Console.WriteLine("   • Educational/diagnostic purposes");
+            Console.WriteLine();
+            
+            Console.WriteLine("5️⃣  Database Operations:");
+            Console.WriteLine("   • Clear all data from database");
+            Console.WriteLine("   • Recreates empty tables with correct schema");
+            Console.WriteLine("   • Requires confirmation for safety");
+            Console.WriteLine();
+            
+            Console.WriteLine("6️⃣  Database Statistics:");
+            Console.WriteLine("   • Shows current record counts");
+            Console.WriteLine("   • Displays connection information");
+            Console.WriteLine("   • Shows in-memory cache status");
+            Console.WriteLine();
+
+            Console.WriteLine("🎯 KEY FEATURES:");
+            Console.WriteLine("   ✅ Thread-safe in-memory data cache");
+            Console.WriteLine("   ✅ Bulk operations to eliminate N+1 query problems");
+            Console.WriteLine("   ✅ Optimized batch processing");
+            Console.WriteLine("   ✅ Auto-detection of supplier configurations");
+            Console.WriteLine("   ✅ Single transaction database saves");
+            Console.WriteLine("   ✅ Comprehensive error handling and logging");
+            Console.WriteLine("   ✅ Performance metrics and monitoring");
+            Console.WriteLine();
+
+            Console.WriteLine("📁 FILE REQUIREMENTS:");
+            Console.WriteLine("   • Excel files (.xlsx) in SacksDataLayer/Inputs folder");
+            Console.WriteLine("   • Files should follow configured supplier formats");
+            Console.WriteLine("   • Temporary files (starting with ~) are automatically skipped");
+            Console.WriteLine();
+
+            Console.WriteLine("🔧 CONFIGURATION:");
+            Console.WriteLine("   • Database settings in appsettings.json");
+            Console.WriteLine("   • Supplier formats in Configuration/supplier-formats.json");
+            Console.WriteLine("   • Logging configuration in appsettings.json");
         }
     }
 }

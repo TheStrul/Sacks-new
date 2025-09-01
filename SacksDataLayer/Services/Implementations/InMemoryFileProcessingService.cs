@@ -251,14 +251,13 @@ namespace SacksDataLayer.Services.Implementations
             {
                 var productData = new ProductData();
 
-                // Map standard fields using supplier configuration column mappings
-                foreach (var mapping in supplierConfig.ColumnMappings)
+                // Process using column index mappings (Excel columns: A, B, C, etc.)
+                foreach (var indexMapping in supplierConfig.ColumnIndexMappings)
                 {
-                    var columnName = mapping.Key;
-                    var propertyName = mapping.Value;
+                    var columnReference = indexMapping.Key;      // e.g., "A", "B", "M" 
+                    var propertyName = indexMapping.Value;       // e.g., "Category", "EAN"
                     
-                    // Find cell by column name (this is simplified - in real scenario we'd need column header mapping)
-                    var cellValue = GetCellValueByColumnName(row, columnName);
+                    var cellValue = GetCellValueByColumnName(row, columnReference);
                     if (!string.IsNullOrWhiteSpace(cellValue))
                     {
                         switch (propertyName?.ToLower())
@@ -274,43 +273,8 @@ namespace SacksDataLayer.Services.Implementations
                                 break;
                             default:
                                 // Store as dynamic property
-                                productData.DynamicProperties[propertyName ?? columnName] = cellValue;
+                                productData.DynamicProperties[propertyName ?? columnReference] = cellValue;
                                 break;
-                        }
-                    }
-                }
-
-                // If using column index mappings, process those too
-                if (supplierConfig.Transformation.UseColumnIndexMapping)
-                {
-                    foreach (var indexMapping in supplierConfig.ColumnIndexMappings)
-                    {
-                        if (int.TryParse(indexMapping.Key, out int columnIndex) && columnIndex < row.Cells.Count)
-                        {
-                            var cellValue = row.Cells[columnIndex]?.Value?.ToString() ?? string.Empty;
-                            var propertyName = indexMapping.Value;
-                            
-                            if (!string.IsNullOrWhiteSpace(cellValue))
-                            {
-                                switch (propertyName?.ToLower())
-                                {
-                                    case "name":
-                                        productData.Name = cellValue;
-                                        break;
-                                    case "ean":
-                                        productData.EAN = cellValue;
-                                        break;
-                                    case "description":
-                                        productData.Description = cellValue;
-                                        break;
-                                    default:
-                                        if (!string.IsNullOrWhiteSpace(propertyName))
-                                        {
-                                            productData.DynamicProperties[propertyName] = cellValue;
-                                        }
-                                        break;
-                                }
-                            }
                         }
                     }
                 }
@@ -332,17 +296,74 @@ namespace SacksDataLayer.Services.Implementations
 
         /// <summary>
         /// Helper method to get cell value by column name
-        /// In real implementation, this would use header mapping
+        /// Uses proper Excel column-to-index mapping
         /// </summary>
         private string GetCellValueByColumnName(RowData row, string columnName)
         {
-            // Simplified implementation - in practice you'd map column names to indices
-            // For now, just return the first cell if it exists
-            if (row.Cells.Count > 0)
+            try
             {
-                return row.Cells[0]?.Value?.ToString() ?? string.Empty;
+                int columnIndex;
+                
+                // Convert Excel column letter (A, B, C, etc.) to 0-based index
+                if (IsExcelColumnLetter(columnName))
+                {
+                    columnIndex = ConvertExcelColumnToIndex(columnName);
+                }
+                else if (int.TryParse(columnName, out int numericIndex))
+                {
+                    columnIndex = numericIndex;
+                }
+                else
+                {
+                    return string.Empty;
+                }
+
+                if (columnIndex >= 0 && columnIndex < row.Cells.Count)
+                {
+                    return row.Cells[columnIndex]?.Value?.ToString() ?? string.Empty;
+                }
+                
+                return string.Empty;
             }
-            return string.Empty;
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Checks if a string represents an Excel column letter (A, B, C, AA, AB, etc.)
+        /// </summary>
+        private bool IsExcelColumnLetter(string columnReference)
+        {
+            if (string.IsNullOrWhiteSpace(columnReference))
+                return false;
+
+            return columnReference.All(c => char.IsLetter(c) && char.IsUpper(c));
+        }
+
+        /// <summary>
+        /// Converts Excel column letters to zero-based column index
+        /// A=0, B=1, C=2, ..., Z=25, AA=26, AB=27, etc.
+        /// </summary>
+        private int ConvertExcelColumnToIndex(string columnLetter)
+        {
+            if (string.IsNullOrWhiteSpace(columnLetter))
+                throw new ArgumentException("Column letter cannot be null or empty", nameof(columnLetter));
+
+            columnLetter = columnLetter.ToUpperInvariant();
+            int result = 0;
+
+            for (int i = 0; i < columnLetter.Length; i++)
+            {
+                char c = columnLetter[i];
+                if (c < 'A' || c > 'Z')
+                    throw new ArgumentException($"Invalid column letter: {columnLetter}", nameof(columnLetter));
+
+                result = result * 26 + (c - 'A' + 1);
+            }
+
+            return result - 1; // Convert to zero-based index
         }
 
         /// <summary>
