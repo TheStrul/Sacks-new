@@ -151,7 +151,7 @@ namespace SacksDataLayer.FileProcessing.Services
                 {
                     FileNamePatterns = new List<string> { $"*{supplierName}*" }
                 },
-                ColumnMappings = GenerateColumnMappings(columnNames),
+                ColumnIndexMappings = GenerateColumnIndexMappings(columnNames),
                 DataTypes = GenerateDataTypes(columnNames),
                 Validation = new ValidationConfiguration
                 {
@@ -281,6 +281,61 @@ namespace SacksDataLayer.FileProcessing.Services
             }
 
             return dataTypes;
+        }
+
+        private Dictionary<string, string> GenerateColumnIndexMappings(List<string> columnNames)
+        {
+            var mappings = new Dictionary<string, string>();
+            
+            // Common mapping patterns
+            var patterns = new Dictionary<string, string[]>
+            {
+                { "Name", new[] { "name", "product name", "title", "item name", "product title", "product" } },
+                { "Description", new[] { "description", "desc", "details", "summary", "product description" } },
+                { "EAN", new[] { "sku", "code", "product code", "item code", "id", "product id" } },
+                { "Price", new[] { "price", "cost", "unit price", "list price", "retail price", "msrp" } },
+                { "Category", new[] { "category", "type", "group", "classification", "product category" } },
+                { "StockQuantity", new[] { "stock", "quantity", "inventory", "available", "on hand", "qty" } },
+                { "IsActive", new[] { "active", "status", "enabled", "published", "visible" } }
+            };
+
+            for (int i = 0; i < columnNames.Count; i++)
+            {
+                var column = columnNames[i];
+                var columnLetter = ConvertIndexToExcelColumn(i); // A, B, C, etc.
+                var columnLower = column.ToLowerInvariant();
+                
+                foreach (var pattern in patterns)
+                {
+                    if (pattern.Value.Any(p => columnLower.Contains(p)))
+                    {
+                        mappings[columnLetter] = pattern.Key;
+                        break;
+                    }
+                }
+                
+                // If no pattern matches, use a generic mapping
+                if (!mappings.ContainsKey(columnLetter))
+                {
+                    mappings[columnLetter] = column;
+                }
+            }
+
+            return mappings;
+        }
+
+        /// <summary>
+        /// Converts 0-based column index to Excel column letter (0=A, 1=B, ..., 25=Z, 26=AA, etc.)
+        /// </summary>
+        private static string ConvertIndexToExcelColumn(int columnIndex)
+        {
+            string result = string.Empty;
+            while (columnIndex >= 0)
+            {
+                result = (char)('A' + (columnIndex % 26)) + result;
+                columnIndex = (columnIndex / 26) - 1;
+            }
+            return result;
         }
     }
 

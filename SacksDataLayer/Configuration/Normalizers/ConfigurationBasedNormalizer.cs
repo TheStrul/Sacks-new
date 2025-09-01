@@ -343,8 +343,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
         private string? GetMappedValue(RowData row, Dictionary<string, int> columnIndexes, string targetProperty)
         {
-            // Find all source columns that map to the target property
-            var sourceColumns = _configuration.ColumnMappings
+            // Find all source columns that map to the target property using ColumnIndexMappings
+            var sourceColumns = _configuration.ColumnIndexMappings
                 .Where(kvp => kvp.Value == targetProperty)
                 .Select(kvp => kvp.Key);
 
@@ -447,7 +447,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
         private async Task AddUnmappedPropertiesAsync(ProductEntity product, RowData row, Dictionary<string, int> columnIndexes)
         {
-            var mappedColumns = new HashSet<string>(_configuration.ColumnMappings.Keys, StringComparer.OrdinalIgnoreCase);
+            var mappedColumns = new HashSet<string>(_configuration.ColumnIndexMappings.Keys, StringComparer.OrdinalIgnoreCase);
 
             foreach (var kvp in columnIndexes)
             {
@@ -569,16 +569,14 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 var product = new ProductEntity();
                 // Note: No metadata added to DynamicProperties - they should contain only product attributes
 
-
                 // Process mapped columns based on mode priorities
-                var columnMappings = GetColumnMapping();
+                var columnMappings = CreateColumnIndexMapping(); // Changed from GetColumnMapping() to use ColumnIndexMappings
                 foreach (var mapping in columnMappings)
                 {
-                    var sourceColumn = mapping.Key;
-                    var targetProperty = mapping.Value;
+                    var targetProperty = mapping.Key;     // Property name
+                    var columnIndex = mapping.Value;      // Column index
 
-                    if (columnIndexes.TryGetValue(sourceColumn, out int columnIndex) && 
-                        columnIndex < row.Cells.Count)
+                    if (columnIndex < row.Cells.Count)
                     {
                         var cellValue = row.Cells[columnIndex].Value?.Trim();
                         
@@ -654,7 +652,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             
             var offerProperties = new Dictionary<string, object?>();
 
-            foreach (var mapping in _configuration.ColumnMappings)
+            foreach (var mapping in _configuration.ColumnIndexMappings)
             {
                 var sourceColumn = mapping.Key;
                 var targetProperty = mapping.Value;

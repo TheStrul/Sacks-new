@@ -35,9 +35,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("detection")]
         public DetectionConfiguration Detection { get; set; } = new();
 
-        [JsonPropertyName("columnMappings")]
-        public Dictionary<string, string> ColumnMappings { get; set; } = new();
-
         [JsonPropertyName("columnIndexMappings")]
         public Dictionary<string, string> ColumnIndexMappings { get; set; } = new();
 

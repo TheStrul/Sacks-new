@@ -349,15 +349,6 @@ namespace SacksDataLayer.FileProcessing.Services
                 {
                     FileNamePatterns = new List<string> { "*" }
                 },
-                ColumnMappings = new Dictionary<string, string>
-                {
-                    { "Product Name", "Name" },
-                    { "Name", "Name" },
-                    { "Description", "Description" },
-                    { "EAN", "EAN" },
-                    { "Price", "Price" },
-                    { "Category", "Category" }
-                },
                 DataTypes = new Dictionary<string, DataTypeConfiguration>
                 {
                     { "Price", new DataTypeConfiguration { Type = "decimal", DefaultValue = 0 } },
@@ -409,9 +400,9 @@ namespace SacksDataLayer.FileProcessing.Services
             }
 
             // Validate column mappings
-            if (supplier.ColumnMappings == null || !supplier.ColumnMappings.Any())
+            if (supplier.ColumnIndexMappings == null || !supplier.ColumnIndexMappings.Any())
             {
-                result.AddWarning($"Supplier '{supplier.Name}' has no column mappings");
+                result.AddWarning($"Supplier '{supplier.Name}' has no column index mappings");
             }
         }
     }
