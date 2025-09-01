@@ -17,80 +17,80 @@ namespace SacksDataLayer.Repositories.Implementations
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<SupplierOfferEntity?> GetByIdAsync(int id)
+        public async Task<SupplierOfferEntity?> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _context.SupplierOffers
                 .Include(so => so.Supplier)
                 .Include(so => so.OfferProducts)
-                .FirstOrDefaultAsync(so => so.Id == id);
+                .FirstOrDefaultAsync(so => so.Id == id, cancellationToken);
         }
 
-        public async Task<SupplierOfferEntity?> GetActiveOfferAsync(int productId, int supplierId)
+        public async Task<SupplierOfferEntity?> GetActiveOfferAsync(int productId, int supplierId, CancellationToken cancellationToken)
         {
             return await _context.SupplierOffers
                 .Include(so => so.Supplier)
                 .Include(so => so.OfferProducts)
                 .FirstOrDefaultAsync(so => so.SupplierId == supplierId && so.IsActive && 
-                                          so.OfferProducts.Any(op => op.ProductId == productId));
+                                          so.OfferProducts.Any(op => op.ProductId == productId), cancellationToken);
         }
 
-        public async Task<SupplierOfferEntity> CreateAsync(SupplierOfferEntity offer)
+        public async Task<SupplierOfferEntity> CreateAsync(SupplierOfferEntity offer, CancellationToken cancellationToken)
         {
             if (offer == null)
                 throw new ArgumentNullException(nameof(offer));
 
             offer.UpdateModified();
             _context.SupplierOffers.Add(offer);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return offer;
         }
 
-        public async Task<SupplierOfferEntity> UpdateAsync(SupplierOfferEntity offer)
+        public async Task<SupplierOfferEntity> UpdateAsync(SupplierOfferEntity offer, CancellationToken cancellationToken)
         {
             if (offer == null)
                 throw new ArgumentNullException(nameof(offer));
 
             offer.UpdateModified();
             _context.SupplierOffers.Update(offer);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return offer;
         }
 
-        public async Task<IEnumerable<SupplierOfferEntity>> GetByProductIdAsync(int productId)
+        public async Task<IEnumerable<SupplierOfferEntity>> GetByProductIdAsync(int productId, CancellationToken cancellationToken)
         {
             return await _context.SupplierOffers
                 .Include(so => so.Supplier)
                 .Include(so => so.OfferProducts)
                 .Where(so => so.OfferProducts.Any(op => op.ProductId == productId))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<SupplierOfferEntity>> GetBySupplierIdAsync(int supplierId)
+        public async Task<IEnumerable<SupplierOfferEntity>> GetBySupplierIdAsync(int supplierId, CancellationToken cancellationToken)
         {
             return await _context.SupplierOffers
                 .Include(so => so.Supplier)
                 .Include(so => so.OfferProducts)
                 .Where(so => so.SupplierId == supplierId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            var offer = await _context.SupplierOffers.FindAsync(id);
+            var offer = await _context.SupplierOffers.FindAsync(new object[] { id }, cancellationToken);
             if (offer == null)
                 return false;
 
             _context.SupplierOffers.Remove(offer);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
 
-        public async Task DeactivateOldOffersAsync(int productId, int supplierId)
+        public async Task DeactivateOldOffersAsync(int productId, int supplierId, CancellationToken cancellationToken)
         {
             var oldOffers = await _context.SupplierOffers
                 .Where(so => so.SupplierId == supplierId && so.IsActive &&
                             so.OfferProducts.Any(op => op.ProductId == productId))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             foreach (var offer in oldOffers)
             {
@@ -98,7 +98,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 offer.UpdateModified();
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

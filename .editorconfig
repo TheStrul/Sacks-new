@@ -1,0 +1,29 @@
+root = true
+
+[*.cs]
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = true
+
+# Nullability & exceptions
+dotnet_diagnostic.CS8602.severity = error   # dereference of possibly null
+dotnet_diagnostic.CS8618.severity = error   # non-nullable uninitialized
+dotnet_diagnostic.CA1062.severity = warning # validate public method params
+dotnet_diagnostic.CA2208.severity = warning # correct argument name in exceptions
+
+# Async + disposables
+dotnet_diagnostic.CA2000.severity = error   # dispose objects
+dotnet_diagnostic.CA2016.severity = warning # forward CancellationToken
+dotnet_diagnostic.CA2007.severity = none    # ConfigureAwait not required in ASP.NET Core
+
+# Performance & allocations
+dotnet_diagnostic.CA1822.severity = suggestion
+dotnet_diagnostic.CA1852.severity = warning # seal types for perf
+dotnet_diagnostic.CA1869.severity = warning # avoid allocations in logging
+
+# Security
+dotnet_diagnostic.CA2100.severity = error   # SQL injection (raw SQL)
+dotnet_diagnostic.CA5364.severity = warning # Do not use SHA1
+dotnet_diagnostic.CA3075.severity = warning # insecure XML
+
+# Naming
+dotnet_diagnostic.IDE1006.severity = warning

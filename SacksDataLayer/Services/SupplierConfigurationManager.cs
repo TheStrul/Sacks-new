@@ -156,24 +156,6 @@ namespace SacksDataLayer.FileProcessing.Services
             return result;
         }
 
-        /// <summary>
-        /// Creates a sample configuration file
-        /// </summary>
-        public async Task CreateSampleConfigurationAsync(string filePath)
-        {
-            var sampleConfig = new SuppliersConfiguration
-            {
-                Version = "1.0",
-                Description = "Sample supplier configurations",
-                LastUpdated = DateTime.UtcNow,
-                Suppliers = new List<SupplierConfiguration>
-                {
-                    CreateSampleSupplierConfiguration("SampleSupplier")
-                }
-            };
-
-            await SaveConfigurationAsync(sampleConfig, filePath);
-        }
 
         private async Task EnsureConfigurationLoadedAsync()
         {
@@ -297,14 +279,6 @@ namespace SacksDataLayer.FileProcessing.Services
             };
         }
 
-        private SupplierConfiguration CreateSampleSupplierConfiguration(string name)
-        {
-            var config = CreateGenericSupplierConfiguration();
-            config.Name = name;
-            config.Description = $"Sample configuration for {name}";
-            config.Detection.FileNamePatterns = new List<string> { $"*{name}*" };
-            return config;
-        }
 
         private void ValidateSupplier(SupplierConfiguration supplier, ConfigurationValidationResult result, HashSet<string> supplierNames)
         {

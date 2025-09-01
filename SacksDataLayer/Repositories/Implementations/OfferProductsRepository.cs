@@ -18,41 +18,41 @@ namespace SacksDataLayer.Repositories.Implementations
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<OfferProductEntity?> GetByIdAsync(int id)
+        public async Task<OfferProductEntity?> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _context.OfferProducts
                 .Include(op => op.Offer)
                 .ThenInclude(o => o.Supplier)
                 .Include(op => op.Product)
-                .FirstOrDefaultAsync(op => op.Id == id);
+                .FirstOrDefaultAsync(op => op.Id == id, cancellationToken);
         }
 
-        public async Task<IEnumerable<OfferProductEntity>> GetByOfferIdAsync(int offerId)
+        public async Task<IEnumerable<OfferProductEntity>> GetByOfferIdAsync(int offerId, CancellationToken cancellationToken)
         {
             return await _context.OfferProducts
                 .Include(op => op.Product)
                 .Where(op => op.OfferId == offerId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<OfferProductEntity>> GetByProductIdAsync(int productId)
+        public async Task<IEnumerable<OfferProductEntity>> GetByProductIdAsync(int productId, CancellationToken cancellationToken)
         {
             return await _context.OfferProducts
                 .Include(op => op.Offer)
                 .ThenInclude(o => o.Supplier)
                 .Where(op => op.ProductId == productId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<OfferProductEntity?> GetByOfferAndProductAsync(int offerId, int productId)
+        public async Task<OfferProductEntity?> GetByOfferAndProductAsync(int offerId, int productId, CancellationToken cancellationToken)
         {
             return await _context.OfferProducts
                 .Include(op => op.Offer)
                 .Include(op => op.Product)
-                .FirstOrDefaultAsync(op => op.OfferId == offerId && op.ProductId == productId);
+                .FirstOrDefaultAsync(op => op.OfferId == offerId && op.ProductId == productId, cancellationToken);
         }
 
-        public async Task<IEnumerable<OfferProductEntity>> GetPagedAsync(int skip, int take)
+        public async Task<IEnumerable<OfferProductEntity>> GetPagedAsync(int skip, int take, CancellationToken cancellationToken)
         {
             return await _context.OfferProducts
                 .Include(op => op.Offer)
@@ -60,42 +60,34 @@ namespace SacksDataLayer.Repositories.Implementations
                 .Include(op => op.Product)
                 .Skip(skip)
                 .Take(take)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<int> GetCountAsync()
+        public async Task<int> GetCountAsync(CancellationToken cancellationToken)
         {
-            return await _context.OfferProducts.CountAsync();
+            return await _context.OfferProducts.CountAsync(cancellationToken);
         }
 
-        public async Task<OfferProductEntity> CreateAsync(OfferProductEntity offerProduct)
+        public async Task<OfferProductEntity> CreateAsync(OfferProductEntity offerProduct, CancellationToken cancellationToken)
         {
             if (offerProduct == null)
                 throw new ArgumentNullException(nameof(offerProduct));
 
             offerProduct.CreatedAt = DateTime.UtcNow;
-            
-            // Serialize ProductProperties if they exist
-            if (offerProduct.ProductProperties != null && offerProduct.ProductProperties.Any())
-            {
-                // The ProductProperties will be automatically serialized by EF Core
-            }
-
             _context.OfferProducts.Add(offerProduct);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return offerProduct;
         }
 
-        public async Task<OfferProductEntity> UpdateAsync(OfferProductEntity offerProduct)
+        public async Task<OfferProductEntity> UpdateAsync(OfferProductEntity offerProduct, CancellationToken cancellationToken)
         {
             if (offerProduct == null)
                 throw new ArgumentNullException(nameof(offerProduct));
 
-            var existingOfferProduct = await GetByIdAsync(offerProduct.Id);
+            var existingOfferProduct = await GetByIdAsync(offerProduct.Id, cancellationToken);
             if (existingOfferProduct == null)
                 throw new InvalidOperationException($"OfferProduct with ID {offerProduct.Id} not found");
 
-            // Update properties
             existingOfferProduct.Price = offerProduct.Price;
             existingOfferProduct.Capacity = offerProduct.Capacity;
             existingOfferProduct.Discount = offerProduct.Discount;
@@ -108,39 +100,38 @@ namespace SacksDataLayer.Repositories.Implementations
             existingOfferProduct.ProductProperties = offerProduct.ProductProperties;
             existingOfferProduct.UpdateModified();
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return existingOfferProduct;
         }
 
-        public async Task<IEnumerable<OfferProductEntity>> BulkCreateAsync(IEnumerable<OfferProductEntity> offerProducts)
+        public async Task<IEnumerable<OfferProductEntity>> BulkCreateAsync(IEnumerable<OfferProductEntity> offerProducts, CancellationToken cancellationToken)
         {
             var offerProductList = offerProducts.ToList();
-            
             foreach (var offerProduct in offerProductList)
             {
                 offerProduct.CreatedAt = DateTime.UtcNow;
             }
 
             _context.OfferProducts.AddRange(offerProductList);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return offerProductList;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            var offerProduct = await GetByIdAsync(id);
+            var offerProduct = await GetByIdAsync(id, cancellationToken);
             if (offerProduct == null)
                 return false;
 
             _context.OfferProducts.Remove(offerProduct);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
 
-        public async Task<bool> ExistsAsync(int offerId, int productId)
+        public async Task<bool> ExistsAsync(int offerId, int productId, CancellationToken cancellationToken)
         {
             return await _context.OfferProducts
-                .AnyAsync(op => op.OfferId == offerId && op.ProductId == productId);
+                .AnyAsync(op => op.OfferId == offerId && op.ProductId == productId, cancellationToken);
         }
     }
 }
