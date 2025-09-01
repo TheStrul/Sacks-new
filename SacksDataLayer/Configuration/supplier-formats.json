@@ -11,10 +11,10 @@
       },
       "columnIndexMappings": {
         "A": "Category",
-        "C": "Family",
-        "D": "CommercialLine",
-        "F": "PricingItemName",
-        "G": "ItemCode",
+        "C": "Gender",
+        "D": "Line",
+        "F": "Description",
+        "G": "Ref",
         "H": "Name",
         "J": "Size",
         "L": "Unit",
@@ -24,10 +24,10 @@
       },
       "propertyClassification": {
         "coreProductProperties": [
-          "EAN", "Category", "Family", "CommercialLine", "PricingItemName", "Size", "ItemCode"
+          "Category", "Gender", "Line", "Size","Unit"
         ],
         "offerProperties": [
-          "Price", "Capacity"
+          "Price", "Capacity", "Ref"
         ]
       },
       "dataTypes": {
@@ -56,10 +56,10 @@
           "transformations": ["trim"]
         },
         "Unit": {
-          "type": "string",
+          "type": "number",
           "allowNull": true,
-          "maxLength": 20,
-          "transformations": ["trim"]
+          "defaultValue": 0,
+          "transformations": ["trim", "parseDecimal"]
         },
         "EAN": {
           "type": "string",
@@ -67,40 +67,34 @@
           "maxLength": 20,
           "transformations": ["trim", "removeSpaces"]
         },
-        "ItemCode": {
+        "Ref": {
           "type": "string",
           "allowNull": true,
           "maxLength": 20,
           "transformations": ["trim"]
         },
         "Capacity": {
-          "type": "string",
+          "type": "number",
           "allowNull": true,
-          "maxLength": 50,
-          "transformations": ["trim"]
+          "defaultValue": 0,
+          "transformations": ["trim", "parseDecimal"]
         },
-        "CommercialLine": {
+        "Line": {
           "type": "string",
           "allowNull": true,
           "maxLength": 100,
           "transformations": ["trim"]
         },
-        "Family": {
+        "Gender": {
           "type": "string",
           "allowNull": true,
           "maxLength": 100,
-          "transformations": ["trim"]
-        },
-        "PricingItemName": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 255,
           "transformations": ["trim"]
         },
         "Description": {
           "type": "string",
           "allowNull": true,
-          "maxLength": 2000,
+          "maxLength": 255,
           "transformations": ["trim"]
         }
       },
