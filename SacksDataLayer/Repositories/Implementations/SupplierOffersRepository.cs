@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SacksDataLayer.Data;
 using SacksDataLayer.Repositories.Interfaces;
+using SacksDataLayer.Entities;
 
 namespace SacksDataLayer.Repositories.Implementations
 {

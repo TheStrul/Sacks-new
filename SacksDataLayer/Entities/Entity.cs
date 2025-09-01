@@ -1,4 +1,4 @@
-﻿namespace SacksDataLayer
+﻿namespace SacksDataLayer.Entities
 {
     public abstract class Entity
     {

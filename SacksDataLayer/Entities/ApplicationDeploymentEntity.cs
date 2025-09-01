@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace SacksDataLayer
+namespace SacksDataLayer.Entities
 {
     /// <summary>
     /// Tracks application deployments and versions

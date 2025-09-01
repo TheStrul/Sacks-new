@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 
-namespace SacksDataLayer
+namespace SacksDataLayer.Entities
 {
     /// <summary>
     /// Product entity with support for unlimited dynamic properties

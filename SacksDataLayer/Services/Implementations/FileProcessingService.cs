@@ -7,6 +7,7 @@ using SacksDataLayer.Repositories.Implementations;
 using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Implementations;
 using SacksDataLayer.Services.Interfaces;
+using SacksDataLayer.Entities;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;

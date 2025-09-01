@@ -1,3 +1,5 @@
+using SacksDataLayer.Entities;
+
 namespace SacksDataLayer.Repositories.Interfaces;
 
 public interface ISupplierOffersRepository

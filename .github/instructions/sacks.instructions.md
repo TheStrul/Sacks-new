@@ -4,9 +4,10 @@
 
 **NO MIGRATIONS NEEDED UNTIL PRODUCTION IS ANNOUNCED!**
 
-- Database will be auto-created on first run
+- Database will be auto-created on first run using `EnsureCreatedAsync()`
 - All migration files have been removed
 - Infrastructure is aligned for automatic database creation
+- Current database provider: **MariaDB/MySQL** (Pomelo.EntityFrameworkCore.MySql)
 
 ## 🎯 Project Overview
 
@@ -17,9 +18,8 @@ This is a **configuration-driven** Excel file normalization system that converts
 ### Core Data Flow
 
 ```text
-Excel Files → FileDataReader → ConfigurationBasedNormalizer → Relational Entities → Database
+Excel Files → FileDataReader → ConfigurationBasedNormalizer → NormalizationResult → Relational Entities → MariaDB
 ```
-
 
 ## 🏗️ Relational Database Architecture
 
@@ -28,14 +28,17 @@ Excel Files → FileDataReader → ConfigurationBasedNormalizer → Relational E
 #### 1. **ProductEntity** - Core Product Data
 ```csharp
 - Id, Name, Description, EAN
-- DynamicProperties (JSON) - core product attributes only
+- DynamicPropertiesJson (JSON column) - core product attributes only
+- CreatedAt, ModifiedAt (audit fields)
 - Navigation: OfferProducts collection
 ```
 
 #### 2. **SupplierEntity** - Supplier Information  
 ```csharp
-- Id, Name, ContactInfo, Industry, Region
-- Navigation: SupplierOffers collection
+- Id, Name, Description, Industry, Region
+- ContactName, ContactEmail, Company, FileFrequency
+- Notes
+- Navigation: Offers collection
 ```
 
 #### 3. **SupplierOfferEntity** - Offer Catalogs/Price Lists
@@ -49,9 +52,9 @@ Excel Files → FileDataReader → ConfigurationBasedNormalizer → Relational E
 #### 4. **OfferProductEntity** - Product-Offer Junction Table
 ```csharp
 - Id, OfferId, ProductId
-- Price, Discount, ListPrice, Capacity
-- MinimumOrderQuantity, IsAvailable
-- ProductPropertiesJson - offer-specific product data
+- Price, Capacity, Discount, ListPrice, UnitOfMeasure
+- MinimumOrderQuantity, MaximumOrderQuantity, IsAvailable
+- Notes, ProductPropertiesJson (JSON column) - offer-specific product data
 - Navigation: Offer, Product
 ```
 
@@ -61,27 +64,32 @@ Excel Files → FileDataReader → ConfigurationBasedNormalizer → Relational E
 
 - ✅ **Database Architecture**: Implemented 4-table relational design with proper normalization
 - ✅ **Property Separation**: Core vs offer properties correctly classified
-- ✅ **Entity Framework Integration**: Full EF Core 9.0 implementation with migrations
+- ✅ **Entity Framework Integration**: Full EF Core 9.0 implementation with MariaDB
 - ✅ **Configuration System**: JSON-based supplier configuration framework
 
 ### Phase 2: Data Processing Enhancement ✅ *COMPLETED*
 
-- ✅ **ConfigurationBasedNormalizer Updated**: Now creates relational entities instead of flat ProductEntity objects
-- ✅ **SupplierOffer and OfferProduct Logic**: Proper relational entity creation implemented
+- ✅ **ConfigurationBasedNormalizer**: Creates relational entities with proper property classification
+- ✅ **NormalizationResult**: Enhanced to contain ProductEntity, SupplierOfferEntity, and OfferProductEntity
+- ✅ **ProcessingResult**: Contains collection of NormalizationResults plus statistics
 - ✅ **Property Classification**: Core vs offer properties correctly separated during processing
-- ✅ **ProcessingModes Configuration**: Added to supplier-formats.json for proper mode handling
-- ✅ **NormalizationResult Enhanced**: Now contains ProductEntity, SupplierOfferEntity, and OfferProductEntity
-- ✅ **Backward Compatibility**: Legacy code integration maintained
-- ✅ **Comprehensive Testing**: Full validation of relational architecture
+- ✅ **Excel Column Mapping**: Column index mappings (A, B, C, etc.) for user-friendly configuration
+- ✅ **Relational Entity Creation**: Proper SupplierOffer and OfferProduct creation
+- ✅ **JSON Property Storage**: Dynamic properties stored in JSON columns with serialization
+- ✅ **Backward Compatibility**: Legacy interfaces maintained
+### Phase 3: Production Readiness 🚧 *IN PROGRESS*
+- **Service Layer**: Complete service implementations for all repositories
+- **File Processing Service**: Unified file processing with automatic supplier detection
+- **Database Auto-Creation**: Production-ready database initialization
+- **Configuration Management**: Dynamic supplier configuration loading
+- **Error Handling**: Comprehensive error handling and logging
 
-**Known Issue**: `SupplierConfigurationManager.GetSupplierConfigurationAsync("DIOR")` may return null in some cases. Production code should include robust workarounds that manually search the suppliers list as a fallback.
-````````
-### Phase 3: Customer BI Consultation
+### Phase 4: Customer BI Consultation
 - Present well-defined relational data layer to customer
 - Gather BI requirements based on normalized structure
 - Plan reporting and analytics features
 
-### Phase 4: Production Deployment
+### Phase 5: Production Deployment
 - Deploy to local PC environment with Entity Framework
 - Support adding new suppliers via JSON configuration only
 
@@ -90,30 +98,45 @@ Excel Files → FileDataReader → ConfigurationBasedNormalizer → Relational E
 ```
 Sacks-New/
 ├── SacksDataLayer/              # Core normalization library
-│   ├── Entity.cs                # Base entity with audit fields
-│   ├── ProductEntity.cs         # Core product data
-│   ├── SupplierEntity.cs        # Supplier information
-│   ├── SupplierOfferEntity.cs   # Offer catalogs/price lists
-│   ├── OfferProductEntity.cs    # Product-offer junction table
+│   ├── Entities/                # Entity classes with proper namespace organization
+│   │   ├── Entity.cs            # Base entity with audit fields (Id, CreatedAt, ModifiedAt)
+│   │   ├── ProductEntity.cs     # Core product data with JSON dynamic properties
+│   │   ├── SupplierEntity.cs    # Supplier information and metadata
+│   │   ├── SupplierOfferEntity.cs # Offer catalogs/price lists
+│   │   ├── OfferProductEntity.cs # Product-offer junction table
+│   │   └── ApplicationDeploymentEntity.cs # Deployment tracking
 │   ├── Data/
-│   │   └── SacksDbContext.cs    # Entity Framework context
+│   │   └── SacksDbContext.cs    # Entity Framework context for MariaDB
 │   ├── Configuration/           # JSON-based supplier configs
 │   │   ├── supplier-formats.json
 │   │   ├── SupplierConfigurationModels.cs
+│   │   ├── ISupplierProductNormalizer.cs
 │   │   └── Normalizers/
+│   │       ├── ConfigurationBasedNormalizer.cs
+│   │       └── NormalizationResult.cs
 │   ├── FileProcessing/          # Excel file processing
+│   │   ├── Models/              # FileData, RowData, CellData, ProcessingModels
+│   │   ├── Interfaces/          # IFileDataReader, IUnifiedFileProcessor
+│   │   └── Implementations/     # FileDataReader
 │   ├── Repositories/            # Data access layer
+│   │   ├── Interfaces/          # Repository contracts
+│   │   └── Implementations/     # EF Core repository implementations
 │   └── Services/                # Business logic services
+│       ├── ConfigurationBasedNormalizerFactory.cs
+│       ├── SupplierConfigurationManager.cs
+│       ├── Interfaces/          # Service contracts
+│       └── Implementations/     # Service implementations
 └── SacksConsoleApp/             # Testing and demonstration
-    └── Program.cs
+    ├── Program.cs               # Main entry point with DI setup
+    └── appsettings.json         # MariaDB connection configuration
 ```
 
 ## Key Components & Patterns
 
 ### 1. Entity Design Pattern
 
-- **Base Class**: `Entity.cs` provides audit fields (Id, CreatedAt, UpdatedAt, IsDeleted)
-- **Product Entity**: Core product data with `DynamicProperties` for unlimited custom fields
+- **Base Class**: `Entity.cs` provides audit fields (Id, CreatedAt, ModifiedAt)
+- **Product Entity**: Core product data with `DynamicPropertiesJson` for unlimited custom fields
 - **Supplier Entity**: Basic supplier information and metadata
 - **SupplierOffer Entity**: Catalog/price list metadata (eliminates duplication)
 - **OfferProduct Entity**: Junction table with product-specific pricing and terms
@@ -122,8 +145,8 @@ Sacks-New/
 
 - **Central Config**: `Configuration/supplier-formats.json` contains ALL supplier definitions
 - **Property Classification**: Separates core product vs offer-specific properties
-- **Detection Logic**: File pattern matching, header keywords, required columns
-- **Column Mapping**: Excel columns → Entity properties (with proper classification)
+- **Detection Logic**: File pattern matching and Excel column index mappings
+- **Column Mapping**: Excel columns (A, B, C, etc.) → Entity properties (with proper classification)
 - **Data Types**: Type conversion rules (string, decimal, int, bool, datetime)
 
 ### 3. Normalizer Pattern
@@ -132,19 +155,21 @@ Sacks-New/
 - **Single Implementation**: `ConfigurationBasedNormalizer` handles ALL suppliers via JSON config
 - **Factory**: `ConfigurationBasedNormalizerFactory` creates normalizers from configuration
 - **Manager**: `SupplierConfigurationManager` loads/manages JSON configurations
+- **Result**: `NormalizationResult` contains ProductEntity, SupplierOfferEntity, and OfferProductEntity
 
 ### 4. Repository Pattern
 
+- **Complete Repository Layer**: All entities have dedicated repositories
 - **SupplierOffersRepository**: Handles catalog and product-offer queries
 - **Proper Entity Framework Queries**: Uses Include() for navigation properties
 - **Junction Table Queries**: Correctly navigates through OfferProducts
 
 ## 🔧 Database Integration
 
-### Entity Framework Core 9.0
+### Entity Framework Core 9.0 with MariaDB
 
 ```csharp
-// DbContext with proper relationships
+// DbContext with proper relationships and JSON column support
 public class SacksDbContext : DbContext
 {
     public DbSet<ProductEntity> Products { get; set; }
@@ -156,32 +181,53 @@ public class SacksDbContext : DbContext
 
 ### Key Features
 
-- **Development Database Management**: Schema recreation and flexible development workflow
-- **Audit Fields**: Automatic CreatedAt/UpdatedAt tracking
-- **Proper Indexes**: Performance optimization for lookups
-- **Foreign Key Constraints**: Data integrity enforcement
-- **JSON Serialization**: Dynamic properties stored as JSON
+- **MariaDB Integration**: Using Pomelo.EntityFrameworkCore.MySql provider
+- **JSON Column Support**: Dynamic properties stored as JSON in database
+- **Development Database Management**: Schema auto-creation using `EnsureCreatedAsync()`
+- **Audit Fields**: Automatic CreatedAt/ModifiedAt tracking with UTC timestamps
+- **Proper Indexes**: Performance optimization for lookups and relationships
+- **Foreign Key Constraints**: Data integrity enforcement with cascade delete
+- **Unique Constraints**: Supplier names are unique
 
-### Connection String
+### Connection String (MariaDB)
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=SacksProductsDb;Trusted_Connection=true;"
+    "DefaultConnection": "Server=localhost;Port=3306;Database=SacksProductsDb;Uid=root;Pwd=;"
+  },
+  "DatabaseSettings": {
+    "Provider": "MariaDB",
+    "CommandTimeout": 30,
+    "RetryOnFailure": true,
+    "MaxRetryCount": 3
   }
 }
 ```
 
 ## 📊 Property Classification System
 
-### Supplier Configuration Example
+### Supplier Configuration Example (DIOR)
 
 ```json
 {
-  "name": "ExampleSupplier",
+  "name": "DIOR",
+  "description": "DIOR beauty and fragrance products supplier",
+  "detection": {
+    "fileNamePatterns": ["DIOR*.xlsx"]
+  },
+  "columnIndexMappings": {
+    "A": "Category",
+    "C": "Family", 
+    "F": "PricingItemName",
+    "H": "Name",
+    "M": "EAN",
+    "N": "Capacity",
+    "O": "Price"
+  },
   "propertyClassification": {
     "coreProductProperties": [
-      "Category", "Size", "Unit", "EAN", "CommercialLine", "Family", "PricingItemName"
+      "EAN", "Category", "Family", "CommercialLine", "PricingItemName", "Size", "ItemCode"
     ],
     "offerProperties": [
       "Price", "Capacity"
@@ -192,13 +238,16 @@ public class SacksDbContext : DbContext
 
 ### Processing Logic
 
-1. **Core Properties** → `ProductEntity.DynamicProperties`
+1. **Core Properties** → `ProductEntity.DynamicPropertiesJson`
    - Stored once per product (deduplicated)
    - Shared across all supplier offers
+   - Serialized to JSON column in database
 
 2. **Offer Properties** → `OfferProductEntity` 
    - Stored per product-offer combination
    - Allows different pricing/terms per supplier
+   - Standard properties mapped to dedicated columns
+   - Additional properties stored in `ProductPropertiesJson`
 
 ## 🤝 Project-Specific Collaboration Rules
 
@@ -225,9 +274,9 @@ public class SacksDbContext : DbContext
 ### Target Environment
 
 - **Platform**: Local PC deployment
-- **Database**: SQL Server LocalDB (free, integrated with Visual Studio)
-- **ORM**: Entity Framework Core 9.0
-- **Storage**: Local file system for Excel inputs and database files
+- **Database**: MariaDB (MySQL-compatible, free, high-performance)
+- **ORM**: Entity Framework Core 9.0 with Pomelo provider
+- **Storage**: Local database server for Excel inputs and relational data
 
 ### Data Relationships
 
@@ -235,50 +284,40 @@ public class SacksDbContext : DbContext
 Suppliers (1) ←→ (Many) SupplierOffers (1) ←→ (Many) OfferProducts (Many) ←→ (1) Products
 
 Example:
-Supplier → "Supplier 2025 Catalog" → Multiple OfferProducts → Multiple Products
+Supplier → "DIOR 2025 Catalog" → Multiple OfferProducts → Multiple Products
 ```
 
 ## 📊 JSON Configuration Structure
 
-The `supplier-formats.json` file contains all supplier configurations with property classification:
+The `supplier-formats.json` file contains all supplier configurations with Excel column index mappings:
 
 ```json
 {
   "version": "1.0",
-  "lastUpdated": "2024-12-19T10:00:00Z",
-  "description": "Configuration file for all supplier file formats",
   "suppliers": [
     {
       "name": "DIOR",
       "description": "DIOR beauty and fragrance products supplier",
       "detection": {
-        "fileNamePatterns": ["*DIOR*", "*dior*", "*Dior*"],
-        "headerKeywords": ["DIOR", "Dior Product", "Beauty Product"],
-        "requiredColumns": ["Item Name", "PRICE"],
-        "priority": 10
+        "fileNamePatterns": ["DIOR*.xlsx"]
       },
-      "columnMappings": {
-        "Item Name": "Name",
-        "Item Code": "SKU", 
-        "PRICE": "Price",
-        "Category": "Category",
-        "Size": "Size",
-        "Capacity": "Capacity"
+      "columnIndexMappings": {
+        "A": "Category",
+        "H": "Name",
+        "M": "EAN",
+        "O": "Price"
       },
       "propertyClassification": {
-        "coreProductProperties": [
-          "Category", "Size", "Unit", "EAN", "CommercialLine", "Family"
-        ],
-        "offerProperties": [
-          "Price", "Capacity"
-        ]
+        "coreProductProperties": ["Category", "Size", "EAN", "Family"],
+        "offerProperties": ["Price", "Capacity"]
       },
-      "dataTypes": {
-        "PRICE": {
-          "type": "decimal",
-          "format": "currency",
-          "transformations": ["removeSymbols", "parseDecimal"]
-        }
+      "validation": {
+        "dataStartRowIndex": 5,
+        "expectedColumnCount": 11
+      },
+      "transformation": {
+        "skipEmptyRows": true,
+        "trimWhitespace": true
       }
     }
   ]
@@ -287,25 +326,22 @@ The `supplier-formats.json` file contains all supplier configurations with prope
 
 ## 🔄 Adding New Suppliers
 
-### Method 1: Manual JSON Editing
+### Method: JSON Configuration
 
-Add new supplier with property classification:
+Add new supplier with Excel column index mappings:
 
 ```json
 {
   "name": "Chanel",
   "description": "Chanel luxury fashion and beauty products",
   "detection": {
-    "fileNamePatterns": ["*Chanel*", "*CHANEL*"],
-    "headerKeywords": ["Chanel", "CHANEL"],
-    "priority": 10
+    "fileNamePatterns": ["*Chanel*", "*CHANEL*"]
   },
-  "columnMappings": {
-    "Product": "Name",
-    "Product Code": "SKU",
-    "Cost": "Price",
-    "Type": "Category",
-    "Volume": "Capacity"
+  "columnIndexMappings": {
+    "A": "Name",
+    "B": "SKU", 
+    "C": "Price",
+    "D": "Category"
   },
   "propertyClassification": {
     "coreProductProperties": ["Category", "Brand", "Collection"],
@@ -316,22 +352,36 @@ Add new supplier with property classification:
 
 ### Configuration Features
 
-- **File Detection**: Filename patterns, header keywords, required columns
-- **Data Types & Transformations**: Built-in type conversion and data cleaning
+- **File Detection**: Filename patterns for automatic supplier recognition
+- **Excel Column Mapping**: User-friendly A, B, C column references
 - **Property Classification**: Automatic separation of core vs offer properties
-- **Validation Rules**: Field requirements, data quality checks
+- **Data Transformation**: Row skipping, whitespace trimming, type conversion
+- **Validation Rules**: Data start row, expected column count
 
 ## 🎯 Current Processing Workflow
 
-### 1. File Detection
+### 1. File Detection & Processing
 ```csharp
-var normalizer = factory.GetNormalizer(fileData);
-// Uses patterns, keywords, and required columns
+var configManager = new SupplierConfigurationManager();
+var factory = new ConfigurationBasedNormalizerFactory(configManager);
+var normalizer = await factory.GetNormalizerForFileAsync(fileName);
 ```
 
-### 2. Property Classification  
+### 2. Relational Entity Creation  
 ```csharp
-// Core properties → ProductEntity.DynamicProperties
+var result = await normalizer.NormalizeAsync(fileData, context);
+
+foreach (var normalizationResult in result.NormalizationResults)
+{
+    var product = normalizationResult.Product;           // Core product data
+    var offer = normalizationResult.SupplierOffer;      // Catalog metadata
+    var offerProduct = normalizationResult.OfferProduct; // Junction with pricing
+}
+```
+
+### 3. Property Classification in Action
+```csharp
+// Core properties → ProductEntity.DynamicPropertiesJson
 product.SetDynamicProperty("Category", "Fragrance");
 
 // Offer properties → OfferProductEntity
@@ -339,44 +389,25 @@ offerProduct.Price = 125.50m;
 offerProduct.SetProductProperty("Capacity", "100ml");
 ```
 
-### 3. Entity Creation
-```csharp
-// Create relational structure
-var supplier = new SupplierEntity { Name = "DIOR" };
-var offer = new SupplierOfferEntity { 
-    OfferName = "DIOR 2025", 
-    Currency = "EUR" 
-};
-var product = new ProductEntity { Name = "J'adore" };
-var offerProduct = new OfferProductEntity { 
-    Price = 125.50m,
-    Capacity = "100ml"
-};
-```
-
 ## 💡 Usage Examples
 
 ### Basic Processing with Relational Architecture
 
 ```csharp
-var configManager = new SupplierConfigurationManager();
-var factory = new ConfigurationBasedNormalizerFactory(configManager);
-var service = new EnhancedProductNormalizationService(fileReader, factory);
+var fileProcessingService = serviceProvider.GetRequiredService<IFileProcessingService>();
+await fileProcessingService.ProcessFileAsync("DIOR_catalog.xlsx");
 
-var result = await service.NormalizeFileAsync("supplier_catalog.xlsx");
+// Access via repositories
+var offersRepo = serviceProvider.GetRequiredService<ISupplierOffersRepository>();
+var offers = await offersRepo.GetBySupplierIdAsync(supplierId);
 
-// Access relational data
-foreach (var product in result.Products)
+foreach (var offer in offers)
 {
-    // Core product properties
-    var category = product.GetDynamicProperty<string>("Category");
-    
-    // Offer-specific data through navigation
-    foreach (var offerProduct in product.OfferProducts)
+    foreach (var offerProduct in offer.OfferProducts)
     {
+        var productName = offerProduct.Product.Name;
         var price = offerProduct.Price;
-        var supplier = offerProduct.Offer.Supplier.Name;
-        var capacity = offerProduct.GetProductProperty<string>("Capacity");
+        var category = offerProduct.Product.GetDynamicProperty<string>("Category");
     }
 }
 ```
@@ -394,23 +425,26 @@ var offers = await offersRepo.GetByProductIdAsync(productId);
 var supplierOffers = await offersRepo.GetBySupplierIdAsync(supplierId);
 ```
 
-## 🎯 Benefits of Relational Architecture
+## 🎯 Benefits of Current Architecture
 
 ### Data Integrity
 - ✅ **No Duplication**: Catalog metadata stored once per offer
 - ✅ **Referential Integrity**: Foreign key constraints prevent orphaned data
 - ✅ **Audit Trail**: Full tracking of when entities were created/modified
+- ✅ **JSON Validation**: Proper serialization/deserialization of dynamic properties
 
 ### Performance  
 - ✅ **Proper Indexing**: Optimized queries with Entity Framework indexes
 - ✅ **Efficient Joins**: Relational queries instead of JSON parsing
 - ✅ **Selective Loading**: Include() only needed navigation properties
+- ✅ **MariaDB Performance**: High-performance database engine
 
 ### Flexibility
 - ✅ **Multiple Catalogs**: Suppliers can have multiple active offers
 - ✅ **Version Control**: Track catalog versions and validity periods  
 - ✅ **Currency Support**: Different currencies per catalog
-- ✅ **Scalability**: Clean separation supports complex business scenarios
+- ✅ **Excel Column Mapping**: User-friendly A, B, C column references
+- ✅ **Dynamic Properties**: Unlimited custom fields via JSON storage
 
 ### Business Intelligence
 - ✅ **Price Comparisons**: Easy supplier pricing analysis
@@ -447,11 +481,11 @@ When adding new suppliers:
 ### Database Management Strategy
 
 #### Development Environment (Current Phase) 🔧
-- **Database Recreation**: Database can be deleted and recreated as needed during development
-- **Schema Management**: Use `EnsureCreated()` or `EnsureDeleted()` for rapid development iterations
-- **No Migration Tracking**: Focus on entity design over formal migration management
-- **LocalDB Flexibility**: Take advantage of LocalDB's easy reset capabilities
+- **Database Auto-Creation**: Database automatically created using `EnsureCreatedAsync()`
+- **Schema Management**: No formal migrations - schema derived from entities
+- **MariaDB Flexibility**: Easy database recreation for schema changes
 - **Rapid Testing**: Delete database when schema changes are needed for testing
+- **JSON Column Support**: Full utilization of MariaDB JSON features
 
 #### Production Environment (Future Phase) 🚀
 - **Formal Migrations**: Will implement proper EF Core migration tracking before production
@@ -460,8 +494,8 @@ When adding new suppliers:
 - **Rollback Support**: Maintain migration history for rollback capabilities
 
 #### Current Implementation Note
-The existing code uses `context.Database.MigrateAsync()` but this should be considered **development scaffolding**. 
+The existing code uses `context.Database.EnsureCreatedAsync()` which is perfect for development.
 For rapid development, you can safely:
-- Delete the LocalDB database files when schema changes are needed
-- Use `EnsureCreated()` for simpler development database initialization
-- Ignore formal migration files until production deployment phase
+- Delete the MariaDB database when schema changes are needed
+- Let the application recreate the schema automatically
+- Focus on entity design over formal migration management

@@ -1,3 +1,5 @@
+using SacksDataLayer.Entities;
+
 namespace SacksDataLayer.FileProcessing.Models
 {
 

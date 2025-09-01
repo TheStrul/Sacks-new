@@ -26,7 +26,6 @@ namespace SacksConsoleApp
         static async Task Main(string[] args)
         {
             Console.WriteLine("=== Sacks Product Management System ===");
-            Console.WriteLine(ApplicationInfo.GetDeploymentInfo());
             Console.WriteLine();
 
             try

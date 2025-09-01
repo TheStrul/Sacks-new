@@ -1,6 +1,7 @@
 using SacksDataLayer.FileProcessing.Models;
 using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
+using SacksDataLayer.Entities;
 using System.Text.Json;
 
 namespace SacksDataLayer.Services.Implementations

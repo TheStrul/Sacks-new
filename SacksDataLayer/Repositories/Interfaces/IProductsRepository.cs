@@ -1,4 +1,5 @@
 using SacksDataLayer.FileProcessing.Models;
+using SacksDataLayer.Entities;
 using System.Linq.Expressions;
 
 namespace SacksDataLayer.Repositories.Interfaces

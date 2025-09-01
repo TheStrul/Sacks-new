@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using SacksDataLayer.Entities;
 
 namespace SacksDataLayer.Data
 {

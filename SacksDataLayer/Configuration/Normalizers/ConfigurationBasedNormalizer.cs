@@ -3,6 +3,7 @@ using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Models;
 using SacksDataLayer.Configuration.Normalizers;
+using SacksDataLayer.Entities;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using System.Globalization;
 using System.Text.RegularExpressions;
