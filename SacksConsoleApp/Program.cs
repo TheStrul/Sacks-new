@@ -223,6 +223,9 @@ namespace SacksConsoleApp
                 var configPath = Path.Combine(AppContext.BaseDirectory, "Configuration", "supplier-formats.json");
                 return new SupplierConfigurationManager(configPath);
             });
+            
+            // Add normalization factory
+            services.AddScoped<ConfigurationBasedNormalizerFactory>();
 
             return services;
         }

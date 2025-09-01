@@ -3,7 +3,10 @@ using SacksDataLayer.Entities;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Configuration;
+using SacksDataLayer.FileProcessing.Models;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
+using SacksDataLayer.Configuration.Normalizers;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 
 namespace SacksDataLayer.Services.Implementations
@@ -17,15 +20,18 @@ namespace SacksDataLayer.Services.Implementations
         private readonly IInMemoryDataService _inMemoryDataService;
         private readonly IFileDataReader _fileDataReader;
         private readonly SupplierConfigurationManager _configManager;
+        private readonly ConfigurationBasedNormalizerFactory _configBasedNormalizerFactory;
 
         public InMemoryFileProcessingService(
             IInMemoryDataService inMemoryDataService,
             IFileDataReader fileDataReader,
-            SupplierConfigurationManager configManager)
+            SupplierConfigurationManager configManager,
+            ConfigurationBasedNormalizerFactory configBasedNormalizerFactory)
         {
             _inMemoryDataService = inMemoryDataService ?? throw new ArgumentNullException(nameof(inMemoryDataService));
             _fileDataReader = fileDataReader ?? throw new ArgumentNullException(nameof(fileDataReader));
             _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
+            _configBasedNormalizerFactory = configBasedNormalizerFactory ?? throw new ArgumentNullException(nameof(configBasedNormalizerFactory));
         }
 
         /// <summary>
@@ -219,7 +225,7 @@ namespace SacksDataLayer.Services.Implementations
             {
                 try
                 {
-                    // Map row data to product using supplier configuration
+                    // Map row data to product using simple direct mapping with property classification
                     var productData = MapRowToProduct(row, supplierConfig);
                     if (productData == null) continue;
 
@@ -243,7 +249,8 @@ namespace SacksDataLayer.Services.Implementations
         }
 
         /// <summary>
-        /// Maps a file row to product data
+        /// <summary>
+        /// Maps a file row to product data with proper property classification
         /// </summary>
         private ProductData? MapRowToProduct(RowData row, SupplierConfiguration supplierConfig)
         {
@@ -272,8 +279,21 @@ namespace SacksDataLayer.Services.Implementations
                                 productData.Description = cellValue;
                                 break;
                             default:
-                                // Store as dynamic property
-                                productData.DynamicProperties[propertyName ?? columnReference] = cellValue;
+                                // Classify properties based on supplier configuration
+                                if (IsOfferProperty(propertyName, supplierConfig))
+                                {
+                                    productData.OfferProperties[propertyName ?? columnReference] = cellValue;
+                                    // Debug logging for Price property
+                                    if (propertyName?.ToLower() == "price")
+                                    {
+                                        Console.WriteLine($"   💰 Found Price: {cellValue} from column {columnReference}");
+                                    }
+                                }
+                                else
+                                {
+                                    // Store as product dynamic property
+                                    productData.DynamicProperties[propertyName ?? columnReference] = cellValue;
+                                }
                                 break;
                         }
                     }
@@ -292,6 +312,19 @@ namespace SacksDataLayer.Services.Implementations
                 Console.WriteLine($"❌ Error mapping row to product: {ex.Message}");
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Helper method to determine if a property should be classified as an offer property
+        /// </summary>
+        private bool IsOfferProperty(string? propertyName, SupplierConfiguration supplierConfig)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName))
+                return false;
+
+            // Check if property is in the offerProperties configuration
+            return supplierConfig.PropertyClassification?.OfferProperties?.Any(op => 
+                string.Equals(op, propertyName, StringComparison.OrdinalIgnoreCase)) == true;
         }
 
         /// <summary>
@@ -387,7 +420,7 @@ namespace SacksDataLayer.Services.Implementations
             }
             else
             {
-                // Create new product in memory
+                // Create new product in memory - properly classified properties
                 var newProduct = new ProductEntity
                 {
                     Id = GenerateTemporaryId("product"),
@@ -421,8 +454,8 @@ namespace SacksDataLayer.Services.Implementations
 
             if (existingOfferProduct != null)
             {
-                // Update existing offer product
-                existingOfferProduct.ProductProperties = productData.DynamicProperties;
+                // Update existing offer product with proper property assignment
+                UpdateOfferProductProperties(existingOfferProduct, productData.OfferProperties);
                 existingOfferProduct.ModifiedAt = DateTime.UtcNow;
                 
                 _inMemoryDataService.AddOrUpdateOfferProductInMemory(existingOfferProduct);
@@ -430,19 +463,57 @@ namespace SacksDataLayer.Services.Implementations
             }
             else
             {
-                // Create new offer product
+                // Create new offer product with proper property assignment
                 var newOfferProduct = new OfferProductEntity
                 {
                     Id = GenerateTemporaryId("offerproduct"),
                     OfferId = offer.Id,
                     ProductId = product.Id,
-                    ProductProperties = productData.DynamicProperties,
                     CreatedAt = DateTime.UtcNow,
                     ModifiedAt = DateTime.UtcNow
                 };
 
+                UpdateOfferProductProperties(newOfferProduct, productData.OfferProperties);
+
                 _inMemoryDataService.AddOrUpdateOfferProductInMemory(newOfferProduct);
                 createCount++;
+            }
+        }
+
+        /// <summary>
+        /// Updates offer product properties from normalized offer properties
+        /// </summary>
+        private void UpdateOfferProductProperties(OfferProductEntity offerProduct, Dictionary<string, object?> offerProperties)
+        {
+            // Debug: Show what offer properties we received
+            Console.WriteLine($"   🔍 Offer properties received: {string.Join(", ", offerProperties.Keys)}");
+            
+            // Set dedicated columns for specific properties
+            if (offerProperties.TryGetValue("Price", out var priceValue) && 
+                decimal.TryParse(priceValue?.ToString(), out var price))
+            {
+                offerProduct.Price = price;
+                Console.WriteLine($"   💰 Set Price: {price}");
+            }
+            else
+            {
+                Console.WriteLine($"   ⚠️  Price not found or invalid. PriceValue: {priceValue}");
+            }
+
+            if (offerProperties.TryGetValue("Capacity", out var capacityValue))
+            {
+                offerProduct.Capacity = capacityValue?.ToString();
+                Console.WriteLine($"   📏 Set Capacity: {capacityValue}");
+            }
+
+            // Store remaining offer properties in ProductPropertiesJson
+            var remainingOfferProperties = offerProperties
+                .Where(kvp => !new[] { "Price", "Capacity" }.Contains(kvp.Key))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            if (remainingOfferProperties.Any())
+            {
+                offerProduct.ProductProperties = remainingOfferProperties;
             }
         }
 
@@ -465,6 +536,7 @@ namespace SacksDataLayer.Services.Implementations
             public string Description { get; set; } = string.Empty;
             public string EAN { get; set; } = string.Empty;
             public Dictionary<string, object?> DynamicProperties { get; set; } = new();
+            public Dictionary<string, object?> OfferProperties { get; set; } = new();
         }
     }
 }

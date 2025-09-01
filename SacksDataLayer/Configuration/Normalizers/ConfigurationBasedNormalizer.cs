@@ -292,33 +292,37 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 }
 
                 // Process all mapped columns as dynamic properties
-                foreach (var mapping in _configuration.ColumnMappings)
+                var columnMappings = CreateColumnIndexMapping(); // Use processed mapping
+                foreach (var mapping in columnMappings)
                 {
-                    var sourceColumn = mapping.Key;
-                    var targetProperty = mapping.Value;
+                    var targetProperty = mapping.Key;     // Property name
+                    var columnIndex = mapping.Value;      // Column index
                     
                     // Skip core properties as they're already handled
                     if (targetProperty is "Name" or "Description" or "EAN")
                         continue;
 
-                    var rawValue = GetCellValue(row, columnIndexes, sourceColumn);
-                    if (!string.IsNullOrEmpty(rawValue))
+                    if (columnIndex < row.Cells.Count)
                     {
-                        var convertedValue = ConvertValue(targetProperty, rawValue);
-                        if (convertedValue != null)
+                        var rawValue = row.Cells[columnIndex].Value?.Trim();
+                        if (!string.IsNullOrEmpty(rawValue))
                         {
-                            // Only set core product properties on the product entity
-                            // Offer properties will be handled separately by the processor
-                            if (!_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
+                            var convertedValue = ConvertValue(targetProperty, rawValue);
+                            if (convertedValue != null)
                             {
-                                product.SetDynamicProperty(targetProperty, convertedValue);
+                                // Only set core product properties on the product entity
+                                // Offer properties will be handled separately by the processor
+                                if (!_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
+                                {
+                                    product.SetDynamicProperty(targetProperty, convertedValue);
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        // Set default value if configured
-                        SetDefaultValue(product, targetProperty);
+                        else
+                        {
+                            // Set default value if configured
+                            SetDefaultValue(product, targetProperty);
+                        }
                     }
                 }
 
@@ -712,16 +716,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 };
 
                 // Process mapped columns with property classification
-                var columnMappings = GetColumnMapping(context);
+                var columnMappings = CreateColumnIndexMapping(); // Use the processed mapping: PropertyName → ColumnIndex
                 var offerProperties = new Dictionary<string, object?>();
                 
                 foreach (var mapping in columnMappings)
                 {
-                    var sourceColumn = mapping.Key;
-                    var targetProperty = mapping.Value;
+                    var targetProperty = mapping.Key;     // Property name (e.g., "Ref", "Capacity")
+                    var columnIndex = mapping.Value;      // Column index (e.g., 6, 13)
 
-                    if (columnIndexes.TryGetValue(targetProperty, out int columnIndex) && 
-                        columnIndex < row.Cells.Count)
+                    if (columnIndex < row.Cells.Count)
                     {
                         var cellValue = row.Cells[columnIndex].Value?.Trim();
                         
