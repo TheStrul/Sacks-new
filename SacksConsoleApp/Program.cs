@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using SacksConsoleApp;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SacksDataLayer.Configuration;
 using SacksDataLayer.Data;
+using SacksDataLayer.Extensions;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Services.Implementations;
 using SacksDataLayer.Repositories.Interfaces;
@@ -71,8 +73,9 @@ namespace SacksConsoleApp
                 Console.WriteLine("\n📋 Choose an option:");
                 Console.WriteLine("1. Test Property Normalization System");
                 Console.WriteLine("2. Run Database Operations");
-                Console.WriteLine("3. Exit");
-                Console.Write("Enter your choice (1-3): ");
+                Console.WriteLine("3. 🚀 Demo Enhanced Logging & Performance Monitoring");
+                Console.WriteLine("4. Exit");
+                Console.Write("Enter your choice (1-4): ");
 
                 var choice = Console.ReadLine();
                 
@@ -85,6 +88,9 @@ namespace SacksConsoleApp
                         await RunDatabaseOperationsAsync(serviceProvider);
                         break;
                     case "3":
+                        await EnhancedLoggingDemo.RunDemoAsync();
+                        break;
+                    case "4":
                         Console.WriteLine("Goodbye!");
                         return;
                     default:
@@ -164,6 +170,7 @@ namespace SacksConsoleApp
 
             // Add configuration options
             services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
+            services.Configure<PerformanceMonitoringSettings>(configuration.GetSection("PerformanceMonitoring"));
 
             // Get connection string from configuration
             var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -206,8 +213,13 @@ namespace SacksConsoleApp
 
             // Add application services
             services.AddScoped<IDatabaseManagementService, DatabaseManagementService>();
-            services.AddScoped<IFileProcessingService, FileProcessingService>();
             services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
+            
+            // Add file processing services (includes all file processing dependencies)
+            services.AddFileProcessingServices();
+            
+            // Add supplier configuration manager
+            services.AddSingleton<SupplierConfigurationManager>();
             
             // 🚀 PERFORMANCE: Add thread-safe services for high-performance processing
             services.AddScoped<IInMemoryDataService, InMemoryDataService>();
@@ -215,6 +227,9 @@ namespace SacksConsoleApp
             
             // 🚀 ULTIMATE PERFORMANCE: Add in-memory file processing service
             services.AddScoped<IInMemoryFileProcessingService, InMemoryFileProcessingService>();
+            
+            // 📊 MONITORING: Add performance monitoring and structured logging
+            services.AddPerformanceMonitoring();
             
             // Add file processing dependencies
             services.AddScoped<SacksAIPlatform.InfrastructuresLayer.FileProcessing.IFileDataReader, SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileDataReader>();
@@ -577,7 +592,7 @@ namespace SacksConsoleApp
                     foreach (var file in files)
                     {
                         Console.WriteLine($"   - {Path.GetFileName(file)}");
-                        await fileProcessingService.ProcessFileAsync(file);
+                        await fileProcessingService.ProcessFileAsync(file, CancellationToken.None);
                         Console.WriteLine();
                     }
                 }

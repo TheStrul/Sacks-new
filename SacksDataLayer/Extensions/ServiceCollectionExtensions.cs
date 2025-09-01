@@ -21,5 +21,31 @@ namespace SacksDataLayer.Extensions
             services.AddScoped<IPerfumeProductService, PerfumeProductService>();
             return services;
         }
+
+        /// <summary>
+        /// Register file processing services for handling file imports and processing
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <returns>Service collection for chaining</returns>
+        public static IServiceCollection AddFileProcessingServices(this IServiceCollection services)
+        {
+            services.AddScoped<IFileValidationService, FileValidationService>();
+            services.AddScoped<ISupplierConfigurationService, SupplierConfigurationService>();
+            services.AddScoped<IFileProcessingDatabaseService, FileProcessingDatabaseService>();
+            services.AddScoped<IFileProcessingBatchService, FileProcessingBatchService>();
+            services.AddScoped<IFileProcessingService, FileProcessingService>();
+            return services;
+        }
+
+        /// <summary>
+        /// Register performance monitoring and structured logging services
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <returns>Service collection for chaining</returns>
+        public static IServiceCollection AddPerformanceMonitoring(this IServiceCollection services)
+        {
+            services.AddSingleton<IPerformanceMonitoringService, PerformanceMonitoringService>();
+            return services;
+        }
     }
 }

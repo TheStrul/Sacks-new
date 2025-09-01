@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SacksDataLayer.Services.Interfaces
@@ -11,7 +12,8 @@ namespace SacksDataLayer.Services.Interfaces
         /// Processes a file (Excel, CSV, etc.) and imports data based on supplier configuration
         /// </summary>
         /// <param name="filePath">Path to the file to process</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the async operation</returns>
-        Task ProcessFileAsync(string filePath);
+        Task ProcessFileAsync(string filePath, CancellationToken cancellationToken = default);
     }
 }

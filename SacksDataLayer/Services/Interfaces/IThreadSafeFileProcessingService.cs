@@ -1,3 +1,6 @@
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace SacksDataLayer.Services.Interfaces
 {
     /// <summary>
@@ -8,6 +11,6 @@ namespace SacksDataLayer.Services.Interfaces
         /// <summary>
         /// Processes a supplier file with maximum performance using thread-safe in-memory data cache
         /// </summary>
-        Task ProcessSupplierFileThreadSafeAsync(string filePath);
+        Task ProcessSupplierFileThreadSafeAsync(string filePath, CancellationToken cancellationToken = default);
     }
 }

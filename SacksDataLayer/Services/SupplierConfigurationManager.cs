@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SacksDataLayer.FileProcessing.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace SacksDataLayer.FileProcessing.Services
 {
@@ -13,10 +14,23 @@ namespace SacksDataLayer.FileProcessing.Services
         private SuppliersConfiguration? _configuration;
         private DateTime _lastLoadTime;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly ILogger<SupplierConfigurationManager>? _logger;
 
-        public SupplierConfigurationManager(string configurationFilePath = "Configuration/supplier-formats.json")
+        /// <summary>
+        /// Creates a new instance with automatic configuration file discovery
+        /// </summary>
+        public SupplierConfigurationManager(ILogger<SupplierConfigurationManager>? logger = null)
+            : this(FindConfigurationFile(), logger)
         {
-            _configurationFilePath = configurationFilePath;
+        }
+
+        /// <summary>
+        /// Creates a new instance with specified configuration file path
+        /// </summary>
+        public SupplierConfigurationManager(string configurationFilePath, ILogger<SupplierConfigurationManager>? logger = null)
+        {
+            _configurationFilePath = configurationFilePath ?? throw new ArgumentNullException(nameof(configurationFilePath));
+            _logger = logger;
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -25,6 +39,32 @@ namespace SacksDataLayer.FileProcessing.Services
                 PropertyNameCaseInsensitive = true,
                 Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
             };
+        }
+
+        /// <summary>
+        /// Automatically finds the supplier configuration file in common locations
+        /// </summary>
+        /// <returns>Path to the configuration file</returns>
+        /// <exception cref="FileNotFoundException">Thrown when configuration file is not found</exception>
+        public static string FindConfigurationFile()
+        {
+            var possiblePaths = new[]
+            {
+                Path.Combine("..", "SacksDataLayer", "Configuration", "supplier-formats.json"),
+                Path.Combine("SacksDataLayer", "Configuration", "supplier-formats.json"),
+                Path.Combine("Configuration", "supplier-formats.json"),
+                "supplier-formats.json"
+            };
+
+            foreach (var path in possiblePaths)
+            {
+                if (File.Exists(path))
+                {
+                    return path;
+                }
+            }
+
+            throw new FileNotFoundException("Configuration file 'supplier-formats.json' not found in any of the expected locations.");
         }
 
         /// <summary>
@@ -161,26 +201,41 @@ namespace SacksDataLayer.FileProcessing.Services
         /// </summary>
         public async Task<SupplierConfiguration?> DetectSupplierFromFileAsync(string filePath)
         {
-            var fileName = Path.GetFileName(filePath);
-            var config = await GetConfigurationAsync();
-
-            // Try to match against each supplier's file name patterns
-            foreach (var supplier in config.Suppliers)
+            if (string.IsNullOrWhiteSpace(filePath))
+                throw new ArgumentException("File path cannot be null or empty", nameof(filePath));
+                
+            try
             {
-                if (supplier.Detection?.FileNamePatterns?.Any() == true)
+                var fileName = Path.GetFileName(filePath);
+                _logger?.LogInformation("Detecting supplier configuration for file: {FileName}", fileName);
+                
+                var config = await GetConfigurationAsync();
+
+                // Try to match against each supplier's file name patterns
+                foreach (var supplier in config.Suppliers)
                 {
-                    foreach (var pattern in supplier.Detection.FileNamePatterns)
+                    if (supplier.Detection?.FileNamePatterns?.Any() == true)
                     {
-                        if (IsFileNameMatch(fileName, pattern))
+                        foreach (var pattern in supplier.Detection.FileNamePatterns)
                         {
-                            return supplier;
+                            if (IsFileNameMatch(fileName, pattern))
+                            {
+                                _logger?.LogInformation("Matched supplier '{SupplierName}' with pattern '{Pattern}' for file '{FileName}'", 
+                                    supplier.Name, pattern, fileName);
+                                return supplier;
+                            }
                         }
                     }
                 }
-            }
 
-            // Return null if no match found (caller should handle this)
-            return null;
+                _logger?.LogWarning("No supplier configuration found for file: {FileName}", fileName);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error detecting supplier configuration for file: {FilePath}", filePath);
+                return null;
+            }
         }
 
         /// <summary>

@@ -21,7 +21,7 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// 🚀 THREAD-SAFE: Processes a supplier file with maximum performance using in-memory data cache
         /// </summary>
-        public async Task ProcessSupplierFileThreadSafeAsync(string filePath)
+        public async Task ProcessSupplierFileThreadSafeAsync(string filePath, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -30,14 +30,14 @@ namespace SacksDataLayer.Services.Implementations
 
                 // Step 1: Load all data into memory for thread-safe access
                 Console.WriteLine("🔄 Loading database into memory for thread-safe processing...");
-                await _inMemoryDataService.LoadAllDataAsync();
+                await _inMemoryDataService.LoadAllDataAsync(cancellationToken);
 
                 var cacheStats = _inMemoryDataService.GetCacheStats();
                 Console.WriteLine($"✅ In-memory cache ready: {cacheStats.Products:N0} products, {cacheStats.Suppliers:N0} suppliers");
 
                 // Step 2: Use the existing file processing service (which is already optimized)
                 Console.WriteLine("🔄 Processing file using optimized service...");
-                await _fileProcessingService.ProcessFileAsync(filePath);
+                await _fileProcessingService.ProcessFileAsync(filePath, cancellationToken);
 
                 // Step 3: Show cache statistics after processing
                 var finalStats = _inMemoryDataService.GetCacheStats();

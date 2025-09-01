@@ -1,0 +1,68 @@
+using SacksDataLayer.FileProcessing.Configuration;
+using SacksDataLayer.FileProcessing.Models;
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace SacksDataLayer.Services.Interfaces
+{
+    /// <summary>
+    /// Service for file validation and reading operations
+    /// </summary>
+    public interface IFileValidationService
+    {
+        /// <summary>
+        /// Validates if a file exists at the specified path
+        /// </summary>
+        /// <param name="filePath">Path to the file</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>True if file exists, false otherwise</returns>
+        Task<bool> ValidateFileExistsAsync(string filePath, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Reads file data from the specified path
+        /// </summary>
+        /// <param name="filePath">Path to the file</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>File data structure</returns>
+        Task<FileData> ReadFileDataAsync(string filePath, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Validates file structure against supplier configuration
+        /// </summary>
+        /// <param name="fileData">File data to validate</param>
+        /// <param name="supplierConfig">Supplier configuration for validation</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>File validation result</returns>
+        Task<FileValidationResult> ValidateFileStructureAsync(
+            FileData fileData, 
+            SupplierConfiguration supplierConfig, 
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Extracts headers from file data
+        /// </summary>
+        /// <param name="fileData">File data</param>
+        /// <param name="headerRowIndex">Index of the header row</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>List of header names</returns>
+        Task<List<string>> ExtractFileHeadersAsync(
+            FileData fileData, 
+            int headerRowIndex = 0, 
+            CancellationToken cancellationToken = default);
+    }
+
+    /// <summary>
+    /// Result of file validation operations
+    /// </summary>
+    public class FileValidationResult
+    {
+        public bool IsValid { get; set; }
+        public List<string> ValidationErrors { get; set; } = new();
+        public List<string> ValidationWarnings { get; set; } = new();
+        public List<string> FileHeaders { get; set; } = new();
+        public int ColumnCount { get; set; }
+        public int ExpectedColumnCount { get; set; }
+    }
+}

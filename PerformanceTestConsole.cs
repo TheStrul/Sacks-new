@@ -1,11 +1,13 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using SacksDataLayer.Data;
+using SacksDataLayer.Extensions;
 using SacksDataLayer.Services.Implementations;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Repositories.Implementations;
@@ -44,7 +46,13 @@ namespace SacksConsoleApp
                 services.AddScoped<ISuppliersService, SuppliersService>();
                 services.AddScoped<ISupplierOffersService, SupplierOffersService>();
                 services.AddScoped<IOfferProductsService, OfferProductsService>();
-                services.AddScoped<IFileProcessingService, FileProcessingService>();
+                
+                // Add file processing services (includes all file processing dependencies)
+                services.AddFileProcessingServices();
+                
+                // Add file processing dependencies
+                services.AddScoped<SacksAIPlatform.InfrastructuresLayer.FileProcessing.IFileDataReader, SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileDataReader>();
+                services.AddSingleton<SacksDataLayer.FileProcessing.Services.SupplierConfigurationManager>();
 
                 var serviceProvider = services.BuildServiceProvider();
 
@@ -55,7 +63,7 @@ namespace SacksConsoleApp
                 Console.WriteLine($"⏱️  Start time: {DateTime.Now:HH:mm:ss.fff}");
 
                 // Process the file with our optimized implementation
-                await fileProcessingService.ProcessFileAsync(filePath);
+                await fileProcessingService.ProcessFileAsync(filePath, CancellationToken.None);
 
                 stopwatch.Stop();
 
