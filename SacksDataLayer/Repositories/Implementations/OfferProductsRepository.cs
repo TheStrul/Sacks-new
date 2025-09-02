@@ -68,15 +68,14 @@ namespace SacksDataLayer.Repositories.Implementations
             return await _context.OfferProducts.CountAsync(cancellationToken);
         }
 
-        public async Task<OfferProductEntity> CreateAsync(OfferProductEntity offerProduct, CancellationToken cancellationToken)
+        public Task<OfferProductEntity> CreateAsync(OfferProductEntity offerProduct, CancellationToken cancellationToken)
         {
             if (offerProduct == null)
                 throw new ArgumentNullException(nameof(offerProduct));
 
             offerProduct.CreatedAt = DateTime.UtcNow;
             _context.OfferProducts.Add(offerProduct);
-            await _context.SaveChangesAsync(cancellationToken);
-            return offerProduct;
+            return Task.FromResult(offerProduct);
         }
 
         public async Task<OfferProductEntity> UpdateAsync(OfferProductEntity offerProduct, CancellationToken cancellationToken)
@@ -100,11 +99,10 @@ namespace SacksDataLayer.Repositories.Implementations
             existingOfferProduct.ProductProperties = offerProduct.ProductProperties;
             existingOfferProduct.UpdateModified();
 
-            await _context.SaveChangesAsync(cancellationToken);
             return existingOfferProduct;
         }
 
-        public async Task<IEnumerable<OfferProductEntity>> BulkCreateAsync(IEnumerable<OfferProductEntity> offerProducts, CancellationToken cancellationToken)
+        public Task<IEnumerable<OfferProductEntity>> BulkCreateAsync(IEnumerable<OfferProductEntity> offerProducts, CancellationToken cancellationToken)
         {
             var offerProductList = offerProducts.ToList();
             foreach (var offerProduct in offerProductList)
@@ -113,8 +111,7 @@ namespace SacksDataLayer.Repositories.Implementations
             }
 
             _context.OfferProducts.AddRange(offerProductList);
-            await _context.SaveChangesAsync(cancellationToken);
-            return offerProductList;
+            return Task.FromResult<IEnumerable<OfferProductEntity>>(offerProductList);
         }
 
         public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
@@ -124,7 +121,6 @@ namespace SacksDataLayer.Repositories.Implementations
                 return false;
 
             _context.OfferProducts.Remove(offerProduct);
-            await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
 

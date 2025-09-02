@@ -69,10 +69,10 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     return result;
                 }
 
-                // Create supplier offer metadata
-                var supplierOffer = CreateSupplierOfferFromContext(context);
+                // Use supplier offer from context if provided, otherwise create one
+                var supplierOffer = context.SupplierOffer ?? CreateSupplierOfferFromContext(context);
                 result.SupplierOffer = supplierOffer;
-                statistics.SupplierOffersCreated = 1;
+                statistics.SupplierOffersCreated = context.SupplierOffer != null ? 0 : 1; // Only count if we created it
 
                 statistics.TotalRowsProcessed = fileData.DataRows.Count;
 
@@ -128,7 +128,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 statistics.ProcessingTime = DateTime.UtcNow - startTime;
                 statistics.WarningCount = warnings.Count;
 
-                result.OfferProducts = offerProducts;
+                result.SupplierOffer.OfferProducts = offerProducts;
                 result.Statistics = statistics;
                 result.Warnings = warnings;
                 result.Errors = errors;

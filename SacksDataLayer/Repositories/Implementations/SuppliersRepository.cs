@@ -55,26 +55,24 @@ namespace SacksDataLayer.Repositories.Implementations
             return await _context.Suppliers.CountAsync(cancellationToken);
         }
 
-        public async Task<SupplierEntity> CreateAsync(SupplierEntity supplier, CancellationToken cancellationToken)
+        public Task<SupplierEntity> CreateAsync(SupplierEntity supplier, CancellationToken cancellationToken)
         {
             if (supplier == null)
                 throw new ArgumentNullException(nameof(supplier));
 
             supplier.UpdateModified();
             _context.Suppliers.Add(supplier);
-            await _context.SaveChangesAsync(cancellationToken);
-            return supplier;
+            return Task.FromResult(supplier);
         }
 
-        public async Task<SupplierEntity> UpdateAsync(SupplierEntity supplier, CancellationToken cancellationToken)
+        public Task<SupplierEntity> UpdateAsync(SupplierEntity supplier, CancellationToken cancellationToken)
         {
             if (supplier == null)
                 throw new ArgumentNullException(nameof(supplier));
 
             supplier.UpdateModified();
             _context.Suppliers.Update(supplier);
-            await _context.SaveChangesAsync(cancellationToken);
-            return supplier;
+            return Task.FromResult(supplier);
         }
 
         public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
@@ -84,7 +82,6 @@ namespace SacksDataLayer.Repositories.Implementations
                 return false;
 
             _context.Suppliers.Remove(supplier);
-            await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
 

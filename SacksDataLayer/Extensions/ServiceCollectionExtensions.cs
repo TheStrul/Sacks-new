@@ -47,5 +47,16 @@ namespace SacksDataLayer.Extensions
             services.AddSingleton<IPerformanceMonitoringService, PerformanceMonitoringService>();
             return services;
         }
+
+        /// <summary>
+        /// Register Unit of Work for transaction management across repositories
+        /// </summary>
+        /// <param name="services">Service collection</param>
+        /// <returns>Service collection for chaining</returns>
+        public static IServiceCollection AddUnitOfWork(this IServiceCollection services)
+        {
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            return services;
+        }
     }
 }

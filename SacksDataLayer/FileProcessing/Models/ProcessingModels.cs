@@ -9,15 +9,10 @@ namespace SacksDataLayer.FileProcessing.Models
     public class ProcessingResult
     {
         /// <summary>
-        /// Direct collection of OfferProduct entities containing all normalized data
-        /// </summary>
-        public IEnumerable<OfferProductEntity> OfferProducts { get; set; } = new List<OfferProductEntity>();
-        
-        /// <summary>
         /// Supplier offer metadata (one per file processing session)
         /// </summary>
-        public SupplierOfferEntity? SupplierOffer { get; set; }
-        
+        public SupplierOfferEntity SupplierOffer { get; set; } = new();
+
         public ProcessingStatistics Statistics { get; set; } = new();
         public List<string> Warnings { get; set; } = new();
         public List<string> Errors { get; set; } = new();

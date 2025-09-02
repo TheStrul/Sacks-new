@@ -195,7 +195,9 @@ namespace SacksDataLayer.Services.Implementations
                     created, updated, bulkErrors);
 
                 // Step 3: Process offer-products
-                //await ProcessOfferProductsAsync(validProducts, offer, supplierConfig, processorName, result, cancellationToken);
+                _logger.LogInformation("About to process offer-products for {ProductCount} products", validProducts.Count);
+                await ProcessOfferProductsAsync(validProducts, offer, supplierConfig, processorName, result, cancellationToken);
+                _logger.LogInformation("Completed offer-products processing");
 
                 _logger.LogInformation("Completed batch processing: {ProductsCreated} products created, {ProductsUpdated} updated, " +
                     "{OfferProductsCreated} offer-products created, {OfferProductsUpdated} updated, {Errors} errors",
@@ -266,6 +268,110 @@ namespace SacksDataLayer.Services.Implementations
             }
 
             return offerProductsToProcess;
+        }
+
+        /// <summary>
+        /// Processes offer-products for the given products and offer
+        /// </summary>
+        private async Task ProcessOfferProductsAsync(
+            List<OfferProductEntity> validProducts,
+            SupplierOfferEntity offer,
+            SupplierConfiguration supplierConfig,
+            string processorName,
+            FileProcessingBatchResult result,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("ProcessOfferProductsAsync called with {ProductCount} products for offer {OfferId}", 
+                validProducts.Count, offer.Id);
+            
+            try
+            {
+                // Get product lookup by EAN to map offer products to saved products
+                var productEANs = validProducts.Select(vp => vp.Product.EAN).ToList();
+                var savedProducts = await _context.Products
+                    .Where(p => productEANs.Contains(p.EAN))
+                    .ToDictionaryAsync(p => p.EAN, p => p, cancellationToken);
+
+                var offerProductsToCreate = new List<OfferProductEntity>();
+                var offerProductsToUpdate = new List<OfferProductEntity>();
+
+                foreach (var productData in validProducts)
+                {
+                    if (savedProducts.TryGetValue(productData.Product.EAN, out var savedProduct))
+                    {
+                        // Check if offer product already exists
+                        var existingOfferProduct = await _context.OfferProducts
+                            .FirstOrDefaultAsync(op => op.OfferId == offer.Id && op.ProductId == savedProduct.Id, cancellationToken);
+
+                        if (existingOfferProduct != null)
+                        {
+                            // Update existing offer product
+                            existingOfferProduct.Price = productData.Price;
+                            existingOfferProduct.Capacity = productData.Capacity;
+                            existingOfferProduct.Discount = productData.Discount;
+                            existingOfferProduct.ListPrice = productData.ListPrice;
+                            existingOfferProduct.UnitOfMeasure = productData.UnitOfMeasure;
+                            existingOfferProduct.MinimumOrderQuantity = productData.MinimumOrderQuantity;
+                            existingOfferProduct.MaximumOrderQuantity = productData.MaximumOrderQuantity;
+                            existingOfferProduct.IsAvailable = productData.IsAvailable;
+                            existingOfferProduct.UpdateModified();
+
+                            // Update dynamic properties
+                            existingOfferProduct.ProductProperties.Clear();
+                            foreach (var prop in productData.ProductProperties)
+                            {
+                                existingOfferProduct.SetProductProperty(prop.Key, prop.Value);
+                            }
+
+                            offerProductsToUpdate.Add(existingOfferProduct);
+                        }
+                        else
+                        {
+                            // Create new offer product
+                            var newOfferProduct = new OfferProductEntity
+                            {
+                                OfferId = offer.Id,
+                                ProductId = savedProduct.Id,
+                                Price = productData.Price,
+                                Capacity = productData.Capacity,
+                                Discount = productData.Discount,
+                                ListPrice = productData.ListPrice,
+                                UnitOfMeasure = productData.UnitOfMeasure,
+                                MinimumOrderQuantity = productData.MinimumOrderQuantity,
+                                MaximumOrderQuantity = productData.MaximumOrderQuantity,
+                                IsAvailable = productData.IsAvailable,
+                                CreatedAt = DateTime.UtcNow
+                            };
+
+                            // Copy dynamic properties
+                            foreach (var prop in productData.ProductProperties)
+                            {
+                                newOfferProduct.SetProductProperty(prop.Key, prop.Value);
+                            }
+
+                            offerProductsToCreate.Add(newOfferProduct);
+                        }
+                    }
+                }
+
+                // Bulk create new offer products
+                if (offerProductsToCreate.Any())
+                {
+                    await _context.OfferProducts.AddRangeAsync(offerProductsToCreate, cancellationToken);
+                    result.OfferProductsCreated += offerProductsToCreate.Count;
+                }
+
+                // Update counts for modified offer products
+                result.OfferProductsUpdated += offerProductsToUpdate.Count;
+
+                _logger.LogInformation("Processed offer products: {Created} created, {Updated} updated", 
+                    offerProductsToCreate.Count, offerProductsToUpdate.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to process offer products for offer: {OfferId}", offer.Id);
+                throw;
+            }
         }
     }
 }

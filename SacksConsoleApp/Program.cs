@@ -302,6 +302,9 @@ namespace SacksConsoleApp
             services.AddScoped<ISupplierOffersRepository, SupplierOffersRepository>();
             services.AddScoped<IOfferProductsRepository, OfferProductsRepository>();
 
+            // Add Unit of Work for transaction management
+            services.AddUnitOfWork();
+
             // Add business services
             services.AddScoped<IProductsService, ProductsService>();
             services.AddScoped<ISuppliersService, SuppliersService>();

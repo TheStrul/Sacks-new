@@ -34,26 +34,24 @@ namespace SacksDataLayer.Repositories.Implementations
                                           so.OfferProducts.Any(op => op.ProductId == productId), cancellationToken);
         }
 
-        public async Task<SupplierOfferEntity> CreateAsync(SupplierOfferEntity offer, CancellationToken cancellationToken)
+        public Task<SupplierOfferEntity> CreateAsync(SupplierOfferEntity offer, CancellationToken cancellationToken)
         {
             if (offer == null)
                 throw new ArgumentNullException(nameof(offer));
 
             offer.UpdateModified();
             _context.SupplierOffers.Add(offer);
-            await _context.SaveChangesAsync(cancellationToken);
-            return offer;
+            return Task.FromResult(offer);
         }
 
-        public async Task<SupplierOfferEntity> UpdateAsync(SupplierOfferEntity offer, CancellationToken cancellationToken)
+        public Task<SupplierOfferEntity> UpdateAsync(SupplierOfferEntity offer, CancellationToken cancellationToken)
         {
             if (offer == null)
                 throw new ArgumentNullException(nameof(offer));
 
             offer.UpdateModified();
             _context.SupplierOffers.Update(offer);
-            await _context.SaveChangesAsync(cancellationToken);
-            return offer;
+            return Task.FromResult(offer);
         }
 
         public async Task<IEnumerable<SupplierOfferEntity>> GetByProductIdAsync(int productId, CancellationToken cancellationToken)
@@ -81,7 +79,6 @@ namespace SacksDataLayer.Repositories.Implementations
                 return false;
 
             _context.SupplierOffers.Remove(offer);
-            await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
 
@@ -97,8 +94,6 @@ namespace SacksDataLayer.Repositories.Implementations
                 offer.IsActive = false;
                 offer.UpdateModified();
             }
-
-            await _context.SaveChangesAsync(cancellationToken);
         }
     }
 }

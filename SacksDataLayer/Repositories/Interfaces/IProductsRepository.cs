@@ -175,23 +175,5 @@ namespace SacksDataLayer.Repositories.Interfaces
         Task<IEnumerable<ProductEntity>> GetByCreatedDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken);
 
         #endregion
-
-        #region Transaction Support
-
-        /// <summary>
-        /// Begins a database transaction
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Database transaction</returns>
-        Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Saves all pending changes to the database
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Number of affected records</returns>
-        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
-
-        #endregion
     }
 }
