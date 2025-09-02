@@ -114,10 +114,11 @@ namespace SacksConsoleApp
                 Console.WriteLine("   2️⃣  🧹 Clear all data from database");
                 Console.WriteLine("   3️⃣  📊 Show database statistics");
                 Console.WriteLine("   4️⃣  🧪 Test Refactored Configuration");
-                Console.WriteLine("   5️⃣  ❓ Show help and feature information"); 
-                Console.WriteLine("   6️⃣  🚪 Exit");                
+                Console.WriteLine("   5️⃣  🔧 Create new supplier configuration (Interactive)");
+                Console.WriteLine("   6️⃣  ❓ Show help and feature information"); 
+                Console.WriteLine("   7️⃣  🚪 Exit");                
                 Console.WriteLine();
-                Console.Write("👉 Enter your choice (1-6, or 0 to exit): ");
+                Console.Write("👉 Enter your choice (1-7, or 0 to exit): ");
 
                 var input = Console.ReadLine()?.Trim();
                 Console.WriteLine();
@@ -139,14 +140,17 @@ namespace SacksConsoleApp
                             await TestRefactoredConfiguration(serviceProvider);
                             break;
                         case "5":
-                            ShowHelpInformation();
+                            await CreateSupplierConfigurationInteractively(serviceProvider);
                             break;
                         case "6":
+                            ShowHelpInformation();
+                            break;
+                        case "7":
                         case "0":
                             Console.WriteLine("👋 Thank you for using Sacks Product Management System!");
                             return;
                         default:
-                            Console.WriteLine("❌ Invalid choice. Please enter a number between 1-6 (or 0 to exit).");
+                            Console.WriteLine("❌ Invalid choice. Please enter a number between 1-7 (or 0 to exit).");
                             break;
                     }
                 }
@@ -223,6 +227,88 @@ namespace SacksConsoleApp
             }
 
             Console.WriteLine("\n✅ Configuration testing completed!");
+        }
+
+        private static async Task CreateSupplierConfigurationInteractively(ServiceProvider serviceProvider)
+        {
+            Console.WriteLine("=== 🔧 INTERACTIVE SUPPLIER CONFIGURATION CREATOR ===\n");
+
+            var configManager = serviceProvider.GetRequiredService<SupplierConfigurationManager>();
+
+            try
+            {
+                // Step 1: Get Excel file path from user
+                Console.WriteLine("📁 Excel File Selection:");
+                Console.WriteLine("   1. Analyze ACE file (Ace 31.8.25.xlsx)");
+                Console.WriteLine("   2. Enter custom file path");
+                Console.Write("👉 Choose option (1 or 2): ");
+                
+                var choice = Console.ReadLine()?.Trim();
+                string excelFilePath;
+
+                if (choice == "1")
+                {
+                    // Use the ACE file from Inputs folder
+                    var inputsPath = FindInputsFolder();
+                    excelFilePath = Path.Combine(inputsPath, "Ace 31.8.25.xlsx");
+                    
+                    if (!File.Exists(excelFilePath))
+                    {
+                        Console.WriteLine($"❌ ACE file not found at: {excelFilePath}");
+                        return;
+                    }
+                }
+                else if (choice == "2")
+                {
+                    Console.Write("✏️  Enter full path to Excel file: ");
+                    excelFilePath = Console.ReadLine()?.Trim() ?? "";
+                    
+                    if (string.IsNullOrWhiteSpace(excelFilePath) || !File.Exists(excelFilePath))
+                    {
+                        Console.WriteLine("❌ Invalid file path or file not found.");
+                        return;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("❌ Invalid choice.");
+                    return;
+                }
+
+                Console.WriteLine($"✅ Selected file: {Path.GetFileName(excelFilePath)}");
+                Console.WriteLine();
+
+                // Step 2: Create supplier configuration interactively
+                var newSupplierConfig = await configManager.CreateSupplierConfigurationInteractivelyAsync(excelFilePath);
+
+                // Step 3: Add to existing configuration
+                Console.WriteLine("💾 Saving Configuration:");
+                var success = await configManager.AddSupplierConfigurationAsync(newSupplierConfig, saveToFile: true);
+
+                if (success)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("🎉 SUCCESS! Supplier configuration created and saved.");
+                    Console.WriteLine();
+                    Console.WriteLine("📋 Configuration Summary:");
+                    Console.WriteLine($"   • Supplier Name: {newSupplierConfig.Name}");
+                    Console.WriteLine($"   • Column Mappings: {newSupplierConfig.ColumnProperties?.Count ?? 0}");
+                    Console.WriteLine($"   • File Patterns: {newSupplierConfig.Detection?.FileNamePatterns?.Count ?? 0}");
+                    Console.WriteLine($"   • Header Row: {newSupplierConfig.FileStructure?.HeaderRowIndex}");
+                    Console.WriteLine($"   • Data Start Row: {newSupplierConfig.FileStructure?.DataStartRowIndex}");
+                    Console.WriteLine();
+                    Console.WriteLine("💡 You can now process files from this supplier using option 1!");
+                }
+                else
+                {
+                    Console.WriteLine("❌ Failed to save supplier configuration.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error creating supplier configuration: {ex.Message}");
+                _logger?.LogError(ex, "Error in interactive supplier configuration creation");
+            }
         }
 
         private static IConfiguration BuildConfiguration()

@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using SacksDataLayer.FileProcessing.Configuration;
 using Microsoft.Extensions.Logging;
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 
 namespace SacksDataLayer.FileProcessing.Services
 {
@@ -368,6 +369,488 @@ namespace SacksDataLayer.FileProcessing.Services
                     TrimWhitespace = true
                 }
             };
+        }
+
+        /// <summary>
+        /// Interactively analyzes an Excel file and creates a new supplier configuration
+        /// </summary>
+        /// <param name="excelFilePath">Path to the Excel file to analyze</param>
+        /// <param name="supplierName">Name for the new supplier (if null, will be derived from filename)</param>
+        /// <returns>The created supplier configuration</returns>
+        public async Task<SupplierConfiguration> CreateSupplierConfigurationInteractivelyAsync(string excelFilePath, string? supplierName = null)
+        {
+            if (string.IsNullOrWhiteSpace(excelFilePath))
+                throw new ArgumentException("Excel file path cannot be null or empty", nameof(excelFilePath));
+
+            if (!File.Exists(excelFilePath))
+                throw new FileNotFoundException($"Excel file not found: {excelFilePath}");
+
+            Console.WriteLine("🔍 === INTERACTIVE SUPPLIER CONFIGURATION CREATOR ===");
+            Console.WriteLine($"📁 Analyzing file: {Path.GetFileName(excelFilePath)}");
+            Console.WriteLine();
+
+            // Step 1: Read the Excel file
+            var fileReader = new FileDataReader();
+            var fileData = await fileReader.ReadFileAsync(excelFilePath);
+
+            Console.WriteLine($"📊 File analysis complete:");
+            Console.WriteLine($"   • Total rows: {fileData.RowCount}");
+            Console.WriteLine($"   • Analyzing first 10 rows for structure...");
+            Console.WriteLine();
+
+            // Step 2: Determine supplier name
+            if (string.IsNullOrWhiteSpace(supplierName))
+            {
+                var fileName = Path.GetFileNameWithoutExtension(excelFilePath);
+                var suggestedName = ExtractSupplierNameFromFileName(fileName);
+                
+                Console.WriteLine($"💡 Suggested supplier name from filename: '{suggestedName}'");
+                Console.Write("✏️  Enter supplier name (or press Enter to use suggested): ");
+                var userInput = Console.ReadLine();
+                supplierName = !string.IsNullOrWhiteSpace(userInput) ? userInput.Trim() : suggestedName;
+            }
+
+            Console.WriteLine($"✅ Supplier name: {supplierName}");
+            Console.WriteLine();
+
+            // Step 3: Analyze file structure and find header row
+            var (headerRowIndex, dataStartRowIndex, expectedColumnCount) = AnalyzeFileStructure(fileData);
+            
+            Console.WriteLine($"📋 File structure analysis:");
+            Console.WriteLine($"   • Detected header row: {headerRowIndex + 1} (Excel row number)");
+            Console.WriteLine($"   • Detected data start row: {dataStartRowIndex + 1} (Excel row number)");
+            Console.WriteLine($"   • Expected columns: {expectedColumnCount}");
+            Console.WriteLine();
+
+            // Step 4: Show header row and ask for confirmation
+            if (headerRowIndex >= 0 && headerRowIndex < fileData.RowCount)
+            {
+                var headerRow = fileData.GetRow(headerRowIndex);
+                Console.WriteLine("📋 Detected header row contents:");
+                for (int i = 0; i < headerRow?.Cells.Count; i++)
+                {
+                    var cellValue = headerRow.Cells[i]?.Value?.ToString()?.Trim() ?? "";
+                    var columnLetter = GetExcelColumnLetter(i);
+                    Console.WriteLine($"   {columnLetter}: {cellValue}");
+                }
+                Console.WriteLine();
+
+                Console.Write("❓ Is this the correct header row? (y/n): ");
+                var confirmation = Console.ReadLine()?.Trim().ToLower();
+                if (confirmation != "y" && confirmation != "yes")
+                {
+                    Console.Write("✏️  Enter the correct header row number (Excel numbering, 1-based): ");
+                    if (int.TryParse(Console.ReadLine(), out int newHeaderRow) && newHeaderRow > 0)
+                    {
+                        headerRowIndex = newHeaderRow - 1; // Convert to 0-based
+                        dataStartRowIndex = headerRowIndex + 1;
+                        Console.WriteLine($"✅ Updated header row to: {headerRowIndex + 1}");
+                    }
+                }
+            }
+
+            // Step 5: Create column mappings interactively
+            var columnProperties = CreateColumnMappingsInteractively(fileData, headerRowIndex, expectedColumnCount);
+
+            // Step 6: Determine file naming patterns
+            Console.WriteLine();
+            Console.WriteLine("📁 File naming patterns:");
+            var currentFileName = Path.GetFileName(excelFilePath);
+            var suggestedPatterns = GenerateFileNamePatterns(currentFileName, supplierName);
+            
+            Console.WriteLine($"💡 Suggested patterns based on '{currentFileName}':");
+            for (int i = 0; i < suggestedPatterns.Count; i++)
+            {
+                Console.WriteLine($"   {i + 1}. {suggestedPatterns[i]}");
+            }
+            Console.WriteLine();
+            
+            Console.Write("✏️  Enter additional patterns (comma-separated) or press Enter to use suggested: ");
+            var additionalPatterns = Console.ReadLine()?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)).ToList() ?? new List<string>();
+            
+            var allPatterns = suggestedPatterns.Concat(additionalPatterns).Distinct().ToList();
+
+            // Step 7: Create the supplier configuration
+            var supplierConfig = new SupplierConfiguration
+            {
+                Name = supplierName,
+                Detection = new DetectionConfiguration
+                {
+                    FileNamePatterns = allPatterns
+                },
+                ColumnProperties = columnProperties,
+                FileStructure = new FileStructureConfiguration
+                {
+                    HeaderRowIndex = headerRowIndex + 1, // Convert back to 1-based
+                    DataStartRowIndex = dataStartRowIndex + 1, // Convert back to 1-based
+                    ExpectedColumnCount = expectedColumnCount
+                },
+                Transformation = new TransformationConfiguration
+                {
+                    SkipEmptyRows = true,
+                    TrimWhitespace = true,
+                    SkipRowsWithMergedCells = false
+                },
+                Metadata = new SupplierMetadata
+                {
+                    Industry = "Beauty & Cosmetics", // Default, user can modify later
+                    Region = "Global", // Default, user can modify later
+                    Contact = new ContactInfo
+                    {
+                        Name = $"{supplierName} Data Team",
+                        Email = $"data@{supplierName.ToLower().Replace(" ", "")}.com",
+                        Company = supplierName
+                    },
+                    FileFrequency = "monthly",
+                    ExpectedFileSize = "Medium (1000-3000 products)",
+                    Currency = "USD", // Default, user can modify later
+                    Timezone = "UTC",
+                    LastUpdated = DateTime.UtcNow,
+                    Version = "1.0"
+                }
+            };
+
+            Console.WriteLine();
+            Console.WriteLine("✅ Supplier configuration created successfully!");
+            Console.WriteLine($"   • Supplier: {supplierConfig.Name}");
+            Console.WriteLine($"   • Columns mapped: {columnProperties.Count}");
+            Console.WriteLine($"   • File patterns: {allPatterns.Count}");
+            Console.WriteLine();
+
+            return supplierConfig;
+        }
+
+        /// <summary>
+        /// Extracts a supplier name from a filename
+        /// </summary>
+        private string ExtractSupplierNameFromFileName(string fileName)
+        {
+            // Remove common suffixes and patterns
+            var cleanName = fileName;
+            
+            // Remove date patterns (e.g., "31.8.25", "2025", etc.)
+            cleanName = System.Text.RegularExpressions.Regex.Replace(cleanName, @"\d{1,2}\.\d{1,2}\.\d{2,4}", "");
+            cleanName = System.Text.RegularExpressions.Regex.Replace(cleanName, @"\d{4}", "");
+            cleanName = System.Text.RegularExpressions.Regex.Replace(cleanName, @"\d{1,2}\.\d{1,2}", "");
+            
+            // Remove common words
+            cleanName = cleanName.Replace("_", " ").Replace("-", " ");
+            cleanName = System.Text.RegularExpressions.Regex.Replace(cleanName, @"\s+", " ");
+            
+            return cleanName.Trim().ToUpperInvariant();
+        }
+
+        /// <summary>
+        /// Analyzes file structure to determine header and data start rows
+        /// </summary>
+        private (int headerRowIndex, int dataStartRowIndex, int expectedColumnCount) AnalyzeFileStructure(FileData fileData)
+        {
+            int headerRowIndex = 0;
+            int maxColumns = 0;
+            int bestHeaderCandidate = 0;
+
+            // Look at first 10 rows to find the one with most non-empty columns
+            for (int i = 0; i < Math.Min(10, fileData.RowCount); i++)
+            {
+                var row = fileData.GetRow(i);
+                if (row == null) continue;
+
+                var nonEmptyColumns = row.Cells.Count(c => !string.IsNullOrWhiteSpace(c?.Value?.ToString()));
+                
+                // Prefer rows that look like headers (contain text, not just numbers)
+                var textColumns = row.Cells.Count(c => 
+                {
+                    var value = c?.Value?.ToString()?.Trim();
+                    return !string.IsNullOrEmpty(value) && !decimal.TryParse(value, out _);
+                });
+
+                // Score: favor rows with more text columns and reasonable total columns
+                var score = textColumns * 2 + nonEmptyColumns;
+                
+                if (score > maxColumns && nonEmptyColumns >= 3) // At least 3 columns to be considered
+                {
+                    maxColumns = score;
+                    bestHeaderCandidate = i;
+                }
+            }
+
+            headerRowIndex = bestHeaderCandidate;
+            var dataStartRowIndex = headerRowIndex + 1;
+            
+            // Determine expected column count from header row
+            var headerRow = fileData.GetRow(headerRowIndex);
+            var expectedColumnCount = headerRow?.Cells.Count(c => !string.IsNullOrWhiteSpace(c?.Value?.ToString())) ?? 10;
+
+            return (headerRowIndex, dataStartRowIndex, expectedColumnCount);
+        }
+
+        /// <summary>
+        /// Creates column mappings interactively with user input
+        /// </summary>
+        private Dictionary<string, ColumnProperty> CreateColumnMappingsInteractively(
+            FileData fileData, int headerRowIndex, int expectedColumnCount)
+        {
+            var columnProperties = new Dictionary<string, ColumnProperty>();
+            var headerRow = fileData.GetRow(headerRowIndex);
+            
+            if (headerRow == null)
+            {
+                throw new InvalidOperationException("Header row not found");
+            }
+
+            Console.WriteLine("🗂️  === COLUMN MAPPING CONFIGURATION ===");
+            Console.WriteLine();
+
+            for (int i = 0; i < Math.Min(headerRow.Cells.Count, expectedColumnCount); i++)
+            {
+                var cellValue = headerRow.Cells[i]?.Value?.ToString()?.Trim() ?? "";
+                var columnLetter = GetExcelColumnLetter(i);
+                
+                if (string.IsNullOrWhiteSpace(cellValue))
+                {
+                    Console.WriteLine($"📋 Column {columnLetter}: (empty) - skipping");
+                    continue;
+                }
+
+                Console.WriteLine($"📋 Column {columnLetter}: '{cellValue}'");
+                
+                // Show sample data from this column
+                Console.WriteLine("   Sample data:");
+                for (int sampleRow = headerRowIndex + 1; sampleRow < Math.Min(headerRowIndex + 6, fileData.RowCount); sampleRow++)
+                {
+                    var dataRow = fileData.GetRow(sampleRow);
+                    var sampleValue = dataRow?.Cells.ElementAtOrDefault(i)?.Value?.ToString()?.Trim() ?? "";
+                    if (!string.IsNullOrWhiteSpace(sampleValue))
+                    {
+                        Console.WriteLine($"      • {sampleValue}");
+                    }
+                }
+
+                // Suggest mapping based on header name
+                var suggestedMapping = SuggestPropertyMapping(cellValue);
+                Console.WriteLine($"💡 Suggested mapping: {suggestedMapping.targetProperty} ({suggestedMapping.classification})");
+                
+                Console.Write($"✏️  Enter target property name (or 'skip' to ignore this column): ");
+                var userInput = Console.ReadLine()?.Trim();
+                
+                if (string.IsNullOrWhiteSpace(userInput) || userInput.ToLower().Equals("skip", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("   ⏭️  Skipping this column");
+                    continue;
+                }
+
+                var targetProperty = userInput;
+                
+                // Ask for classification
+                Console.WriteLine("   📊 Property classification:");
+                Console.WriteLine("      1. coreProduct (product attributes like name, brand, category)");
+                Console.WriteLine("      2. offer (pricing, availability, supplier-specific data)");
+                Console.Write("   Enter classification (1 or 2): ");
+                var classificationInput = Console.ReadLine()?.Trim();
+                var classification = classificationInput?.Equals("2", StringComparison.Ordinal) == true ? "offer" : "coreProduct";
+                
+                // Determine data type based on sample data
+                var dataType = DetermineDataType(fileData, headerRowIndex, i);
+                
+                Console.WriteLine($"   📊 Detected data type: {dataType.Type}");
+                
+                var columnProperty = new ColumnProperty
+                {
+                    TargetProperty = targetProperty,
+                    DisplayName = cellValue,
+                    DataType = dataType,
+                    Classification = classification,
+                    Validation = new ColumnValidationConfiguration
+                    {
+                        IsRequired = targetProperty.Contains("name", StringComparison.OrdinalIgnoreCase) || targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase),
+                        IsUnique = targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase) || targetProperty.Contains("id", StringComparison.OrdinalIgnoreCase)
+                    }
+                };
+
+                columnProperties[columnLetter] = columnProperty;
+                Console.WriteLine($"   ✅ Mapped {columnLetter} → {targetProperty}");
+                Console.WriteLine();
+            }
+
+            return columnProperties;
+        }
+
+        /// <summary>
+        /// Suggests property mapping based on header text
+        /// </summary>
+        private (string targetProperty, string classification) SuggestPropertyMapping(string headerText)
+        {
+            var lower = headerText.ToLower();
+            
+            if (lower.Contains("name", StringComparison.OrdinalIgnoreCase) || lower.Contains("product", StringComparison.OrdinalIgnoreCase) || lower.Contains("title", StringComparison.OrdinalIgnoreCase))
+                return ("Name", "coreProduct");
+            if (lower.Contains("ean", StringComparison.OrdinalIgnoreCase) || lower.Contains("barcode", StringComparison.OrdinalIgnoreCase) || lower.Contains("code", StringComparison.OrdinalIgnoreCase))
+                return ("EAN", "coreProduct");
+            if (lower.Contains("price", StringComparison.OrdinalIgnoreCase) || lower.Contains("cost", StringComparison.OrdinalIgnoreCase) || lower.Contains("amount", StringComparison.OrdinalIgnoreCase))
+                return ("Price", "offer");
+            if (lower.Contains("brand", StringComparison.OrdinalIgnoreCase) || lower.Contains("manufacturer", StringComparison.OrdinalIgnoreCase))
+                return ("Brand", "coreProduct");
+            if (lower.Contains("category", StringComparison.OrdinalIgnoreCase) || lower.Contains("type", StringComparison.OrdinalIgnoreCase))
+                return ("Category", "coreProduct");
+            if (lower.Contains("size", StringComparison.OrdinalIgnoreCase) || lower.Contains("volume", StringComparison.OrdinalIgnoreCase) || lower.Contains("weight", StringComparison.OrdinalIgnoreCase))
+                return ("Size", "coreProduct");
+            if (lower.Contains("reference", StringComparison.OrdinalIgnoreCase) || lower.Contains("ref", StringComparison.OrdinalIgnoreCase) || lower.Contains("sku", StringComparison.OrdinalIgnoreCase))
+                return ("Reference", "offer");
+            if (lower.Contains("stock", StringComparison.OrdinalIgnoreCase) || lower.Contains("inventory", StringComparison.OrdinalIgnoreCase) || lower.Contains("qty", StringComparison.OrdinalIgnoreCase))
+                return ("InStock", "offer");
+            if (lower.Contains("description", StringComparison.OrdinalIgnoreCase) || lower.Contains("desc", StringComparison.OrdinalIgnoreCase))
+                return ("Description", "coreProduct");
+            if (lower.Contains("gender", StringComparison.OrdinalIgnoreCase) || lower.Contains("sex", StringComparison.OrdinalIgnoreCase))
+                return ("Gender", "coreProduct");
+            if (lower.Contains("line", StringComparison.OrdinalIgnoreCase) || lower.Contains("series", StringComparison.OrdinalIgnoreCase))
+                return ("Line", "coreProduct");
+            if (lower.Contains("capacity", StringComparison.OrdinalIgnoreCase) || lower.Contains("ml", StringComparison.OrdinalIgnoreCase) || lower.Contains("oz", StringComparison.OrdinalIgnoreCase))
+                return ("Capacity", "offer");
+            if (lower.Contains("unit", StringComparison.OrdinalIgnoreCase))
+                return ("Unit", "coreProduct");
+                
+            return (headerText.Replace(" ", ""), "coreProduct");
+        }
+
+        /// <summary>
+        /// Determines data type from sample data
+        /// </summary>
+        private DataTypeConfiguration DetermineDataType(FileData fileData, int headerRowIndex, int columnIndex)
+        {
+            var sampleValues = new List<string>();
+            
+            // Collect sample values
+            for (int row = headerRowIndex + 1; row < Math.Min(headerRowIndex + 20, fileData.RowCount); row++)
+            {
+                var dataRow = fileData.GetRow(row);
+                var value = dataRow?.Cells.ElementAtOrDefault(columnIndex)?.Value?.ToString()?.Trim();
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    sampleValues.Add(value);
+                }
+            }
+
+            if (!sampleValues.Any())
+            {
+                return new DataTypeConfiguration { Type = "string", AllowNull = true, MaxLength = 255 };
+            }
+
+            // Check if all values are numeric
+            var numericValues = sampleValues.Where(v => decimal.TryParse(v.Replace("$", "").Replace(",", ""), out _)).Count();
+            var totalValues = sampleValues.Count;
+            
+            if (numericValues > totalValues * 0.8) // 80% numeric
+            {
+                return new DataTypeConfiguration 
+                { 
+                    Type = "decimal", 
+                    Format = "currency",
+                    AllowNull = true,
+                    DefaultValue = 0.0,
+                    Transformations = new List<string> { "removeSymbols", "parseDecimal" }
+                };
+            }
+
+            // Determine max length for strings
+            var maxLength = sampleValues.Max(v => v.Length);
+            var suggestedMaxLength = maxLength < 50 ? 100 : 
+                                   maxLength < 200 ? 500 : 1000;
+
+            return new DataTypeConfiguration 
+            { 
+                Type = "string", 
+                AllowNull = true, 
+                MaxLength = suggestedMaxLength,
+                Transformations = new List<string> { "trim" }
+            };
+        }
+
+        /// <summary>
+        /// Generates suggested file name patterns
+        /// </summary>
+        private List<string> GenerateFileNamePatterns(string fileName, string supplierName)
+        {
+            var patterns = new List<string>();
+            var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+            
+            // Pattern 1: Exact name with different extensions
+            patterns.Add($"{nameWithoutExt}.xlsx");
+            patterns.Add($"{nameWithoutExt}.xls");
+            
+            // Pattern 2: Supplier name with wildcards
+            patterns.Add($"{supplierName}*.xlsx");
+            patterns.Add($"{supplierName.ToLower()}*.xlsx");
+            
+            // Pattern 3: Extract base name (remove dates/numbers) with wildcards
+            var baseName = System.Text.RegularExpressions.Regex.Replace(nameWithoutExt, @"\d+", "*");
+            if (baseName != nameWithoutExt)
+            {
+                patterns.Add($"{baseName}.xlsx");
+            }
+
+            return patterns.Distinct().ToList();
+        }
+
+        /// <summary>
+        /// Converts column index to Excel column letter (A, B, C, etc.)
+        /// </summary>
+        private string GetExcelColumnLetter(int columnIndex)
+        {
+            string columnName = "";
+            while (columnIndex >= 0)
+            {
+                columnName = (char)('A' + (columnIndex % 26)) + columnName;
+                columnIndex = (columnIndex / 26) - 1;
+            }
+            return columnName;
+        }
+
+        /// <summary>
+        /// Adds a new supplier configuration to the existing configuration file
+        /// </summary>
+        /// <param name="newSupplier">The supplier configuration to add</param>
+        /// <param name="saveToFile">Whether to save immediately to file</param>
+        /// <returns>True if added successfully, false if supplier already exists</returns>
+        public async Task<bool> AddSupplierConfigurationAsync(SupplierConfiguration newSupplier, bool saveToFile = true)
+        {
+            if (newSupplier == null)
+                throw new ArgumentNullException(nameof(newSupplier));
+
+            var config = await GetConfigurationAsync();
+            
+            // Check if supplier already exists
+            if (config.Suppliers.Any(s => s.Name.Equals(newSupplier.Name, StringComparison.OrdinalIgnoreCase)))
+            {
+                Console.WriteLine($"⚠️  Supplier '{newSupplier.Name}' already exists!");
+                Console.Write("❓ Do you want to replace it? (y/n): ");
+                var replace = Console.ReadLine()?.Trim().ToLower();
+                
+                if (replace == "y" || replace == "yes")
+                {
+                    // Remove existing supplier
+                    config.Suppliers.RemoveAll(s => s.Name.Equals(newSupplier.Name, StringComparison.OrdinalIgnoreCase));
+                    Console.WriteLine($"🔄 Replaced existing supplier configuration for '{newSupplier.Name}'");
+                }
+                else
+                {
+                    Console.WriteLine("❌ Operation cancelled - supplier not added");
+                    return false;
+                }
+            }
+
+            // Add the new supplier
+            config.Suppliers.Add(newSupplier);
+            config.LastUpdated = DateTime.UtcNow;
+
+            if (saveToFile)
+            {
+                await SaveConfigurationAsync(config);
+                Console.WriteLine($"✅ Supplier '{newSupplier.Name}' added to configuration file");
+                Console.WriteLine($"📁 Configuration saved to: {_configurationFilePath}");
+            }
+
+            return true;
         }
 
 
