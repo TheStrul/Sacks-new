@@ -46,6 +46,11 @@ namespace SacksDataLayer.Services.Interfaces
             string? createdBy = null);
 
         /// <summary>
+        /// Checks if an offer with the specified name already exists for the supplier
+        /// </summary>
+        Task<bool> OfferExistsAsync(int supplierId, string offerName, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Deactivates an offer (sets IsActive = false)
         /// </summary>
         Task<bool> DeactivateOfferAsync(int offerId, string? modifiedBy = null);

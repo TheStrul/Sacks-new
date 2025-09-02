@@ -5,6 +5,7 @@ using SacksDataLayer.FileProcessing.Models;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
 using SacksDataLayer.Extensions;
+using SacksDataLayer.Exceptions;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -447,18 +448,16 @@ namespace SacksDataLayer.Services.Implementations
                     await _unitOfWork.SaveChangesAsync(ct);
                     Console.WriteLine($"   🏢 ✅ Supplier ready: {supplier.Name} (ID: {supplier.Id})");
                     
-                    // Step 2: Check for existing offers and ask user permission
-                    bool exist = supplier.Offers.Any(o =>
-                        string.Equals(o.OfferName, Path.GetFileName(filePath), StringComparison.OrdinalIgnoreCase));
+                    // Step 2: Validate that offer does not already exist
+                    Console.WriteLine($"   🔍 Checking for existing offer with name: {Path.GetFileName(filePath)}");
+                    await _databaseService.ValidateOfferDoesNotExistAsync(
+                        supplier.Id, 
+                        Path.GetFileName(filePath), 
+                        supplier.Name, 
+                        ct);
+                    Console.WriteLine($"   ✅ No duplicate offer found - proceeding with processing");
 
-                    if (exist)
-                    {
-                        Console.WriteLine($"   ⚠️ Offer already exists for file: {Path.GetFileName(filePath)}");
-                        Console.WriteLine("   💡 To avoid duplicates, consider renaming the file or updating the existing offer.");
-                        return;
-                    }
-
-                    // Step 2: Create new offer
+                    // Step 3: Create new offer
                     Console.WriteLine($"   📋 Creating offer for file: {Path.GetFileName(filePath)}");
                     var offer = await _databaseService.CreateOfferAsync(
                         supplier,
@@ -505,6 +504,23 @@ namespace SacksDataLayer.Services.Implementations
                     DisplayProcessingResults(supplier, offer, batchResult, stopwatch.ElapsedMilliseconds);
                     
                 }, cancellationToken);
+            }
+            catch (DuplicateOfferException ex)
+            {
+                stopwatch.Stop();
+                Console.WriteLine($"\n   ⚠️ DUPLICATE OFFER DETECTED");
+                Console.WriteLine($"   📋 Supplier: {ex.SupplierName}");
+                Console.WriteLine($"   📄 File: {ex.FileName}");
+                Console.WriteLine($"   🚫 Existing Offer: {ex.OfferName}");
+                Console.WriteLine($"\n   💡 SOLUTION:");
+                Console.WriteLine($"   ➡️  Rename the file '{ex.FileName}' to a different name");
+                Console.WriteLine($"   ➡️  Or delete/deactivate the existing offer first");
+                Console.WriteLine($"   ➡️  Processing has been stopped to prevent duplicates");
+                
+                _logger.LogWarning("Duplicate offer validation failed: {Message}", ex.Message);
+                
+                // Don't rethrow - this is an expected business rule validation
+                return;
             }
             catch (Exception ex)
             {

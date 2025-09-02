@@ -2,6 +2,7 @@ using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
 using SacksDataLayer.Data;
+using SacksDataLayer.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -225,6 +226,47 @@ namespace SacksDataLayer.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create or get supplier: {SupplierName}", supplierConfig.Name);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Validates that an offer does not already exist for the supplier and file name
+        /// </summary>
+        public async Task ValidateOfferDoesNotExistAsync(
+            int supplierId, 
+            string fileName, 
+            string supplierName, 
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(fileName))
+                throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
+            
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                // Create the expected offer name using the same logic as CreateOfferFromFileAsync
+                var expectedOfferName = $"{supplierName} - {fileName}";
+                
+                var offerExists = await _supplierOffersService.OfferExistsAsync(supplierId, expectedOfferName, cancellationToken);
+                
+                if (offerExists)
+                {
+                    _logger.LogWarning("Duplicate offer detected: {SupplierName} - {OfferName}", supplierName, expectedOfferName);
+                    throw new DuplicateOfferException(supplierName, expectedOfferName, fileName);
+                }
+                
+                _logger.LogDebug("Offer validation passed for: {SupplierName} - {FileName}", supplierName, fileName);
+            }
+            catch (DuplicateOfferException)
+            {
+                throw; // Re-throw our custom exception
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to validate offer existence for supplier: {SupplierName}, file: {FileName}", 
+                    supplierName, fileName);
                 throw;
             }
         }

@@ -91,6 +91,15 @@ namespace SacksDataLayer.Services.Implementations
             return await _repository.CreateAsync(offer, CancellationToken.None);
         }
 
+        public async Task<bool> OfferExistsAsync(int supplierId, string offerName, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(offerName))
+                return false;
+
+            var existingOffer = await _repository.GetBySupplierAndOfferNameAsync(supplierId, offerName, cancellationToken);
+            return existingOffer != null;
+        }
+
         public async Task<bool> DeactivateOfferAsync(int offerId, string? modifiedBy = null)
         {
             var offer = await _repository.GetByIdAsync(offerId, CancellationToken.None);

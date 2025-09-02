@@ -32,6 +32,20 @@ namespace SacksDataLayer.Services.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Validates that an offer does not already exist for the supplier and file name
+        /// </summary>
+        /// <param name="supplierId">Supplier ID</param>
+        /// <param name="fileName">Name of the file being processed</param>
+        /// <param name="supplierName">Name of the supplier (for exception message)</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <exception cref="DuplicateOfferException">Thrown when an offer with the same name already exists</exception>
+        Task ValidateOfferDoesNotExistAsync(
+            int supplierId, 
+            string fileName, 
+            string supplierName, 
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Creates a new offer for the file processing session
         /// </summary>
         /// <param name="supplier">Supplier entity</param>

@@ -47,7 +47,7 @@ namespace SacksDataLayer.Data
 
                 // Index configurations for common queries
                 entity.HasIndex(e => e.EAN)
-                      .IsUnique(false)
+                      .IsUnique(true)  // Make EAN unique as it should be a unique product identifier
                       .HasDatabaseName("IX_Products_EAN");
 
                 entity.HasIndex(e => e.Name)

@@ -277,6 +277,9 @@ namespace SacksConsoleApp
                         mysqlOptions.EnableRetryOnFailure(dbSettings.MaxRetryCount);
                     }
                     mysqlOptions.CommandTimeout(dbSettings.CommandTimeout);
+                    
+                    // Enable string comparison translations for better LINQ support
+                    mysqlOptions.EnableStringComparisonTranslations();
                 });
 
                 if (dbSettings.EnableSensitiveDataLogging)

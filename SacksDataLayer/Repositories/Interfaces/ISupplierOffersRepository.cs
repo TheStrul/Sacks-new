@@ -14,4 +14,5 @@ public interface ISupplierOffersRepository
     Task<IEnumerable<SupplierOfferEntity>> GetBySupplierIdAsync(int supplierId, CancellationToken cancellationToken);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken);
     Task DeactivateOldOffersAsync(int productId, int supplierId, CancellationToken cancellationToken);
+    Task<SupplierOfferEntity?> GetBySupplierAndOfferNameAsync(int supplierId, string offerName, CancellationToken cancellationToken);
 }

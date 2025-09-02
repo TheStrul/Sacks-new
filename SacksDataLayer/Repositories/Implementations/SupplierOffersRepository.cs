@@ -95,5 +95,18 @@ namespace SacksDataLayer.Repositories.Implementations
                 offer.UpdateModified();
             }
         }
+
+        public async Task<SupplierOfferEntity?> GetBySupplierAndOfferNameAsync(int supplierId, string offerName, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(offerName))
+                return null;
+
+            return await _context.SupplierOffers
+                .Include(so => so.Supplier)
+                .FirstOrDefaultAsync(so => so.SupplierId == supplierId && 
+                                          so.OfferName != null &&
+                                          so.OfferName.Equals(offerName, StringComparison.OrdinalIgnoreCase), 
+                                    cancellationToken);
+        }
     }
 }
