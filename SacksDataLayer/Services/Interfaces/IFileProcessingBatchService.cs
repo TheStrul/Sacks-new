@@ -24,7 +24,7 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Aggregated batch processing results</returns>
         Task<FileProcessingBatchResult> ProcessProductsInBatchesAsync(
-            IEnumerable<ProductEntity> products,
+            IEnumerable<OfferProductEntity> products,
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
             int batchSize = 500,
@@ -43,7 +43,7 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Batch processing results</returns>
         Task<FileProcessingBatchResult> ProcessSingleBatchAsync(
-            List<ProductEntity> batch,
+            List<OfferProductEntity> batch,
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
             int batchIndex,

@@ -1,8 +1,6 @@
 ﻿using SacksDataLayer.FileProcessing.Interfaces;
 using SacksDataLayer.FileProcessing.Configuration;
-using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Models;
-using SacksDataLayer.Configuration.Normalizers;
 using SacksDataLayer.Entities;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using System.Globalization;
@@ -11,7 +9,7 @@ using System.Text.RegularExpressions;
 namespace SacksDataLayer.FileProcessing.Normalizers
 {
     /// <summary>
-    /// Configuration-driven normalizer that uses JSON configuration files instead of hardcoded logic
+    /// Configuration-driven normalizer using unified ColumnProperties structure
     /// </summary>
     public class ConfigurationBasedNormalizer : ISupplierProductNormalizer
     {
@@ -31,75 +29,10 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             ArgumentNullException.ThrowIfNull(fileName);
             
             var detection = _configuration.Detection;
-
-            // Convert filename to lowercase for pattern matching
             var lowerFileName = fileName.ToLowerInvariant();
 
-            // Check filename patterns against lowercase filename
             return detection.FileNamePatterns.Any(pattern => 
                 IsPatternMatch(lowerFileName, pattern.ToLowerInvariant()));
-        }
-
-        public async Task<IEnumerable<ProductEntity>> NormalizeAsync(FileData fileData)
-        {
-            ArgumentNullException.ThrowIfNull(fileData);
-            
-            var products = new List<ProductEntity>();
-
-            if (fileData.DataRows.Count == 0)
-                return products;
-
-            // Validate that we have the expected number of columns in the first row
-            var firstRow = fileData.DataRows.FirstOrDefault(r => r.HasData);
-            if (firstRow == null)
-                return products;
-
-            if (_configuration.Validation.ExpectedColumnCount > 0 && 
-                firstRow.Cells.Count != _configuration.Validation.ExpectedColumnCount)
-            {
-                throw new InvalidOperationException(
-                    $"Expected {_configuration.Validation.ExpectedColumnCount} columns but found {firstRow.Cells.Count}");
-            }
-
-            // Create column mapping using Excel column indexes
-            var columnIndexes = CreateColumnIndexMapping();
-
-            // Process data rows starting from configured index (convert from 1-based to 0-based)
-            var dataStartIndex = _configuration.Validation.DataStartRowIndex - 1;
-            var dataRows = fileData.DataRows
-                .Skip(dataStartIndex)
-                .Where(r => !_configuration.Transformation.SkipEmptyRows || r.HasData);
-
-            foreach (var row in dataRows)
-            {
-                try
-                {
-                    var product = await NormalizeRowAsync(row, columnIndexes, fileData.FilePath);
-                    if (product != null)
-                    {
-                        products.Add(product);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error processing row {row.Index}: {ex.Message}");
-                    // Continue processing other rows instead of stopping
-                }
-            }
-
-            return products;
-        }
-
-        public Dictionary<string, string> GetColumnMapping()
-        {
-            // Return the Excel column-based mappings
-            return new Dictionary<string, string>(_configuration.ColumnIndexMappings);
-        }
-
-        public Dictionary<string, string> GetColumnMapping(ProcessingContext context)
-        {
-            // Return the Excel column-based mappings
-            return new Dictionary<string, string>(_configuration.ColumnIndexMappings);
         }
 
         public async Task<ProcessingResult> NormalizeAsync(FileData fileData, ProcessingContext context)
@@ -117,7 +50,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
             try
             {
-                var normalizationResults = new List<NormalizationResult>();
+                var offerProducts = new List<OfferProductEntity>();
                 var statistics = new ProcessingStatistics();
                 var warnings = new List<string>();
                 var errors = new List<string>();
@@ -128,53 +61,51 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     return result;
                 }
 
-                // Create supplier offer metadata for this processing session
-                SupplierOfferEntity supplierOffer = CreateSupplierOfferFromContext(context);
-                    result.SupplierOffer = supplierOffer;
-                    statistics.SupplierOffersCreated = 1;
-
-                // Find header row
-                var headerRowIndex = _configuration.Transformation.HeaderRowIndex;
-                var headerRow = fileData.DataRows.Skip(headerRowIndex).FirstOrDefault(r => r.HasData);
-                
-                if (headerRow == null)
+                // Require ColumnProperties configuration
+                if (_configuration.ColumnProperties?.Count == 0)
                 {
-                    errors.Add("No valid header row found");
+                    errors.Add("No column properties configured for supplier");
                     result.Errors = errors;
                     return result;
                 }
 
-                // Create column mapping for supplier offers
-                var columnIndexes = CreateColumnMapping(headerRow);
+                // Create supplier offer metadata
+                var supplierOffer = CreateSupplierOfferFromContext(context);
+                result.SupplierOffer = supplierOffer;
+                statistics.SupplierOffersCreated = 1;
+
                 statistics.TotalRowsProcessed = fileData.DataRows.Count;
 
-                // Process data rows
-                var dataStartIndex = Math.Max(_configuration.Transformation.DataStartRowIndex, headerRow.Index + 1);
+                // Process data rows using FileStructure configuration
+                var dataStartIndex = _configuration.FileStructure?.DataStartRowIndex ?? 1;
                 var dataRows = fileData.DataRows
                     .Skip(dataStartIndex)
-                    .Where(r => !_configuration.Transformation.SkipEmptyRows || r.HasData);
+                    .Where(r => !(_configuration.Transformation?.SkipEmptyRows == true) || r.HasData);
 
                 foreach (var row in dataRows)
                 {
                     try
                     {
-                        var normalizationResult = await NormalizeRowToRelationalEntitiesAsync(
-                            row, columnIndexes, context, fileData.FilePath, supplierOffer);
+                        var offerProduct = await NormalizeRowAsync(row, context, fileData.FilePath, supplierOffer);
                         
-                        if (normalizationResult != null)
+                        if (offerProduct != null)
                         {
-                            if (IsValidNormalizationResult(normalizationResult))
+                            if (IsValidOfferProduct(offerProduct))
                             {
-                                normalizationResults.Add(normalizationResult);
+                                offerProducts.Add(offerProduct);
                                 statistics.ProductsCreated++;
-                                
-                                // Update supplier offer statistics
                                 statistics.PricingRecordsProcessed++;
-                                if (normalizationResult.HasOfferProperties)
+                                
+                                // Check if this offer product has offer-specific data
+                                var hasOfferData = offerProduct.Price.HasValue ||
+                                                 !string.IsNullOrEmpty(offerProduct.Capacity) ||
+                                                 offerProduct.ProductProperties.Count > 0;
+                                
+                                if (hasOfferData)
                                 {
                                     statistics.OfferProductsCreated++;
                                 }
-                                if (normalizationResult.OfferProperties.ContainsKey("StockQuantity"))
+                                if (offerProduct.ProductProperties.ContainsKey("StockQuantity"))
                                 {
                                     statistics.StockRecordsProcessed++;
                                 }
@@ -197,7 +128,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 statistics.ProcessingTime = DateTime.UtcNow - startTime;
                 statistics.WarningCount = warnings.Count;
 
-                result.NormalizationResults = normalizationResults;
+                result.OfferProducts = offerProducts;
                 result.Statistics = statistics;
                 result.Warnings = warnings;
                 result.Errors = errors;
@@ -212,201 +143,233 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
         }
 
-        private Dictionary<string, int> CreateColumnMapping(RowData headerRow)
+        /// <summary>
+        /// Normalizes a single row using unified ColumnProperties configuration
+        /// </summary>
+        private async Task<OfferProductEntity?> NormalizeRowAsync(
+            RowData row, 
+            ProcessingContext context, 
+            string sourceFile,
+            SupplierOfferEntity? supplierOffer)
         {
-            var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            
-            // Create mapping using Excel column letters or numeric indices
-            foreach (var indexMapping in _configuration.ColumnIndexMappings)
-            {
-                int columnIndex;
-                
-                // Try to parse as Excel column letter (A, B, C, etc.) or numeric index
-                if (IsExcelColumnLetter(indexMapping.Key))
-                {
-                    columnIndex = ConvertExcelColumnToIndex(indexMapping.Key);
-                }
-                else if (int.TryParse(indexMapping.Key, out int numericIndex))
-                {
-                    columnIndex = numericIndex;
-                }
-                else
-                {
-                    continue; // Skip invalid column references
-                }
-
-                var targetProperty = indexMapping.Value;
-                mapping[targetProperty] = columnIndex;
-            }
-
-            return mapping;
-        }
-
-        private Dictionary<string, int> CreateColumnIndexMapping()
-        {
-            var mapping = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            
-            // Create mapping using Excel column letters to 0-based indices
-            foreach (var indexMapping in _configuration.ColumnIndexMappings)
-            {
-                int columnIndex;
-                
-                // Convert Excel column letter (A, B, C, etc.) to 0-based index
-                if (IsExcelColumnLetter(indexMapping.Key))
-                {
-                    columnIndex = ConvertExcelColumnToIndex(indexMapping.Key);
-                }
-                else if (int.TryParse(indexMapping.Key, out int numericIndex))
-                {
-                    columnIndex = numericIndex;
-                }
-                else
-                {
-                    continue; // Skip invalid column references
-                }
-
-                var targetProperty = indexMapping.Value;
-                mapping[targetProperty] = columnIndex;
-            }
-
-            return mapping;
-        }
-
-        private async Task<ProductEntity?> NormalizeRowAsync(RowData row, Dictionary<string, int> columnIndexes, string filePath)
-        {
-            var product = new ProductEntity();
-
             try
             {
-                // Map core properties (Name, Description, EAN)
-                product.Name = GetMappedValue(row, columnIndexes, "Name") ?? "Unknown Product";
-                product.Description = GetMappedValue(row, columnIndexes, "Description");
-                product.EAN = GetMappedValue(row, columnIndexes, "EAN") ?? "";
-
-                // Apply transformations to core properties
-                if (_configuration.Transformation.TrimWhitespace)
+                var product = new ProductEntity();
+                var offerProperties = new Dictionary<string, object?>();
+                
+                // Process each configured column property
+                foreach (var columnConfig in _configuration.ColumnProperties)
                 {
-                    product.Name = product.Name?.Trim() ?? "";
-                    product.Description = product.Description?.Trim();
-                    product.EAN = product.EAN?.Trim() ?? "";
-                }
-
-                // Process all mapped columns as dynamic properties
-                var columnMappings = CreateColumnIndexMapping(); // Use processed mapping
-                foreach (var mapping in columnMappings)
-                {
-                    var targetProperty = mapping.Key;     // Property name
-                    var columnIndex = mapping.Value;      // Column index
+                    var columnKey = columnConfig.Key; // Excel column (A, B, C, etc.)
+                    var columnProperty = columnConfig.Value;
+                    var targetProperty = columnProperty.TargetProperty ?? columnProperty.DisplayName;
                     
-                    // Skip core properties as they're already handled
-                    if (targetProperty is "Name" or "Description" or "EAN")
+                    if (string.IsNullOrEmpty(targetProperty))
                         continue;
 
-                    if (columnIndex < row.Cells.Count)
+                    // Get column index
+                    var columnIndex = GetColumnIndex(columnKey);
+                    if (columnIndex < 0 || columnIndex >= row.Cells.Count)
+                        continue;
+
+                    // Extract and process cell value
+                    var rawValue = row.Cells[columnIndex].Value?.Trim();
+                    if (string.IsNullOrEmpty(rawValue))
                     {
-                        var rawValue = row.Cells[columnIndex].Value?.Trim();
-                        if (!string.IsNullOrEmpty(rawValue))
-                        {
-                            var convertedValue = ConvertValue(targetProperty, rawValue);
-                            if (convertedValue != null)
-                            {
-                                // Only set core product properties on the product entity
-                                // Offer properties will be handled separately by the processor
-                                if (!_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
-                                {
-                                    product.SetDynamicProperty(targetProperty, convertedValue);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // Set default value if configured
-                            SetDefaultValue(product, targetProperty);
-                        }
+                        // Handle default values for empty cells
+                        await SetDefaultValueIfConfiguredAsync(product, offerProperties, columnProperty, targetProperty);
+                        continue;
                     }
+
+                    // Apply transformations and type conversion
+                    var processedValue = await ProcessCellValueAsync(rawValue, columnProperty);
+                    if (processedValue == null && !columnProperty.DataType.AllowNull)
+                        continue;
+
+                    // Validate processed value
+                    if (!await ValidateValueAsync(processedValue, columnProperty, targetProperty))
+                        continue;
+
+                    // Classify and assign value based on property classification
+                    await AssignValueByClassificationAsync(
+                        product, offerProperties, targetProperty, processedValue, columnProperty.Classification);
                 }
 
-                // Add unmapped columns as dynamic properties
-                await AddUnmappedPropertiesAsync(product, row, columnIndexes);
+                // Ensure product has valid name
+                if (string.IsNullOrEmpty(product.Name))
+                {
+                    product.Name = ConstructProductNameFromProperties(product);
+                }
 
-                // Note: No metadata is added to DynamicProperties - they should contain only product attributes
-                // Metadata like SourceFile, ProcessingMode, etc. are handled separately by the processing layer
+                // Create unified OfferProduct entity containing everything
+                var offerProduct = CreateOfferProductEntity(offerProperties, supplierOffer!);
+                offerProduct.Product = product;
+                if (supplierOffer != null)
+                {
+                    offerProduct.Offer = supplierOffer;
+                    offerProduct.OfferId = supplierOffer.Id;
+                }
 
-                return product;
+                return offerProduct;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error normalizing row {row.Index}: {ex.Message}");
-                return null;
+                throw new InvalidOperationException($"Failed to normalize row {row.Index}: {ex.Message}", ex);
             }
         }
 
-        private string? GetMappedValue(RowData row, Dictionary<string, int> columnIndexes, string targetProperty)
+        #region Core Processing Methods
+
+        /// <summary>
+        /// Gets column index from Excel column reference (A=0, B=1, etc.)
+        /// </summary>
+        private int GetColumnIndex(string columnKey)
         {
-            // Find all source columns that map to the target property using ColumnIndexMappings
-            var sourceColumns = _configuration.ColumnIndexMappings
-                .Where(kvp => kvp.Value == targetProperty)
-                .Select(kvp => kvp.Key);
-
-            foreach (var sourceColumn in sourceColumns)
+            if (IsExcelColumnLetter(columnKey))
             {
-                var value = GetCellValue(row, columnIndexes, sourceColumn);
-                if (!string.IsNullOrEmpty(value))
-                {
-                    return value;
-                }
+                return ConvertExcelColumnToIndex(columnKey);
             }
-
-            return null;
+            else if (int.TryParse(columnKey, out int numericIndex))
+            {
+                return numericIndex;
+            }
+            return -1;
         }
 
-        private string? GetCellValue(RowData row, Dictionary<string, int> columnIndexes, string columnName)
+        /// <summary>
+        /// Processes cell value through transformations and type conversion
+        /// </summary>
+        private async Task<object?> ProcessCellValueAsync(string rawValue, ColumnProperty columnProperty)
         {
-            if (columnIndexes.TryGetValue(columnName, out int index) && index < row.Cells.Count)
-            {
-                var value = row.Cells[index].Value?.Trim();
-                return string.IsNullOrEmpty(value) ? null : value;
-            }
-            return null;
-        }
-
-        private object? ConvertValue(string targetProperty, string rawValue)
-        {
-            if (string.IsNullOrWhiteSpace(rawValue))
-                return null;
-
-            // Get data type configuration for this property
-            if (!_configuration.DataTypes.TryGetValue(targetProperty, out var dataTypeConfig))
-            {
-                return rawValue; // Return as string if no type configuration
-            }
-
+            await Task.CompletedTask; // For async consistency
+            
             try
             {
-                // Apply transformations
-                var transformedValue = ApplyTransformations(rawValue, dataTypeConfig.Transformations);
-
+                // Apply configured transformations
+                var transformedValue = ApplyTransformations(rawValue, columnProperty.DataType.Transformations);
+                
                 // Convert to target type
-                if (_dataTypeConverters.TryGetValue(dataTypeConfig.Type.ToLowerInvariant(), out var converter))
+                if (_dataTypeConverters.TryGetValue(columnProperty.DataType.Type.ToLowerInvariant(), out var converter))
                 {
                     return converter(transformedValue);
                 }
 
-                return transformedValue; // Return as string if no converter found
+                return transformedValue;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Error converting value '{rawValue}' for property '{targetProperty}': {ex.Message}");
-                
-                // Return default value if conversion fails
-                if (dataTypeConfig.DefaultValue != null)
-                {
-                    return dataTypeConfig.DefaultValue;
-                }
-
-                return dataTypeConfig.AllowNull ? null : rawValue;
+                // Return default value on conversion failure
+                return columnProperty.DataType.DefaultValue;
             }
         }
+
+        /// <summary>
+        /// Validates processed value against column validation rules
+        /// </summary>
+        private async Task<bool> ValidateValueAsync(object? value, ColumnProperty columnProperty, string targetProperty)
+        {
+            await Task.CompletedTask; // For async consistency
+            
+            // Check required field validation
+            if (columnProperty.Validation.IsRequired && value == null)
+            {
+                return false;
+            }
+
+            // Check allowed values if configured
+            if (columnProperty.Validation.AllowedValues.Count > 0)
+            {
+                var stringValue = value?.ToString();
+                if (!columnProperty.Validation.AllowedValues.Contains(stringValue, StringComparer.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            // Check validation patterns if configured
+            if (columnProperty.Validation.ValidationPatterns.Count > 0)
+            {
+                var stringValue = value?.ToString();
+                if (!string.IsNullOrEmpty(stringValue))
+                {
+                    var matchesPattern = columnProperty.Validation.ValidationPatterns
+                        .Any(pattern => Regex.IsMatch(stringValue, pattern, RegexOptions.IgnoreCase));
+                    if (!matchesPattern)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Sets default value if configured for empty cells
+        /// </summary>
+        private async Task SetDefaultValueIfConfiguredAsync(
+            ProductEntity product, 
+            Dictionary<string, object?> offerProperties, 
+            ColumnProperty columnProperty, 
+            string targetProperty)
+        {
+            await Task.CompletedTask; // For async consistency
+            
+            if (columnProperty.DataType.DefaultValue != null)
+            {
+                await AssignValueByClassificationAsync(
+                    product, offerProperties, targetProperty, 
+                    columnProperty.DataType.DefaultValue, columnProperty.Classification);
+            }
+        }
+
+        /// <summary>
+        /// Assigns value to appropriate entity based on classification
+        /// </summary>
+        private async Task AssignValueByClassificationAsync(
+            ProductEntity product, 
+            Dictionary<string, object?> offerProperties, 
+            string targetProperty, 
+            object? value, 
+            string classification)
+        {
+            await Task.CompletedTask; // For async consistency
+            
+            switch (targetProperty.ToLowerInvariant())
+            {
+                case "name":
+                    product.Name = value?.ToString() ?? "";
+                    break;
+                case "description":
+                    product.Description = value?.ToString();
+                    break;
+                case "ean":
+                    product.EAN = value?.ToString() ?? "";
+                    break;
+                default:
+                    // Classify based on configuration
+                    if (classification == "coreProduct")
+                    {
+                        // Core product property - goes to ProductEntity.DynamicProperties
+                        product.SetDynamicProperty(targetProperty, value);
+                    }
+                    else if (classification == "offer")
+                    {
+                        // Offer property - goes to OfferProductEntity
+                        offerProperties[targetProperty] = value;
+                    }
+                    else
+                    {
+                        // Default to core product for unknown classification
+                        product.SetDynamicProperty(targetProperty, value);
+                    }
+                    break;
+            }
+        }
+
+        #endregion
+
+        #region Utility Methods
 
         private string ApplyTransformations(string value, List<string> transformations)
         {
@@ -428,82 +391,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
 
             return value;
-        }
-
-        private void SetDefaultValue(ProductEntity product, string targetProperty)
-        {
-            if (_configuration.DataTypes.TryGetValue(targetProperty, out var dataTypeConfig) &&
-                dataTypeConfig.DefaultValue != null)
-            {
-                // Determine if this is a core product property or offer property
-                // Only set core product properties default values
-                // Offer properties will be handled separately
-                if (!_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
-                {
-                    product.SetDynamicProperty(targetProperty, dataTypeConfig.DefaultValue);
-                }
-            }
-        }
-
-        private async Task AddUnmappedPropertiesAsync(ProductEntity product, RowData row, Dictionary<string, int> columnIndexes)
-        {
-            var mappedColumns = new HashSet<string>(_configuration.ColumnIndexMappings.Keys, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var kvp in columnIndexes)
-            {
-                if (!mappedColumns.Contains(kvp.Key) && kvp.Value < row.Cells.Count)
-                {
-                    var value = row.Cells[kvp.Value].Value?.Trim();
-                    if (!string.IsNullOrEmpty(value))
-                    {
-                        var cleanKey = CleanPropertyKey(kvp.Key);
-                        product.SetDynamicProperty(cleanKey, value);
-                    }
-                }
-            }
-
-            await Task.CompletedTask;
-        }
-
-        private string CleanPropertyKey(string key)
-        {
-            return key.Replace(" ", "")
-                      .Replace("-", "")
-                      .Replace("_", "")
-                      .Replace("(", "")
-                      .Replace(")", "")
-                      .Replace("[", "")
-                      .Replace("]", "")
-                      .Trim();
-        }
-
-        private bool IsValidProduct(ProductEntity product)
-        {
-            // Simple validation - just check that the product has a name
-            return !string.IsNullOrWhiteSpace(product.Name);
-        }
-
-        private bool IsHeaderRow(ProductEntity product)
-        {
-            // Check if product name/EAN matches known column headers
-            var headerKeywords = new[] { "Item Name", "Item Code", "PRICE", "Category", "Family", "Commercial Line", "Pricing Item Name", "Size", "Unit", "EAN", "Capacity" };
-            
-            if (headerKeywords.Any(keyword => string.Equals(product.Name, keyword, StringComparison.OrdinalIgnoreCase) ||
-                                               string.Equals(product.EAN, keyword, StringComparison.OrdinalIgnoreCase)))
-                return true;
-
-            // Check if multiple dynamic properties contain header-like values
-            var headerMatches = 0;
-            foreach (var prop in product.DynamicProperties)
-            {
-                if (headerKeywords.Any(keyword => string.Equals(prop.Value?.ToString(), keyword, StringComparison.OrdinalIgnoreCase)))
-                {
-                    headerMatches++;
-                }
-            }
-
-            // If more than 50% of properties match header keywords, it's likely a header row
-            return headerMatches > product.DynamicProperties.Count / 2 && headerMatches >= 3;
         }
 
         private bool IsPatternMatch(string input, string pattern)
@@ -531,342 +418,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
 
             return string.Equals(input, pattern, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private Dictionary<string, Func<string, object?>> InitializeDataTypeConverters()
-        {
-            return new Dictionary<string, Func<string, object?>>
-            {
-                ["string"] = value => value,
-                ["int"] = value => int.TryParse(value, out int result) ? result : null,
-                ["decimal"] = value => decimal.TryParse(value, NumberStyles.Currency, CultureInfo.InvariantCulture, out decimal result) ? result : null,
-                ["bool"] = value => ParseBooleanValue(value),
-                ["datetime"] = value => DateTime.TryParse(value, out DateTime result) ? result : null,
-                ["date"] = value => DateOnly.TryParse(value, out DateOnly result) ? result : null,
-                ["time"] = value => TimeOnly.TryParse(value, out TimeOnly result) ? result : null
-            };
-        }
-
-        private bool ParseBooleanValue(string? value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return false;
-
-            value = value.Trim().ToLowerInvariant();
-            
-            return value switch
-            {
-                "yes" or "y" or "true" or "1" or "active" or "enabled" or "on" => true,
-                "no" or "n" or "false" or "0" or "inactive" or "disabled" or "off" => false,
-                _ => false
-            };
-        }
-
-        private Task<ProductEntity?> NormalizeModeSpecificRowAsync(RowData row, Dictionary<string, int> columnIndexes, ProcessingContext context, string sourceFile)
-        {
-            try
-            {
-                var product = new ProductEntity();
-                // Note: No metadata added to DynamicProperties - they should contain only product attributes
-
-                // Process mapped columns based on mode priorities
-                var columnMappings = CreateColumnIndexMapping(); // Changed from GetColumnMapping() to use ColumnIndexMappings
-                foreach (var mapping in columnMappings)
-                {
-                    var targetProperty = mapping.Key;     // Property name
-                    var columnIndex = mapping.Value;      // Column index
-
-                    if (columnIndex < row.Cells.Count)
-                    {
-                        var cellValue = row.Cells[columnIndex].Value?.Trim();
-                        
-                        if (!string.IsNullOrEmpty(cellValue))
-                        {
-                            var convertedValue = ConvertValue(targetProperty, cellValue);
-                            
-                            // Set core properties or dynamic properties based on target
-                            switch (targetProperty.ToLowerInvariant())
-                            {
-                                case "name":
-                                    product.Name = convertedValue?.ToString() ?? "";
-                                    break;
-                                case "description":
-                                    product.Description = convertedValue?.ToString();
-                                    break;
-                                case "ean":
-                                    product.EAN = convertedValue?.ToString() ?? "";
-                                    break;
-                                default:
-                                    // Only set core product properties  
-                                    // Offer properties will be handled separately
-                                    if (!_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
-                                    {
-                                        product.SetDynamicProperty(targetProperty, convertedValue);
-                                    }
-                                    break;
-                            }
-                        }
-                    }
-                }
-
-                // For supplier offers, ensure we have a valid product with EAN and name
-                if (string.IsNullOrEmpty(product.Name))
-                {
-                    // Try to construct name from available fields
-                    var nameComponents = new List<string>();
-                    
-                    if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
-                        nameComponents.Add(family.ToString()!);
-                    if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
-                        nameComponents.Add(category.ToString()!);
-                    if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
-                        nameComponents.Add(itemName.ToString()!);
-
-                    if (nameComponents.Any())
-                    {
-                        product.Name = string.Join(" - ", nameComponents);
-                    }
-                    else
-                    {
-                        product.Name = "Unknown Product";
-                    }
-                }
-
-                // Note: Keep all data including pricing - we'll separate core vs offer properties in the service layer
-
-                return Task.FromResult<ProductEntity?>(product);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to normalize row {row.Index}: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Extracts offer properties from a row for creating SupplierOffer entities
-        /// </summary>
-        public Dictionary<string, object?> ExtractOfferProperties(RowData row, Dictionary<string, int> columnIndexes)
-        {
-            ArgumentNullException.ThrowIfNull(row);
-            ArgumentNullException.ThrowIfNull(columnIndexes);
-            
-            var offerProperties = new Dictionary<string, object?>();
-
-            foreach (var mapping in _configuration.ColumnIndexMappings)
-            {
-                var sourceColumn = mapping.Key;
-                var targetProperty = mapping.Value;
-
-                // Only process offer properties
-                if (_configuration.PropertyClassification.OfferProperties.Contains(targetProperty))
-                {
-                    var rawValue = GetCellValue(row, columnIndexes, sourceColumn);
-                    if (!string.IsNullOrEmpty(rawValue))
-                    {
-                        var convertedValue = ConvertValue(targetProperty, rawValue);
-                        if (convertedValue != null)
-                        {
-                            offerProperties[targetProperty] = convertedValue;
-                        }
-                    }
-                }
-            }
-
-            return offerProperties;
-        }
-
-        /// <summary>
-        /// Creates a SupplierOffer entity from processing context
-        /// </summary>
-        private SupplierOfferEntity CreateSupplierOfferFromContext(ProcessingContext context)
-        {
-            return new SupplierOfferEntity
-            {
-                OfferName = $"{SupplierName} - {context.SourceFileName}",
-                Description = $"Offer created from file: {context.SourceFileName}",
-                Currency = "USD", // Default currency, could be extracted from config or context
-                ValidFrom = context.ProcessingDate,
-                ValidTo = context.ProcessingDate.AddYears(1), // Default 1 year validity
-                IsActive = true,
-                OfferType = "File Import",
-                Version = "1.0",
-                CreatedAt = context.ProcessingDate
-            };
-        }
-
-        /// <summary>
-        /// Normalizes a single row into relational entities (ProductEntity + OfferProductEntity)
-        /// </summary>
-        private async Task<NormalizationResult?> NormalizeRowToRelationalEntitiesAsync(
-            RowData row, 
-            Dictionary<string, int> columnIndexes, 
-            ProcessingContext context, 
-            string sourceFile,
-            SupplierOfferEntity? supplierOffer)
-        {
-            try
-            {
-                var product = new ProductEntity();
-                var normalizationResult = new NormalizationResult
-                {
-                    RowIndex = row.Index,
-                    SupplierOffer = supplierOffer
-                };
-
-                // Process mapped columns with property classification
-                var columnMappings = CreateColumnIndexMapping(); // Use the processed mapping: PropertyName → ColumnIndex
-                var offerProperties = new Dictionary<string, object?>();
-                
-                foreach (var mapping in columnMappings)
-                {
-                    var targetProperty = mapping.Key;     // Property name (e.g., "Ref", "Capacity")
-                    var columnIndex = mapping.Value;      // Column index (e.g., 6, 13)
-
-                    if (columnIndex < row.Cells.Count)
-                    {
-                        var cellValue = row.Cells[columnIndex].Value?.Trim();
-                        
-                        if (!string.IsNullOrEmpty(cellValue))
-                        {
-                            var convertedValue = ConvertValue(targetProperty, cellValue);
-                            
-                            // Set core properties or collect offer properties based on classification
-                            switch (targetProperty.ToLowerInvariant())
-                            {
-                                case "name":
-                                    product.Name = convertedValue?.ToString() ?? "";
-                                    break;
-                                case "description":
-                                    product.Description = convertedValue?.ToString();
-                                    break;
-                                case "ean":
-                                    product.EAN = convertedValue?.ToString() ?? "";
-                                    break;
-                                default:
-                                    // Classify property as core product or offer property
-                                    if (_configuration.PropertyClassification.CoreProductProperties.Contains(targetProperty, StringComparer.OrdinalIgnoreCase))
-                                    {
-                                        // Core product property - goes to ProductEntity.DynamicProperties
-                                        product.SetDynamicProperty(targetProperty, convertedValue);
-                                    }
-                                    else if (_configuration.PropertyClassification.OfferProperties.Contains(targetProperty, StringComparer.OrdinalIgnoreCase))
-                                    {
-                                        // Offer property - goes to OfferProductEntity
-                                        offerProperties[targetProperty] = convertedValue;
-                                    }
-                                    else
-                                    {
-                                        // Unmapped property - default to core product property for backward compatibility
-                                        product.SetDynamicProperty(targetProperty, convertedValue);
-                                    }
-                                    break;
-                            }
-                        }
-                    }
-                }
-
-                // For supplier offers, create OfferProduct entity if we have offer properties
-                if (offerProperties.Count > 0 && supplierOffer != null)
-                {
-                    var offerProduct = CreateOfferProductEntity(offerProperties, supplierOffer);
-                    normalizationResult.OfferProduct = offerProduct;
-                    normalizationResult.HasOfferProperties = true;
-                    normalizationResult.OfferProperties = offerProperties;
-                }
-
-                // Ensure we have a valid product name
-                if (string.IsNullOrEmpty(product.Name))
-                {
-                    product.Name = ConstructProductNameFromProperties(product);
-                }
-
-                normalizationResult.Product = product;
-                return await Task.FromResult(normalizationResult);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to normalize row {row.Index}: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Creates an OfferProduct entity from offer properties
-        /// </summary>
-        private OfferProductEntity CreateOfferProductEntity(Dictionary<string, object?> offerProperties, SupplierOfferEntity supplierOffer)
-        {
-            var offerProduct = new OfferProductEntity
-            {
-                IsAvailable = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            // Map standard offer properties to OfferProduct entity properties
-            foreach (var prop in offerProperties)
-            {
-                switch (prop.Key.ToLowerInvariant())
-                {
-                    case "price":
-                        if (decimal.TryParse(prop.Value?.ToString(), out decimal price))
-                            offerProduct.Price = price;
-                        break;
-                    case "capacity":
-                        offerProduct.Capacity = prop.Value?.ToString();
-                        break;
-                    case "discount":
-                        if (decimal.TryParse(prop.Value?.ToString(), out decimal discount))
-                            offerProduct.Discount = discount;
-                        break;
-                    case "listprice":
-                        if (decimal.TryParse(prop.Value?.ToString(), out decimal listPrice))
-                            offerProduct.ListPrice = listPrice;
-                        break;
-                    case "unitofmeasure":
-                        offerProduct.UnitOfMeasure = prop.Value?.ToString();
-                        break;
-                    case "minimumorderquantity":
-                        if (int.TryParse(prop.Value?.ToString(), out int minQty))
-                            offerProduct.MinimumOrderQuantity = minQty;
-                        break;
-                    case "maximumorderquantity":
-                        if (int.TryParse(prop.Value?.ToString(), out int maxQty))
-                            offerProduct.MaximumOrderQuantity = maxQty;
-                        break;
-                    default:
-                        // Store as dynamic property in JSON
-                        offerProduct.SetProductProperty(prop.Key, prop.Value);
-                        break;
-                }
-            }
-
-            return offerProduct;
-        }
-
-        /// <summary>
-        /// Constructs a product name from available properties when name is missing
-        /// </summary>
-        private string ConstructProductNameFromProperties(ProductEntity product)
-        {
-            var nameComponents = new List<string>();
-            
-            if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
-                nameComponents.Add(family.ToString()!);
-            if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
-                nameComponents.Add(category.ToString()!);
-            if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
-                nameComponents.Add(itemName.ToString()!);
-
-            return nameComponents.Any() ? string.Join(" - ", nameComponents) : "Unknown Product";
-        }
-
-        /// <summary>
-        /// Validates a normalization result for supplier offers
-        /// </summary>
-        private bool IsValidNormalizationResult(NormalizationResult normalizationResult)
-        {
-            // For supplier offers, require valid product with EAN
-            return !string.IsNullOrEmpty(normalizationResult.Product.Name) && 
-                   normalizationResult.Product.Name != "Unknown Product" && 
-                   !string.IsNullOrEmpty(normalizationResult.Product.EAN);
         }
 
         /// <summary>
@@ -903,5 +454,155 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
             return result - 1; // Convert to zero-based index
         }
+
+        private Dictionary<string, Func<string, object?>> InitializeDataTypeConverters()
+        {
+            return new Dictionary<string, Func<string, object?>>
+            {
+                ["string"] = value => value,
+                ["int"] = value => int.TryParse(value, out int result) ? result : null,
+                ["decimal"] = value => decimal.TryParse(value, NumberStyles.Currency, CultureInfo.InvariantCulture, out decimal result) ? result : null,
+                ["bool"] = value => ParseBooleanValue(value),
+                ["datetime"] = value => DateTime.TryParse(value, out DateTime result) ? result : null,
+                ["date"] = value => DateOnly.TryParse(value, out DateOnly result) ? result : null,
+                ["time"] = value => TimeOnly.TryParse(value, out TimeOnly result) ? result : null
+            };
+        }
+
+        private bool ParseBooleanValue(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            value = value.Trim().ToLowerInvariant();
+            
+            return value switch
+            {
+                "yes" or "y" or "true" or "1" or "active" or "enabled" or "on" => true,
+                "no" or "n" or "false" or "0" or "inactive" or "disabled" or "off" => false,
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// Creates a SupplierOffer entity from processing context
+        /// </summary>
+        private SupplierOfferEntity CreateSupplierOfferFromContext(ProcessingContext context)
+        {
+            return new SupplierOfferEntity
+            {
+                OfferName = $"{SupplierName} - {context.SourceFileName}",
+                Description = $"Offer created from file: {context.SourceFileName}",
+                Currency = _configuration.Metadata?.Currency ?? "USD",
+                ValidFrom = context.ProcessingDate,
+                ValidTo = context.ProcessingDate.AddYears(1), // Default 1 year validity
+                IsActive = true,
+                OfferType = "File Import",
+                Version = "1.0",
+                CreatedAt = context.ProcessingDate
+            };
+        }
+
+        /// <summary>
+        /// Creates an OfferProduct entity from offer properties
+        /// </summary>
+        private OfferProductEntity CreateOfferProductEntity(Dictionary<string, object?> offerProperties, SupplierOfferEntity? supplierOffer)
+        {
+            var offerProduct = new OfferProductEntity
+            {
+                IsAvailable = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // Track which properties have been mapped to avoid duplication
+            var mappedProperties = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // Map standard offer properties to OfferProduct entity properties
+            foreach (var prop in offerProperties)
+            {
+                switch (prop.Key.ToLowerInvariant())
+                {
+                    case "price":
+                        if (decimal.TryParse(prop.Value?.ToString(), out decimal price))
+                            offerProduct.Price = price;
+                        mappedProperties.Add(prop.Key);
+                        break;
+                    case "capacity":
+                        offerProduct.Capacity = prop.Value?.ToString();
+                        mappedProperties.Add(prop.Key);
+                        break;
+                    case "discount":
+                        if (decimal.TryParse(prop.Value?.ToString(), out decimal discount))
+                            offerProduct.Discount = discount;
+                        mappedProperties.Add(prop.Key);
+                        break;
+                    case "listprice":
+                        if (decimal.TryParse(prop.Value?.ToString(), out decimal listPrice))
+                            offerProduct.ListPrice = listPrice;
+                        mappedProperties.Add(prop.Key);
+                        break;
+                    case "unitofmeasure":
+                        offerProduct.UnitOfMeasure = prop.Value?.ToString();
+                        mappedProperties.Add(prop.Key);
+                        break;
+                    case "minimumorderquantity":
+                        if (int.TryParse(prop.Value?.ToString(), out int minQty))
+                            offerProduct.MinimumOrderQuantity = minQty;
+                        mappedProperties.Add(prop.Key);
+                        break;
+                    case "maximumorderquantity":
+                        if (int.TryParse(prop.Value?.ToString(), out int maxQty))
+                            offerProduct.MaximumOrderQuantity = maxQty;
+                        mappedProperties.Add(prop.Key);
+                        break;
+                }
+            }
+
+            // Only store unmapped properties as dynamic properties to avoid duplication
+            var unmappedProperties = offerProperties
+                .Where(kvp => !mappedProperties.Contains(kvp.Key))
+                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+            if (unmappedProperties.Count > 0)
+            {
+                foreach (var prop in unmappedProperties)
+                {
+                    offerProduct.SetProductProperty(prop.Key, prop.Value);
+                }
+            }
+
+            return offerProduct;
+        }
+
+        /// <summary>
+        /// Constructs a product name from available properties when name is missing
+        /// </summary>
+        private string ConstructProductNameFromProperties(ProductEntity product)
+        {
+            var nameComponents = new List<string>();
+            
+            if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
+                nameComponents.Add(family.ToString()!);
+            if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
+                nameComponents.Add(category.ToString()!);
+            if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
+                nameComponents.Add(itemName.ToString()!);
+
+            return nameComponents.Any() ? string.Join(" - ", nameComponents) : "Unknown Product";
+        }
+
+        /// <summary>
+        /// Validates an offer product for supplier offers
+        /// </summary>
+        private bool IsValidOfferProduct(OfferProductEntity offerProduct)
+        {
+            // For supplier offers, require valid product with EAN
+            return offerProduct?.Product != null &&
+                   !string.IsNullOrEmpty(offerProduct.Product.Name) && 
+                   offerProduct.Product.Name != "Unknown Product" && 
+                   !string.IsNullOrEmpty(offerProduct.Product.EAN);
+        }
+
+        #endregion
     }
 }

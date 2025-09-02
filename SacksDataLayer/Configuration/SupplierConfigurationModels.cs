@@ -8,17 +8,14 @@ namespace SacksDataLayer.FileProcessing.Configuration
     /// </summary>
     public class SuppliersConfiguration
     {
-        [JsonPropertyName("suppliers")]
-        public List<SupplierConfiguration> Suppliers { get; set; } = new();
-
         [JsonPropertyName("version")]
-        public string Version { get; set; } = "1.0";
+        public string Version { get; set; } = "2.1";
 
         [JsonPropertyName("lastUpdated")]
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 
-        [JsonPropertyName("description")]
-        public string Description { get; set; } = "Configuration file for all supplier file formats";
+        [JsonPropertyName("suppliers")]
+        public List<SupplierConfiguration> Suppliers { get; set; } = new();
     }
 
     /// <summary>
@@ -29,23 +26,14 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
-        [JsonPropertyName("description")]
-        public string Description { get; set; } = string.Empty;
-
         [JsonPropertyName("detection")]
         public DetectionConfiguration Detection { get; set; } = new();
 
-        [JsonPropertyName("columnIndexMappings")]
-        public Dictionary<string, string> ColumnIndexMappings { get; set; } = new();
+        [JsonPropertyName("columnProperties")]
+        public Dictionary<string, ColumnProperty> ColumnProperties { get; set; } = new();
 
-        [JsonPropertyName("propertyClassification")]
-        public PropertyClassificationConfiguration PropertyClassification { get; set; } = new();
-
-        [JsonPropertyName("dataTypes")]
-        public Dictionary<string, DataTypeConfiguration> DataTypes { get; set; } = new();
-
-        [JsonPropertyName("validation")]
-        public ValidationConfiguration Validation { get; set; } = new();
+        [JsonPropertyName("fileStructure")]
+        public FileStructureConfiguration FileStructure { get; set; } = new();
 
         [JsonPropertyName("transformation")]
         public TransformationConfiguration Transformation { get; set; } = new();
@@ -53,6 +41,260 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("metadata")]
         public SupplierMetadata Metadata { get; set; } = new();
 
+        // Legacy properties for backward compatibility - made settable
+        [JsonIgnore]
+        public string Description 
+        { 
+            get => Metadata?.Industry ?? "";
+            set 
+            {
+                if (Metadata != null)
+                    Metadata.Industry = value;
+            }
+        }
+
+
+        [JsonIgnore]
+        public Dictionary<string, string>? ColumnIndexMappings 
+        { 
+            get => GetColumnMappings();
+            set => SetColumnMappings(value ?? new Dictionary<string, string>());
+        }
+
+        [JsonIgnore]
+        public PropertyClassificationConfiguration? PropertyClassification 
+        { 
+            get => GetPropertyClassification();
+            set => SetPropertyClassification(value);
+        }
+
+        [JsonIgnore]
+        public Dictionary<string, DataTypeConfiguration>? DataTypes 
+        { 
+            get => GetDataTypes();
+            set => SetDataTypes(value ?? new Dictionary<string, DataTypeConfiguration>());
+        }
+
+        [JsonIgnore]
+        public ValidationConfiguration? Validation 
+        { 
+            get => GetValidation();
+            set => SetValidation(value);
+        }
+
+        /// <summary>
+        /// Gets column mappings from ColumnProperties for legacy compatibility
+        /// </summary>
+        public Dictionary<string, string> GetColumnMappings()
+        {
+            return ColumnProperties?.ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.TargetProperty ?? kvp.Value.DisplayName ?? kvp.Key
+            ) ?? new Dictionary<string, string>();
+        }
+
+        /// <summary>
+        /// Sets column mappings by updating ColumnProperties
+        /// </summary>
+        public void SetColumnMappings(Dictionary<string, string> mappings)
+        {
+            ColumnProperties = mappings.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new ColumnProperty 
+                { 
+                    TargetProperty = kvp.Value,
+                    DisplayName = kvp.Value,
+                    DataType = new DataTypeConfiguration { Type = "string", AllowNull = true },
+                    Classification = "coreProduct",
+                    Validation = new ColumnValidationConfiguration()
+                }
+            );
+        }
+
+        /// <summary>
+        /// Gets legacy column index mappings for backward compatibility
+        /// </summary>
+        public Dictionary<string, string> GetColumnIndexMappings()
+        {
+            return GetColumnMappings();
+        }
+
+        /// <summary>
+        /// Gets legacy property classification for backward compatibility
+        /// </summary>
+        public PropertyClassificationConfiguration GetPropertyClassification()
+        {
+            var coreProperties = ColumnProperties?
+                .Where(kvp => kvp.Value.Classification == "coreProduct")
+                .Select(kvp => kvp.Value.TargetProperty ?? kvp.Value.DisplayName ?? kvp.Key)
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToList() ?? new List<string>();
+
+            var offerProperties = ColumnProperties?
+                .Where(kvp => kvp.Value.Classification == "offer")
+                .Select(kvp => kvp.Value.TargetProperty ?? kvp.Value.DisplayName ?? kvp.Key)
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToList() ?? new List<string>();
+
+            return new PropertyClassificationConfiguration
+            {
+                CoreProductProperties = coreProperties!,
+                OfferProperties = offerProperties!
+            };
+        }
+
+        /// <summary>
+        /// Sets property classification by updating ColumnProperties
+        /// </summary>
+        public void SetPropertyClassification(PropertyClassificationConfiguration? config)
+        {
+            if (config == null) return;
+
+            foreach (var columnProperty in ColumnProperties.Values)
+            {
+                var targetProperty = columnProperty.TargetProperty ?? columnProperty.DisplayName;
+                if (config.CoreProductProperties.Contains(targetProperty))
+                {
+                    columnProperty.Classification = "coreProduct";
+                }
+                else if (config.OfferProperties.Contains(targetProperty))
+                {
+                    columnProperty.Classification = "offer";
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets legacy data types for backward compatibility
+        /// </summary>
+        public Dictionary<string, DataTypeConfiguration> GetDataTypes()
+        {
+            return ColumnProperties?.ToDictionary(
+                kvp => kvp.Value.TargetProperty ?? kvp.Value.DisplayName ?? kvp.Key,
+                kvp => kvp.Value.DataType
+            ) ?? new Dictionary<string, DataTypeConfiguration>();
+        }
+
+        /// <summary>
+        /// Sets data types by updating ColumnProperties
+        /// </summary>
+        public void SetDataTypes(Dictionary<string, DataTypeConfiguration> dataTypes)
+        {
+            ArgumentNullException.ThrowIfNull(dataTypes);
+            
+            foreach (var kvp in dataTypes)
+            {
+                var columnProperty = ColumnProperties.Values
+                    .FirstOrDefault(cp => (cp.TargetProperty ?? cp.DisplayName) == kvp.Key);
+                if (columnProperty != null)
+                {
+                    columnProperty.DataType = kvp.Value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets legacy validation configuration for backward compatibility
+        /// </summary>
+        public ValidationConfiguration GetValidation()
+        {
+            var requiredFields = ColumnProperties?
+                .Where(kvp => kvp.Value.Validation.IsRequired)
+                .Select(kvp => kvp.Value.TargetProperty ?? kvp.Value.DisplayName ?? kvp.Key)
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToList() ?? new List<string>();
+
+            var uniqueFields = ColumnProperties?
+                .Where(kvp => kvp.Value.Validation.IsUnique)
+                .Select(kvp => kvp.Value.TargetProperty ?? kvp.Value.DisplayName ?? kvp.Key)
+                .Where(s => !string.IsNullOrEmpty(s))
+                .ToList() ?? new List<string>();
+
+            return new ValidationConfiguration
+            {
+                DataStartRowIndex = FileStructure?.DataStartRowIndex ?? 1,
+                ExpectedColumnCount = FileStructure?.ExpectedColumnCount ?? 0,
+                RequiredFields = requiredFields!,
+                UniqueFields = uniqueFields!
+            };
+        }
+
+        /// <summary>
+        /// Sets validation configuration by updating ColumnProperties and FileStructure
+        /// </summary>
+        public void SetValidation(ValidationConfiguration? config)
+        {
+            if (config == null) return;
+
+            // Update file structure
+            FileStructure.DataStartRowIndex = config.DataStartRowIndex;
+            FileStructure.ExpectedColumnCount = config.ExpectedColumnCount;
+
+            // Update column validations
+            foreach (var columnProperty in ColumnProperties.Values)
+            {
+                var targetProperty = columnProperty.TargetProperty ?? columnProperty.DisplayName;
+                columnProperty.Validation.IsRequired = config.RequiredFields.Contains(targetProperty);
+                columnProperty.Validation.IsUnique = config.UniqueFields.Contains(targetProperty);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Unified column property configuration combining mapping, classification, data type, and validation
+    /// </summary>
+    public class ColumnProperty
+    {
+        [JsonPropertyName("targetProperty")]
+        public string? TargetProperty { get; set; }
+
+        [JsonPropertyName("displayName")]
+        public string DisplayName { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
+
+        [JsonPropertyName("dataType")]
+        public DataTypeConfiguration DataType { get; set; } = new();
+
+        [JsonPropertyName("classification")]
+        public string Classification { get; set; } = "coreProduct"; // "coreProduct" or "offer"
+
+        [JsonPropertyName("validation")]
+        public ColumnValidationConfiguration Validation { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Validation configuration for individual columns
+    /// </summary>
+    public class ColumnValidationConfiguration
+    {
+        [JsonPropertyName("isRequired")]
+        public bool IsRequired { get; set; } = false;
+
+        [JsonPropertyName("isUnique")]
+        public bool IsUnique { get; set; } = false;
+
+        [JsonPropertyName("validationPatterns")]
+        public List<string> ValidationPatterns { get; set; } = new();
+
+        [JsonPropertyName("allowedValues")]
+        public List<string> AllowedValues { get; set; } = new();
+    }
+
+    /// <summary>
+    /// File structure configuration
+    /// </summary>
+    public class FileStructureConfiguration
+    {
+        [JsonPropertyName("dataStartRowIndex")]
+        public int DataStartRowIndex { get; set; } = 5; // 1-based index (Excel row number)
+
+        [JsonPropertyName("expectedColumnCount")]
+        public int ExpectedColumnCount { get; set; } = 15;
+
+        [JsonPropertyName("headerRowIndex")]
+        public int HeaderRowIndex { get; set; } = 4; // 1-based index
     }
 
     /// <summary>
@@ -89,15 +331,15 @@ namespace SacksDataLayer.FileProcessing.Configuration
     }
 
     /// <summary>
-    /// Configuration for data validation rules
+    /// Configuration for data validation rules (legacy support)
     /// </summary>
     public class ValidationConfiguration
     {
         [JsonPropertyName("dataStartRowIndex")]
-        public int DataStartRowIndex { get; set; } = 1; // 1-based index (Excel row number)
+        public int DataStartRowIndex { get; set; } = 5; // 1-based index (Excel row number)
 
         [JsonPropertyName("expectedColumnCount")]
-        public int ExpectedColumnCount { get; set; } = 0;
+        public int ExpectedColumnCount { get; set; } = 15;
 
         [JsonPropertyName("requiredFields")]
         public List<string> RequiredFields { get; set; } = new();
@@ -111,32 +353,27 @@ namespace SacksDataLayer.FileProcessing.Configuration
     /// </summary>
     public class TransformationConfiguration
     {
-        [JsonPropertyName("headerRowIndex")]
-        public int HeaderRowIndex { get; set; } = 0; // 0-based index
-
-        [JsonPropertyName("dataStartRowIndex")]
-        public int DataStartRowIndex { get; set; } = 1; // 0-based index
-
         [JsonPropertyName("skipEmptyRows")]
         public bool SkipEmptyRows { get; set; } = true;
 
         [JsonPropertyName("trimWhitespace")]
         public bool TrimWhitespace { get; set; } = true;
 
+        [JsonPropertyName("skipRowsWithMergedCells")]
+        public bool SkipRowsWithMergedCells { get; set; } = true;
+
         [JsonPropertyName("subtitleRowHandling")]
         public SubtitleRowHandlingConfiguration? SubtitleRowHandling { get; set; }
 
-        [JsonPropertyName("skipRowsWithMergedCells")]
-        public bool SkipRowsWithMergedCells { get; set; } = false;
-
-        [JsonPropertyName("useColumnIndexMapping")]
-        public bool UseColumnIndexMapping { get; set; } = false;
-
-        [JsonPropertyName("ignoreHeaderRow")]
-        public bool IgnoreHeaderRow { get; set; } = false;
-
         [JsonPropertyName("customTransformations")]
         public Dictionary<string, string> CustomTransformations { get; set; } = new();
+
+        // Legacy properties for backward compatibility
+        [JsonIgnore]
+        public int HeaderRowIndex { get; set; } = 4; // 1-based index
+
+        [JsonIgnore]
+        public int DataStartRowIndex { get; set; } = 5; // 1-based index
     }
 
     /// <summary>
@@ -165,14 +402,15 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("timezone")]
         public string? Timezone { get; set; }
 
-        [JsonPropertyName("notes")]
-        public List<string> Notes { get; set; } = new();
-
         [JsonPropertyName("lastUpdated")]
         public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 
         [JsonPropertyName("version")]
-        public string Version { get; set; } = "1.0";
+        public string Version { get; set; } = "2.1";
+
+        // Legacy properties for backward compatibility
+        [JsonIgnore]
+        public List<string> Notes { get; set; } = new();
     }
 
     /// <summary>
@@ -193,8 +431,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         public string? Company { get; set; }
     }
 
-
-
     /// <summary>
     /// Configuration for classifying properties as core product vs offer-specific
     /// </summary>
@@ -213,10 +449,10 @@ namespace SacksDataLayer.FileProcessing.Configuration
     public class SubtitleRowHandlingConfiguration
     {
         [JsonPropertyName("enabled")]
-        public bool Enabled { get; set; } = false;
+        public bool Enabled { get; set; } = true;
 
         [JsonPropertyName("action")]
-        public string Action { get; set; } = "skip"; // "skip" or "parse"
+        public string Action { get; set; } = "parse"; // "skip" or "parse"
 
         [JsonPropertyName("detectionRules")]
         public List<SubtitleDetectionRule> DetectionRules { get; set; } = new();
@@ -234,7 +470,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
         public string Name { get; set; } = string.Empty;
 
         [JsonPropertyName("description")]
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; }
 
         [JsonPropertyName("detectionMethod")]
         public string DetectionMethod { get; set; } = "columnCount"; // "columnCount", "pattern", "hybrid"
@@ -250,5 +486,12 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("validationPatterns")]
         public List<string> ValidationPatterns { get; set; } = new();
+    }
+
+    // Legacy enum for backward compatibility
+    public enum PropertyClassification
+    {
+        CoreProduct,
+        Offer
     }
 }

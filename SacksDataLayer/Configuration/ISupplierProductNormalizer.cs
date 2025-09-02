@@ -30,17 +30,5 @@ namespace SacksDataLayer.FileProcessing.Interfaces
         /// <returns>Processing result with normalized ProductEntity objects and statistics</returns>
         Task<ProcessingResult> NormalizeAsync(SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileData fileData, ProcessingContext context);
 
-        /// <summary>
-        /// Normalizes supplier data using default processing mode (for backward compatibility)
-        /// </summary>
-        /// <param name="fileData">Raw file data</param>
-        /// <returns>Collection of normalized ProductEntity objects</returns>
-        Task<IEnumerable<ProductEntity>> NormalizeAsync(SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileData fileData);
-
-        /// <summary>
-        /// Gets the expected column mapping for this supplier
-        /// </summary>
-        /// <returns>Dictionary mapping supplier column names to standard property names</returns>
-        Dictionary<string, string> GetColumnMapping();
     }
 }

@@ -75,14 +75,15 @@ namespace SacksDataLayer.Services.Implementations
 
         /// <summary>
         /// Validates file structure against supplier configuration
+        /// Samples 10% of data rows and validates that 80% have expected column count
         /// </summary>
-        public async Task<FileValidationResult> ValidateFileStructureAsync(
+        public FileValidationResult ValidateFileStructureAsync(
             FileData fileData, 
             SupplierConfiguration supplierConfig, 
             CancellationToken cancellationToken = default)
         {
-            if (fileData == null) throw new ArgumentNullException(nameof(fileData));
-            if (supplierConfig == null) throw new ArgumentNullException(nameof(supplierConfig));
+            ArgumentNullException.ThrowIfNull(fileData);
+            ArgumentNullException.ThrowIfNull(supplierConfig);
             
             cancellationToken.ThrowIfCancellationRequested();
             
@@ -90,38 +91,48 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                // Extract headers
-                var headerRowIndex = supplierConfig.Transformation?.HeaderRowIndex ?? 0;
-                result.FileHeaders = await ExtractFileHeadersAsync(fileData, headerRowIndex, cancellationToken);
-                result.ColumnCount = result.FileHeaders.Count;
-                result.ExpectedColumnCount = supplierConfig.Validation?.ExpectedColumnCount ?? 0;
 
-                // Validate column count if specified
-                if (result.ExpectedColumnCount > 0)
+                // Sample 10% of data rows starting from headerRowIndex + 1
+                int dataStartIndex = supplierConfig.FileStructure!.DataStartRowIndex + 1;
+                var totalDataRows = Math.Max(0, fileData.DataRows.Count - dataStartIndex);
+                
+                if (totalDataRows == 0)
                 {
-                    if (result.ColumnCount == result.ExpectedColumnCount)
+                    result.ValidationWarnings.Add("No data rows found after header");
+                }
+                else if (result.ExpectedColumnCount > 0)
+                {
+                    var sampleSize = Math.Max(1, totalDataRows / 10); // At least 1 row, up to 10%
+                    var validRowCount = 0;
+                    var sampledRowCount = 0;
+
+                    for (int i = dataStartIndex; i < fileData.DataRows.Count && sampledRowCount < sampleSize; i++)
                     {
-                        _logger.LogInformation("Column count validation passed: Expected {Expected}, found {Actual}", 
-                            result.ExpectedColumnCount, result.ColumnCount);
+                        var row = fileData.DataRows[i];
+                        sampledRowCount++;
+                        
+                        if (row.Cells.Count == result.ExpectedColumnCount)
+                        {
+                            validRowCount++;
+                        }
+                    }
+
+                    var validPercentage = (double)validRowCount / sampledRowCount * 100;
+                    
+                    if (validPercentage >= 80.0)
+                    {
+                        _logger.LogInformation("Column structure validation passed: {ValidPercentage:F1}% of sampled rows have expected column count ({Expected})", 
+                            validPercentage, result.ExpectedColumnCount);
                     }
                     else
                     {
-                        var error = $"Column count mismatch. Expected {result.ExpectedColumnCount}, found {result.ColumnCount}";
-                        result.ValidationWarnings.Add(error);
-                        _logger.LogWarning("Column count validation warning: {Error}", error);
+                        var warning = $"Column structure warning: Only {validPercentage:F1}% of sampled rows have expected column count ({result.ExpectedColumnCount}). Sampled {sampledRowCount} of {totalDataRows} data rows.";
+                        result.ValidationWarnings.Add(warning);
+                        _logger.LogWarning("Column structure validation warning: {Warning}", warning);
                     }
                 }
 
-                // Check if header row exists
-                if (!result.FileHeaders.Any())
-                {
-                    var error = "No header row found in file";
-                    result.ValidationErrors.Add(error);
-                    _logger.LogError("File structure validation error: {Error}", error);
-                }
-
                 result.IsValid = !result.ValidationErrors.Any();
-                
                 return result;
             }
             catch (Exception ex)
@@ -133,41 +144,5 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        /// <summary>
-        /// Extracts headers from file data
-        /// </summary>
-        public Task<List<string>> ExtractFileHeadersAsync(
-            FileData fileData, 
-            int headerRowIndex = 0, 
-            CancellationToken cancellationToken = default)
-        {
-            if (fileData == null) throw new ArgumentNullException(nameof(fileData));
-            
-            cancellationToken.ThrowIfCancellationRequested();
-            
-            try
-            {
-                var headerRow = fileData.DataRows?.Skip(headerRowIndex).FirstOrDefault(r => r.HasData);
-                if (headerRow == null)
-                {
-                    _logger.LogWarning("No header row found at index {HeaderRowIndex}", headerRowIndex);
-                    return Task.FromResult(new List<string>());
-                }
-
-                var headers = headerRow.Cells
-                    .Select(c => c.Value?.Trim())
-                    .Where(h => !string.IsNullOrWhiteSpace(h))
-                    .Cast<string>()
-                    .ToList();
-
-                _logger.LogInformation("Extracted {HeaderCount} headers from file", headers.Count);
-                return Task.FromResult(headers);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error extracting file headers");
-                return Task.FromResult(new List<string>());
-            }
-        }
     }
 }

@@ -5,7 +5,6 @@ using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.FileProcessing.Models;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
-using SacksDataLayer.Configuration.Normalizers;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 
@@ -276,7 +275,7 @@ namespace SacksDataLayer.Services.Implementations
                 _debugRowCounter++;
 
                 // Process using column index mappings (Excel columns: A, B, C, etc.)
-                foreach (var indexMapping in supplierConfig.ColumnIndexMappings)
+                foreach (var indexMapping in supplierConfig.ColumnIndexMappings!)
                 {
                     var columnReference = indexMapping.Key;      // e.g., "A", "B", "M" 
                     var propertyName = indexMapping.Value;       // e.g., "Category", "EAN"
@@ -354,8 +353,9 @@ namespace SacksDataLayer.Services.Implementations
                 return false;
 
             // Check if property is in the offerProperties configuration
-            return supplierConfig.PropertyClassification?.OfferProperties?.Any(op => 
-                string.Equals(op, propertyName, StringComparison.OrdinalIgnoreCase)) == true;
+            var propertyClassification = supplierConfig.PropertyClassification ?? supplierConfig.GetPropertyClassification();
+            return propertyClassification.OfferProperties.Any(op => 
+                string.Equals(op, propertyName, StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>

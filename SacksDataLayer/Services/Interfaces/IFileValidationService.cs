@@ -35,21 +35,9 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="supplierConfig">Supplier configuration for validation</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>File validation result</returns>
-        Task<FileValidationResult> ValidateFileStructureAsync(
+        FileValidationResult ValidateFileStructureAsync(
             FileData fileData, 
             SupplierConfiguration supplierConfig, 
-            CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Extracts headers from file data
-        /// </summary>
-        /// <param name="fileData">File data</param>
-        /// <param name="headerRowIndex">Index of the header row</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>List of header names</returns>
-        Task<List<string>> ExtractFileHeadersAsync(
-            FileData fileData, 
-            int headerRowIndex = 0, 
             CancellationToken cancellationToken = default);
     }
 

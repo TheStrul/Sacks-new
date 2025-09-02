@@ -141,7 +141,7 @@ namespace SacksDataLayer.Services.Implementations
         /// Processes a batch of products with optimized bulk operations
         /// </summary>
         public async Task<FileProcessingBatchResult> ProcessProductBatchAsync(
-            List<ProductEntity> products,
+            List<OfferProductEntity> products,
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
             string? createdBy = null,
@@ -162,7 +162,7 @@ namespace SacksDataLayer.Services.Implementations
                     products.Count, offer.Id);
 
                 // Filter out products without EAN
-                var validProducts = products.Where(p => !string.IsNullOrWhiteSpace(p.EAN)).ToList();
+                var validProducts = products.Where(p => !string.IsNullOrWhiteSpace(p.Product.EAN)).ToList();
                 var invalidCount = products.Count - validProducts.Count;
                 result.Errors += invalidCount;
 
@@ -195,7 +195,7 @@ namespace SacksDataLayer.Services.Implementations
                     created, updated, bulkErrors);
 
                 // Step 3: Process offer-products
-                await ProcessOfferProductsAsync(validProducts, offer, supplierConfig, processorName, result, cancellationToken);
+                //await ProcessOfferProductsAsync(validProducts, offer, supplierConfig, processorName, result, cancellationToken);
 
                 _logger.LogInformation("Completed batch processing: {ProductsCreated} products created, {ProductsUpdated} updated, " +
                     "{OfferProductsCreated} offer-products created, {OfferProductsUpdated} updated, {Errors} errors",
@@ -212,7 +212,7 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        private List<ProductEntity> PrepareProductsForBulkOperation(List<ProductEntity> validProducts, List<string> coreProperties)
+        private List<ProductEntity> PrepareProductsForBulkOperation(List<OfferProductEntity> validProducts, List<string> coreProperties)
         {
             var productsForBulkOperation = new List<ProductEntity>();
 
@@ -220,13 +220,13 @@ namespace SacksDataLayer.Services.Implementations
             {
                 var productEntity = new ProductEntity
                 {
-                    Name = productData.Name,
-                    Description = productData.Description,
-                    EAN = productData.EAN
+                    Name = productData.Product.Name,
+                    Description = productData.Product.Description,
+                    EAN = productData.Product.EAN
                 };
 
                 // Add core product properties only
-                foreach (var dynProp in productData.DynamicProperties)
+                foreach (var dynProp in productData.Product.DynamicProperties)
                 {
                     if (coreProperties.Contains(dynProp.Key, StringComparer.OrdinalIgnoreCase))
                     {
@@ -240,69 +240,7 @@ namespace SacksDataLayer.Services.Implementations
             return productsForBulkOperation;
         }
 
-        private async Task ProcessOfferProductsAsync(
-            List<ProductEntity> validProducts,
-            SupplierOfferEntity offer,
-            SupplierConfiguration supplierConfig,
-            string processorName,
-            FileProcessingBatchResult result,
-            CancellationToken cancellationToken)
-        {
-            var offerPropertyNames = supplierConfig.PropertyClassification?.OfferProperties ?? new List<string>();
-            
-            if (!validProducts.Any() || !offerPropertyNames.Any())
-            {
-                _logger.LogDebug("No offer properties to process or no valid products");
-                return;
-            }
-
-            try
-            {
-                // Get all products with single bulk lookup
-                var eans = validProducts.Select(p => p.EAN).ToList();
-                var productLookup = await _productsService.GetProductsByEANsBulkAsync(eans);
-
-                // Prepare offer-products for processing
-                var offerProductsToProcess = PrepareOfferProductsForProcessing(validProducts, productLookup, offerPropertyNames);
-
-                // Process offer-products sequentially to avoid DbContext concurrency issues
-                foreach (var (productId, offerProperties) in offerProductsToProcess)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    
-                    try
-                    {
-                        var offerProduct = await _offerProductsService.CreateOrUpdateOfferProductAsync(
-                            offer.Id, productId, offerProperties, processorName);
-
-                        if (offerProduct.CreatedAt == offerProduct.ModifiedAt)
-                            result.OfferProductsCreated++;
-                        else
-                            result.OfferProductsUpdated++;
-                    }
-                    catch (Exception ex)
-                    {
-                        result.Errors++;
-                        var errorMessage = $"Error creating offer-product for product {productId}: {ex.Message}";
-                        result.ErrorMessages.Add(errorMessage);
-                        
-                        if (result.Errors <= 3) // Log only first few errors to avoid spam
-                        {
-                            _logger.LogError(ex, "Error creating offer-product for product {ProductId}", productId);
-                        }
-                    }
-                }
-
-                _logger.LogInformation("Processed offer-products: {Created} created, {Updated} updated",
-                    result.OfferProductsCreated, result.OfferProductsUpdated);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to process offer-products for offer: {OfferId}", offer.Id);
-                result.Errors++;
-                result.ErrorMessages.Add($"Offer-products processing failed: {ex.Message}");
-            }
-        }
+        
 
         private List<(int ProductId, Dictionary<string, object?> OfferProperties)> PrepareOfferProductsForProcessing(
             List<ProductEntity> validProducts,

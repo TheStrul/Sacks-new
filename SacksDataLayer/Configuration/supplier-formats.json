@@ -1,109 +1,183 @@
 {
   "version": "2.1",
   "lastUpdated": "2024-12-19T15:30:00Z",
-  "description": "Refactored configuration file for all supplier file formats - optimized for .NET 9",
   "suppliers": [
     {
       "name": "DIOR",
-      "description": "DIOR beauty and fragrance products supplier",
       "detection": {
         "fileNamePatterns": ["DIOR*.xlsx", "dior*.xlsx", "DIOR*.xls", "dior*.xls"]
       },
-      "columnIndexMappings": {
-        "A": "Category",
-        "C": "Gender", 
-        "D": "Line",
-        "F": "Description",
-        "G": "Ref",
-        "H": "Name",
-        "J": "Size",
-        "L": "Unit",
-        "M": "EAN",
-        "N": "Capacity",
-        "O": "Price"
-      },
-      "propertyClassification": {
-        "coreProductProperties": [
-          "Category", "Gender", "Line", "Size", "Unit", "EAN", "Name", "Description"
-        ],
-        "offerProperties": [
-          "Price", "Capacity", "Ref"
-        ]
-      },
-      "dataTypes": {
-        "Price": {
-          "type": "decimal",
-          "format": "currency",
-          "defaultValue": 0.0,
-          "allowNull": false,
-          "transformations": ["removeSymbols", "parseDecimal"]
+      "columnProperties": {
+        "A": {
+          "targetProperty": "Category",
+          "displayName": "Category",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 100,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "Name": {
-          "type": "string",
-          "allowNull": false,
-          "maxLength": 500,
-          "transformations": ["trim"]
+        "C": {
+          "targetProperty": "Gender",
+          "displayName": "Gender",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 20,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "Category": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 100,
-          "transformations": ["trim"]
+        "D": {
+          "targetProperty": "Line",
+          "displayName": "Product Line",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 100,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "Size": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 50,
-          "transformations": ["trim"]
+        "F": {
+          "displayName": "Description",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 1000,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "Unit": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 20,
-          "transformations": ["trim"]
+        "G": {
+          "targetProperty": "Ref",
+          "displayName": "Reference",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 50,
+            "transformations": ["trim"]
+          },
+          "classification": "offer",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "EAN": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 20,
-          "transformations": ["trim", "removeSpaces"]
+        "H": {
+          "targetProperty": "Name",
+          "displayName": "Product Name",
+          "dataType": {
+            "type": "string",
+            "allowNull": false,
+            "maxLength": 500,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": true,
+            "isUnique": false
+          }
         },
-        "Ref": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 50,
-          "transformations": ["trim"]
+        "J": {
+          "targetProperty": "Size",
+          "displayName": "Size",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 50,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "Capacity": {
-          "type": "decimal",
-          "allowNull": true,
-          "defaultValue": 0.0,
-          "transformations": ["trim", "parseDecimal"]
+        "L": {
+          "targetProperty": "Unit",
+          "displayName": "Unit",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 20,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "Line": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 100,
-          "transformations": ["trim"]
+        "M": {
+          "targetProperty": "EAN",
+          "displayName": "EAN Code",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 20,
+            "transformations": ["trim", "removeSpaces"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": true,
+            "isUnique": true
+          }
         },
-        "Gender": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 20,
-          "transformations": ["trim"]
+        "N": {
+          "targetProperty": "Capacity",
+          "displayName": "Capacity",
+          "dataType": {
+            "type": "decimal",
+            "allowNull": true,
+            "defaultValue": 0.0,
+            "transformations": ["trim", "parseDecimal"]
+          },
+          "classification": "offer",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "Description": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 1000,
-          "transformations": ["trim"]
+        "O": {
+          "targetProperty": "Price",
+          "displayName": "Price",
+          "dataType": {
+            "type": "decimal",
+            "format": "currency",
+            "defaultValue": 0.0,
+            "allowNull": false,
+            "transformations": ["removeSymbols", "parseDecimal"]
+          },
+          "classification": "offer",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         }
       },
-      "validation": {
+      "fileStructure": {
         "dataStartRowIndex": 5,
         "expectedColumnCount": 15,
-        "requiredFields": ["Name", "EAN"],
-        "uniqueFields": ["EAN"]
+        "headerRowIndex": 4
       },
       "transformation": {
         "skipEmptyRows": true,
@@ -115,7 +189,6 @@
           "detectionRules": [
             {
               "name": "CategoryHeaderRow",
-              "description": "Rows that define product categories",
               "detectionMethod": "columnCount",
               "expectedColumnCount": 1,
               "columnIndexMappings": {
@@ -130,7 +203,6 @@
             },
             {
               "name": "SectionHeaderRow",
-              "description": "Rows that define product sections",
               "detectionMethod": "columnCount",
               "expectedColumnCount": 2,
               "columnIndexMappings": {
@@ -146,7 +218,6 @@
             },
             {
               "name": "ManufacturerRow",
-              "description": "Rows that define manufacturer info",
               "detectionMethod": "columnCount",
               "expectedColumnCount": 3,
               "columnIndexMappings": {
@@ -181,151 +252,163 @@
         "expectedFileSize": "Large (4000+ products)",
         "currency": "EUR",
         "timezone": "Europe/Paris",
-        "notes": [
-          "Files typically contain 4000+ products across multiple categories",
-          "Price format includes currency symbols that need removal",
-          "Multiple product categories: Fragrances, Makeup, Skincare, Beauty Products",
-          "Excel column mapping: A=Category, C=Gender, D=Line, F=Description, G=Ref, H=Name, J=Size, L=Unit, M=EAN, N=Capacity, O=Price",
-          "Data processing starts from Excel row 5 (dataStartRowIndex: 5), rows 1-4 are headers/metadata",
-          "Subtitle rows are detected by column count and parsed using specific column mappings",
-          "Each subtitle type has its own columnIndexMappings and expectedColumnCount",
-          "Supports category hierarchy through subtitle parsing"
-        ],
         "lastUpdated": "2024-12-19T15:30:00Z",
         "version": "2.1"
       }
     },
     {
       "name": "UNLIMITED",
-      "description": "UNLIMITED perfume and fragrance products supplier",
       "detection": {
         "fileNamePatterns": ["UNLIMITED*.xlsx", "unlimited*.xlsx", "UNLIMITED*.xls", "unlimited*.xls"]
       },
-      "columnIndexMappings": {
-        "A": "EAN",
-        "B": "Reference",
-        "C": "Brand",
-        "D": "Name",
-        "E": "Category",
-        "F": "Type",
-        "G": "InStock",
-        "H": "PriceAED",
-        "I": "PriceUSD",
-        "J": "Order"
-      },
-      "propertyClassification": {
-        "coreProductProperties": [
-          "EAN", "Reference", "Brand", "Name", "Category", "Type"
-        ],
-        "offerProperties": [
-          "PriceAED", "PriceUSD", "InStock", "Order"
-        ]
-      },
-      "dataTypes": {
-        "PriceAED": {
-          "type": "decimal",
-          "format": "currency",
-          "defaultValue": 0.0,
-          "allowNull": false,
-          "transformations": ["removeSymbols", "parseDecimal"]
+      "columnProperties": {
+        "A": {
+          "targetProperty": "EAN",
+          "displayName": "EAN Code",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 20,
+            "transformations": ["trim", "removeSpaces"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": true
+          }
         },
-        "PriceUSD": {
-          "type": "decimal", 
-          "format": "currency",
-          "defaultValue": 0.0,
-          "allowNull": false,
-          "transformations": ["removeSymbols", "parseDecimal"]
+        "B": {
+          "targetProperty": "Reference",
+          "displayName": "Reference",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 50,
+            "transformations": ["trim"]
+          },
+          "classification": "offer",
+          "validation": {
+            "isRequired": false,
+            "isUnique": true
+          }
         },
-        "Name": {
-          "type": "string",
-          "allowNull": false,
-          "maxLength": 500,
-          "transformations": ["trim"]
+        "C": {
+          "targetProperty": "Brand",
+          "displayName": "Brand",
+          "dataType": {
+            "type": "string",
+            "allowNull": false,
+            "maxLength": 100,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": true,
+            "isUnique": false
+          }
         },
-        "Brand": {
-          "type": "string",
-          "allowNull": false,
-          "maxLength": 100,
-          "transformations": ["trim"]
+        "D": {
+          "targetProperty": "Name",
+          "displayName": "Product Name",
+          "dataType": {
+            "type": "string",
+            "allowNull": false,
+            "maxLength": 500,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": true,
+            "isUnique": false
+          }
         },
-        "Category": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 100,
-          "transformations": ["trim"]
+        "E": {
+          "targetProperty": "Category",
+          "displayName": "Category",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 100,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "Type": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 50,
-          "transformations": ["trim"]
+        "F": {
+          "targetProperty": "Type",
+          "displayName": "Type",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 50,
+            "transformations": ["trim"]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "EAN": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 20,
-          "transformations": ["trim", "removeSpaces"]
+        "G": {
+          "targetProperty": "InStock",
+          "displayName": "In Stock",
+          "dataType": {
+            "type": "string",
+            "allowNull": true,
+            "maxLength": 20,
+            "transformations": ["trim"]
+          },
+          "classification": "offer",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         },
-        "Reference": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 50,
-          "transformations": ["trim"]
-        },
-        "InStock": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 20,
-          "transformations": ["trim"]
-        },
-        "Order": {
-          "type": "string",
-          "allowNull": true,
-          "maxLength": 100,
-          "transformations": ["trim"]
+        "H": {
+          "targetProperty": "PriceAED",
+          "displayName": "Price AED",
+          "dataType": {
+            "type": "decimal",
+            "format": "currency",
+            "defaultValue": 0.0,
+            "allowNull": false,
+            "transformations": ["removeSymbols", "parseDecimal"]
+          },
+          "classification": "offer",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false
+          }
         }
       },
-      "validation": {
+      "fileStructure": {
         "dataStartRowIndex": 2,
-        "expectedColumnCount": 10,
-        "requiredFields": ["Name", "Brand"],
-        "uniqueFields": ["EAN", "Reference"]
+        "expectedColumnCount": 8,
+        "headerRowIndex": 1
       },
       "transformation": {
         "skipEmptyRows": true,
         "trimWhitespace": true,
         "skipRowsWithMergedCells": false,
-        "subtitleRowHandling": {
-          "enabled": false
-        },
         "customTransformations": {
-          "normalizeBrand": "standard",
-          "normalizeStockStatus": "standard"
+          "normalizeCurrency": "AED"
         }
       },
       "metadata": {
-        "industry": "Perfume & Fragrance",
+        "industry": "Beauty & Cosmetics",
         "region": "Middle East",
         "contact": {
-          "name": "UNLIMITED Data Team",
-          "email": "data@unlimited.com",
+          "name": "UNLIMITED Team",
+          "email": "data@unlimited.ae",
           "company": "UNLIMITED"
         },
-        "fileFrequency": "monthly",
-        "expectedFileSize": "Large (6000+ products)",
-        "currency": "AED,USD", 
+        "fileFrequency": "weekly",
+        "expectedFileSize": "Medium (1000-3000 products)",
+        "currency": "AED",
         "timezone": "Asia/Dubai",
-        "notes": [
-          "Files typically contain 6000+ perfume and fragrance products",
-          "Dual pricing in AED (local) and USD currencies",
-          "Product categories include PERFUME, TESTER, EAU DE TOILETTE, EAU DE PARFUM",
-          "Stock levels indicated in IN STOCK column with values like 'IN STOCK', 'OUT OF STOCK'",
-          "Data processing starts from Excel row 2 (dataStartRowIndex: 2), row 1 contains headers",
-          "Fixed column structure: A=EAN CODE, B=REFERENCE, C=BRAND, D=PRODUCT NAME, E=CATEGORY, F=TYPE, G=IN STOCK, H=PRICE (AED), I=PRICE (USD), J=ORDER",
-          "Brand names include ACQUA DI PARMA, AMOUROUD, CREED, TOM FORD, and many others",
-          "Product names are detailed with volume specifications (e.g., 100ML, 180ML, 250ML)",
-          "Reference codes are supplier-specific product identifiers"
-        ],
         "lastUpdated": "2024-12-19T15:30:00Z",
         "version": "2.1"
       }

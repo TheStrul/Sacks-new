@@ -50,7 +50,6 @@ namespace SacksDataLayer.Services.Implementations
             try
             {
                 var connectionString = GetConnectionString();
-                _logger.LogInformation("Testing database connection...");
 
                 using var connection = new MySqlConnection(connectionString);
                 await connection.OpenAsync();
@@ -58,7 +57,6 @@ namespace SacksDataLayer.Services.Implementations
                 var serverInfo = await GetServerInfoAsync();
                 var message = $"Successfully connected to {_databaseSettings.Provider}. {serverInfo}";
                 
-                _logger.LogInformation("Database connection test successful: {ServerInfo}", serverInfo);
                 return (true, message, null);
             }
             catch (MySqlException ex)

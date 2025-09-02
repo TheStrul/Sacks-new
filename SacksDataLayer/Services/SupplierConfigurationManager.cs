@@ -327,8 +327,7 @@ namespace SacksDataLayer.FileProcessing.Services
         {
             var defaultConfig = new SuppliersConfiguration
             {
-                Version = "1.0",
-                Description = "Default supplier configurations",
+                Version = "2.1",
                 LastUpdated = DateTime.UtcNow,
                 Suppliers = new List<SupplierConfiguration>
                 {
@@ -344,25 +343,27 @@ namespace SacksDataLayer.FileProcessing.Services
             return new SupplierConfiguration
             {
                 Name = "Generic",
-                Description = "Default configuration for unknown suppliers",
+                Metadata = new SupplierMetadata 
+                { 
+                    Industry = "Default configuration for unknown suppliers" 
+                },
                 Detection = new DetectionConfiguration
                 {
                     FileNamePatterns = new List<string> { "*" }
                 },
-                DataTypes = new Dictionary<string, DataTypeConfiguration>
+                ColumnProperties = new Dictionary<string, ColumnProperty>
                 {
-                    { "Price", new DataTypeConfiguration { Type = "decimal", DefaultValue = 0 } },
-                    { "StockQuantity", new DataTypeConfiguration { Type = "int", DefaultValue = 0 } }
+                    { "A", new ColumnProperty { TargetProperty = "Name", DisplayName = "Name", DataType = new DataTypeConfiguration { Type = "string", AllowNull = false }, Classification = "coreProduct" } },
+                    { "B", new ColumnProperty { TargetProperty = "EAN", DisplayName = "EAN", DataType = new DataTypeConfiguration { Type = "string", AllowNull = true }, Classification = "coreProduct" } },
+                    { "C", new ColumnProperty { TargetProperty = "Price", DisplayName = "Price", DataType = new DataTypeConfiguration { Type = "decimal", DefaultValue = 0 }, Classification = "offer" } }
                 },
-                Validation = new ValidationConfiguration
+                FileStructure = new FileStructureConfiguration
                 {
                     DataStartRowIndex = 2,
-                    ExpectedColumnCount = 10
+                    ExpectedColumnCount = 10,
                 },
                 Transformation = new TransformationConfiguration
                 {
-                    HeaderRowIndex = 0,
-                    DataStartRowIndex = 1,
                     SkipEmptyRows = true,
                     TrimWhitespace = true
                 }

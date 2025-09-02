@@ -9,14 +9,9 @@ namespace SacksDataLayer.FileProcessing.Models
     public class ProcessingResult
     {
         /// <summary>
-        /// Legacy property for backward compatibility - returns products from NormalizationResults
+        /// Direct collection of OfferProduct entities containing all normalized data
         /// </summary>
-        public IEnumerable<ProductEntity> Products => NormalizationResults.Select(nr => nr.Product);
-        
-        /// <summary>
-        /// New relational results containing ProductEntity, SupplierOffer, and OfferProduct data
-        /// </summary>
-        public IEnumerable<SacksDataLayer.Configuration.Normalizers.NormalizationResult> NormalizationResults { get; set; } = new List<SacksDataLayer.Configuration.Normalizers.NormalizationResult>();
+        public IEnumerable<OfferProductEntity> OfferProducts { get; set; } = new List<OfferProductEntity>();
         
         /// <summary>
         /// Supplier offer metadata (one per file processing session)
@@ -42,15 +37,10 @@ namespace SacksDataLayer.FileProcessing.Models
         public int ErrorCount { get; set; }
         public int WarningCount { get; set; }
         
-        // Stage 1 specific metrics
-        public int UniqueProductsIdentified { get; set; }
-        public int DuplicateProductsDetected { get; set; }
-        public int MissingCoreAttributes { get; set; }
         
         // Stage 2 specific metrics - Enhanced for relational architecture
         public int PricingRecordsProcessed { get; set; }
         public int StockRecordsProcessed { get; set; }
-        public int ProductLinksEstablished { get; set; }
         public int OrphanedCommercialRecords { get; set; }
         public int OfferProductsCreated { get; set; }
         public int SupplierOffersCreated { get; set; }

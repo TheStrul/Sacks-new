@@ -61,7 +61,7 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Processing results with statistics</returns>
         Task<FileProcessingBatchResult> ProcessProductBatchAsync(
-            List<ProductEntity> products,
+            List<OfferProductEntity> products,
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
             string? createdBy = null,

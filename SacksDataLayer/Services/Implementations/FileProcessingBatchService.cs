@@ -31,7 +31,7 @@ namespace SacksDataLayer.Services.Implementations
         /// Processes a collection of products in optimized batches
         /// </summary>
         public async Task<FileProcessingBatchResult> ProcessProductsInBatchesAsync(
-            IEnumerable<ProductEntity> products,
+            IEnumerable<OfferProductEntity> products,
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
             int batchSize = 500,
@@ -124,7 +124,7 @@ namespace SacksDataLayer.Services.Implementations
         /// Processes a single batch of products
         /// </summary>
         public async Task<FileProcessingBatchResult> ProcessSingleBatchAsync(
-            List<ProductEntity> batch,
+            List<OfferProductEntity> batch,
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
             int batchIndex,

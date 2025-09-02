@@ -144,8 +144,8 @@ namespace SacksDataLayer.Services.Implementations
                 // 🔧 STEP 2: Ensure database is ready with connection validation
                 await EnsureDatabaseReadyWithValidationAsync(correlationId, cancellationToken);
 
-                // 🎯 STEP 3: Auto-detect supplier with fallback mechanisms
-                var supplierConfig = await DetectSupplierWithFallbackAsync(filePath, correlationId, cancellationToken);
+                // 🎯 STEP 3: Auto-detect supplier
+                var supplierConfig = await DetectSupplierAsync(filePath, correlationId, cancellationToken);
 
                 // 📖 STEP 4: Read file data with memory monitoring
                 var fileData = await ReadFileDataWithMonitoringAsync(filePath, correlationId, cancellationToken);
@@ -323,7 +323,7 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// 🎯 ENHANCED: Supplier detection with fallback mechanisms
         /// </summary>
-        private async Task<SupplierConfiguration> DetectSupplierWithFallbackAsync(string filePath, string correlationId, CancellationToken cancellationToken)
+        private async Task<SupplierConfiguration> DetectSupplierAsync(string filePath, string correlationId, CancellationToken cancellationToken)
         {
             using var supplierOp = _performanceMonitor.StartOperation("EnhancedSupplierDetection", correlationId);
             
@@ -404,7 +404,7 @@ namespace SacksDataLayer.Services.Implementations
             try
             {
                 Console.WriteLine("\n🔍 Validating file structure with enhanced checks:");
-                var validationResult = await _fileValidationService.ValidateFileStructureAsync(fileData, supplierConfig, cancellationToken);
+                var validationResult = _fileValidationService.ValidateFileStructureAsync(fileData, supplierConfig, cancellationToken);
                 
                 // Display detailed validation results
                 if (validationResult.FileHeaders.Any())
@@ -476,7 +476,7 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                Console.WriteLine($"\n� Processing file as Supplier Offer with optimizations...");
+                Console.WriteLine($"\n🚀 Processing file as Supplier Offer with optimizations...");
                 
                 // Create processing context
                 var context = new ProcessingContext
@@ -489,6 +489,18 @@ namespace SacksDataLayer.Services.Implementations
                 Console.WriteLine($"   🏢 Creating/finding supplier: {supplierConfig.Name}");
                 var supplier = await _databaseService.CreateOrGetSupplierAsync(supplierConfig, "BulletproofProcessor", cancellationToken);
                 Console.WriteLine($"   🏢 ✅ Supplier ready: {supplier.Name} (ID: {supplier.Id})");
+
+                // Step 1.5: Check for existing offers and ask user permission
+                // check if eny of supplier.Offers has an OfferName as fileName
+                bool exist = supplier.Offers.Any(o =>
+                    string.Equals(o.OfferName, Path.GetFileName(filePath), StringComparison.OrdinalIgnoreCase));
+
+                if (exist)
+                {
+                    Console.WriteLine($"   ⚠️ Offer already exists for file: {Path.GetFileName(filePath)}");
+                    Console.WriteLine("   💡 To avoid duplicates, consider renaming the file or updating the existing offer.");
+                    return;
+                }
 
                 // Step 2: Create new offer
                 Console.WriteLine($"   📋 Creating offer for file: {Path.GetFileName(filePath)}");
@@ -518,12 +530,12 @@ namespace SacksDataLayer.Services.Implementations
                     throw new InvalidDataException(errorMessage);
                 }
 
-                var productCount = result.Products.Count();
-                Console.WriteLine($"   � ✅ Normalized {productCount:N0} products successfully");
+                var productCount = result.OfferProducts.Count();
+                Console.WriteLine($"   📦 ✅ Normalized {productCount:N0} products offers successfully");
 
                 // Step 4: Process products in optimized batches with memory checks
                 const int optimizedBatchSize = 500;
-                var productList = result.Products.ToList();
+                var productList = result.OfferProducts.ToList();
 
                 Console.WriteLine($"   ⚡ Processing {productList.Count:N0} products in batches of {optimizedBatchSize}...");
                 var batchResult = await _batchService.ProcessProductsInBatchesAsync(
@@ -554,7 +566,7 @@ namespace SacksDataLayer.Services.Implementations
         }
 
         /// <summary>
-        /// � ENHANCED: Display comprehensive processing results
+        /// 📊 ENHANCED: Display comprehensive processing results
         /// </summary>
         private static void DisplayProcessingResults(
             SupplierEntity supplier, 
@@ -588,6 +600,8 @@ namespace SacksDataLayer.Services.Implementations
                 Console.WriteLine($"      🚀 Performance: {operationsPerSecond:F1} operations/second");
             }
         }
+
+
 
         #endregion
 

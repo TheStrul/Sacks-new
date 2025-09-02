@@ -34,13 +34,6 @@ namespace SacksConsoleApp
 
             try
             {
-                // Check if we want to run normalization tests first
-                if (args.Length > 0 && args[0].Equals("test-normalization", StringComparison.OrdinalIgnoreCase))
-                {
-                    await NormalizationTestRunner.RunTestsAsync();
-                    return;
-                }
-
                 // Build configuration
                 _configuration = BuildConfiguration();
 
@@ -50,10 +43,9 @@ namespace SacksConsoleApp
 
                 // Get logger
                 _logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-                _logger.LogInformation("Application starting...");
 
-                // Show main menu
-                await ShowMainMenuAsync(serviceProvider);
+                // Go directly to database operations (main menu)
+                await RunDatabaseOperationsAsync(serviceProvider);
             }
             catch (Exception ex)
             {
@@ -63,40 +55,6 @@ namespace SacksConsoleApp
                     _logger.LogCritical(ex, "Fatal application error");
                 }
                 Environment.Exit(1);
-            }
-        }
-
-        private static async Task ShowMainMenuAsync(ServiceProvider serviceProvider)
-        {
-            while (true)
-            {
-                Console.WriteLine("\n📋 Choose an option:");
-                Console.WriteLine("1. Test Property Normalization System");
-                Console.WriteLine("2. Run Database Operations");
-                Console.WriteLine("3. 🚀 Demo Enhanced Logging & Performance Monitoring");
-                Console.WriteLine("4. Exit");
-                Console.Write("Enter your choice (1-4): ");
-
-                var choice = Console.ReadLine();
-                
-                switch (choice)
-                {
-                    case "1":
-                        await NormalizationTestRunner.RunTestsAsync();
-                        break;
-                    case "2":
-                        await RunDatabaseOperationsAsync(serviceProvider);
-                        break;
-                    case "3":
-                        await QuickLoggingDemo.RunQuickDemoAsync();
-                        break;
-                    case "4":
-                        Console.WriteLine("Goodbye!");
-                        return;
-                    default:
-                        Console.WriteLine("Invalid choice. Please try again.");
-                        break;
-                }
             }
         }
 
@@ -124,11 +82,11 @@ namespace SacksConsoleApp
                     return;
                 }
 
-                Console.WriteLine($"✅ {message}");
-                _logger?.LogInformation("Database connection successful");
+                _logger?.LogDebug($"✅ {message}");
+                _logger?.LogDebug("Database connection successful");
 
-                // Show interactive menu
-                await ShowInteractiveMenu(serviceProvider);
+                // Show the main interactive menu
+                await ShowMainMenuAsync(serviceProvider);
             }
             catch (Exception ex)
             {
@@ -137,6 +95,145 @@ namespace SacksConsoleApp
                 Console.WriteLine("Press any key to exit...");
                 Console.ReadKey();
             }
+        }
+
+        /// <summary>
+        /// Shows the main interactive menu for user to choose operations
+        /// </summary>
+        private static async Task ShowMainMenuAsync(ServiceProvider serviceProvider)
+        {
+            while (true)
+            {
+                Console.WriteLine("\n" + new string('=', 70));
+                Console.WriteLine("🎯 SACKS PRODUCT MANAGEMENT SYSTEM - MAIN MENU");
+                Console.WriteLine(new string('=', 70));
+                Console.WriteLine();
+                Console.WriteLine("📋 Please choose an option:");
+                Console.WriteLine();
+                Console.WriteLine("   1️⃣  Process all Excel files (Standard Processing)");
+                Console.WriteLine("   2️⃣  🚀 Process all files with In-Memory Processing (ULTIMATE PERFORMANCE)");
+                Console.WriteLine("   3️⃣  🚀 Process single file with In-Memory Processing");
+                Console.WriteLine("   4️⃣  🚀 Demonstrate Thread-Safe Processing");
+                Console.WriteLine("   5️⃣  🧹 Clear all data from database");
+                Console.WriteLine("   6️⃣  📊 Show database statistics");
+                Console.WriteLine("   7️⃣  🧪 Test Refactored Configuration");
+                Console.WriteLine("   8️⃣  ❓ Show help and feature information");
+                Console.WriteLine("   0️⃣  🚪 Exit");
+                Console.WriteLine();
+                Console.Write("👉 Enter your choice (0-8): ");
+
+                var input = Console.ReadLine()?.Trim();
+                Console.WriteLine();
+
+                try
+                {
+                    switch (input)
+                    {
+                        case "1":
+                            await ProcessInputFiles(serviceProvider);
+                            break;
+                        case "2":
+                            await ProcessAllFilesInMemory(serviceProvider);
+                            break;
+                        case "3":
+                            await DemonstrateInMemoryProcessing(serviceProvider);
+                            break;
+                        case "4":
+                            await DemonstrateThreadSafeProcessing(serviceProvider);
+                            break;
+                        case "5":
+                            await HandleDatabaseClearCommand(serviceProvider);
+                            break;
+                        case "6":
+                            await ShowDatabaseStatistics(serviceProvider);
+                            break;
+                        case "7":
+                            await TestRefactoredConfiguration(serviceProvider);
+                            break;
+                        case "8":
+                            ShowHelpInformation();
+                            break;
+                        case "0":
+                            Console.WriteLine("👋 Thank you for using Sacks Product Management System!");
+                            return;
+                        default:
+                            Console.WriteLine("❌ Invalid choice. Please enter a number between 0 and 8.");
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"❌ Error executing option: {ex.Message}");
+                    _logger?.LogError(ex, "Error executing menu option {Option}", input);
+                }
+
+                if (input != "0")
+                {
+                    Console.WriteLine("\nPress any key to return to main menu...");
+                    Console.ReadKey();
+                }
+            }
+        }
+
+        private static async Task TestRefactoredConfiguration(ServiceProvider serviceProvider)
+        {
+            Console.WriteLine("=== 🧪 TESTING REFACTORED CONFIGURATION ===\n");
+
+            var configManager = serviceProvider.GetRequiredService<SupplierConfigurationManager>();
+
+            // Test 1: Load configuration
+            Console.WriteLine("🔄 Test 1: Loading refactored configuration...");
+            var config = await configManager.GetConfigurationAsync();
+            Console.WriteLine($"✅ Configuration loaded successfully");
+            Console.WriteLine($"   Version: {config.Version}");
+            Console.WriteLine($"   Suppliers: {config.Suppliers.Count}");
+            Console.WriteLine($"   Last Updated: {config.LastUpdated:yyyy-MM-dd HH:mm:ss}");
+
+            // Test 2: Validate configuration
+            Console.WriteLine("\n🔄 Test 2: Validating configuration...");
+            var validationResult = await configManager.ValidateConfigurationAsync();
+            Console.WriteLine($"✅ Validation completed");
+            Console.WriteLine($"   Is Valid: {validationResult.IsValid}");
+            Console.WriteLine($"   Errors: {validationResult.Errors.Count}");
+            Console.WriteLine($"   Warnings: {validationResult.Warnings.Count}");
+
+            if (validationResult.Errors.Count > 0)
+            {
+                Console.WriteLine("\n❌ Validation Errors:");
+                foreach (var error in validationResult.Errors)
+                {
+                    Console.WriteLine($"   • {error}");
+                }
+            }
+
+            if (validationResult.Warnings.Count > 0)
+            {
+                Console.WriteLine("\n⚠️ Validation Warnings:");
+                foreach (var warning in validationResult.Warnings)
+                {
+                    Console.WriteLine($"   • {warning}");
+                }
+            }
+
+            // Test 3: Test enhanced properties for DIOR
+            Console.WriteLine("\n🔄 Test 3: Testing enhanced DIOR configuration...");
+            var diorConfig = await configManager.GetSupplierConfigurationAsync("DIOR");
+            if (diorConfig != null)
+            {
+                Console.WriteLine($"✅ DIOR Configuration:");
+                Console.WriteLine($"   Column Mappings: {diorConfig.ColumnIndexMappings?.Count ?? 0}");
+                Console.WriteLine($"   Data Types: {diorConfig.DataTypes?.Count ?? 0}");
+                Console.WriteLine($"   Required Fields: {diorConfig.Validation?.RequiredFields.Count ?? 0} ({string.Join(", ", diorConfig.Validation?.RequiredFields ?? new List<string>())})");
+                Console.WriteLine($"   File Patterns: {string.Join(", ", diorConfig.Detection?.FileNamePatterns ?? new List<string>())}");
+                Console.WriteLine($"   Industry: {diorConfig.Metadata?.Industry}");
+                Console.WriteLine($"   Currency: {diorConfig.Metadata?.Currency}");
+            }
+            else
+            {
+                Console.WriteLine("❌ DIOR configuration not found");
+            }
+
+            Console.WriteLine("\n✅ Configuration testing completed!");
         }
 
         private static IConfiguration BuildConfiguration()
@@ -314,84 +411,6 @@ namespace SacksConsoleApp
             else
             {
                 Console.WriteLine("Operation cancelled.");
-            }
-        }
-
-        /// <summary>
-        /// Shows an interactive menu for user to choose operations
-        /// </summary>
-        private static async Task ShowInteractiveMenu(ServiceProvider serviceProvider)
-        {
-            while (true)
-            {
-                Console.WriteLine("\n" + new string('=', 70));
-                Console.WriteLine("🎯 SACKS PRODUCT MANAGEMENT SYSTEM - MAIN MENU");
-                Console.WriteLine(new string('=', 70));
-                Console.WriteLine();
-                Console.WriteLine("📋 Please choose an option:");
-                Console.WriteLine();
-                Console.WriteLine("   1️⃣  Process all Excel files (Standard Processing)");
-                Console.WriteLine("   2️⃣  🚀 Process all files with In-Memory Processing (ULTIMATE PERFORMANCE)");
-                Console.WriteLine("   3️⃣  🚀 Process single file with In-Memory Processing");
-                Console.WriteLine("   4️⃣  🚀 Demonstrate Thread-Safe Processing");
-                Console.WriteLine("   5️⃣  🧹 Clear all data from database");
-                Console.WriteLine("   6️⃣  📊 Show database statistics");
-                Console.WriteLine("   7️⃣  🧪 Test Refactored Configuration");
-                Console.WriteLine("   8️⃣  ❓ Show help and feature information");
-                Console.WriteLine("   0️⃣  🚪 Exit");
-                Console.WriteLine();
-                Console.Write("👉 Enter your choice (0-8): ");
-
-                var input = Console.ReadLine()?.Trim();
-                Console.WriteLine();
-
-                try
-                {
-                    switch (input)
-                    {
-                        case "1":
-                            await ProcessInputFiles(serviceProvider);
-                            break;
-                        case "2":
-                            await ProcessAllFilesInMemory(serviceProvider);
-                            break;
-                        case "3":
-                            await DemonstrateInMemoryProcessing(serviceProvider);
-                            break;
-                        case "4":
-                            await DemonstrateThreadSafeProcessing(serviceProvider);
-                            break;
-                        case "5":
-                            await HandleDatabaseClearCommand(serviceProvider);
-                            break;
-                        case "6":
-                            await ShowDatabaseStatistics(serviceProvider);
-                            break;
-                        case "7":
-                            await TestRefactoredConfiguration(serviceProvider);
-                            break;
-                        case "8":
-                            ShowHelpInformation();
-                            break;
-                        case "0":
-                            Console.WriteLine("👋 Thank you for using Sacks Product Management System!");
-                            return;
-                        default:
-                            Console.WriteLine("❌ Invalid choice. Please enter a number between 0 and 8.");
-                            break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"❌ Error executing option: {ex.Message}");
-                    _logger?.LogError(ex, "Error executing menu option {Option}", input);
-                }
-
-                if (input != "0")
-                {
-                    Console.WriteLine("\nPress any key to return to main menu...");
-                    Console.ReadKey();
-                }
             }
         }
 
@@ -885,128 +904,6 @@ namespace SacksConsoleApp
             Console.WriteLine("   • Supplier formats in Configuration/supplier-formats.json");
             Console.WriteLine("   • Logging configuration in appsettings.json");
         }
-
-        private static async Task TestRefactoredConfiguration(ServiceProvider serviceProvider)
-        {
-            Console.WriteLine("=== 🧪 TESTING REFACTORED CONFIGURATION ===\n");
-
-            var configManager = serviceProvider.GetRequiredService<SupplierConfigurationManager>();
-
-            // Test 1: Load configuration
-            Console.WriteLine("🔄 Test 1: Loading refactored configuration...");
-            var config = await configManager.GetConfigurationAsync();
-            Console.WriteLine($"✅ Configuration loaded successfully");
-            Console.WriteLine($"   Version: {config.Version}");
-            Console.WriteLine($"   Suppliers: {config.Suppliers.Count}");
-            Console.WriteLine($"   Last Updated: {config.LastUpdated:yyyy-MM-dd HH:mm:ss}");
-
-            // Test 2: Validate configuration
-            Console.WriteLine("\n🔄 Test 2: Validating configuration...");
-            var validationResult = await configManager.ValidateConfigurationAsync();
-            Console.WriteLine($"✅ Validation completed");
-            Console.WriteLine($"   Is Valid: {validationResult.IsValid}");
-            Console.WriteLine($"   Errors: {validationResult.Errors.Count}");
-            Console.WriteLine($"   Warnings: {validationResult.Warnings.Count}");
-
-            if (validationResult.Errors.Count > 0)
-            {
-                Console.WriteLine("\n❌ Validation Errors:");
-                foreach (var error in validationResult.Errors)
-                {
-                    Console.WriteLine($"   • {error}");
-                }
-            }
-
-            if (validationResult.Warnings.Count > 0)
-            {
-                Console.WriteLine("\n⚠️ Validation Warnings:");
-                foreach (var warning in validationResult.Warnings)
-                {
-                    Console.WriteLine($"   • {warning}");
-                }
-            }
-
-            // Test 3: Test enhanced properties for DIOR
-            Console.WriteLine("\n🔄 Test 3: Testing enhanced DIOR configuration...");
-            var diorConfig = await configManager.GetSupplierConfigurationAsync("DIOR");
-            if (diorConfig != null)
-            {
-                Console.WriteLine($"✅ DIOR Configuration:");
-                Console.WriteLine($"   Column Mappings: {diorConfig.ColumnIndexMappings.Count}");
-                Console.WriteLine($"   Data Types: {diorConfig.DataTypes.Count}");
-                Console.WriteLine($"   Required Fields: {diorConfig.Validation.RequiredFields.Count} ({string.Join(", ", diorConfig.Validation.RequiredFields)})");
-                Console.WriteLine($"   Unique Fields: {diorConfig.Validation.UniqueFields.Count} ({string.Join(", ", diorConfig.Validation.UniqueFields)})");
-                Console.WriteLine($"   Currency: {diorConfig.Metadata.Currency}");
-                Console.WriteLine($"   Timezone: {diorConfig.Metadata.Timezone}");
-                Console.WriteLine($"   Core Properties: {diorConfig.PropertyClassification.CoreProductProperties.Count}");
-                Console.WriteLine($"   Offer Properties: {diorConfig.PropertyClassification.OfferProperties.Count}");
-
-                // Test data type configurations with maxLength
-                var nameDataType = diorConfig.DataTypes.GetValueOrDefault("Name");
-                if (nameDataType != null)
-                {
-                    Console.WriteLine($"   Name field maxLength: {nameDataType.MaxLength}");
-                }
-            }
-
-            // Test 4: Test enhanced properties for UNLIMITED
-            Console.WriteLine("\n🔄 Test 4: Testing enhanced UNLIMITED configuration...");
-            var unlimitedConfig = await configManager.GetSupplierConfigurationAsync("UNLIMITED");
-            if (unlimitedConfig != null)
-            {
-                Console.WriteLine($"✅ UNLIMITED Configuration:");
-                Console.WriteLine($"   Column Mappings: {unlimitedConfig.ColumnIndexMappings.Count}");
-                Console.WriteLine($"   Required Fields: {unlimitedConfig.Validation.RequiredFields.Count} ({string.Join(", ", unlimitedConfig.Validation.RequiredFields)})");
-                Console.WriteLine($"   Unique Fields: {unlimitedConfig.Validation.UniqueFields.Count} ({string.Join(", ", unlimitedConfig.Validation.UniqueFields)})");
-                Console.WriteLine($"   Currency: {unlimitedConfig.Metadata.Currency}");
-                Console.WriteLine($"   Timezone: {unlimitedConfig.Metadata.Timezone}");
-            }
-
-            // Test 5: File detection with enhanced patterns
-            Console.WriteLine("\n🔄 Test 5: Testing enhanced file detection...");
-            var testFiles = new[]
-            {
-                "DIOR_Products_2024.xlsx",
-                "dior_beauty_catalog.xlsx",
-                "DIOR_December_2024.xls",
-                "UNLIMITED_Products.xlsx",
-                "unlimited_fragrances.xlsx",
-                "RANDOM_FILE.xlsx"
-            };
-
-            foreach (var testFile in testFiles)
-            {
-                var detectedConfig = await configManager.DetectSupplierFromFileAsync(testFile);
-                if (detectedConfig != null)
-                {
-                    Console.WriteLine($"   ✅ {testFile} → {detectedConfig.Name}");
-                }
-                else
-                {
-                    Console.WriteLine($"   ❌ {testFile} → No match");
-                }
-            }
-
-            Console.WriteLine("\n🎯 REFACTORED CONFIGURATION TEST SUMMARY:");
-            Console.WriteLine("   ✅ JSON loading and deserialization");
-            Console.WriteLine("   ✅ Enhanced validation rules (requiredFields, uniqueFields)");
-            Console.WriteLine("   ✅ New metadata properties (currency, timezone)");
-            Console.WriteLine("   ✅ Data type configurations with maxLength");
-            Console.WriteLine("   ✅ Improved case-insensitive file detection patterns");
-            Console.WriteLine("   ✅ Property classification (core vs offer)");
-            Console.WriteLine("   ✅ Configuration validation and error reporting");
-
-            if (validationResult.IsValid)
-            {
-                Console.WriteLine("\n🏆 ALL CONFIGURATION TESTS PASSED! 🏆");
-            }
-            else
-            {
-                Console.WriteLine("\n⚠️ Configuration has validation issues - see errors above");
-            }
-
-            Console.WriteLine("\nPress any key to return to main menu...");
-            Console.ReadKey();
-        }
+        
     }
 }
