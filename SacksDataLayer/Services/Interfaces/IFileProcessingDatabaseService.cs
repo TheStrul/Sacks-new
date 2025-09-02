@@ -52,6 +52,23 @@ namespace SacksDataLayer.Services.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Inserts or updates a supplier offer and all its products/offer-products in a single transaction
+        /// This method handles the database state-dependent operations
+        /// </summary>
+        /// <param name="analysisOffer">Analyzed offer from file data (without database IDs)</param>
+        /// <param name="dbOffer">Database offer entity with proper IDs</param>
+        /// <param name="supplierConfig">Supplier configuration</param>
+        /// <param name="createdBy">User who created the data</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Processing results with statistics</returns>
+        Task<FileProcessingBatchResult> InsertOrUpdateSupplierOfferAsync(
+            SupplierOfferEntity analysisOffer,
+            SupplierOfferEntity dbOffer,
+            SupplierConfiguration supplierConfig,
+            string? createdBy = null,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Processes a batch of products with optimized bulk operations
         /// </summary>
         /// <param name="products">List of product entities to process</param>

@@ -204,8 +204,6 @@ namespace SacksDataLayer.Services.Implementations
             var productsToUpdate = new List<ProductEntity>();
             int errors = 0;
 
-            Console.WriteLine($"   🔍 DEBUG: Processing {productList.Count} products, {eans.Count} have EANs, {existingProducts.Count} existing found");
-
             foreach (var product in productList)
             {
                 try
@@ -221,12 +219,6 @@ namespace SacksDataLayer.Services.Implementations
                     }
                     else
                     {
-                        // 🐛 TEMPORARY FIX: Log products without EANs for debugging
-                        if (string.IsNullOrWhiteSpace(product.EAN))
-                        {
-                            Console.WriteLine($"   ⚠️  DEBUG: Creating product without EAN: '{product.Name}' - THIS MIGHT BE A DUPLICATE!");
-                        }
-                        
                         // Create new product
                         product.CreatedAt = DateTime.UtcNow;
                         productsToCreate.Add(product);

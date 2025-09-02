@@ -41,6 +41,140 @@ namespace SacksDataLayer.Services.Implementations
         }
 
         /// <summary>
+        /// Inserts or updates a supplier offer and all its products/offer-products in a single transaction
+        /// This method handles the database state-dependent operations
+        /// </summary>
+        public async Task<FileProcessingBatchResult> InsertOrUpdateSupplierOfferAsync(
+            SupplierOfferEntity analysisOffer,
+            SupplierOfferEntity dbOffer,
+            SupplierConfiguration supplierConfig,
+            string? createdBy = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (analysisOffer == null) throw new ArgumentNullException(nameof(analysisOffer));
+            if (dbOffer == null) throw new ArgumentNullException(nameof(dbOffer));
+            if (supplierConfig == null) throw new ArgumentNullException(nameof(supplierConfig));
+            
+            cancellationToken.ThrowIfCancellationRequested();
+            
+            var result = new FileProcessingBatchResult();
+            var processorName = createdBy ?? "FileProcessor";
+            
+            try
+            {
+                _logger.LogInformation("Starting insert/update operations for {ProductCount} products", 
+                    analysisOffer.OfferProducts.Count);
+
+                Console.WriteLine($"   🔍 DEBUG: InsertOrUpdateSupplierOfferAsync called with {analysisOffer.OfferProducts.Count} products");
+                Console.WriteLine($"   🔍 DEBUG: Database offer ID: {dbOffer.Id}");
+
+                // Step 1: Get all unique EANs from the analysis result
+                var productEANs = analysisOffer.OfferProducts
+                    .Select(op => op.Product.EAN)
+                    .Where(ean => !string.IsNullOrWhiteSpace(ean))
+                    .Distinct()
+                    .ToList();
+
+                // Step 2: Bulk lookup existing products by EAN
+                var existingProducts = await _context.Products
+                    .Where(p => productEANs.Contains(p.EAN))
+                    .ToDictionaryAsync(p => p.EAN, p => p, cancellationToken);
+
+                Console.WriteLine($"   🔍 DEBUG: Found {existingProducts.Count} existing products out of {productEANs.Count} EANs");
+
+                var productsToCreate = new List<ProductEntity>();
+                var productsToUpdate = new List<ProductEntity>();
+                var offerProductsToCreate = new List<OfferProductEntity>();
+
+                // Step 3: Process each product offer from analysis
+                foreach (var analysisOfferProduct in analysisOffer.OfferProducts)
+                {
+                    var analysisProduct = analysisOfferProduct.Product;
+                    ProductEntity dbProduct;
+
+                    if (!string.IsNullOrWhiteSpace(analysisProduct.EAN) && 
+                        existingProducts.TryGetValue(analysisProduct.EAN, out var existingProduct))
+                    {
+                        // Update existing product
+                        existingProduct.Name = analysisProduct.Name;
+                        existingProduct.Description = analysisProduct.Description;
+                        existingProduct.DynamicProperties = analysisProduct.DynamicProperties;
+                        existingProduct.ModifiedAt = DateTime.UtcNow;
+                        
+                        productsToUpdate.Add(existingProduct);
+                        dbProduct = existingProduct;
+                        result.ProductsUpdated++;
+                    }
+                    else
+                    {
+                        // Create new product (including those without EANs)
+                        analysisProduct.CreatedAt = DateTime.UtcNow;
+                        analysisProduct.Id = 0; // Ensure it's treated as new
+                        
+                        productsToCreate.Add(analysisProduct);
+                        dbProduct = analysisProduct;
+                        result.ProductsCreated++;
+                    }
+
+                    // Create offer-product relationship
+                    var offerProduct = new OfferProductEntity
+                    {
+                        OfferId = dbOffer.Id,
+                        Product = dbProduct, // Navigation property will handle ID assignment
+                        Price = analysisOfferProduct.Price,
+                        Capacity = analysisOfferProduct.Capacity,
+                        Discount = analysisOfferProduct.Discount,
+                        ListPrice = analysisOfferProduct.ListPrice,
+                        UnitOfMeasure = analysisOfferProduct.UnitOfMeasure,
+                        MinimumOrderQuantity = analysisOfferProduct.MinimumOrderQuantity,
+                        MaximumOrderQuantity = analysisOfferProduct.MaximumOrderQuantity,
+                        IsAvailable = analysisOfferProduct.IsAvailable,
+                        CreatedAt = DateTime.UtcNow,
+                        ProductProperties = analysisOfferProduct.ProductProperties
+                    };
+                    offerProduct.SerializeProductProperties();
+
+                    offerProductsToCreate.Add(offerProduct);
+                }
+
+                // Step 4: Bulk database operations
+                if (productsToCreate.Any())
+                {
+                    await _context.Products.AddRangeAsync(productsToCreate, cancellationToken);
+                    _logger.LogInformation("Added {Count} new products", productsToCreate.Count);
+                }
+
+                if (productsToUpdate.Any())
+                {
+                    _context.Products.UpdateRange(productsToUpdate);
+                    _logger.LogInformation("Updated {Count} existing products", productsToUpdate.Count);
+                }
+
+                if (offerProductsToCreate.Any())
+                {
+                    await _context.OfferProducts.AddRangeAsync(offerProductsToCreate, cancellationToken);
+                    result.OfferProductsCreated = offerProductsToCreate.Count;
+                    _logger.LogInformation("Added {Count} offer-product relationships", offerProductsToCreate.Count);
+                }
+
+                Console.WriteLine($"   🔍 DEBUG: Final result - Products Created={result.ProductsCreated}, Updated={result.ProductsUpdated}, OfferProducts Created={result.OfferProductsCreated}, Updated={result.OfferProductsUpdated}, Errors={result.Errors}");
+
+                _logger.LogInformation("Completed insert/update operations: {ProductsCreated} products created, {ProductsUpdated} updated, " +
+                    "{OfferProductsCreated} offer-products created, {Errors} errors",
+                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.Errors);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to insert/update supplier offer: {OfferId}", dbOffer.Id);
+                result.Errors += analysisOffer.OfferProducts.Count; // Count all items as errors
+                result.ErrorMessages.Add($"Insert/update operations failed: {ex.Message}");
+                return result;
+            }
+        }
+
+        /// <summary>
         /// Ensures the database is ready for file processing operations
         /// </summary>
         public async Task EnsureDatabaseReadyAsync(CancellationToken cancellationToken = default)

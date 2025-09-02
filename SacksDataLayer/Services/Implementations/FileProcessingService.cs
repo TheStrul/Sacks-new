@@ -473,33 +473,27 @@ namespace SacksDataLayer.Services.Implementations
                     await _unitOfWork.SaveChangesAsync(ct);
                     Console.WriteLine($"   📋 ✅ Offer created: {offer.OfferName} (ID: {offer.Id})");
 
-                    // Step 3: Normalize products with memory monitoring
-                    Console.WriteLine($"   🔄 Normalizing products with memory monitoring...");
+                    // Step 3: Analyze file data (independent of database state)
+                    Console.WriteLine($"   � Analyzing file data without database dependencies...");
                     
-                    // Update context with the actual offer entity containing the database ID
-                    context.SupplierOffer = offer;
+                    var analysisResult = await AnalyzeFileDataAsync(fileData, 
+                        supplier, supplierConfig, context.ProcessingDate, "BulletproofProcessor", ct);
                     
-                    var normalizer = new ConfigurationBasedNormalizer(supplierConfig);
-                    var result = await normalizer.NormalizeAsync(fileData, context);
-                    
-                    if (result.Errors.Any())
+                    if (analysisResult.Errors.Any())
                     {
-                        var errorMessage = $"Normalization errors: {string.Join(", ", result.Errors)}";
+                        var errorMessage = $"Analysis errors: {string.Join(", ", analysisResult.Errors)}";
                         Console.WriteLine($"   🔄 ❌ {errorMessage}");
                         throw new InvalidDataException(errorMessage);
                     }
 
-                    var productCount = result.SupplierOffer.OfferProducts.Count();
-                    Console.WriteLine($"   📦 ✅ Normalized {productCount:N0} products offers successfully");
+                    var productCount = analysisResult.SupplierOffer.OfferProducts.Count();
+                    Console.WriteLine($"   📦 ✅ Analyzed {productCount:N0} product offers from file");
 
-                    // Step 4: Process all products directly in the transaction
-                    var productList = result.SupplierOffer.OfferProducts.ToList();
-
-                    Console.WriteLine($"   ⚡ Processing {productList.Count:N0} products directly in single transaction...");
+                    // Step 4: Database operations - Insert/Update based on current database state
+                    Console.WriteLine($"   💾 Performing database insert/update operations in single transaction...");
                     
-                    // Process products directly using the database service
-                    var batchResult = await _databaseService.ProcessProductBatchAsync(
-                        productList, offer, supplierConfig, "BulletproofProcessor", ct);
+                    var batchResult = await _databaseService.InsertOrUpdateSupplierOfferAsync(
+                        analysisResult.SupplierOffer, offer, supplierConfig, "BulletproofProcessor", ct);
 
                     // Step 5: Final save for all remaining changes
                     await _unitOfWork.SaveChangesAsync(ct);
@@ -537,9 +531,6 @@ namespace SacksDataLayer.Services.Implementations
             long processingTimeMs)
         {
             Console.WriteLine($"\n   📈 🎯 BULLETPROOF PROCESSING RESULTS:");
-            
-            Console.WriteLine($"      🔍 DEBUG: DisplayProcessingResults received - Products Created={batchResult.ProductsCreated}, Updated={batchResult.ProductsUpdated}, OfferProducts Created={batchResult.OfferProductsCreated}, Updated={batchResult.OfferProductsUpdated}, Errors={batchResult.Errors}");
-            
             Console.WriteLine($"      🏢 Supplier: {supplier.Name} (ID: {supplier.Id})");
             Console.WriteLine($"      📋 Offer: {offer.OfferName} (ID: {offer.Id})");
             Console.WriteLine($"      ➕ Products created: {batchResult.ProductsCreated:N0}");
@@ -567,6 +558,37 @@ namespace SacksDataLayer.Services.Implementations
         }
 
 
+
+        #endregion
+
+        #region File Analysis Methods
+
+        /// <summary>
+        /// Analyzes file data without any database dependencies
+        /// This creates a pure data analysis of what the file contains
+        /// </summary>
+        private async Task<ProcessingResult> AnalyzeFileDataAsync(
+            SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileData fileData,
+            SupplierEntity supplier,
+            SupplierConfiguration supplierConfig,
+            DateTime processingDate,
+            string? createdBy = null,
+            CancellationToken cancellationToken = default)
+        {
+            // Create a clean analysis context without database entities
+            var analysisContext = new ProcessingContext
+            {
+                SourceFileName = fileData.FileName,
+                ProcessingDate = processingDate,
+                SupplierName = supplier.Name,
+                SupplierOffer = null // No database entity during analysis
+            };
+            
+            var normalizer = new ConfigurationBasedNormalizer(supplierConfig);
+            var analysisResult = await normalizer.NormalizeAsync(fileData, analysisContext);
+            
+            return analysisResult;
+        }
 
         #endregion
 
