@@ -19,7 +19,7 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="products">The products to process</param>
         /// <param name="offer">The supplier offer these products belong to</param>
         /// <param name="supplierConfig">The supplier configuration for processing rules</param>
-        /// <param name="batchSize">The size of each batch (default: 500)</param>
+        /// <param name="batchSize">The size of each batch (default: 7000)</param>
         /// <param name="createdBy">The user/system creating the records</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Aggregated batch processing results</returns>
@@ -27,7 +27,7 @@ namespace SacksDataLayer.Services.Interfaces
             IEnumerable<OfferProductEntity> products,
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
-            int batchSize = 500,
+            int batchSize = 7000,
             string? createdBy = null,
             CancellationToken cancellationToken = default);
 

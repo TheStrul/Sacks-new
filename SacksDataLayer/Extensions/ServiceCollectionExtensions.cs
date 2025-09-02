@@ -32,7 +32,6 @@ namespace SacksDataLayer.Extensions
             services.AddScoped<IFileValidationService, FileValidationService>();
             services.AddScoped<ISupplierConfigurationService, SupplierConfigurationService>();
             services.AddScoped<IFileProcessingDatabaseService, FileProcessingDatabaseService>();
-            services.AddScoped<IFileProcessingBatchService, FileProcessingBatchService>();
             services.AddScoped<IFileProcessingService, FileProcessingService>();
             return services;
         }

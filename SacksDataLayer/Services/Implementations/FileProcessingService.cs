@@ -38,7 +38,6 @@ namespace SacksDataLayer.Services.Implementations
         private readonly IFileValidationService _fileValidationService;
         private readonly ISupplierConfigurationService _supplierConfigurationService;
         private readonly IFileProcessingDatabaseService _databaseService;
-        private readonly IFileProcessingBatchService _batchService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<FileProcessingService> _logger;
         
@@ -60,7 +59,6 @@ namespace SacksDataLayer.Services.Implementations
             IFileValidationService fileValidationService,
             ISupplierConfigurationService supplierConfigurationService,
             IFileProcessingDatabaseService databaseService,
-            IFileProcessingBatchService batchService,
             IUnitOfWork unitOfWork,
             ILogger<FileProcessingService> logger)
         {
@@ -71,8 +69,6 @@ namespace SacksDataLayer.Services.Implementations
                 throw new ArgumentNullException(nameof(supplierConfigurationService), "Supplier configuration service is required for auto-detection");
             _databaseService = databaseService ?? 
                 throw new ArgumentNullException(nameof(databaseService), "Database service is required for data persistence");
-            _batchService = batchService ?? 
-                throw new ArgumentNullException(nameof(batchService), "Batch service is required for optimized processing");
             _unitOfWork = unitOfWork ?? 
                 throw new ArgumentNullException(nameof(unitOfWork), "Unit of Work is required for transaction management");
             _logger = logger ?? 
@@ -143,7 +139,7 @@ namespace SacksDataLayer.Services.Implementations
                 // 🔍 STEP 5: Validate file structure with detailed reporting
                 await ValidateFileStructureWithDetailedReportingAsync(fileData, supplierConfig, correlationId, cancellationToken);
 
-                // 🔄 STEP 6: Process data with optimized batch operations
+                // 🔄 STEP 6: Process data with direct database operations
                 await ProcessSupplierOfferWithOptimizationsAsync(fileData, filePath, supplierConfig, correlationId, cancellationToken);
 
                 // ✅ COMPLETION: Log success metrics
@@ -496,13 +492,14 @@ namespace SacksDataLayer.Services.Implementations
                     var productCount = result.SupplierOffer.OfferProducts.Count();
                     Console.WriteLine($"   📦 ✅ Normalized {productCount:N0} products offers successfully");
 
-                    // Step 4: Process products in optimized batches with memory checks
-                    const int optimizedBatchSize = 500;
+                    // Step 4: Process all products directly in the transaction
                     var productList = result.SupplierOffer.OfferProducts.ToList();
 
-                    Console.WriteLine($"   ⚡ Processing {productList.Count:N0} products in transaction-safe batches of {optimizedBatchSize}...");
-                    var batchResult = await _batchService.ProcessProductsInBatchesAsync(
-                        productList, offer, supplierConfig, optimizedBatchSize, "BulletproofProcessor", ct);
+                    Console.WriteLine($"   ⚡ Processing {productList.Count:N0} products directly in single transaction...");
+                    
+                    // Process products directly using the database service
+                    var batchResult = await _databaseService.ProcessProductBatchAsync(
+                        productList, offer, supplierConfig, "BulletproofProcessor", ct);
 
                     // Step 5: Final save for all remaining changes
                     await _unitOfWork.SaveChangesAsync(ct);
@@ -540,6 +537,9 @@ namespace SacksDataLayer.Services.Implementations
             long processingTimeMs)
         {
             Console.WriteLine($"\n   📈 🎯 BULLETPROOF PROCESSING RESULTS:");
+            
+            Console.WriteLine($"      🔍 DEBUG: DisplayProcessingResults received - Products Created={batchResult.ProductsCreated}, Updated={batchResult.ProductsUpdated}, OfferProducts Created={batchResult.OfferProductsCreated}, Updated={batchResult.OfferProductsUpdated}, Errors={batchResult.Errors}");
+            
             Console.WriteLine($"      🏢 Supplier: {supplier.Name} (ID: {supplier.Id})");
             Console.WriteLine($"      📋 Offer: {offer.OfferName} (ID: {offer.Id})");
             Console.WriteLine($"      ➕ Products created: {batchResult.ProductsCreated:N0}");

@@ -203,6 +203,8 @@ namespace SacksDataLayer.Services.Implementations
                     "{OfferProductsCreated} offer-products created, {OfferProductsUpdated} updated, {Errors} errors",
                     result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated, result.Errors);
 
+                Console.WriteLine($"   🔍 DEBUG: Final result being returned - Products Created={result.ProductsCreated}, Updated={result.ProductsUpdated}, OfferProducts Created={result.OfferProductsCreated}, Updated={result.OfferProductsUpdated}, Errors={result.Errors}");
+
                 return result;
             }
             catch (Exception ex)
@@ -295,6 +297,9 @@ namespace SacksDataLayer.Services.Implementations
                 var offerProductsToCreate = new List<OfferProductEntity>();
                 var offerProductsToUpdate = new List<OfferProductEntity>();
 
+                Console.WriteLine($"   🔍 DEBUG: ProcessOfferProductsAsync called with {validProducts.Count} products");
+                Console.WriteLine($"   🔍 DEBUG: Current result counts BEFORE: Products Created={result.ProductsCreated}, Updated={result.ProductsUpdated}, OfferProducts Created={result.OfferProductsCreated}, Updated={result.OfferProductsUpdated}");
+
                 foreach (var productData in validProducts)
                 {
                     if (savedProducts.TryGetValue(productData.Product.EAN, out var savedProduct))
@@ -363,6 +368,9 @@ namespace SacksDataLayer.Services.Implementations
 
                 // Update counts for modified offer products
                 result.OfferProductsUpdated += offerProductsToUpdate.Count;
+
+                Console.WriteLine($"   🔍 DEBUG: OfferProducts processing completed. Created {offerProductsToCreate.Count}, Updated {offerProductsToUpdate.Count}");
+                Console.WriteLine($"   🔍 DEBUG: Current result counts AFTER: Products Created={result.ProductsCreated}, Updated={result.ProductsUpdated}, OfferProducts Created={result.OfferProductsCreated}, Updated={result.OfferProductsUpdated}");
 
                 _logger.LogInformation("Processed offer products: {Created} created, {Updated} updated", 
                     offerProductsToCreate.Count, offerProductsToUpdate.Count);

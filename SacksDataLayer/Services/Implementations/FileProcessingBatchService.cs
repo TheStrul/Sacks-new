@@ -34,7 +34,7 @@ namespace SacksDataLayer.Services.Implementations
             IEnumerable<OfferProductEntity> products,
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
-            int batchSize = 500,
+            int batchSize = 7000,
             string? createdBy = null,
             CancellationToken cancellationToken = default)
         {
