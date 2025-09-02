@@ -111,20 +111,17 @@ namespace SacksConsoleApp
                 Console.WriteLine("📋 Please choose an option:");
                 Console.WriteLine();
                 Console.WriteLine("   1️⃣  Process all Excel files (Standard Processing)");
-                Console.WriteLine("   2️⃣  🚀 Process all files with In-Memory Processing (ULTIMATE PERFORMANCE)");
-                Console.WriteLine("   3️⃣  🚀 Process single file with In-Memory Processing");
-                Console.WriteLine("   4️⃣  🚀 Demonstrate Thread-Safe Processing");
-                Console.WriteLine("   5️⃣  🧹 Clear all data from database");
-                Console.WriteLine("   6️⃣  📊 Show database statistics");
-                Console.WriteLine("   7️⃣  🧪 Test Refactored Configuration");
-                Console.WriteLine("   8️⃣  ❓ Show help and feature information");
-                Console.WriteLine("   0️⃣  🚪 Exit");
+                Console.WriteLine("   2️⃣  🧹 Clear all data from database");
+                Console.WriteLine("   3️⃣  📊 Show database statistics");
+                Console.WriteLine("   4️⃣  🧪 Test Refactored Configuration");
+                Console.WriteLine("   5️⃣  ❓ Show help and feature information"); 
+                Console.WriteLine("   6️⃣  🚪 Exit");                
                 Console.WriteLine();
-                Console.Write("👉 Enter your choice (0-8): ");
+                Console.Write("👉 Enter your choice (0-6): ");
 
                 var input = Console.ReadLine()?.Trim();
                 Console.WriteLine();
-
+    
                 try
                 {
                     switch (input)
