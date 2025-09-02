@@ -36,6 +36,9 @@ namespace SacksDataLayer.Services.Implementations
                 await _context.Database.EnsureDeletedAsync();
                 await _context.Database.EnsureCreatedAsync();
 
+                // Clear the DbContext change tracker to remove any cached/tracked entities
+                _context.ChangeTracker.Clear();
+
                 result.Success = true;
                 result.Message = "Database recreated successfully! All tables are now empty with correct schema.";
 

@@ -446,8 +446,8 @@ namespace SacksDataLayer.Services.Implementations
                     // Step 1.5: Save changes to get the supplier ID
                     await _unitOfWork.SaveChangesAsync(ct);
                     Console.WriteLine($"   🏢 ✅ Supplier ready: {supplier.Name} (ID: {supplier.Id})");
-
-                    // Step 1.6: Check for existing offers and ask user permission
+                    
+                    // Step 2: Check for existing offers and ask user permission
                     bool exist = supplier.Offers.Any(o =>
                         string.Equals(o.OfferName, Path.GetFileName(filePath), StringComparison.OrdinalIgnoreCase));
 

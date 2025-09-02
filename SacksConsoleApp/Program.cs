@@ -117,7 +117,7 @@ namespace SacksConsoleApp
                 Console.WriteLine("   5️⃣  ❓ Show help and feature information"); 
                 Console.WriteLine("   6️⃣  🚪 Exit");                
                 Console.WriteLine();
-                Console.Write("👉 Enter your choice (0-6): ");
+                Console.Write("👉 Enter your choice (1-6, or 0 to exit): ");
 
                 var input = Console.ReadLine()?.Trim();
                 Console.WriteLine();
@@ -129,23 +129,24 @@ namespace SacksConsoleApp
                         case "1":
                             await ProcessInputFiles(serviceProvider);
                             break;
-                        case "5":
+                        case "2":
                             await HandleDatabaseClearCommand(serviceProvider);
                             break;
-                        case "6":
+                        case "3":
                             await ShowDatabaseStatistics(serviceProvider);
                             break;
-                        case "7":
+                        case "4":
                             await TestRefactoredConfiguration(serviceProvider);
                             break;
-                        case "8":
+                        case "5":
                             ShowHelpInformation();
                             break;
+                        case "6":
                         case "0":
                             Console.WriteLine("👋 Thank you for using Sacks Product Management System!");
                             return;
                         default:
-                            Console.WriteLine("❌ Invalid choice. Please enter a number between 0 and 8.");
+                            Console.WriteLine("❌ Invalid choice. Please enter a number between 1-6 (or 0 to exit).");
                             break;
                     }
                 }
