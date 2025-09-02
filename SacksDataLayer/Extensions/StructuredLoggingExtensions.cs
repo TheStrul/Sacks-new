@@ -110,21 +110,6 @@ namespace SacksDataLayer.Extensions
         }
 
         /// <summary>
-        /// Logs memory usage at specific checkpoints
-        /// </summary>
-        public static void LogMemoryCheckpoint(this ILogger logger, string checkpoint, MemoryUsageStats stats, string correlationId)
-        {
-            if (stats == null)
-                throw new ArgumentNullException(nameof(stats));
-
-            logger.LogInformation("💾 Memory checkpoint - {Checkpoint}: Working={WorkingSetMB:F1}MB, GC={GCMemoryMB:F1}MB [CorrelationId: {CorrelationId}]",
-                checkpoint,
-                stats.WorkingSetBytes / 1024.0 / 1024.0,
-                stats.GCTotalMemoryBytes / 1024.0 / 1024.0,
-                correlationId);
-        }
-
-        /// <summary>
         /// Logs configuration loading or reloading
         /// </summary>
         public static void LogConfigurationLoad(this ILogger logger, string configurationType, int itemCount, 

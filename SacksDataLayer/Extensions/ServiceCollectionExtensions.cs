@@ -36,16 +36,6 @@ namespace SacksDataLayer.Extensions
             return services;
         }
 
-        /// <summary>
-        /// Register performance monitoring and structured logging services
-        /// </summary>
-        /// <param name="services">Service collection</param>
-        /// <returns>Service collection for chaining</returns>
-        public static IServiceCollection AddPerformanceMonitoring(this IServiceCollection services)
-        {
-            services.AddSingleton<IPerformanceMonitoringService, PerformanceMonitoringService>();
-            return services;
-        }
 
         /// <summary>
         /// Register Unit of Work for transaction management across repositories
