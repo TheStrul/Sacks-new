@@ -654,24 +654,46 @@ namespace SacksDataLayer.FileProcessing.Services
                 var suggestedMapping = SuggestPropertyMapping(cellValue);
                 Console.WriteLine($"💡 Suggested mapping: {suggestedMapping.targetProperty} ({suggestedMapping.classification})");
                 
-                Console.Write($"✏️  Enter target property name (or 'skip' to ignore this column): ");
+                Console.Write($"✏️  Enter target property name (or 'skip' to ignore, press Enter to accept suggestion): ");
                 var userInput = Console.ReadLine()?.Trim();
                 
-                if (string.IsNullOrWhiteSpace(userInput) || userInput.ToLower().Equals("skip", StringComparison.OrdinalIgnoreCase))
+                if (userInput?.ToLower().Equals("skip", StringComparison.OrdinalIgnoreCase) == true)
                 {
                     Console.WriteLine("   ⏭️  Skipping this column");
                     continue;
                 }
 
-                var targetProperty = userInput;
+                // If user pressed Enter (empty input), use the suggested mapping
+                var targetProperty = string.IsNullOrWhiteSpace(userInput) ? suggestedMapping.targetProperty : userInput;
                 
-                // Ask for classification
-                Console.WriteLine("   📊 Property classification:");
-                Console.WriteLine("      1. coreProduct (product attributes like name, brand, category)");
-                Console.WriteLine("      2. offer (pricing, availability, supplier-specific data)");
-                Console.Write("   Enter classification (1 or 2): ");
-                var classificationInput = Console.ReadLine()?.Trim();
-                var classification = classificationInput?.Equals("2", StringComparison.Ordinal) == true ? "offer" : "coreProduct";
+                // Show what was accepted
+                if (string.IsNullOrWhiteSpace(userInput))
+                {
+                    Console.WriteLine($"   ✅ Accepted suggested mapping: {targetProperty}");
+                }
+                else
+                {
+                    Console.WriteLine($"   ✅ Using custom mapping: {targetProperty}");
+                }
+                
+                // Determine classification - use suggested if user accepted the suggestion by pressing Enter
+                string classification;
+                if (string.IsNullOrWhiteSpace(userInput))
+                {
+                    // User accepted suggestion, use suggested classification
+                    classification = suggestedMapping.classification;
+                    Console.WriteLine($"   ✅ Using suggested classification: {classification}");
+                }
+                else
+                {
+                    // User provided custom mapping, ask for classification
+                    Console.WriteLine("   📊 Property classification:");
+                    Console.WriteLine("      1. coreProduct (product attributes like name, brand, category)");
+                    Console.WriteLine("      2. offer (pricing, availability, supplier-specific data)");
+                    Console.Write("   Enter classification (1 or 2): ");
+                    var classificationInput = Console.ReadLine()?.Trim();
+                    classification = classificationInput?.Equals("2", StringComparison.Ordinal) == true ? "offer" : "coreProduct";
+                }
                 
                 // Determine data type based on sample data
                 var dataType = DetermineDataType(fileData, headerRowIndex, i);

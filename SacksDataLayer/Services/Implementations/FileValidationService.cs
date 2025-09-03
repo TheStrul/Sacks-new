@@ -92,7 +92,7 @@ namespace SacksDataLayer.Services.Implementations
             try
             {
 
-                // Sample 10% of data rows starting from headerRowIndex + 1
+                // Sample 10% of data rows starting from DataStartRowIndex + 1
                 int dataStartIndex = supplierConfig.FileStructure!.DataStartRowIndex + 1;
                 var totalDataRows = Math.Max(0, fileData.DataRows.Count - dataStartIndex);
                 

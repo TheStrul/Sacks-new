@@ -126,10 +126,10 @@ namespace SacksConsoleApp
                 Console.WriteLine();
                 Console.WriteLine("📋 Please choose an option:");
                 Console.WriteLine();
-                Console.WriteLine("   1️⃣  Process all Excel files (Standard Processing)");
+                Console.WriteLine("   1️⃣  Process all Excel files");
                 Console.WriteLine("   2️⃣  🧹 Clear all data from database");
                 Console.WriteLine("   3️⃣  📊 Show database statistics");
-                Console.WriteLine("   4️⃣  🧪 Test Refactored Configuration");
+                Console.WriteLine("   4️⃣  🧪 Test Configuration");
                 Console.WriteLine("   5️⃣  🔧 Create new supplier configuration (Interactive)");
                 Console.WriteLine("   6️⃣  ❓ Show help and feature information"); 
                 Console.WriteLine("   7️⃣  🚪 Exit");                
@@ -186,7 +186,7 @@ namespace SacksConsoleApp
 
         private static async Task TestRefactoredConfiguration(ServiceProvider serviceProvider)
         {
-            Console.WriteLine("=== 🧪 TESTING REFACTORED CONFIGURATION ===\n");
+            Console.WriteLine("=== 🧪 TESTING CONFIGURATION ===\n");
 
             var configManager = serviceProvider.GetRequiredService<SupplierConfigurationManager>();
 
@@ -224,22 +224,28 @@ namespace SacksConsoleApp
                 }
             }
 
-            // Test 3: Test enhanced properties for DIOR
-            Console.WriteLine("\n🔄 Test 3: Testing enhanced DIOR configuration...");
-            var diorConfig = await configManager.GetSupplierConfigurationAsync("DIOR");
-            if (diorConfig != null)
+            // Test 3: Test all supplier configurations
+            Console.WriteLine("\n🔄 Test 3: Testing all supplier configurations...");
+            if (config.Suppliers.Count > 0)
             {
-                Console.WriteLine($"✅ DIOR Configuration:");
-                Console.WriteLine($"   Column Mappings: {diorConfig.ColumnIndexMappings?.Count ?? 0}");
-                Console.WriteLine($"   Data Types: {diorConfig.DataTypes?.Count ?? 0}");
-                Console.WriteLine($"   Required Fields: {diorConfig.Validation?.RequiredFields.Count ?? 0} ({string.Join(", ", diorConfig.Validation?.RequiredFields ?? new List<string>())})");
-                Console.WriteLine($"   File Patterns: {string.Join(", ", diorConfig.Detection?.FileNamePatterns ?? new List<string>())}");
-                Console.WriteLine($"   Industry: {diorConfig.Metadata?.Industry}");
-                Console.WriteLine($"   Currency: {diorConfig.Metadata?.Currency}");
+                for (int i = 0; i < config.Suppliers.Count; i++)
+                {
+                    var supplierConfig = config.Suppliers[i];
+                    Console.WriteLine($"\n✅ {i + 1}. {supplierConfig.Name} Configuration:");
+                    Console.WriteLine($"   Column Properties: {supplierConfig.ColumnProperties?.Count ?? 0}");
+                    Console.WriteLine($"   Column Mappings: {supplierConfig.ColumnIndexMappings?.Count ?? 0}");
+                    Console.WriteLine($"   Data Types: {supplierConfig.DataTypes?.Count ?? 0}");
+                    Console.WriteLine($"   Required Fields: {supplierConfig.Validation?.RequiredFields.Count ?? 0} ({string.Join(", ", supplierConfig.Validation?.RequiredFields ?? new List<string>())})");
+                    Console.WriteLine($"   File Patterns: {string.Join(", ", supplierConfig.Detection?.FileNamePatterns ?? new List<string>())}");
+                    Console.WriteLine($"   Industry: {supplierConfig.Metadata?.Industry}");
+                    Console.WriteLine($"   Currency: {supplierConfig.Metadata?.Currency}");
+                    Console.WriteLine($"   Header Row: {supplierConfig.FileStructure?.HeaderRowIndex}");
+                    Console.WriteLine($"   Data Start Row: {supplierConfig.FileStructure?.DataStartRowIndex}");
+                }
             }
             else
             {
-                Console.WriteLine("❌ DIOR configuration not found");
+                Console.WriteLine("❌ No supplier configurations found");
             }
 
             Console.WriteLine("\n✅ Configuration testing completed!");
@@ -532,31 +538,31 @@ namespace SacksConsoleApp
 
         private static string FindInputsFolder()
         {
-            // Try different strategies to find the Inputs folder
+            // Try different strategies to find the Inputs folder (now at workspace root)
             var currentDirectory = Environment.CurrentDirectory;
 
             // Strategy 1: Check if we're running from project folder (dotnet run)
-            var strategy1 = Path.Combine(currentDirectory, "..", "SacksDataLayer", "Inputs");
+            var strategy1 = Path.Combine(currentDirectory, "..", "Inputs");
             if (Directory.Exists(strategy1))
             {
                 return Path.GetFullPath(strategy1);
             }
 
             // Strategy 2: Check if we're running from bin folder (Visual Studio)
-            var strategy2 = Path.Combine(currentDirectory, "..", "..", "..", "..", "SacksDataLayer", "Inputs");
+            var strategy2 = Path.Combine(currentDirectory, "..", "..", "..", "..", "Inputs");
             if (Directory.Exists(strategy2))
             {
                 return Path.GetFullPath(strategy2);
             }
 
-            // Strategy 3: Search upward for solution file, then go to SacksDataLayer/Inputs
+            // Strategy 3: Search upward for solution file, then go to Inputs at workspace root
             var searchDir = new DirectoryInfo(currentDirectory);
             while (searchDir != null)
             {
                 var solutionFile = searchDir.GetFiles("*.sln").FirstOrDefault();
                 if (solutionFile != null)
                 {
-                    var solutionInputsPath = Path.Combine(searchDir.FullName, "SacksDataLayer", "Inputs");
+                    var solutionInputsPath = Path.Combine(searchDir.FullName, "Inputs");
                     if (Directory.Exists(solutionInputsPath))
                     {
                         return solutionInputsPath;
@@ -566,7 +572,7 @@ namespace SacksConsoleApp
             }
 
             // Strategy 4: Fallback - return a non-existent path so we can show a helpful error
-            return Path.Combine(currentDirectory, "SacksDataLayer", "Inputs");
+            return Path.Combine(currentDirectory, "Inputs");
         }
 
         /// <summary>
@@ -615,71 +621,94 @@ namespace SacksConsoleApp
         {
             Console.WriteLine("=== ❓ HELP & FEATURE INFORMATION ===\n");
             
-            Console.WriteLine("🚀 PROCESSING OPTIONS:");
+            Console.WriteLine("🚀 MAIN MENU OPTIONS:");
             Console.WriteLine();
-            Console.WriteLine("1️⃣  Standard Processing:");
-            Console.WriteLine("   • Traditional database operations");
-            Console.WriteLine("   • Processes all Excel files in sequence");
-            Console.WriteLine("   • Good for small to medium datasets");
-            Console.WriteLine();
-            
-            Console.WriteLine("2️⃣  🚀 In-Memory Processing (ALL FILES):");
-            Console.WriteLine("   • ULTIMATE PERFORMANCE - loads all data into memory once");
-            Console.WriteLine("   • Processes all files with maximum speed");
-            Console.WriteLine("   • Single database transaction at the end");
-            Console.WriteLine("   • Best for large batch operations");
+            Console.WriteLine("1️⃣  Process all Excel files (Standard Processing):");
+            Console.WriteLine("   • Processes all Excel files from the Inputs folder");
+            Console.WriteLine("   • Auto-detects supplier configurations based on filename patterns");
+            Console.WriteLine("   • Applies column mappings and data transformations");
+            Console.WriteLine("   • Saves processed data to the database");
+            Console.WriteLine("   • Handles duplicate detection and data validation");
             Console.WriteLine();
             
-            Console.WriteLine("3️⃣  🚀 In-Memory Processing (SINGLE FILE):");
-            Console.WriteLine("   • Choose specific file to process");
-            Console.WriteLine("   • Same ultra-fast processing as option 2");
-            Console.WriteLine("   • Perfect for testing or selective processing");
-            Console.WriteLine();
-            
-            Console.WriteLine("4️⃣  🚀 Thread-Safe Processing Demo:");
-            Console.WriteLine("   • Demonstrates concurrent data access");
-            Console.WriteLine("   • Shows thread-safe in-memory operations");
-            Console.WriteLine("   • Educational/diagnostic purposes");
-            Console.WriteLine();
-            
-            Console.WriteLine("5️⃣  Database Operations:");
-            Console.WriteLine("   • Clear all data from database");
-            Console.WriteLine("   • Recreates empty tables with correct schema");
+            Console.WriteLine("2️⃣  🧹 Clear all data from database:");
+            Console.WriteLine("   • Removes all records from all tables");
+            Console.WriteLine("   • Maintains table structure and relationships");
             Console.WriteLine("   • Requires confirmation for safety");
+            Console.WriteLine("   • Shows deletion summary with record counts");
             Console.WriteLine();
             
-            Console.WriteLine("6️⃣  Database Statistics:");
-            Console.WriteLine("   • Shows current record counts");
-            Console.WriteLine("   • Displays connection information");
-            Console.WriteLine("   • Shows in-memory cache status");
+            Console.WriteLine("3️⃣  � Show database statistics:");
+            Console.WriteLine("   • Displays current record counts for all tables");
+            Console.WriteLine("   • Shows database connection information");
+            Console.WriteLine("   • Provides total records summary");
+            Console.WriteLine("   • Helpful for monitoring data growth");
+            Console.WriteLine();
+            
+            Console.WriteLine("4️⃣  🧪 Test Configuration:");
+            Console.WriteLine("   • Validates the supplier configuration system");
+            Console.WriteLine("   • Tests configuration loading and parsing");
+            Console.WriteLine("   • Shows detailed configuration information");
+            Console.WriteLine("   • Reports any configuration errors or warnings");
             Console.WriteLine();
 
-            Console.WriteLine("7️⃣  Test Refactored Configuration:");
-            Console.WriteLine("   • Tests and validates the new configuration system");
-            Console.WriteLine("   • Ensures all settings are loaded correctly");
-            Console.WriteLine("   • Reports any missing or invalid settings");
+            Console.WriteLine("5️⃣  🔧 Create new supplier configuration (Interactive):");
+            Console.WriteLine("   • Guided creation of new supplier configurations");
+            Console.WriteLine("   • Analyzes Excel file structure automatically");
+            Console.WriteLine("   • Suggests intelligent column mappings");
+            Console.WriteLine("   • Interactive column classification (coreProduct/offer)");
+            Console.WriteLine("   • Auto-detects data types and validation rules");
+            Console.WriteLine("   • Generates filename detection patterns");
+            Console.WriteLine("   • Saves configuration to supplier-formats.json");
             Console.WriteLine();
 
+            Console.WriteLine("6️⃣  ❓ Show help and feature information:");
+            Console.WriteLine("   • This help screen with detailed feature descriptions");
+            Console.WriteLine("   • System requirements and configuration info");
+            Console.WriteLine();
+
+            Console.WriteLine("7️⃣  🚪 Exit:");
+            Console.WriteLine("   • Safely exits the application");
+            Console.WriteLine("   • Ensures all logs are flushed");
+            Console.WriteLine();
+            
             Console.WriteLine("🎯 KEY FEATURES:");
-            Console.WriteLine("   ✅ Thread-safe in-memory data cache");
-            Console.WriteLine("   ✅ Bulk operations to eliminate N+1 query problems");
-            Console.WriteLine("   ✅ Optimized batch processing");
             Console.WriteLine("   ✅ Auto-detection of supplier configurations");
-            Console.WriteLine("   ✅ Single transaction database saves");
-            Console.WriteLine("   ✅ Comprehensive error handling and logging");
-            Console.WriteLine("   ✅ Performance metrics and monitoring");
+            Console.WriteLine("   ✅ Intelligent column mapping suggestions");
+            Console.WriteLine("   ✅ Interactive configuration creation");
+            Console.WriteLine("   ✅ Comprehensive data validation");
+            Console.WriteLine("   ✅ Duplicate detection and handling");
+            Console.WriteLine("   ✅ Structured logging with Serilog");
+            Console.WriteLine("   ✅ MySQL database with Entity Framework Core");
+            Console.WriteLine("   ✅ Robust error handling and recovery");
+            Console.WriteLine("   ✅ Performance monitoring and metrics");
             Console.WriteLine();
 
             Console.WriteLine("📁 FILE REQUIREMENTS:");
-            Console.WriteLine("   • Excel files (.xlsx) in SacksDataLayer/Inputs folder");
+            Console.WriteLine("   • Excel files (.xlsx) in Inputs folder at workspace root");
             Console.WriteLine("   • Files should follow configured supplier formats");
             Console.WriteLine("   • Temporary files (starting with ~) are automatically skipped");
+            Console.WriteLine("   • Supported suppliers: DIOR, UNLIMITED, ACE (and custom)");
             Console.WriteLine();
 
-            Console.WriteLine("🔧 CONFIGURATION:");
-            Console.WriteLine("   • Database settings in appsettings.json");
-            Console.WriteLine("   • Supplier formats in Configuration/supplier-formats.json");
-            Console.WriteLine("   • Logging configuration in appsettings.json");
+            Console.WriteLine("🔧 CONFIGURATION FILES:");
+            Console.WriteLine("   • appsettings.json - Database and logging configuration");
+            Console.WriteLine("   • Configuration/supplier-formats.json - Supplier mappings");
+            Console.WriteLine("   • Inputs/ - Folder containing Excel files to process");
+            Console.WriteLine();
+
+            Console.WriteLine("💡 GETTING STARTED:");
+            Console.WriteLine("   1. Place Excel files in the Inputs folder");
+            Console.WriteLine("   2. Use option 5 to create configurations for new suppliers");
+            Console.WriteLine("   3. Use option 1 to process all files");
+            Console.WriteLine("   4. Use option 3 to monitor processing results");
+            Console.WriteLine();
+
+            Console.WriteLine("🆘 TROUBLESHOOTING:");
+            Console.WriteLine("   • Check database connection in appsettings.json");
+            Console.WriteLine("   • Ensure Excel files are not open in another application");
+            Console.WriteLine("   • Use option 4 to validate configuration integrity");
+            Console.WriteLine("   • Check logs in the logs/ folder for detailed error information");
         }
         
     }

@@ -40,7 +40,7 @@
     <None Include="Configuration\supplier-formats.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="..\SacksDataLayer\Inputs\*.xlsx">
+    <None Include="..\Inputs\*.xlsx">
       <Link>Inputs\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
