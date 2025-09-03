@@ -404,9 +404,11 @@ namespace SacksDataLayer.FileProcessing.Services
                 var suggestedName = ExtractSupplierNameFromFileName(fileName);
                 
                 _logger?.LogInformation("Suggested supplier name from filename: '{SuggestedName}'", suggestedName);
-                _logger?.LogInformation("Using suggested supplier name as no user input available in non-interactive mode");
-                // NOTE: Interactive input removed - using suggested name automatically
-                supplierName = suggestedName;
+                Console.WriteLine($"📝 Suggested supplier name: '{suggestedName}'");
+                Console.Write("✏️  Enter supplier name (press Enter to accept suggestion): ");
+                var userInput = Console.ReadLine()?.Trim();
+                
+                supplierName = string.IsNullOrWhiteSpace(userInput) ? suggestedName : userInput;
             }
 
             _logger?.LogInformation("Supplier name: {SupplierName}", supplierName);
@@ -424,19 +426,24 @@ namespace SacksDataLayer.FileProcessing.Services
             {
                 var headerRow = fileData.GetRow(headerRowIndex);
                 _logger?.LogInformation("Detected header row contents:");
+                Console.WriteLine();
+                Console.WriteLine($"📋 Detected header row (Excel row {headerRowIndex + 1}):");
                 for (int i = 0; i < headerRow?.Cells.Count; i++)
                 {
                     var cellValue = headerRow.Cells[i]?.Value?.ToString()?.Trim() ?? "";
                     var columnLetter = GetExcelColumnLetter(i);
                     _logger?.LogInformation("   {ColumnLetter}: {CellValue}", columnLetter, cellValue);
+                    Console.WriteLine($"   {columnLetter}: {cellValue}");
                 }
 
-                // NOTE: Interactive confirmation removed - automatically accepting detected header row
-                _logger?.LogInformation("Auto-accepting detected header row in non-interactive mode");
-                // Commenting out interactive logic:
-                // Console.Write("❓ Is this the correct header row? (y/n): ");
-                // var confirmation = Console.ReadLine()?.Trim().ToLower();
-                // if (confirmation != "y" && confirmation != "yes") { ... }
+                Console.WriteLine();
+                Console.Write("❓ Is this the correct header row? (y/n): ");
+                var confirmation = Console.ReadLine()?.Trim().ToLower();
+                if (confirmation != "y" && confirmation != "yes")
+                {
+                    Console.WriteLine("❌ Header row confirmation cancelled. Please manually specify header row location or check the file structure.");
+                    throw new InvalidOperationException("Header row not confirmed by user");
+                }
             }
 
             // Step 5: Create column mappings interactively
@@ -608,19 +615,21 @@ namespace SacksDataLayer.FileProcessing.Services
                 // Determine data type based on sample data
                 var dataType = DetermineDataType(fileData, headerRowIndex, i);
                 
-                _logger?.LogInformation("   📊 Detected data type: {DataType}", dataType.Type);
+                _logger?.LogInformation("   📊 Detected data type: {DataType}", dataType.type);
                 
                 var columnProperty = new ColumnProperty
                 {
                     TargetProperty = targetProperty,
                     DisplayName = cellValue,
-                    DataType = dataType,
+                    DataType = dataType.type,
+                    Format = dataType.format,
+                    DefaultValue = dataType.defaultValue,
+                    AllowNull = dataType.allowNull,
+                    MaxLength = dataType.maxLength,
+                    Transformations = dataType.transformations,
                     Classification = classification,
-                    Validation = new ColumnValidationConfiguration
-                    {
-                        IsRequired = targetProperty.Contains("name", StringComparison.OrdinalIgnoreCase) || targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase),
-                        IsUnique = targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase) || targetProperty.Contains("id", StringComparison.OrdinalIgnoreCase)
-                    }
+                    IsRequired = targetProperty.Contains("name", StringComparison.OrdinalIgnoreCase) || targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase),
+                    IsUnique = targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase) || targetProperty.Contains("id", StringComparison.OrdinalIgnoreCase)
                 };
 
                 columnProperties[columnLetter] = columnProperty;
@@ -670,7 +679,7 @@ namespace SacksDataLayer.FileProcessing.Services
         /// <summary>
         /// Determines data type from sample data
         /// </summary>
-        private DataTypeConfiguration DetermineDataType(FileData fileData, int headerRowIndex, int columnIndex)
+        private (string type, string? format, object? defaultValue, bool allowNull, int? maxLength, List<string> transformations) DetermineDataType(FileData fileData, int headerRowIndex, int columnIndex)
         {
             var sampleValues = new List<string>();
             
@@ -687,7 +696,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
             if (!sampleValues.Any())
             {
-                return new DataTypeConfiguration { Type = "string", AllowNull = true, MaxLength = 255 };
+                return ("string", null, null, true, 255, new List<string>());
             }
 
             // Check if all values are numeric
@@ -696,14 +705,7 @@ namespace SacksDataLayer.FileProcessing.Services
             
             if (numericValues > totalValues * 0.8) // 80% numeric
             {
-                return new DataTypeConfiguration 
-                { 
-                    Type = "decimal", 
-                    Format = "currency",
-                    AllowNull = true,
-                    DefaultValue = 0.0,
-                    Transformations = new List<string> { "removeSymbols", "parseDecimal" }
-                };
+                return ("decimal", "currency", 0.0, true, null, new List<string> { "removeSymbols", "parseDecimal" });
             }
 
             // Determine max length for strings
@@ -711,13 +713,7 @@ namespace SacksDataLayer.FileProcessing.Services
             var suggestedMaxLength = maxLength < 50 ? 100 : 
                                    maxLength < 200 ? 500 : 1000;
 
-            return new DataTypeConfiguration 
-            { 
-                Type = "string", 
-                AllowNull = true, 
-                MaxLength = suggestedMaxLength,
-                Transformations = new List<string> { "trim" }
-            };
+            return ("string", null, null, true, suggestedMaxLength, new List<string> { "trim" });
         }
 
         /// <summary>

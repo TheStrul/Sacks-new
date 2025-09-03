@@ -1,924 +1,169 @@
 {
   "version": "2.1",
-  "lastUpdated": "2025-09-03T09:54:48.8663571Z",
   "suppliers": [
-    {
-      "name": "DIOR",
-      "detection": {
-        "fileNamePatterns": [
-          "dior*.xlsx"
-        ]
-      },
-      "columnProperties": {
-        "A": {
-          "targetProperty": "Category",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "C": {
-          "targetProperty": "Gender",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 20,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "D": {
-          "targetProperty": "Line",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "F": {
-          "targetProperty": null,
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 1000,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "G": {
-          "targetProperty": "Ref",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 50,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "offer",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "H": {
-          "targetProperty": "Name",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": false,
-            "maxLength": 500,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": true,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "J": {
-          "targetProperty": "Size",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 50,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "L": {
-          "targetProperty": "Unit",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 20,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "M": {
-          "targetProperty": "EAN",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 20,
-            "transformations": [
-              "trim",
-              "removeSpaces"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": true,
-            "isUnique": true,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "N": {
-          "targetProperty": "Capacity",
-          "description": null,
-          "dataType": {
-            "type": "decimal",
-            "format": null,
-            "defaultValue": 0.0,
-            "allowNull": true,
-            "maxLength": null,
-            "transformations": [
-              "trim",
-              "parseDecimal"
-            ]
-          },
-          "classification": "offer",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "O": {
-          "targetProperty": "Price",
-          "description": null,
-          "dataType": {
-            "type": "decimal",
-            "format": "currency",
-            "defaultValue": 0.0,
-            "allowNull": false,
-            "maxLength": null,
-            "transformations": [
-              "removeSymbols",
-              "parseDecimal"
-            ]
-          },
-          "classification": "offer",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        }
-      },
-      "fileStructure": {
-        "dataStartRowIndex": 5,
-        "expectedColumnCount": 15,
-        "headerRowIndex": 4
-      },
-      "transformation": {
-        "skipEmptyRows": true,
-        "trimWhitespace": true,
-        "skipRowsWithMergedCells": true,
-        "subtitleRowHandling": {
-          "enabled": true,
-          "action": "parse",
-          "detectionRules": [
-            {
-              "name": "CategoryHeaderRow",
-              "description": null,
-              "detectionMethod": "columnCount",
-              "expectedColumnCount": 1,
-              "columnIndexMappings": {
-                "A": "CurrentCategory"
-              },
-              "applyToSubsequentRows": true,
-              "validationPatterns": [
-                "^(Beauty Products|Fragrances|Makeup|Skincare)$",
-                "===.*===",
-                "Category:.*"
-              ]
-            },
-            {
-              "name": "SectionHeaderRow",
-              "description": null,
-              "detectionMethod": "columnCount",
-              "expectedColumnCount": 2,
-              "columnIndexMappings": {
-                "A": "SectionType",
-                "B": "CurrentSection"
-              },
-              "applyToSubsequentRows": true,
-              "validationPatterns": [
-                "Section:",
-                "Category:",
-                "Brand:"
-              ]
-            },
-            {
-              "name": "ManufacturerRow",
-              "description": null,
-              "detectionMethod": "columnCount",
-              "expectedColumnCount": 3,
-              "columnIndexMappings": {
-                "A": "ManufacturerName",
-                "B": "ManufacturerCode",
-                "C": "ManufacturerRegion"
-              },
-              "applyToSubsequentRows": true,
-              "validationPatterns": [
-                "Manufacturer:",
-                "Brand:",
-                "Supplier:"
-              ]
-            }
-          ],
-          "fallbackAction": "skip"
-        },
-        "customTransformations": {
-          "normalizeGender": "standard",
-          "normalizeCategory": "standard"
-        }
-      },
-      "metadata": {
-        "industry": "Beauty \u0026 Cosmetics",
-        "region": "Global",
-        "contact": {
-          "name": "DIOR Data Team",
-          "email": "data@dior.com",
-          "phone": null,
-          "company": "Christian Dior SE"
-        },
-        "fileFrequency": "monthly",
-        "expectedFileSize": "Large (4000\u002B products)",
-        "currency": "EUR",
-        "timezone": "Europe/Paris",
-        "lastUpdated": "2024-12-19T15:30:00Z",
-        "version": "2.1"
-      }
-    },
-    {
-      "name": "UNLIMITED",
-      "detection": {
-        "fileNamePatterns": [
-          "unlimited*.xlsx",
-          "unlimited*.xls"
-        ]
-      },
-      "columnProperties": {
-        "A": {
-          "targetProperty": "EAN",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 20,
-            "transformations": [
-              "trim",
-              "removeSpaces"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": true,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "B": {
-          "targetProperty": "Reference",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 50,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "offer",
-          "validation": {
-            "isRequired": false,
-            "isUnique": true,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "C": {
-          "targetProperty": "Brand",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": false,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": true,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "D": {
-          "targetProperty": "Name",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": false,
-            "maxLength": 500,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": true,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "E": {
-          "targetProperty": "Category",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "F": {
-          "targetProperty": "Type",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 50,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "G": {
-          "targetProperty": "InStock",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 20,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "offer",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "H": {
-          "targetProperty": "PriceAED",
-          "description": null,
-          "dataType": {
-            "type": "decimal",
-            "format": "currency",
-            "defaultValue": 0.0,
-            "allowNull": false,
-            "maxLength": null,
-            "transformations": [
-              "removeSymbols",
-              "parseDecimal"
-            ]
-          },
-          "classification": "offer",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        }
-      },
-      "fileStructure": {
-        "dataStartRowIndex": 2,
-        "expectedColumnCount": 8,
-        "headerRowIndex": 1
-      },
-      "transformation": {
-        "skipEmptyRows": true,
-        "trimWhitespace": true,
-        "skipRowsWithMergedCells": false,
-        "subtitleRowHandling": null,
-        "customTransformations": {
-          "normalizeCurrency": "AED"
-        }
-      },
-      "metadata": {
-        "industry": "Beauty \u0026 Cosmetics",
-        "region": "Middle East",
-        "contact": {
-          "name": "UNLIMITED Team",
-          "email": "data@unlimited.ae",
-          "phone": null,
-          "company": "UNLIMITED"
-        },
-        "fileFrequency": "weekly",
-        "expectedFileSize": "Medium (1000-3000 products)",
-        "currency": "AED",
-        "timezone": "Asia/Dubai",
-        "lastUpdated": "2024-12-19T15:30:00Z",
-        "version": "2.1"
-      }
-    },
     {
       "name": "ACE",
       "detection": {
         "fileNamePatterns": [
-          "ACE*.xlsx",
-          "ace*.xlsx"
+          "ace 31.8.25.xlsx",
+          "ace 31.8.25.xls",
+          "ace*.xlsx",
+          "ace *.*.*.xlsx"
         ]
       },
       "columnProperties": {
         "A": {
           "targetProperty": "EAN",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
+          "displayName": "EAN",
           "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
+          "dataType": "decimal",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols",
+            "parseDecimal"
+          ],
+          "isRequired": true,
+          "isUnique": true,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
         },
         "B": {
-          "targetProperty": "Ref",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "offer",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
+          "targetProperty": "SUPPLIERID",
+          "displayName": "SUPPLIER ID",
+          "classification": "coreProduct",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [
+            "trim"
+          ],
+          "isRequired": false,
+          "isUnique": true,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
         },
         "C": {
           "targetProperty": "Brand",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
+          "displayName": "BRAND",
           "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [
+            "trim"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
         },
         "D": {
           "targetProperty": "Description",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 500,
-            "transformations": [
-              "trim"
-            ]
-          },
+          "displayName": "DESCRIPTION",
           "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 500,
+          "transformations": [
+            "trim"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
         },
         "E": {
           "targetProperty": "Category",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
+          "displayName": "CATEGORY",
           "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [
+            "trim"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
         },
         "F": {
           "targetProperty": "COO",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
+          "displayName": "COO",
           "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [
+            "trim"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
         },
         "G": {
-          "targetProperty": "Quantity",
-          "description": null,
-          "dataType": {
-            "type": "decimal",
-            "format": "currency",
-            "defaultValue": 0,
-            "allowNull": true,
-            "maxLength": null,
-            "transformations": [
-              "removeSymbols",
-              "parseDecimal"
-            ]
-          },
-          "classification": "offer",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
+          "targetProperty": "QUANTITY",
+          "displayName": "QUANTITY",
+          "classification": "coreProduct",
+          "dataType": "decimal",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols",
+            "parseDecimal"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
         },
         "H": {
           "targetProperty": "Price",
-          "description": null,
-          "dataType": {
-            "type": "decimal",
-            "format": "currency",
-            "defaultValue": 0,
-            "allowNull": true,
-            "maxLength": null,
-            "transformations": [
-              "removeSymbols",
-              "parseDecimal"
-            ]
-          },
+          "displayName": "PRICE\n(USD)",
           "classification": "offer",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
+          "dataType": "decimal",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols",
+            "parseDecimal"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
         }
       },
       "fileStructure": {
         "dataStartRowIndex": 2,
         "expectedColumnCount": 8,
         "headerRowIndex": 1
-      },
-      "transformation": {
-        "skipEmptyRows": true,
-        "trimWhitespace": true,
-        "skipRowsWithMergedCells": false,
-        "subtitleRowHandling": null,
-        "customTransformations": {}
-      },
-      "metadata": {
-        "industry": "Beauty \u0026 Cosmetics",
-        "region": "Global",
-        "contact": {
-          "name": "ACE Data Team",
-          "email": "data@ace.com",
-          "phone": null,
-          "company": "ACE"
-        },
-        "fileFrequency": "monthly",
-        "expectedFileSize": "Medium (1000-3000 products)",
-        "currency": "USD",
-        "timezone": "UTC",
-        "lastUpdated": "2025-09-03T07:50:41.9530728Z",
-        "version": "1.0"
-      }
-    },
-    {
-      "name": "API",
-      "detection": {
-        "fileNamePatterns": [
-          "api 31.8.25.xlsx",
-          "api 31.8.25.xls",
-          "api*.xlsx",
-          "api *.*.*.xlsx"
-        ]
-      },
-      "columnProperties": {
-"A": {
-          "targetProperty": "EAN",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 20,
-            "transformations": [
-              "trim",
-              "removeSpaces"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": true,
-            "isUnique": true,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "B": {
-          "targetProperty": "Brand",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "C": {
-          "targetProperty": "Name",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": true,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "D": {
-          "targetProperty": "Capacity",
-          "description": null,
-          "dataType": {
-            "type": "decimal",
-            "format": "currency",
-            "defaultValue": 0,
-            "allowNull": true,
-            "maxLength": null,
-            "transformations": [
-              "removeSymbols",
-              "parseDecimal"
-            ]
-          },
-          "classification": "offer",
-          "validation": {
-            "isRequired": true,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "E": {
-          "targetProperty": "Price",
-          "description": null,
-          "dataType": {
-            "type": "decimal",
-            "format": "currency",
-            "defaultValue": 0,
-            "allowNull": true,
-            "maxLength": null,
-            "transformations": [
-              "removeSymbols",
-              "parseDecimal"
-            ]
-          },
-          "classification": "offer",
-          "validation": {
-            "isRequired": true,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        },
-        "F": {
-          "targetProperty": "COO",
-          "description": null,
-          "dataType": {
-            "type": "string",
-            "format": null,
-            "defaultValue": null,
-            "allowNull": true,
-            "maxLength": 100,
-            "transformations": [
-              "trim"
-            ]
-          },
-          "classification": "coreProduct",
-          "validation": {
-            "isRequired": false,
-            "isUnique": false,
-            "validationPatterns": [],
-            "allowedValues": []
-          }
-        }
-      },
-      "fileStructure": {
-        "dataStartRowIndex": 2,
-        "expectedColumnCount": 6,
-        "headerRowIndex": 1
-      },
-      "transformation": {
-        "skipEmptyRows": true,
-        "trimWhitespace": true,
-        "skipRowsWithMergedCells": false,
-        "subtitleRowHandling": null,
-        "customTransformations": {}
-      },
-      "metadata": {
-        "industry": "Beauty \u0026 Cosmetics",
-        "region": "Global",
-        "contact": {
-          "name": "API Data Team",
-          "email": "data@api.com",
-          "phone": null,
-          "company": "API"
-        },
-        "fileFrequency": "monthly",
-        "expectedFileSize": "Medium (1000-3000 products)",
-        "currency": "USD",
-        "timezone": "UTC",
-        "lastUpdated": "2025-09-03T09:54:48.8645445Z",
-        "version": "1.0"
       }
     }
   ]

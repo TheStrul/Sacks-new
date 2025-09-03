@@ -10,6 +10,20 @@ using SacksDataLayer.Configuration;
 namespace SacksDataLayer.FileProcessing.Normalizers
 {
     /// <summary>
+    /// Result of column validation indicating whether validation passed and what action to take
+    /// </summary>
+    public class ValidationResult
+    {
+        public bool IsValid { get; set; }
+        public bool SkipEntireRow { get; set; }
+        public string? ErrorMessage { get; set; }
+
+        public static ValidationResult Valid() => new() { IsValid = true };
+        public static ValidationResult Invalid(bool skipEntireRow = false, string? errorMessage = null) => 
+            new() { IsValid = false, SkipEntireRow = skipEntireRow, ErrorMessage = errorMessage };
+    }
+
+    /// <summary>
     /// Configuration-driven normalizer using unified ColumnProperties structure
     /// </summary>
     public class ConfigurationBasedNormalizer : ISupplierProductNormalizer
@@ -188,12 +202,21 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
                     // Apply transformations and type conversion
                     var processedValue = await ProcessCellValueAsync(rawValue, columnProperty);
-                    if (processedValue == null && !columnProperty.DataType.AllowNull)
+                    if (processedValue == null && !columnProperty.AllowNull)
                         continue;
 
                     // Validate processed value
-                    if (!await ValidateValueAsync(processedValue, columnProperty, targetProperty))
+                    var validationResult = await ValidateValueAsync(processedValue, columnProperty, targetProperty);
+                    if (!validationResult.IsValid)
+                    {
+                        if (validationResult.SkipEntireRow)
+                        {
+                            // Skip the entire row - return null to indicate row should be skipped
+                            return null;
+                        }
+                        // Skip just this column
                         continue;
+                    }
 
                     // Classify and assign value based on property classification
                     await AssignValueByClassificationAsync(
@@ -266,10 +289,10 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             try
             {
                 // Apply configured transformations
-                var transformedValue = ApplyTransformations(rawValue, columnProperty.DataType.Transformations);
+                var transformedValue = ApplyTransformations(rawValue, columnProperty.Transformations);
                 
                 // Convert to target type
-                if (_dataTypeConverters.TryGetValue(columnProperty.DataType.Type.ToLowerInvariant(), out var converter))
+                if (_dataTypeConverters.TryGetValue(columnProperty.DataType.ToLowerInvariant(), out var converter))
                 {
                     return converter(transformedValue);
                 }
@@ -279,49 +302,55 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             catch (Exception)
             {
                 // Return default value on conversion failure
-                return columnProperty.DataType.DefaultValue;
+                return columnProperty.DefaultValue;
             }
         }
 
         /// <summary>
         /// Validates processed value against column validation rules
         /// </summary>
-        private async Task<bool> ValidateValueAsync(object? value, ColumnProperty columnProperty, string targetProperty)
+        private async Task<ValidationResult> ValidateValueAsync(object? value, ColumnProperty columnProperty, string targetProperty)
         {
             await Task.CompletedTask; // For async consistency
             
             // Check required field validation
-            if (columnProperty.Validation.IsRequired && value == null)
+            if (columnProperty.IsRequired && value == null)
             {
-                return false;
+                return ValidationResult.Invalid(
+                    columnProperty.SkipEntireRow, 
+                    $"Required field '{targetProperty}' is null");
             }
 
             // Check allowed values if configured
-            if (columnProperty.Validation.AllowedValues.Count > 0)
+            if (columnProperty.AllowedValues.Count > 0)
             {
                 var stringValue = value?.ToString();
-                if (!columnProperty.Validation.AllowedValues.Contains(stringValue, StringComparer.OrdinalIgnoreCase))
+                if (!columnProperty.AllowedValues.Contains(stringValue, StringComparer.OrdinalIgnoreCase))
                 {
-                    return false;
+                    return ValidationResult.Invalid(
+                        columnProperty.SkipEntireRow,
+                        $"Value '{stringValue}' is not in allowed values for '{targetProperty}'");
                 }
             }
 
             // Check validation patterns if configured
-            if (columnProperty.Validation.ValidationPatterns.Count > 0)
+            if (columnProperty.ValidationPatterns.Count > 0)
             {
                 var stringValue = value?.ToString();
                 if (!string.IsNullOrEmpty(stringValue))
                 {
-                    var matchesPattern = columnProperty.Validation.ValidationPatterns
+                    var matchesPattern = columnProperty.ValidationPatterns
                         .Any(pattern => Regex.IsMatch(stringValue, pattern, RegexOptions.IgnoreCase));
                     if (!matchesPattern)
                     {
-                        return false;
+                        return ValidationResult.Invalid(
+                            columnProperty.SkipEntireRow,
+                            $"Value '{stringValue}' does not match validation patterns for '{targetProperty}'");
                     }
                 }
             }
 
-            return true;
+            return ValidationResult.Valid();
         }
 
         /// <summary>
@@ -335,11 +364,11 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             await Task.CompletedTask; // For async consistency
             
-            if (columnProperty.DataType.DefaultValue != null)
+            if (columnProperty.DefaultValue != null)
             {
                 await AssignValueByClassificationAsync(
                     product, offerProperties, targetProperty, 
-                    columnProperty.DataType.DefaultValue, columnProperty.Classification);
+                    columnProperty.DefaultValue, columnProperty.Classification);
             }
         }
 

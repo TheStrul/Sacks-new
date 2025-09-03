@@ -64,7 +64,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
         public List<string> GetRequiredFields()
         {
             return ColumnProperties?
-                .Where(kvp => kvp.Value.Validation.IsRequired)
+                .Where(kvp => kvp.Value.IsRequired)
                 .Select(kvp => kvp.Value.TargetProperty ?? kvp.Value.DisplayName ?? kvp.Key)
                 .Where(s => !string.IsNullOrEmpty(s))
                 .ToList() ?? new List<string>();
@@ -73,7 +73,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
     }
 
     /// <summary>
-    /// Unified column property configuration combining mapping, classification, data type, and validation
+    /// Unified column property configuration - flattened structure
     /// </summary>
     public class ColumnProperty
     {
@@ -83,19 +83,49 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("displayName")]
         public string DisplayName { get; set; } = string.Empty;
 
-        [JsonPropertyName("dataType")]
-        public DataTypeConfiguration DataType { get; set; } = new();
-
         [JsonPropertyName("classification")]
         public string Classification { get; set; } = "coreProduct"; // "coreProduct" or "offer"
 
-        [JsonPropertyName("validation")]
-        public ColumnValidationConfiguration Validation { get; set; } = new();
+        // Data Type Properties (flattened from DataTypeConfiguration)
+        [JsonPropertyName("dataType")]
+        public string DataType { get; set; } = "string"; // string, decimal, int, bool, datetime
+
+        [JsonPropertyName("format")]
+        public string? Format { get; set; } // For dates, numbers, etc.
+
+        [JsonPropertyName("defaultValue")]
+        public object? DefaultValue { get; set; }
+
+        [JsonPropertyName("allowNull")]
+        public bool AllowNull { get; set; } = true;
+
+        [JsonPropertyName("maxLength")]
+        public int? MaxLength { get; set; }
+
+        [JsonPropertyName("transformations")]
+        public List<string> Transformations { get; set; } = new(); // e.g., "trim", "lowercase", "removeSymbols"
+
+        // Validation Properties (flattened from ColumnValidationConfiguration)
+        [JsonPropertyName("isRequired")]
+        public bool IsRequired { get; set; } = false;
+
+        [JsonPropertyName("isUnique")]
+        public bool IsUnique { get; set; } = false;
+
+        [JsonPropertyName("validationPatterns")]
+        public List<string> ValidationPatterns { get; set; } = new();
+
+        [JsonPropertyName("allowedValues")]
+        public List<string> AllowedValues { get; set; } = new();
+
+        [JsonPropertyName("skipEntireRow")]
+        public bool SkipEntireRow { get; set; } = false;
     }
 
     /// <summary>
-    /// Validation configuration for individual columns
+    /// Validation configuration for individual columns - DEPRECATED: Properties moved to ColumnProperty
     /// </summary>
+    [Obsolete("Use flattened properties in ColumnProperty instead")]
     public class ColumnValidationConfiguration
     {
         [JsonPropertyName("isRequired")]
@@ -109,6 +139,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("allowedValues")]
         public List<string> AllowedValues { get; set; } = new();
+
+        [JsonPropertyName("skipEntireRow")]
+        public bool SkipEntireRow { get; set; } = false;
     }
 
     /// <summary>
@@ -136,8 +169,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
     }
 
     /// <summary>
-    /// Configuration for data type parsing and conversion
+    /// Configuration for data type parsing and conversion - DEPRECATED: Properties moved to ColumnProperty
     /// </summary>
+    [Obsolete("Use flattened properties in ColumnProperty instead")]
     public class DataTypeConfiguration
     {
         [JsonPropertyName("type")]
