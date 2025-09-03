@@ -78,18 +78,18 @@ namespace SacksConsoleApp
         {
             try
             {
-                // Test database connection first
+                // Ensure database exists and create if needed
                 var connectionService = serviceProvider.GetRequiredService<IDatabaseConnectionService>();
-                var (isAvailable, message, exception) = await connectionService.TestConnectionAsync();
+                var (success, message, exception) = await connectionService.EnsureDatabaseExistsAsync();
 
-                if (!isAvailable)
+                if (!success)
                 {
-                    Console.WriteLine($"⚠️  Database Connection Issue: {message}");
-                    _logger?.LogWarning("Database connection failed: {Message}", message);
+                    Console.WriteLine($"⚠️  Database Issue: {message}");
+                    _logger?.LogWarning("Database operation failed: {Message}", message);
                     
                     if (exception != null)
                     {
-                        _logger?.LogError(exception, "Database connection error details");
+                        _logger?.LogError(exception, "Database operation error details");
                     }
                     
                     Console.WriteLine("🔧 Please check your database configuration in appsettings.json");
@@ -98,8 +98,8 @@ namespace SacksConsoleApp
                     return;
                 }
 
-                _logger?.LogDebug($"✅ {message}");
-                _logger?.LogDebug("Database connection successful");
+                Console.WriteLine($"✅ {message}");
+                _logger?.LogInformation("Database ready: {Message}", message);
 
                 // Show the main interactive menu
                 await ShowMainMenuAsync(serviceProvider);
@@ -131,10 +131,11 @@ namespace SacksConsoleApp
                 Console.WriteLine("   3️⃣  📊 Show database statistics");
                 Console.WriteLine("   4️⃣  🧪 Test Configuration");
                 Console.WriteLine("   5️⃣  🔧 Create new supplier configuration (Interactive)");
-                Console.WriteLine("   6️⃣  ❓ Show help and feature information"); 
-                Console.WriteLine("   7️⃣  🚪 Exit");                
+                Console.WriteLine("   6️⃣  ❓ Show help and feature information");
+                Console.WriteLine("   7️⃣  🗂️ Create database views");
+                Console.WriteLine("   8️⃣  🚪 Exit");                
                 Console.WriteLine();
-                Console.Write("👉 Enter your choice (1-7, or 0 to exit): ");
+                Console.Write("👉 Enter your choice (1-8, or 0 to exit): ");
 
                 var input = Console.ReadLine()?.Trim();
                 Console.WriteLine();
@@ -162,11 +163,14 @@ namespace SacksConsoleApp
                             ShowHelpInformation();
                             break;
                         case "7":
+                            await CreateDatabaseViews(serviceProvider);
+                            break;
+                        case "8":
                         case "0":
                             Console.WriteLine("👋 Thank you for using Sacks Product Management System!");
                             return;
                         default:
-                            Console.WriteLine("❌ Invalid choice. Please enter a number between 1-7 (or 0 to exit).");
+                            Console.WriteLine("❌ Invalid choice. Please enter a number between 1-8 (or 0 to exit).");
                             break;
                     }
                 }
@@ -405,16 +409,13 @@ namespace SacksConsoleApp
             {
                 var dbSettings = configuration.GetSection("DatabaseSettings").Get<DatabaseSettings>() ?? new DatabaseSettings();
                 
-                options.UseMySql(connectionString, new MySqlServerVersion(new Version(10, 11, 0)), mysqlOptions =>
+                options.UseSqlServer(connectionString, sqlOptions =>
                 {
                     if (dbSettings.RetryOnFailure)
                     {
-                        mysqlOptions.EnableRetryOnFailure(dbSettings.MaxRetryCount);
+                        sqlOptions.EnableRetryOnFailure(dbSettings.MaxRetryCount);
                     }
-                    mysqlOptions.CommandTimeout(dbSettings.CommandTimeout);
-                    
-                    // Enable string comparison translations for better LINQ support
-                    mysqlOptions.EnableStringComparisonTranslations();
+                    sqlOptions.CommandTimeout(dbSettings.CommandTimeout);
                 });
 
                 if (dbSettings.EnableSensitiveDataLogging)
@@ -711,7 +712,7 @@ namespace SacksConsoleApp
             Console.WriteLine("   ✅ Comprehensive data validation");
             Console.WriteLine("   ✅ Duplicate detection and handling");
             Console.WriteLine("   ✅ Structured logging with Serilog");
-            Console.WriteLine("   ✅ MySQL database with Entity Framework Core");
+            Console.WriteLine("   ✅ SQL Server database with Entity Framework Core");
             Console.WriteLine("   ✅ Robust error handling and recovery");
             Console.WriteLine("   ✅ Performance monitoring and metrics");
             Console.WriteLine();
@@ -741,6 +742,106 @@ namespace SacksConsoleApp
             Console.WriteLine("   • Ensure Excel files are not open in another application");
             Console.WriteLine("   • Use option 4 to validate configuration integrity");
             Console.WriteLine("   • Check logs in the logs/ folder for detailed error information");
+        }
+
+        /// <summary>
+        /// Creates database views for better data analysis
+        /// </summary>
+        private static async Task CreateDatabaseViews(ServiceProvider serviceProvider)
+        {
+            Console.WriteLine("=== 🗂️ CREATING DATABASE VIEWS ===\n");
+
+            try
+            {
+                var context = serviceProvider.GetRequiredService<SacksDbContext>();
+
+                Console.WriteLine("🔧 Creating view: vw_ProductsWithOffers...");
+
+                // Drop view if it exists and create new one
+                var sql = @"
+                    IF OBJECT_ID('vw_ProductsWithOffers', 'V') IS NOT NULL
+                        DROP VIEW vw_ProductsWithOffers;
+                    
+                    EXEC('
+                    CREATE VIEW vw_ProductsWithOffers AS
+                    SELECT 
+                        -- Product Information
+                        p.Id AS ProductId,
+                        p.Name AS ProductName,
+                        p.Description AS ProductDescription,
+                        p.EAN AS ProductEAN,
+                        p.DynamicProperties AS ProductDynamicProperties,
+                        p.CreatedAt AS ProductCreatedAt,
+                        p.ModifiedAt AS ProductModifiedAt,
+                        
+                        -- Offer Product Information
+                        op.Id AS OfferProductId,
+                        op.Price,
+                        op.Capacity,
+                        op.Discount,
+                        op.UnitOfMeasure,
+                        op.MinimumOrderQuantity,
+                        op.MaximumOrderQuantity,
+                        op.ListPrice,
+                        op.IsAvailable,
+                        op.Notes AS OfferProductNotes,
+                        op.ProductProperties AS OfferProductProperties,
+                        op.CreatedAt AS OfferProductCreatedAt,
+                        op.ModifiedAt AS OfferProductModifiedAt,
+                        
+                        -- Supplier Offer Information
+                        so.Id AS SupplierOfferId,
+                        so.OfferName,
+                        so.Description AS OfferDescription,
+                        so.Currency,
+                        so.ValidFrom,
+                        so.ValidTo,
+                        so.IsActive AS OfferIsActive,
+                        so.OfferType,
+                        so.Version AS OfferVersion,
+                        so.CreatedAt AS OfferCreatedAt,
+                        so.ModifiedAt AS OfferModifiedAt,
+                        
+                        -- Supplier Information
+                        s.Id AS SupplierId,
+                        s.Name AS SupplierName,
+                        s.Description AS SupplierDescription,
+                        s.Industry AS SupplierIndustry,
+                        s.Region AS SupplierRegion,
+                        s.ContactName AS SupplierContactName,
+                        s.ContactEmail AS SupplierContactEmail,
+                        s.Company AS SupplierCompany,
+                        s.FileFrequency AS SupplierFileFrequency,
+                        s.CreatedAt AS SupplierCreatedAt,
+                        s.ModifiedAt AS SupplierModifiedAt
+
+                    FROM Products p
+                    INNER JOIN OfferProducts op ON p.Id = op.ProductId
+                    INNER JOIN SupplierOffers so ON op.OfferId = so.Id
+                    INNER JOIN Suppliers s ON so.SupplierId = s.Id
+                    ')";
+
+                await context.Database.ExecuteSqlRawAsync(sql);
+                Console.WriteLine("✅ View 'vw_ProductsWithOffers' created successfully!");
+
+                Console.WriteLine("\n📊 Testing the view...");
+                var testSql = "SELECT COUNT(*) FROM vw_ProductsWithOffers";
+                var count = await context.Database.SqlQueryRaw<int>(testSql).FirstAsync();
+                Console.WriteLine($"✅ View contains {count:N0} records");
+
+                Console.WriteLine("\n🎯 USAGE EXAMPLES:");
+                Console.WriteLine("   • SELECT * FROM vw_ProductsWithOffers WHERE SupplierName = 'UNLIMITED'");
+                Console.WriteLine("   • SELECT ProductName, Price, SupplierName FROM vw_ProductsWithOffers WHERE Price > 100");
+                Console.WriteLine("   • SELECT SupplierName, COUNT(*) FROM vw_ProductsWithOffers GROUP BY SupplierName");
+                Console.WriteLine("   • SELECT * FROM vw_ProductsWithOffers WHERE ProductEAN LIKE '%123%'");
+
+                Console.WriteLine("\n✅ Database views created successfully!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error creating database views: {ex.Message}");
+                _logger?.LogError(ex, "Error creating database views");
+            }
         }
         
     }

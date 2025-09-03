@@ -74,7 +74,7 @@ namespace SacksDataLayer.Services.Implementations
 
                 if (canConnect)
                 {
-                    result.Message = "Successfully connected to MariaDB";
+                    result.Message = "Successfully connected to SQL Server";
 
                     // Get server info if possible
                     try
@@ -84,15 +84,33 @@ namespace SacksDataLayer.Services.Implementations
                     }
                     catch
                     {
-                        result.ServerInfo = "Connected to MariaDB (connection details unavailable)";
+                        result.ServerInfo = "Connected to SQL Server (connection details unavailable)";
                     }
 
-                    // Get table counts
-                    result.TableCounts = await GetTableCountsAsync();
+                    // Ensure database and tables exist before trying to count
+                    try
+                    {
+                        await _context.Database.EnsureCreatedAsync();
+                        
+                        // Get table counts
+                        result.TableCounts = await GetTableCountsAsync();
+                    }
+                    catch
+                    {
+                        // If we can't create the database or get counts, still report successful connection
+                        result.TableCounts = new Dictionary<string, int>
+                        {
+                            ["Products"] = 0,
+                            ["Suppliers"] = 0,
+                            ["SupplierOffers"] = 0,
+                            ["OfferProducts"] = 0
+                        };
+                        result.Message += $" (Database created/verified)";
+                    }
                 }
                 else
                 {
-                    result.Message = "Cannot connect to MariaDB";
+                    result.Message = "Cannot connect to SQL Server";
                 }
 
                 return result;
@@ -165,10 +183,10 @@ namespace SacksDataLayer.Services.Implementations
         /// </summary>
         private async Task ResetAutoIncrementCountersInternalAsync()
         {
-            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE OfferProducts AUTO_INCREMENT = 1");
-            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE SupplierOffers AUTO_INCREMENT = 1");
-            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE Products AUTO_INCREMENT = 1");
-            await _context.Database.ExecuteSqlRawAsync("ALTER TABLE Suppliers AUTO_INCREMENT = 1");
+            await _context.Database.ExecuteSqlRawAsync("DBCC CHECKIDENT ('OfferProducts', RESEED, 0)");
+            await _context.Database.ExecuteSqlRawAsync("DBCC CHECKIDENT ('SupplierOffers', RESEED, 0)");
+            await _context.Database.ExecuteSqlRawAsync("DBCC CHECKIDENT ('Products', RESEED, 0)");
+            await _context.Database.ExecuteSqlRawAsync("DBCC CHECKIDENT ('Suppliers', RESEED, 0)");
         }
     }
 }

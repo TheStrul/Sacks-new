@@ -7,7 +7,7 @@
 - Database will be auto-created on first run using `EnsureCreatedAsync()`
 - All migration files have been removed
 - Infrastructure is aligned for automatic database creation
-- Current database provider: **MariaDB/MySQL** (Pomelo.EntityFrameworkCore.MySql)
+- Current database provider: **SQL Server** (Microsoft.EntityFrameworkCore.SqlServer)
 
 ## 🎯 Project Overview
 

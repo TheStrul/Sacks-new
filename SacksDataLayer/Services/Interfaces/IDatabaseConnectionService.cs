@@ -2,7 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
-using MySqlConnector;
+using Microsoft.Data.SqlClient;
 using SacksDataLayer.Configuration;
 
 namespace SacksDataLayer.Services.Interfaces
@@ -31,5 +31,11 @@ namespace SacksDataLayer.Services.Interfaces
         /// Gets server information
         /// </summary>
         Task<string> GetServerInfoAsync();
+
+        /// <summary>
+        /// Ensures the database exists and creates it if it doesn't.
+        /// Does NOT apply migrations to existing databases.
+        /// </summary>
+        Task<(bool Success, string Message, Exception? Exception)> EnsureDatabaseExistsAsync();
     }
 }

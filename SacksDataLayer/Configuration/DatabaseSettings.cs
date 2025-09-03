@@ -8,9 +8,9 @@ namespace SacksDataLayer.Configuration
         public const string SectionName = "DatabaseSettings";
 
         /// <summary>
-        /// Database provider (MariaDB, MySQL, SQLite, etc.)
+        /// Database provider (SqlServer, etc.)
         /// </summary>
-        public string Provider { get; set; } = "MariaDB";
+        public string Provider { get; set; } = "SqlServer";
 
         /// <summary>
         /// Command timeout in seconds

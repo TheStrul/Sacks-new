@@ -105,7 +105,8 @@ namespace SacksDataLayer.Repositories.Implementations
                 .Include(so => so.Supplier)
                 .FirstOrDefaultAsync(so => so.SupplierId == supplierId && 
                                           so.OfferName != null &&
-                                          so.OfferName.Equals(offerName, StringComparison.OrdinalIgnoreCase), 
+                                          EF.Functions.Collate(so.OfferName, "SQL_Latin1_General_CP1_CI_AS") == 
+                                          EF.Functions.Collate(offerName, "SQL_Latin1_General_CP1_CI_AS"), 
                                     cancellationToken);
         }
     }

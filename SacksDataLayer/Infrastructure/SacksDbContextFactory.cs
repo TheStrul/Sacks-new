@@ -32,10 +32,9 @@ namespace SacksDataLayer.Infrastructure
                 throw new InvalidOperationException("DefaultConnection connection string is not configured in appsettings.json");
             }
 
-            // Use Pomelo provider which supports ServerVersion.AutoDetect and MariaDB
-            optionsBuilder.UseMySql(
+            // Use SQL Server provider
+            optionsBuilder.UseSqlServer(
                 connectionString,
-                ServerVersion.AutoDetect(connectionString),
                 options => {
                     options.MigrationsAssembly("SacksDataLayer");
                 });

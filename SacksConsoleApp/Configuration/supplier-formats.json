@@ -1,6 +1,6 @@
 {
   "version": "2.1",
-  "lastUpdated": "2025-09-03T07:50:41.9563907Z",
+  "lastUpdated": "2025-09-03T09:54:48.8663571Z",
   "suppliers": [
     {
       "name": "DIOR",
@@ -12,7 +12,6 @@
       "columnProperties": {
         "A": {
           "targetProperty": "Category",
-          "displayName": "Category",
           "description": null,
           "dataType": {
             "type": "string",
@@ -34,7 +33,6 @@
         },
         "C": {
           "targetProperty": "Gender",
-          "displayName": "Gender",
           "description": null,
           "dataType": {
             "type": "string",
@@ -56,7 +54,6 @@
         },
         "D": {
           "targetProperty": "Line",
-          "displayName": "Product Line",
           "description": null,
           "dataType": {
             "type": "string",
@@ -78,7 +75,6 @@
         },
         "F": {
           "targetProperty": null,
-          "displayName": "Description",
           "description": null,
           "dataType": {
             "type": "string",
@@ -100,7 +96,6 @@
         },
         "G": {
           "targetProperty": "Ref",
-          "displayName": "Reference",
           "description": null,
           "dataType": {
             "type": "string",
@@ -122,7 +117,6 @@
         },
         "H": {
           "targetProperty": "Name",
-          "displayName": "Product Name",
           "description": null,
           "dataType": {
             "type": "string",
@@ -144,7 +138,6 @@
         },
         "J": {
           "targetProperty": "Size",
-          "displayName": "Size",
           "description": null,
           "dataType": {
             "type": "string",
@@ -166,7 +159,6 @@
         },
         "L": {
           "targetProperty": "Unit",
-          "displayName": "Unit",
           "description": null,
           "dataType": {
             "type": "string",
@@ -188,7 +180,6 @@
         },
         "M": {
           "targetProperty": "EAN",
-          "displayName": "EAN Code",
           "description": null,
           "dataType": {
             "type": "string",
@@ -211,7 +202,6 @@
         },
         "N": {
           "targetProperty": "Capacity",
-          "displayName": "Capacity",
           "description": null,
           "dataType": {
             "type": "decimal",
@@ -234,7 +224,6 @@
         },
         "O": {
           "targetProperty": "Price",
-          "displayName": "Price",
           "description": null,
           "dataType": {
             "type": "decimal",
@@ -353,7 +342,6 @@
       "columnProperties": {
         "A": {
           "targetProperty": "EAN",
-          "displayName": "EAN Code",
           "description": null,
           "dataType": {
             "type": "string",
@@ -376,7 +364,6 @@
         },
         "B": {
           "targetProperty": "Reference",
-          "displayName": "Reference",
           "description": null,
           "dataType": {
             "type": "string",
@@ -398,7 +385,6 @@
         },
         "C": {
           "targetProperty": "Brand",
-          "displayName": "Brand",
           "description": null,
           "dataType": {
             "type": "string",
@@ -420,7 +406,6 @@
         },
         "D": {
           "targetProperty": "Name",
-          "displayName": "Product Name",
           "description": null,
           "dataType": {
             "type": "string",
@@ -442,7 +427,6 @@
         },
         "E": {
           "targetProperty": "Category",
-          "displayName": "Category",
           "description": null,
           "dataType": {
             "type": "string",
@@ -464,7 +448,6 @@
         },
         "F": {
           "targetProperty": "Type",
-          "displayName": "Type",
           "description": null,
           "dataType": {
             "type": "string",
@@ -486,7 +469,6 @@
         },
         "G": {
           "targetProperty": "InStock",
-          "displayName": "In Stock",
           "description": null,
           "dataType": {
             "type": "string",
@@ -508,7 +490,6 @@
         },
         "H": {
           "targetProperty": "PriceAED",
-          "displayName": "Price AED",
           "description": null,
           "dataType": {
             "type": "decimal",
@@ -572,7 +553,6 @@
       "columnProperties": {
         "A": {
           "targetProperty": "EAN",
-          "displayName": "EAN",
           "description": null,
           "dataType": {
             "type": "string",
@@ -594,7 +574,6 @@
         },
         "B": {
           "targetProperty": "Ref",
-          "displayName": "SUPPLIER ID",
           "description": null,
           "dataType": {
             "type": "string",
@@ -616,7 +595,6 @@
         },
         "C": {
           "targetProperty": "Brand",
-          "displayName": "BRAND",
           "description": null,
           "dataType": {
             "type": "string",
@@ -638,7 +616,6 @@
         },
         "D": {
           "targetProperty": "Description",
-          "displayName": "DESCRIPTION",
           "description": null,
           "dataType": {
             "type": "string",
@@ -660,7 +637,6 @@
         },
         "E": {
           "targetProperty": "Category",
-          "displayName": "CATEGORY",
           "description": null,
           "dataType": {
             "type": "string",
@@ -682,7 +658,6 @@
         },
         "F": {
           "targetProperty": "COO",
-          "displayName": "COO",
           "description": null,
           "dataType": {
             "type": "string",
@@ -704,7 +679,6 @@
         },
         "G": {
           "targetProperty": "Quantity",
-          "displayName": "QUANTITY",
           "description": null,
           "dataType": {
             "type": "decimal",
@@ -727,7 +701,6 @@
         },
         "H": {
           "targetProperty": "Price",
-          "displayName": "PRICE\n(USD)",
           "description": null,
           "dataType": {
             "type": "decimal",
@@ -775,6 +748,176 @@
         "currency": "USD",
         "timezone": "UTC",
         "lastUpdated": "2025-09-03T07:50:41.9530728Z",
+        "version": "1.0"
+      }
+    },
+    {
+      "name": "API",
+      "detection": {
+        "fileNamePatterns": [
+          "api 31.8.25.xlsx",
+          "api 31.8.25.xls",
+          "api*.xlsx",
+          "api *.*.*.xlsx"
+        ]
+      },
+      "columnProperties": {
+"A": {
+          "targetProperty": "EAN",
+          "description": null,
+          "dataType": {
+            "type": "string",
+            "format": null,
+            "defaultValue": null,
+            "allowNull": true,
+            "maxLength": 20,
+            "transformations": [
+              "trim",
+              "removeSpaces"
+            ]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": true,
+            "isUnique": true,
+            "validationPatterns": [],
+            "allowedValues": []
+          }
+        },
+        "B": {
+          "targetProperty": "Brand",
+          "description": null,
+          "dataType": {
+            "type": "string",
+            "format": null,
+            "defaultValue": null,
+            "allowNull": true,
+            "maxLength": 100,
+            "transformations": [
+              "trim"
+            ]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false,
+            "validationPatterns": [],
+            "allowedValues": []
+          }
+        },
+        "C": {
+          "targetProperty": "Name",
+          "description": null,
+          "dataType": {
+            "type": "string",
+            "format": null,
+            "defaultValue": null,
+            "allowNull": true,
+            "maxLength": 100,
+            "transformations": [
+              "trim"
+            ]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": true,
+            "isUnique": false,
+            "validationPatterns": [],
+            "allowedValues": []
+          }
+        },
+        "D": {
+          "targetProperty": "Capacity",
+          "description": null,
+          "dataType": {
+            "type": "decimal",
+            "format": "currency",
+            "defaultValue": 0,
+            "allowNull": true,
+            "maxLength": null,
+            "transformations": [
+              "removeSymbols",
+              "parseDecimal"
+            ]
+          },
+          "classification": "offer",
+          "validation": {
+            "isRequired": true,
+            "isUnique": false,
+            "validationPatterns": [],
+            "allowedValues": []
+          }
+        },
+        "E": {
+          "targetProperty": "Price",
+          "description": null,
+          "dataType": {
+            "type": "decimal",
+            "format": "currency",
+            "defaultValue": 0,
+            "allowNull": true,
+            "maxLength": null,
+            "transformations": [
+              "removeSymbols",
+              "parseDecimal"
+            ]
+          },
+          "classification": "offer",
+          "validation": {
+            "isRequired": true,
+            "isUnique": false,
+            "validationPatterns": [],
+            "allowedValues": []
+          }
+        },
+        "F": {
+          "targetProperty": "COO",
+          "description": null,
+          "dataType": {
+            "type": "string",
+            "format": null,
+            "defaultValue": null,
+            "allowNull": true,
+            "maxLength": 100,
+            "transformations": [
+              "trim"
+            ]
+          },
+          "classification": "coreProduct",
+          "validation": {
+            "isRequired": false,
+            "isUnique": false,
+            "validationPatterns": [],
+            "allowedValues": []
+          }
+        }
+      },
+      "fileStructure": {
+        "dataStartRowIndex": 2,
+        "expectedColumnCount": 6,
+        "headerRowIndex": 1
+      },
+      "transformation": {
+        "skipEmptyRows": true,
+        "trimWhitespace": true,
+        "skipRowsWithMergedCells": false,
+        "subtitleRowHandling": null,
+        "customTransformations": {}
+      },
+      "metadata": {
+        "industry": "Beauty \u0026 Cosmetics",
+        "region": "Global",
+        "contact": {
+          "name": "API Data Team",
+          "email": "data@api.com",
+          "phone": null,
+          "company": "API"
+        },
+        "fileFrequency": "monthly",
+        "expectedFileSize": "Medium (1000-3000 products)",
+        "currency": "USD",
+        "timezone": "UTC",
+        "lastUpdated": "2025-09-03T09:54:48.8645445Z",
         "version": "1.0"
       }
     }
