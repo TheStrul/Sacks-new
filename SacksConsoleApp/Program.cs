@@ -200,7 +200,6 @@ namespace SacksConsoleApp
             Console.WriteLine($"✅ Configuration loaded successfully");
             Console.WriteLine($"   Version: {config.Version}");
             Console.WriteLine($"   Suppliers: {config.Suppliers.Count}");
-            Console.WriteLine($"   Last Updated: {config.LastUpdated:yyyy-MM-dd HH:mm:ss}");
 
             // Test 2: Validate configuration
             Console.WriteLine("\n🔄 Test 2: Validating configuration...");
@@ -237,12 +236,9 @@ namespace SacksConsoleApp
                     var supplierConfig = config.Suppliers[i];
                     Console.WriteLine($"\n✅ {i + 1}. {supplierConfig.Name} Configuration:");
                     Console.WriteLine($"   Column Properties: {supplierConfig.ColumnProperties?.Count ?? 0}");
-                    Console.WriteLine($"   Column Mappings: {supplierConfig.ColumnIndexMappings?.Count ?? 0}");
                     Console.WriteLine($"   Data Types: {supplierConfig.DataTypes?.Count ?? 0}");
                     Console.WriteLine($"   Required Fields: {supplierConfig.Validation?.RequiredFields.Count ?? 0} ({string.Join(", ", supplierConfig.Validation?.RequiredFields ?? new List<string>())})");
                     Console.WriteLine($"   File Patterns: {string.Join(", ", supplierConfig.Detection?.FileNamePatterns ?? new List<string>())}");
-                    Console.WriteLine($"   Industry: {supplierConfig.Metadata?.Industry}");
-                    Console.WriteLine($"   Currency: {supplierConfig.Metadata?.Currency}");
                     Console.WriteLine($"   Header Row: {supplierConfig.FileStructure?.HeaderRowIndex}");
                     Console.WriteLine($"   Data Start Row: {supplierConfig.FileStructure?.DataStartRowIndex}");
                 }
@@ -451,9 +447,6 @@ namespace SacksConsoleApp
             services.AddScoped<SacksAIPlatform.InfrastructuresLayer.FileProcessing.IFileDataReader, SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileDataReader>();
             services.AddScoped<SupplierConfigurationManager>();
             
-            // Add normalization factory
-            services.AddScoped<ConfigurationBasedNormalizerFactory>();
-
             return services;
         }
 

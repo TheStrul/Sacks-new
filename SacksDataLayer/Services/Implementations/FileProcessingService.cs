@@ -645,7 +645,22 @@ namespace SacksDataLayer.Services.Implementations
                     rowCount++;
                 }
 
-                // Check validation configuration (1-based indexing)
+                // Check FileStructure configuration (1-based indexing)
+                if (config.FileStructure?.DataStartRowIndex > 0)
+                {
+                    if (config.FileStructure.DataStartRowIndex > rowCount)
+                    {
+                        throw new InvalidOperationException(
+                            $"❌ VALIDATION ERROR: FileStructure.DataStartRowIndex ({config.FileStructure.DataStartRowIndex}) " +
+                            $"exceeds file row count ({rowCount}). File: {Path.GetFileName(filePath)}");
+                    }
+
+                    _logger.LogInformation(
+                        "✅ FileStructure DataStartRowIndex: {DataStartRow} (1-based) is valid for file with {RowCount} rows",
+                        config.FileStructure.DataStartRowIndex, rowCount);
+                }
+
+                // Check validation configuration (1-based indexing) 
                 if (config.Validation?.DataStartRowIndex > 0)
                 {
                     if (config.Validation.DataStartRowIndex > rowCount)
@@ -658,21 +673,6 @@ namespace SacksDataLayer.Services.Implementations
                     _logger.LogInformation(
                         "✅ Validation DataStartRowIndex: {ValidationStartRow} (1-based) is valid for file with {RowCount} rows",
                         config.Validation.DataStartRowIndex, rowCount);
-                }
-
-                // Check transformation configuration (0-based indexing)
-                if (config.Transformation?.DataStartRowIndex >= 0)
-                {
-                    if (config.Transformation.DataStartRowIndex >= rowCount)
-                    {
-                        throw new InvalidOperationException(
-                            $"❌ TRANSFORMATION ERROR: Transformation.DataStartRowIndex ({config.Transformation.DataStartRowIndex}) " +
-                            $"exceeds file row count ({rowCount}). File: {Path.GetFileName(filePath)}");
-                    }
-
-                    _logger.LogInformation(
-                        "✅ Transformation DataStartRowIndex: {TransformationStartRow} (0-based) is valid for file with {RowCount} rows",
-                        config.Transformation.DataStartRowIndex, rowCount);
                 }
             }
             catch (Exception ex) when (!(ex is InvalidOperationException))

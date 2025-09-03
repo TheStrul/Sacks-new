@@ -11,9 +11,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("version")]
         public string Version { get; set; } = "2.1";
 
-        [JsonPropertyName("lastUpdated")]
-        public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
-
         [JsonPropertyName("suppliers")]
         public List<SupplierConfiguration> Suppliers { get; set; } = new();
     }
@@ -35,32 +32,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("fileStructure")]
         public FileStructureConfiguration FileStructure { get; set; } = new();
 
-        [JsonPropertyName("transformation")]
-        public TransformationConfiguration Transformation { get; set; } = new();
-
-        [JsonPropertyName("metadata")]
-        public SupplierMetadata Metadata { get; set; } = new();
-
-        // Legacy properties for backward compatibility - made settable
-        [JsonIgnore]
-        public string Description 
-        { 
-            get => Metadata?.Industry ?? "";
-            set 
-            {
-                if (Metadata != null)
-                    Metadata.Industry = value;
-            }
-        }
-
-
-        [JsonIgnore]
-        public Dictionary<string, string>? ColumnIndexMappings 
-        { 
-            get => GetColumnMappings();
-            set => SetColumnMappings(value ?? new Dictionary<string, string>());
-        }
-
         [JsonIgnore]
         public PropertyClassificationConfiguration? PropertyClassification 
         { 
@@ -81,6 +52,8 @@ namespace SacksDataLayer.FileProcessing.Configuration
             get => GetValidation();
             set => SetValidation(value);
         }
+
+
 
         /// <summary>
         /// Gets column mappings from ColumnProperties for legacy compatibility
@@ -341,34 +314,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
     }
 
     /// <summary>
-    /// Configuration for data transformations
-    /// </summary>
-    public class TransformationConfiguration
-    {
-        [JsonPropertyName("skipEmptyRows")]
-        public bool SkipEmptyRows { get; set; } = true;
-
-        [JsonPropertyName("trimWhitespace")]
-        public bool TrimWhitespace { get; set; } = true;
-
-        [JsonPropertyName("skipRowsWithMergedCells")]
-        public bool SkipRowsWithMergedCells { get; set; } = true;
-
-        [JsonPropertyName("subtitleRowHandling")]
-        public SubtitleRowHandlingConfiguration? SubtitleRowHandling { get; set; }
-
-        [JsonPropertyName("customTransformations")]
-        public Dictionary<string, string> CustomTransformations { get; set; } = new();
-
-        // Legacy properties for backward compatibility
-        [JsonIgnore]
-        public int HeaderRowIndex { get; set; } = 4; // 1-based index
-
-        [JsonIgnore]
-        public int DataStartRowIndex { get; set; } = 5; // 1-based index
-    }
-
-    /// <summary>
     /// Metadata about the supplier
     /// </summary>
     public class SupplierMetadata
@@ -469,9 +414,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("expectedColumnCount")]
         public int ExpectedColumnCount { get; set; } = 1;
-
-        [JsonPropertyName("columnIndexMappings")]
-        public Dictionary<string, string> ColumnIndexMappings { get; set; } = new();
 
         [JsonPropertyName("applyToSubsequentRows")]
         public bool ApplyToSubsequentRows { get; set; } = true;

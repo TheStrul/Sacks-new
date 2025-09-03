@@ -215,9 +215,6 @@ namespace SacksDataLayer.Services.Implementations
                 
                 var supplier = await _suppliersService.CreateOrGetSupplierFromConfigAsync(
                     supplierConfig.Name,
-                    supplierConfig.Description,
-                    supplierConfig.Metadata?.Industry,
-                    supplierConfig.Metadata?.Region,
                     createdBy ?? "FileProcessor");
 
                 _logger.LogInformation("Supplier ready: {SupplierName} (ID: {SupplierId})", 

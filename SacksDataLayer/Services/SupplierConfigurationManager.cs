@@ -183,34 +183,11 @@ namespace SacksDataLayer.FileProcessing.Services
             
             // Add new configuration
             config.Suppliers.Add(supplierConfig);
-            config.LastUpdated = DateTime.UtcNow;
             
             await SaveConfigurationAsync(config);
         }
 
-        /// <summary>
-        /// Updates an existing supplier configuration
-        /// </summary>
-        public async Task UpdateSupplierConfigurationAsync(SupplierConfiguration supplierConfig)
-        {
-            await AddSupplierConfigurationAsync(supplierConfig); // Same implementation
-        }
 
-        /// <summary>
-        /// Removes a supplier configuration
-        /// </summary>
-        public async Task RemoveSupplierConfigurationAsync(string supplierName)
-        {
-            var config = await GetConfigurationAsync();
-            var removed = config.Suppliers.RemoveAll(s => 
-                string.Equals(s.Name, supplierName, StringComparison.OrdinalIgnoreCase));
-            
-            if (removed > 0)
-            {
-                config.LastUpdated = DateTime.UtcNow;
-                await SaveConfigurationAsync(config);
-            }
-        }
 
         /// <summary>
         /// Reloads configuration from file
@@ -357,11 +334,6 @@ namespace SacksDataLayer.FileProcessing.Services
         {
             try
             {
-                if (!File.Exists(_configurationFilePath))
-                {
-                    // Create default configuration if file doesn't exist
-                    await CreateDefaultConfigurationAsync();
-                }
 
                 var json = await File.ReadAllTextAsync(_configurationFilePath);
                 _configuration = JsonSerializer.Deserialize<SuppliersConfiguration>(json, _jsonOptions);
@@ -397,53 +369,6 @@ namespace SacksDataLayer.FileProcessing.Services
                 _configuration = config;
                 _lastLoadTime = DateTime.UtcNow;
             }
-        }
-
-        private async Task CreateDefaultConfigurationAsync()
-        {
-            var defaultConfig = new SuppliersConfiguration
-            {
-                Version = "2.1",
-                LastUpdated = DateTime.UtcNow,
-                Suppliers = new List<SupplierConfiguration>
-                {
-                    CreateGenericSupplierConfiguration()
-                }
-            };
-
-            await SaveConfigurationAsync(defaultConfig);
-        }
-
-        private SupplierConfiguration CreateGenericSupplierConfiguration()
-        {
-            return new SupplierConfiguration
-            {
-                Name = "Generic",
-                Metadata = new SupplierMetadata 
-                { 
-                    Industry = "Default configuration for unknown suppliers" 
-                },
-                Detection = new DetectionConfiguration
-                {
-                    FileNamePatterns = new List<string> { "*" }
-                },
-                ColumnProperties = new Dictionary<string, ColumnProperty>
-                {
-                    { "A", new ColumnProperty { TargetProperty = "Name", DisplayName = "Name", DataType = new DataTypeConfiguration { Type = "string", AllowNull = false }, Classification = "coreProduct" } },
-                    { "B", new ColumnProperty { TargetProperty = "EAN", DisplayName = "EAN", DataType = new DataTypeConfiguration { Type = "string", AllowNull = true }, Classification = "coreProduct" } },
-                    { "C", new ColumnProperty { TargetProperty = "Price", DisplayName = "Price", DataType = new DataTypeConfiguration { Type = "decimal", DefaultValue = 0 }, Classification = "offer" } }
-                },
-                FileStructure = new FileStructureConfiguration
-                {
-                    DataStartRowIndex = 2,
-                    ExpectedColumnCount = 10,
-                },
-                Transformation = new TransformationConfiguration
-                {
-                    SkipEmptyRows = true,
-                    TrimWhitespace = true
-                }
-            };
         }
 
         /// <summary>
@@ -549,29 +474,6 @@ namespace SacksDataLayer.FileProcessing.Services
                     DataStartRowIndex = dataStartRowIndex + 1, // Convert back to 1-based
                     ExpectedColumnCount = expectedColumnCount
                 },
-                Transformation = new TransformationConfiguration
-                {
-                    SkipEmptyRows = true,
-                    TrimWhitespace = true,
-                    SkipRowsWithMergedCells = false
-                },
-                Metadata = new SupplierMetadata
-                {
-                    Industry = "Beauty & Cosmetics", // Default, user can modify later
-                    Region = "Global", // Default, user can modify later
-                    Contact = new ContactInfo
-                    {
-                        Name = $"{supplierName} Data Team",
-                        Email = $"data@{supplierName.ToLower().Replace(" ", "")}.com",
-                        Company = supplierName
-                    },
-                    FileFrequency = "monthly",
-                    ExpectedFileSize = "Medium (1000-3000 products)",
-                    Currency = "USD", // Default, user can modify later
-                    Timezone = "UTC",
-                    LastUpdated = DateTime.UtcNow,
-                    Version = "1.0"
-                }
             };
 
             _logger?.LogInformation("Supplier configuration created successfully!");
@@ -884,7 +786,6 @@ namespace SacksDataLayer.FileProcessing.Services
 
             // Add the new supplier
             config.Suppliers.Add(newSupplier);
-            config.LastUpdated = DateTime.UtcNow;
 
             if (saveToFile)
             {
@@ -924,12 +825,6 @@ namespace SacksDataLayer.FileProcessing.Services
             else if (!supplier.Detection.FileNamePatterns.Any())
             {
                 result.AddWarning($"Supplier '{supplier.Name}' has no detection patterns");
-            }
-
-            // Validate column mappings
-            if (supplier.ColumnIndexMappings == null || !supplier.ColumnIndexMappings.Any())
-            {
-                result.AddWarning($"Supplier '{supplier.Name}' has no column index mappings");
             }
         }
         

@@ -80,7 +80,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 var dataStartIndex = _configuration.FileStructure?.DataStartRowIndex ?? 1;
                 var dataRows = fileData.DataRows
                     .Skip(dataStartIndex)
-                    .Where(r => !(_configuration.Transformation?.SkipEmptyRows == true) || r.HasData);
+                    .Where(r => r.HasData); // Simplified: always skip empty rows for now
 
                 foreach (var row in dataRows)
                 {
@@ -493,7 +493,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             {
                 OfferName = $"{SupplierName} - {context.SourceFileName}",
                 Description = $"Offer created from file: {context.SourceFileName}",
-                Currency = _configuration.Metadata?.Currency ?? "USD",
                 ValidFrom = context.ProcessingDate,
                 ValidTo = context.ProcessingDate.AddYears(1), // Default 1 year validity
                 IsActive = true,
