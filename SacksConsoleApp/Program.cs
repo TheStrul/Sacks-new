@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Serilog;
 using SacksDataLayer.Configuration;
 using SacksDataLayer.Data;
 using SacksDataLayer.Extensions;
@@ -37,6 +38,13 @@ namespace SacksConsoleApp
                 // Build configuration
                 _configuration = BuildConfiguration();
 
+                // Initialize Serilog
+                Log.Logger = new LoggerConfiguration()
+                    .ReadFrom.Configuration(_configuration)
+                    .CreateLogger();
+
+                Log.Information("🚀 Sacks Product Management System starting up...");
+
                 // Setup dependency injection with configuration and logging
                 var services = ConfigureServices(_configuration);
                 var serviceProvider = services.BuildServiceProvider();
@@ -46,15 +54,23 @@ namespace SacksConsoleApp
 
                 // Go directly to database operations (main menu)
                 await RunDatabaseOperationsAsync(serviceProvider);
+                
+                Log.Information("🛑 Sacks Product Management System shutting down normally");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Fatal error: {ex.Message}");
+                Log.Fatal(ex, "💥 Fatal application error");
                 if (_logger != null)
                 {
                     _logger.LogCritical(ex, "Fatal application error");
                 }
                 Environment.Exit(1);
+            }
+            finally
+            {
+                // Ensure all logs are flushed
+                Log.CloseAndFlush();
             }
         }
 
@@ -313,7 +329,7 @@ namespace SacksConsoleApp
 
         private static IConfiguration BuildConfiguration()
         {
-            var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+            var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Development";
             
             // Get the directory where the executable is running from (contains appsettings.json)
             var basePath = AppContext.BaseDirectory;
@@ -333,16 +349,15 @@ namespace SacksConsoleApp
             // Add configuration as singleton
             services.AddSingleton<IConfiguration>(configuration);
 
-            // Add logging
+            // Add Serilog logging
             services.AddLogging(builder =>
             {
-                builder.AddConfiguration(configuration.GetSection("Logging"));
-                builder.AddConsole();
+                builder.ClearProviders();
+                builder.AddSerilog();
             });
 
             // Add configuration options
             services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
-            services.Configure<PerformanceMonitoringSettings>(configuration.GetSection("PerformanceMonitoring"));
 
             // Get connection string from configuration
             var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -397,16 +412,9 @@ namespace SacksConsoleApp
             services.AddFileProcessingServices();
             
             // Add supplier configuration manager
-            services.AddSingleton<SupplierConfigurationManager>();
-                       
-
             // Add file processing dependencies
             services.AddScoped<SacksAIPlatform.InfrastructuresLayer.FileProcessing.IFileDataReader, SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileDataReader>();
-            services.AddScoped<SupplierConfigurationManager>(provider =>
-            {
-                var configPath = Path.Combine(AppContext.BaseDirectory, "Configuration", "supplier-formats.json");
-                return new SupplierConfigurationManager(configPath);
-            });
+            services.AddScoped<SupplierConfigurationManager>();
             
             // Add normalization factory
             services.AddScoped<ConfigurationBasedNormalizerFactory>();

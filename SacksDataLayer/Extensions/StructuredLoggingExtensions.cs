@@ -89,44 +89,5 @@ namespace SacksDataLayer.Extensions
                 operation, exception.Message, context ?? "N/A", correlationId);
         }
 
-        /// <summary>
-        /// Logs performance warning for slow operations
-        /// </summary>
-        public static void LogPerformanceWarning(this ILogger logger, string operation, long actualDurationMs, 
-            long expectedDurationMs, string correlationId)
-        {
-            logger.LogWarning("🐌 Performance issue: {Operation} took {ActualDurationMs}ms (expected <{ExpectedDurationMs}ms) [CorrelationId: {CorrelationId}]",
-                operation, actualDurationMs, expectedDurationMs, correlationId);
-        }
-
-        /// <summary>
-        /// Logs batch processing metrics
-        /// </summary>
-        public static void LogBatchMetrics(this ILogger logger, string batchType, int batchSize, int currentBatch, 
-            int totalBatches, long batchDurationMs, string correlationId)
-        {
-            logger.LogInformation("📊 Batch {CurrentBatch}/{TotalBatches}: {BatchType} - {BatchSize} items in {BatchDurationMs}ms [CorrelationId: {CorrelationId}]",
-                currentBatch, totalBatches, batchType, batchSize, batchDurationMs, correlationId);
-        }
-
-        /// <summary>
-        /// Logs configuration loading or reloading
-        /// </summary>
-        public static void LogConfigurationLoad(this ILogger logger, string configurationType, int itemCount, 
-            string source, string correlationId)
-        {
-            logger.LogInformation("⚙️ Configuration loaded: {ConfigurationType} - {ItemCount} items from {Source} [CorrelationId: {CorrelationId}]",
-                configurationType, itemCount, source, correlationId);
-        }
-
-        /// <summary>
-        /// Logs cache operations
-        /// </summary>
-        public static void LogCacheOperation(this ILogger logger, string operation, string cacheType, 
-            int itemCount, long durationMs, string correlationId)
-        {
-            logger.LogInformation("🧠 Cache {Operation}: {CacheType} - {ItemCount} items in {DurationMs}ms [CorrelationId: {CorrelationId}]",
-                operation, cacheType, itemCount, durationMs, correlationId);
-        }
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Services.Implementations;
 using SacksDataLayer.Configuration;
+using SacksDataLayer.FileProcessing.Services;
 
 namespace SacksDataLayer.Extensions
 {
@@ -33,6 +34,7 @@ namespace SacksDataLayer.Extensions
             services.AddScoped<ISupplierConfigurationService, SupplierConfigurationService>();
             services.AddScoped<IFileProcessingDatabaseService, FileProcessingDatabaseService>();
             services.AddScoped<IFileProcessingService, FileProcessingService>();
+            services.AddScoped<SupplierConfigurationManager>();
             return services;
         }
 

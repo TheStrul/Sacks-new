@@ -5,7 +5,7 @@
     {
       "name": "DIOR",
       "detection": {
-        "fileNamePatterns": ["DIOR*.xlsx", "dior*.xlsx", "DIOR*.xls", "dior*.xls"]
+        "fileNamePatterns": ["DIOR*.xlsx"]
       },
       "columnProperties": {
         "A": {

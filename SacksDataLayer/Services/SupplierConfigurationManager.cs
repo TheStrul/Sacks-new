@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using SacksDataLayer.FileProcessing.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 
 namespace SacksDataLayer.FileProcessing.Services
@@ -18,21 +19,43 @@ namespace SacksDataLayer.FileProcessing.Services
         private readonly ILogger<SupplierConfigurationManager>? _logger;
 
         /// <summary>
-        /// Creates a new instance with automatic configuration file discovery
+        /// Creates a new instance with IConfiguration support (recommended)
         /// </summary>
+        public SupplierConfigurationManager(IConfiguration configuration, ILogger<SupplierConfigurationManager>? logger = null)
+        {
+            ArgumentNullException.ThrowIfNull(configuration);
+            
+            var configPath = configuration["SupplierConfiguration:ConfigurationFilePath"] 
+                ?? throw new InvalidOperationException("SupplierConfiguration:ConfigurationFilePath not found in configuration");
+            
+            _configurationFilePath = Path.Combine(AppContext.BaseDirectory, configPath);
+            _logger = logger;
+            _jsonOptions = CreateJsonOptions();
+        }
+
+        /// <summary>
+        /// Creates a new instance with automatic configuration file discovery (legacy)
+        /// </summary>
+        [Obsolete("Use constructor with IConfiguration parameter instead")]
         public SupplierConfigurationManager(ILogger<SupplierConfigurationManager>? logger = null)
             : this(FindConfigurationFile(), logger)
         {
         }
 
         /// <summary>
-        /// Creates a new instance with specified configuration file path
+        /// Creates a new instance with specified configuration file path (legacy)
         /// </summary>
+        [Obsolete("Use constructor with IConfiguration parameter instead")]
         public SupplierConfigurationManager(string configurationFilePath, ILogger<SupplierConfigurationManager>? logger = null)
         {
             _configurationFilePath = configurationFilePath ?? throw new ArgumentNullException(nameof(configurationFilePath));
             _logger = logger;
-            _jsonOptions = new JsonSerializerOptions
+            _jsonOptions = CreateJsonOptions();
+        }
+
+        private static JsonSerializerOptions CreateJsonOptions()
+        {
+            return new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = true,
