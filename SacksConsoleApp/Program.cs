@@ -153,7 +153,7 @@ namespace SacksConsoleApp
                             await ShowDatabaseStatistics(serviceProvider);
                             break;
                         case "4":
-                            await TestRefactoredConfiguration(serviceProvider);
+                            await TestConfiguration(serviceProvider);
                             break;
                         case "5":
                             await CreateSupplierConfigurationInteractively(serviceProvider);
@@ -184,7 +184,7 @@ namespace SacksConsoleApp
             }
         }
 
-        private static async Task TestRefactoredConfiguration(ServiceProvider serviceProvider)
+        private static async Task TestConfiguration(ServiceProvider serviceProvider)
         {
             Console.WriteLine("=== 🧪 TESTING CONFIGURATION ===\n");
 
@@ -259,51 +259,79 @@ namespace SacksConsoleApp
 
             try
             {
-                // Step 1: Get Excel file path from user
-                Console.WriteLine("📁 Excel File Selection:");
-                Console.WriteLine("   1. Analyze ACE file (Ace 31.8.25.xlsx)");
-                Console.WriteLine("   2. Enter custom file path");
-                Console.Write("👉 Choose option (1 or 2): ");
+                // Step 1: Show unmatched files in the Inputs folder
+                var inputsPath = FindInputsFolder();
+                if (!Directory.Exists(inputsPath))
+                {
+                    Console.WriteLine($"❌ Inputs folder not found at: {inputsPath}");
+                    return;
+                }
+
+                Console.WriteLine("� Scanning for files without supplier configurations...\n");
+                var unmatchedFiles = await configManager.GetUnmatchedFilesAsync(inputsPath);
+
+                if (unmatchedFiles.Count == 0)
+                {
+                    Console.WriteLine("✅ All Excel files in the Inputs folder already have matching supplier configurations!");
+                    Console.WriteLine("💡 To create a configuration for a new file, place it in the Inputs folder first.");
+                    return;
+                }
+
+                Console.WriteLine($"� Found {unmatchedFiles.Count} file(s) without matching supplier configurations:");
+                Console.WriteLine();
+                
+                for (int i = 0; i < unmatchedFiles.Count; i++)
+                {
+                    var fileName = Path.GetFileName(unmatchedFiles[i]);
+                    Console.WriteLine($"   {i + 1}. {fileName}");
+                }
+                Console.WriteLine($"   {unmatchedFiles.Count + 1}. Enter custom file path");
+
+                // Step 2: Let user choose which file to configure
+                Console.WriteLine();
+                Console.Write($"👉 Choose file to configure (1-{unmatchedFiles.Count + 1}): ");
                 
                 var choice = Console.ReadLine()?.Trim();
                 string excelFilePath;
 
-                if (choice == "1")
+                if (int.TryParse(choice, out int fileIndex))
                 {
-                    // Use the ACE file from Inputs folder
-                    var inputsPath = FindInputsFolder();
-                    excelFilePath = Path.Combine(inputsPath, "Ace 31.8.25.xlsx");
-                    
-                    if (!File.Exists(excelFilePath))
+                    if (fileIndex >= 1 && fileIndex <= unmatchedFiles.Count)
                     {
-                        Console.WriteLine($"❌ ACE file not found at: {excelFilePath}");
-                        return;
+                        // User selected one of the unmatched files
+                        excelFilePath = unmatchedFiles[fileIndex - 1];
+                        Console.WriteLine($"✅ Selected file: {Path.GetFileName(excelFilePath)}");
                     }
-                }
-                else if (choice == "2")
-                {
-                    Console.Write("✏️  Enter full path to Excel file: ");
-                    excelFilePath = Console.ReadLine()?.Trim() ?? "";
-                    
-                    if (string.IsNullOrWhiteSpace(excelFilePath) || !File.Exists(excelFilePath))
+                    else if (fileIndex == unmatchedFiles.Count + 1)
                     {
-                        Console.WriteLine("❌ Invalid file path or file not found.");
+                        // User chose custom file path
+                        Console.Write("✏️  Enter full path to Excel file: ");
+                        excelFilePath = Console.ReadLine()?.Trim() ?? "";
+                        
+                        if (string.IsNullOrWhiteSpace(excelFilePath) || !File.Exists(excelFilePath))
+                        {
+                            Console.WriteLine("❌ Invalid file path or file not found.");
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("❌ Invalid choice.");
                         return;
                     }
                 }
                 else
                 {
-                    Console.WriteLine("❌ Invalid choice.");
+                    Console.WriteLine("❌ Invalid choice. Please enter a number.");
                     return;
                 }
 
-                Console.WriteLine($"✅ Selected file: {Path.GetFileName(excelFilePath)}");
                 Console.WriteLine();
 
-                // Step 2: Create supplier configuration interactively
+                // Step 3: Create supplier configuration interactively
                 var newSupplierConfig = await configManager.CreateSupplierConfigurationInteractivelyAsync(excelFilePath);
 
-                // Step 3: Add to existing configuration
+                // Step 4: Add to existing configuration
                 Console.WriteLine("💾 Saving Configuration:");
                 var success = await configManager.AddSupplierConfigurationAsync(newSupplierConfig, saveToFile: true);
 
@@ -502,8 +530,12 @@ namespace SacksConsoleApp
 
         private static async Task ProcessInputFiles(ServiceProvider serviceProvider)
         {
-            Console.WriteLine("🚀 Analyzing All Inputs...");
-            Console.WriteLine("\n" + new string('=', 50));
+            if (_logger == null)
+            {
+                throw new InvalidOperationException("Logger not initialized");
+            }
+            _logger.LogInformation("🚀 Analyzing All Inputs...");
+            _logger.LogInformation("\n" + new string('=', 50));
 
             var fileProcessingService = serviceProvider.GetRequiredService<IFileProcessingService>();
 
@@ -517,22 +549,22 @@ namespace SacksConsoleApp
 
                 if (files.Length > 0)
                 {
-                    Console.WriteLine($"📁 Found {files.Length} Excel file(s) in Inputs folder:");
+                    _logger.LogInformation($"📁 Found {files.Length} Excel file(s) in Inputs folder:");
                     foreach (var file in files)
                     {
-                        Console.WriteLine($"   - {Path.GetFileName(file)}");
+                        _logger.LogInformation($"   - {Path.GetFileName(file)}");
                         await fileProcessingService.ProcessFileAsync(file, CancellationToken.None);
-                        Console.WriteLine();
+                        _logger.LogInformation($"   - Finished processing {Path.GetFileName(file)}");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("❌ No Excel files found in Inputs folder.");
+                    _logger.LogWarning("❌ No Excel files found in Inputs folder.");
                 }
             }
             else
             {
-                Console.WriteLine("❌ Inputs folder not found.");
+                _logger.LogError("❌ Inputs folder not found.");
             }
         }
 

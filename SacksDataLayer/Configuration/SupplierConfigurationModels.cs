@@ -112,14 +112,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         }
 
         /// <summary>
-        /// Gets legacy column index mappings for backward compatibility
-        /// </summary>
-        public Dictionary<string, string> GetColumnIndexMappings()
-        {
-            return GetColumnMappings();
-        }
-
-        /// <summary>
         /// Gets legacy property classification for backward compatibility
         /// </summary>
         public PropertyClassificationConfiguration GetPropertyClassification()

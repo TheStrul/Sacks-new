@@ -28,7 +28,8 @@ namespace SacksDataLayer.FileProcessing.Services
             var configPath = configuration["SupplierConfiguration:ConfigurationFilePath"] 
                 ?? throw new InvalidOperationException("SupplierConfiguration:ConfigurationFilePath not found in configuration");
             
-            _configurationFilePath = Path.Combine(AppContext.BaseDirectory, configPath);
+            // Try to find the source Configuration folder instead of using output directory
+            _configurationFilePath = FindSourceConfigurationPath(configPath);
             _logger = logger;
             _jsonOptions = CreateJsonOptions();
         }
@@ -89,6 +90,54 @@ namespace SacksDataLayer.FileProcessing.Services
             }
 
             throw new FileNotFoundException("Configuration file 'supplier-formats.json' not found in any of the expected locations.");
+        }
+
+        /// <summary>
+        /// Finds the source configuration path (in source code) instead of output directory
+        /// </summary>
+        private string FindSourceConfigurationPath(string configPath)
+        {
+            var currentDirectory = Environment.CurrentDirectory;
+            
+            // Strategy 1: Check if we're running from project folder (dotnet run)
+            var strategy1 = Path.Combine(currentDirectory, configPath);
+            if (File.Exists(strategy1))
+            {
+                return Path.GetFullPath(strategy1);
+            }
+
+            // Strategy 2: Search upward for solution file, then go to SacksConsoleApp/Configuration
+            var searchDir = new DirectoryInfo(currentDirectory);
+            while (searchDir != null)
+            {
+                var solutionFile = searchDir.GetFiles("*.sln").FirstOrDefault();
+                if (solutionFile != null)
+                {
+                    var solutionConfigPath = Path.Combine(searchDir.FullName, "SacksConsoleApp", configPath);
+                    if (File.Exists(solutionConfigPath))
+                    {
+                        return solutionConfigPath;
+                    }
+                }
+                searchDir = searchDir.Parent;
+            }
+
+            // Strategy 3: Check if we're running from bin folder (Visual Studio/output directory)
+            var strategy3 = Path.Combine(currentDirectory, "..", "..", "..", configPath);
+            if (File.Exists(strategy3))
+            {
+                return Path.GetFullPath(strategy3);
+            }
+
+            // Fallback: Use the original method if source file not found
+            var fallbackPath = Path.Combine(AppContext.BaseDirectory, configPath);
+            if (File.Exists(fallbackPath))
+            {
+                return fallbackPath;
+            }
+
+            // Last resort: return the expected path and let error handling deal with it
+            return Path.Combine(currentDirectory, configPath);
         }
 
         /// <summary>
@@ -231,21 +280,24 @@ namespace SacksDataLayer.FileProcessing.Services
             try
             {
                 var fileName = Path.GetFileName(filePath);
-                _logger?.LogInformation("Detecting supplier configuration for file: {FileName}", fileName);
+                var fileNameLowerCase = fileName.ToLowerInvariant(); // Convert to lowercase for matching
+                _logger?.LogInformation("Detecting supplier configuration for file: {FileName} (matching as: {FileNameLower})", fileName, fileNameLowerCase);
                 
                 var config = await GetConfigurationAsync();
 
-                // Try to match against each supplier's file name patterns
+                // Try to match against each supplier's file name patterns using lowercase filename
                 foreach (var supplier in config.Suppliers)
                 {
                     if (supplier.Detection?.FileNamePatterns?.Any() == true)
                     {
                         foreach (var pattern in supplier.Detection.FileNamePatterns)
                         {
-                            if (IsFileNameMatch(fileName, pattern))
+                            // Convert pattern to lowercase for case-insensitive matching
+                            var patternLowerCase = pattern.ToLowerInvariant();
+                            if (IsFileNameMatch(fileNameLowerCase, patternLowerCase))
                             {
-                                _logger?.LogInformation("Matched supplier '{SupplierName}' with pattern '{Pattern}' for file '{FileName}'", 
-                                    supplier.Name, pattern, fileName);
+                                _logger?.LogInformation("Matched supplier '{SupplierName}' with pattern '{Pattern}' (as '{PatternLower}') for file '{FileName}'", 
+                                    supplier.Name, pattern, patternLowerCase, fileName);
                                 return supplier;
                             }
                         }
@@ -264,6 +316,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Checks if a file name matches a pattern (supports wildcards)
+        /// Note: Both fileName and pattern should already be normalized to the same case
         /// </summary>
         private bool IsFileNameMatch(string fileName, string pattern)
         {
@@ -275,8 +328,7 @@ namespace SacksDataLayer.FileProcessing.Services
                 .Replace("*", ".*")
                 .Replace("?", ".");
 
-            return System.Text.RegularExpressions.Regex.IsMatch(fileName, regexPattern, 
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            return System.Text.RegularExpressions.Regex.IsMatch(fileName, regexPattern);
         }
 
 
@@ -396,6 +448,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Interactively analyzes an Excel file and creates a new supplier configuration
+        /// NOTE: Console interactions have been replaced with logging - method is no longer interactive
         /// </summary>
         /// <param name="excelFilePath">Path to the Excel file to analyze</param>
         /// <param name="supplierName">Name for the new supplier (if null, will be derived from filename)</param>
@@ -408,18 +461,16 @@ namespace SacksDataLayer.FileProcessing.Services
             if (!File.Exists(excelFilePath))
                 throw new FileNotFoundException($"Excel file not found: {excelFilePath}");
 
-            Console.WriteLine("🔍 === INTERACTIVE SUPPLIER CONFIGURATION CREATOR ===");
-            Console.WriteLine($"📁 Analyzing file: {Path.GetFileName(excelFilePath)}");
-            Console.WriteLine();
+            _logger?.LogInformation("INTERACTIVE SUPPLIER CONFIGURATION CREATOR");
+            _logger?.LogInformation("Analyzing file: {FileName}", Path.GetFileName(excelFilePath));
 
             // Step 1: Read the Excel file
             var fileReader = new FileDataReader();
             var fileData = await fileReader.ReadFileAsync(excelFilePath);
 
-            Console.WriteLine($"📊 File analysis complete:");
-            Console.WriteLine($"   • Total rows: {fileData.RowCount}");
-            Console.WriteLine($"   • Analyzing first 10 rows for structure...");
-            Console.WriteLine();
+            _logger?.LogInformation("File analysis complete:");
+            _logger?.LogInformation("   • Total rows: {RowCount}", fileData.RowCount);
+            _logger?.LogInformation("   • Analyzing first 10 rows for structure...");
 
             // Step 2: Determine supplier name
             if (string.IsNullOrWhiteSpace(supplierName))
@@ -427,70 +478,59 @@ namespace SacksDataLayer.FileProcessing.Services
                 var fileName = Path.GetFileNameWithoutExtension(excelFilePath);
                 var suggestedName = ExtractSupplierNameFromFileName(fileName);
                 
-                Console.WriteLine($"💡 Suggested supplier name from filename: '{suggestedName}'");
-                Console.Write("✏️  Enter supplier name (or press Enter to use suggested): ");
-                var userInput = Console.ReadLine();
-                supplierName = !string.IsNullOrWhiteSpace(userInput) ? userInput.Trim() : suggestedName;
+                _logger?.LogInformation("Suggested supplier name from filename: '{SuggestedName}'", suggestedName);
+                _logger?.LogInformation("Using suggested supplier name as no user input available in non-interactive mode");
+                // NOTE: Interactive input removed - using suggested name automatically
+                supplierName = suggestedName;
             }
 
-            Console.WriteLine($"✅ Supplier name: {supplierName}");
-            Console.WriteLine();
+            _logger?.LogInformation("Supplier name: {SupplierName}", supplierName);
 
             // Step 3: Analyze file structure and find header row
             var (headerRowIndex, dataStartRowIndex, expectedColumnCount) = AnalyzeFileStructure(fileData);
             
-            Console.WriteLine($"📋 File structure analysis:");
-            Console.WriteLine($"   • Detected header row: {headerRowIndex + 1} (Excel row number)");
-            Console.WriteLine($"   • Detected data start row: {dataStartRowIndex + 1} (Excel row number)");
-            Console.WriteLine($"   • Expected columns: {expectedColumnCount}");
-            Console.WriteLine();
+            _logger?.LogInformation("File structure analysis:");
+            _logger?.LogInformation("   • Detected header row: {HeaderRow} (Excel row number)", headerRowIndex + 1);
+            _logger?.LogInformation("   • Detected data start row: {DataStartRow} (Excel row number)", dataStartRowIndex + 1);
+            _logger?.LogInformation("   • Expected columns: {ExpectedColumns}", expectedColumnCount);
 
             // Step 4: Show header row and ask for confirmation
             if (headerRowIndex >= 0 && headerRowIndex < fileData.RowCount)
             {
                 var headerRow = fileData.GetRow(headerRowIndex);
-                Console.WriteLine("📋 Detected header row contents:");
+                _logger?.LogInformation("Detected header row contents:");
                 for (int i = 0; i < headerRow?.Cells.Count; i++)
                 {
                     var cellValue = headerRow.Cells[i]?.Value?.ToString()?.Trim() ?? "";
                     var columnLetter = GetExcelColumnLetter(i);
-                    Console.WriteLine($"   {columnLetter}: {cellValue}");
+                    _logger?.LogInformation("   {ColumnLetter}: {CellValue}", columnLetter, cellValue);
                 }
-                Console.WriteLine();
 
-                Console.Write("❓ Is this the correct header row? (y/n): ");
-                var confirmation = Console.ReadLine()?.Trim().ToLower();
-                if (confirmation != "y" && confirmation != "yes")
-                {
-                    Console.Write("✏️  Enter the correct header row number (Excel numbering, 1-based): ");
-                    if (int.TryParse(Console.ReadLine(), out int newHeaderRow) && newHeaderRow > 0)
-                    {
-                        headerRowIndex = newHeaderRow - 1; // Convert to 0-based
-                        dataStartRowIndex = headerRowIndex + 1;
-                        Console.WriteLine($"✅ Updated header row to: {headerRowIndex + 1}");
-                    }
-                }
+                // NOTE: Interactive confirmation removed - automatically accepting detected header row
+                _logger?.LogInformation("Auto-accepting detected header row in non-interactive mode");
+                // Commenting out interactive logic:
+                // Console.Write("❓ Is this the correct header row? (y/n): ");
+                // var confirmation = Console.ReadLine()?.Trim().ToLower();
+                // if (confirmation != "y" && confirmation != "yes") { ... }
             }
 
             // Step 5: Create column mappings interactively
             var columnProperties = CreateColumnMappingsInteractively(fileData, headerRowIndex, expectedColumnCount);
 
             // Step 6: Determine file naming patterns
-            Console.WriteLine();
-            Console.WriteLine("📁 File naming patterns:");
+            _logger?.LogInformation("File naming patterns:");
             var currentFileName = Path.GetFileName(excelFilePath);
             var suggestedPatterns = GenerateFileNamePatterns(currentFileName, supplierName);
             
-            Console.WriteLine($"💡 Suggested patterns based on '{currentFileName}':");
+            _logger?.LogInformation("Suggested patterns based on '{CurrentFileName}':", currentFileName);
             for (int i = 0; i < suggestedPatterns.Count; i++)
             {
-                Console.WriteLine($"   {i + 1}. {suggestedPatterns[i]}");
+                _logger?.LogInformation("   {Index}. {Pattern}", i + 1, suggestedPatterns[i]);
             }
-            Console.WriteLine();
             
-            Console.Write("✏️  Enter additional patterns (comma-separated) or press Enter to use suggested: ");
-            var additionalPatterns = Console.ReadLine()?.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)).ToList() ?? new List<string>();
+            // NOTE: Interactive input removed - using suggested patterns automatically
+            _logger?.LogInformation("Using suggested patterns automatically in non-interactive mode");
+            var additionalPatterns = new List<string>(); // No additional patterns in non-interactive mode
             
             var allPatterns = suggestedPatterns.Concat(additionalPatterns).Distinct().ToList();
 
@@ -534,12 +574,10 @@ namespace SacksDataLayer.FileProcessing.Services
                 }
             };
 
-            Console.WriteLine();
-            Console.WriteLine("✅ Supplier configuration created successfully!");
-            Console.WriteLine($"   • Supplier: {supplierConfig.Name}");
-            Console.WriteLine($"   • Columns mapped: {columnProperties.Count}");
-            Console.WriteLine($"   • File patterns: {allPatterns.Count}");
-            Console.WriteLine();
+            _logger?.LogInformation("Supplier configuration created successfully!");
+            _logger?.LogInformation("   • Supplier: {SupplierName}", supplierConfig.Name);
+            _logger?.LogInformation("   • Columns mapped: {ColumnCount}", columnProperties.Count);
+            _logger?.LogInformation("   • File patterns: {PatternCount}", allPatterns.Count);
 
             return supplierConfig;
         }
@@ -610,6 +648,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Creates column mappings interactively with user input
+        /// NOTE: Console interactions have been replaced with logging - method is no longer interactive
         /// </summary>
         private Dictionary<string, ColumnProperty> CreateColumnMappingsInteractively(
             FileData fileData, int headerRowIndex, int expectedColumnCount)
@@ -622,8 +661,7 @@ namespace SacksDataLayer.FileProcessing.Services
                 throw new InvalidOperationException("Header row not found");
             }
 
-            Console.WriteLine("🗂️  === COLUMN MAPPING CONFIGURATION ===");
-            Console.WriteLine();
+            _logger?.LogInformation("COLUMN MAPPING CONFIGURATION");
 
             for (int i = 0; i < Math.Min(headerRow.Cells.Count, expectedColumnCount); i++)
             {
@@ -632,73 +670,43 @@ namespace SacksDataLayer.FileProcessing.Services
                 
                 if (string.IsNullOrWhiteSpace(cellValue))
                 {
-                    Console.WriteLine($"📋 Column {columnLetter}: (empty) - skipping");
+                    _logger?.LogInformation("Column {ColumnLetter}: (empty) - skipping", columnLetter);
                     continue;
                 }
 
-                Console.WriteLine($"📋 Column {columnLetter}: '{cellValue}'");
+                _logger?.LogInformation("Column {ColumnLetter}: '{CellValue}'", columnLetter, cellValue);
                 
                 // Show sample data from this column
-                Console.WriteLine("   Sample data:");
+                _logger?.LogInformation("   Sample data:");
                 for (int sampleRow = headerRowIndex + 1; sampleRow < Math.Min(headerRowIndex + 6, fileData.RowCount); sampleRow++)
                 {
                     var dataRow = fileData.GetRow(sampleRow);
                     var sampleValue = dataRow?.Cells.ElementAtOrDefault(i)?.Value?.ToString()?.Trim() ?? "";
                     if (!string.IsNullOrWhiteSpace(sampleValue))
                     {
-                        Console.WriteLine($"      • {sampleValue}");
+                        _logger?.LogInformation("      • {SampleValue}", sampleValue);
                     }
                 }
 
                 // Suggest mapping based on header name
                 var suggestedMapping = SuggestPropertyMapping(cellValue);
-                Console.WriteLine($"💡 Suggested mapping: {suggestedMapping.targetProperty} ({suggestedMapping.classification})");
+                _logger?.LogInformation("Suggested mapping: {TargetProperty} ({Classification})", suggestedMapping.targetProperty, suggestedMapping.classification);
                 
-                Console.Write($"✏️  Enter target property name (or 'skip' to ignore, press Enter to accept suggestion): ");
-                var userInput = Console.ReadLine()?.Trim();
-                
-                if (userInput?.ToLower().Equals("skip", StringComparison.OrdinalIgnoreCase) == true)
-                {
-                    Console.WriteLine("   ⏭️  Skipping this column");
-                    continue;
-                }
-
-                // If user pressed Enter (empty input), use the suggested mapping
-                var targetProperty = string.IsNullOrWhiteSpace(userInput) ? suggestedMapping.targetProperty : userInput;
+                // NOTE: Interactive input removed - automatically accepting suggested mapping
+                _logger?.LogInformation("Auto-accepting suggested mapping in non-interactive mode");
+                var targetProperty = suggestedMapping.targetProperty; // Use suggested mapping automatically
                 
                 // Show what was accepted
-                if (string.IsNullOrWhiteSpace(userInput))
-                {
-                    Console.WriteLine($"   ✅ Accepted suggested mapping: {targetProperty}");
-                }
-                else
-                {
-                    Console.WriteLine($"   ✅ Using custom mapping: {targetProperty}");
-                }
+                _logger?.LogInformation("   ✅ Accepted suggested mapping: {TargetProperty}", targetProperty);
                 
-                // Determine classification - use suggested if user accepted the suggestion by pressing Enter
-                string classification;
-                if (string.IsNullOrWhiteSpace(userInput))
-                {
-                    // User accepted suggestion, use suggested classification
-                    classification = suggestedMapping.classification;
-                    Console.WriteLine($"   ✅ Using suggested classification: {classification}");
-                }
-                else
-                {
-                    // User provided custom mapping, ask for classification
-                    Console.WriteLine("   📊 Property classification:");
-                    Console.WriteLine("      1. coreProduct (product attributes like name, brand, category)");
-                    Console.WriteLine("      2. offer (pricing, availability, supplier-specific data)");
-                    Console.Write("   Enter classification (1 or 2): ");
-                    var classificationInput = Console.ReadLine()?.Trim();
-                    classification = classificationInput?.Equals("2", StringComparison.Ordinal) == true ? "offer" : "coreProduct";
-                }
+                // Since we're automatically accepting suggestions, use suggested classification
+                string classification = suggestedMapping.classification;
+                _logger?.LogInformation("   ✅ Using suggested classification: {Classification}", classification);
                 
                 // Determine data type based on sample data
                 var dataType = DetermineDataType(fileData, headerRowIndex, i);
                 
-                Console.WriteLine($"   📊 Detected data type: {dataType.Type}");
+                _logger?.LogInformation("   📊 Detected data type: {DataType}", dataType.Type);
                 
                 var columnProperty = new ColumnProperty
                 {
@@ -714,8 +722,7 @@ namespace SacksDataLayer.FileProcessing.Services
                 };
 
                 columnProperties[columnLetter] = columnProperty;
-                Console.WriteLine($"   ✅ Mapped {columnLetter} → {targetProperty}");
-                Console.WriteLine();
+                _logger?.LogInformation("   ✅ Mapped {ColumnLetter} → {TargetProperty}", columnLetter, targetProperty);
             }
 
             return columnProperties;
@@ -817,15 +824,15 @@ namespace SacksDataLayer.FileProcessing.Services
         private List<string> GenerateFileNamePatterns(string fileName, string supplierName)
         {
             var patterns = new List<string>();
-            var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+            var nameWithoutExt = Path.GetFileNameWithoutExtension(fileName).ToLowerInvariant();
+            var supplierNameLower = supplierName.ToLowerInvariant();
             
-            // Pattern 1: Exact name with different extensions
+            // Pattern 1: Exact name with different extensions (lowercase)
             patterns.Add($"{nameWithoutExt}.xlsx");
             patterns.Add($"{nameWithoutExt}.xls");
             
-            // Pattern 2: Supplier name with wildcards
-            patterns.Add($"{supplierName}*.xlsx");
-            patterns.Add($"{supplierName.ToLower()}*.xlsx");
+            // Pattern 2: Supplier name with wildcards (lowercase only)
+            patterns.Add($"{supplierNameLower}*.xlsx");
             
             // Pattern 3: Extract base name (remove dates/numbers) with wildcards
             var baseName = System.Text.RegularExpressions.Regex.Replace(nameWithoutExt, @"\d+", "*");
@@ -867,21 +874,12 @@ namespace SacksDataLayer.FileProcessing.Services
             // Check if supplier already exists
             if (config.Suppliers.Any(s => s.Name.Equals(newSupplier.Name, StringComparison.OrdinalIgnoreCase)))
             {
-                Console.WriteLine($"⚠️  Supplier '{newSupplier.Name}' already exists!");
-                Console.Write("❓ Do you want to replace it? (y/n): ");
-                var replace = Console.ReadLine()?.Trim().ToLower();
+                _logger?.LogWarning("Supplier '{SupplierName}' already exists!", newSupplier.Name);
+                _logger?.LogInformation("Auto-replacing existing supplier in non-interactive mode");
                 
-                if (replace == "y" || replace == "yes")
-                {
-                    // Remove existing supplier
-                    config.Suppliers.RemoveAll(s => s.Name.Equals(newSupplier.Name, StringComparison.OrdinalIgnoreCase));
-                    Console.WriteLine($"🔄 Replaced existing supplier configuration for '{newSupplier.Name}'");
-                }
-                else
-                {
-                    Console.WriteLine("❌ Operation cancelled - supplier not added");
-                    return false;
-                }
+                // Remove existing supplier automatically in non-interactive mode
+                config.Suppliers.RemoveAll(s => s.Name.Equals(newSupplier.Name, StringComparison.OrdinalIgnoreCase));
+                _logger?.LogInformation("Replaced existing supplier configuration for '{SupplierName}'", newSupplier.Name);
             }
 
             // Add the new supplier
@@ -891,8 +889,8 @@ namespace SacksDataLayer.FileProcessing.Services
             if (saveToFile)
             {
                 await SaveConfigurationAsync(config);
-                Console.WriteLine($"✅ Supplier '{newSupplier.Name}' added to configuration file");
-                Console.WriteLine($"📁 Configuration saved to: {_configurationFilePath}");
+                _logger?.LogInformation("Supplier '{SupplierName}' added to configuration file", newSupplier.Name);
+                _logger?.LogInformation("Configuration saved to: {ConfigurationPath}", _configurationFilePath);
             }
 
             return true;
@@ -932,6 +930,43 @@ namespace SacksDataLayer.FileProcessing.Services
             if (supplier.ColumnIndexMappings == null || !supplier.ColumnIndexMappings.Any())
             {
                 result.AddWarning($"Supplier '{supplier.Name}' has no column index mappings");
+            }
+        }
+        
+        /// <summary>
+        /// Gets all Excel files in the specified directory that don't match any known supplier configuration pattern
+        /// </summary>
+        public async Task<List<string>> GetUnmatchedFilesAsync(string inputDirectory)
+        {
+            if (string.IsNullOrWhiteSpace(inputDirectory) || !Directory.Exists(inputDirectory))
+                return new List<string>();
+
+            try
+            {
+                var allExcelFiles = Directory.GetFiles(inputDirectory, "*.xlsx")
+                    .Where(f => !Path.GetFileName(f).StartsWith("~")) // Skip temp files
+                    .ToList();
+
+                var unmatchedFiles = new List<string>();
+
+                foreach (var filePath in allExcelFiles)
+                {
+                    var supplierConfig = await DetectSupplierFromFileAsync(filePath);
+                    if (supplierConfig == null)
+                    {
+                        unmatchedFiles.Add(filePath);
+                    }
+                }
+
+                _logger?.LogInformation("Found {UnmatchedCount} unmatched files out of {TotalFiles} Excel files", 
+                    unmatchedFiles.Count, allExcelFiles.Count);
+
+                return unmatchedFiles;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error getting unmatched files from directory: {Directory}", inputDirectory);
+                return new List<string>();
             }
         }
     }

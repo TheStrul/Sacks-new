@@ -122,8 +122,8 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                Console.WriteLine("🚀 === BULLETPROOF FILE PROCESSING - PERFORMANCE CHAMPION ===\n");
                 _logger.LogFileProcessingStart(fileName, "BulletproofMode", correlationId);
+                _logger.LogInformation("🚀 Starting bulletproof file processing for {FileName}", fileName);
 
                 // 🛡️ STEP 1: Enhanced file validation with size and accessibility checks
                 await ValidateFileWithEnhancedChecksAsync(filePath, correlationId, cancellationToken);
@@ -147,41 +147,41 @@ namespace SacksDataLayer.Services.Implementations
                 _logger.LogFileProcessingComplete(fileName, fileData.DataRows.Count, 
                     0, correlationId); // No elapsed time tracking without performance monitor
 
-                Console.WriteLine("\n🎉 BULLETPROOF FILE PROCESSING COMPLETED SUCCESSFULLY! 🎉");
+                _logger.LogInformation("File processed successfully: {FileName}", fileName);
             }
             catch (OperationCanceledException)
             {
                 _logger.LogWarning("🚫 File processing cancelled by user: {FileName} [CorrelationId: {CorrelationId}]", 
                     fileName, correlationId);
-                Console.WriteLine($"🚫 Operation cancelled: {fileName}");
+                _logger.LogWarning("Operation cancelled: {FileName}", fileName);
                 throw;
             }
             catch (Exception ex) when (ex is ArgumentException or FileNotFoundException or DirectoryNotFoundException)
             {
                 _logger.LogErrorWithContext(ex, "FileValidation", 
                     new { FileName = fileName, FilePath = filePath }, correlationId);
-                Console.WriteLine($"❌ File validation error: {ex.Message}");
+                _logger.LogError("File validation error: {ErrorMessage}", ex.Message);
                 throw;
             }
             catch (InvalidOperationException ex)
             {
                 _logger.LogErrorWithContext(ex, "SupplierConfiguration", 
                     new { FileName = fileName }, correlationId);
-                Console.WriteLine($"❌ Configuration error: {ex.Message}");
+                _logger.LogError("Configuration error: {ErrorMessage}", ex.Message);
                 throw;
             }
             catch (InvalidDataException ex)
             {
                 _logger.LogErrorWithContext(ex, "FileStructureValidation", 
                     new { FileName = fileName }, correlationId);
-                Console.WriteLine($"❌ File structure error: {ex.Message}");
+                _logger.LogError("File structure error: {ErrorMessage}", ex.Message);
                 throw;
             }
             catch (OutOfMemoryException ex)
             {
                 _logger.LogErrorWithContext(ex, "MemoryExhaustion", 
                     new { FileName = fileName, FileSize = GetFileSizeInMB(filePath) }, correlationId);
-                Console.WriteLine($"❌ Memory error: File too large or insufficient memory: {ex.Message}");
+                _logger.LogError("Memory error: File too large or insufficient memory: {ErrorMessage}", ex.Message);
                 
                 // Force garbage collection to free memory
                 GC.Collect();
@@ -194,11 +194,11 @@ namespace SacksDataLayer.Services.Implementations
             {
                 _logger.LogErrorWithContext(ex, "UnexpectedError", 
                     new { FileName = fileName, ExceptionType = ex.GetType().Name }, correlationId);
-                Console.WriteLine($"❌ Unexpected error during processing: {ex.Message}");
+                _logger.LogError("Unexpected error during processing: {ErrorMessage}", ex.Message);
                 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    Console.WriteLine($"🐛 Debug info - Stack trace: {ex.StackTrace}");
+                _logger.LogDebug("Debug info - Stack trace: {StackTrace}", ex.StackTrace);
                 }
                 
                 throw;
@@ -264,11 +264,12 @@ namespace SacksDataLayer.Services.Implementations
                     throw new IOException($"File is locked or in use: {filePath}", ex);
                 }
 
-                Console.WriteLine($"📁 ✅ File validation passed: {Path.GetFileName(filePath)} ({fileSizeMB:F1}MB)");
+                _logger.LogDebug("File validation passed: {FileName} ({FileSizeMB:F1}MB)", Path.GetFileName(filePath), fileSizeMB);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"📁 ❌ File validation failed: {ex.Message}");
+                _logger.LogError(ex, "File validation failed: {FilePath}", filePath);
+                _logger.LogError("File validation failed: {ErrorMessage}", ex.Message);
                 throw;
             }
         }
@@ -280,13 +281,13 @@ namespace SacksDataLayer.Services.Implementations
         {
             try
             {
-                Console.WriteLine("🔧 Ensuring database is ready and accessible...");
+                _logger.LogDebug("Ensuring database is ready and accessible...");
                 await _databaseService.EnsureDatabaseReadyAsync(cancellationToken);
-                Console.WriteLine("🔧 ✅ Database ready and validated!");
+                _logger.LogDebug("Database ready and validated");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"🔧 ❌ Database setup failed: {ex.Message}");
+                _logger.LogError("Database setup failed: {ErrorMessage}", ex.Message);
                 throw new InvalidOperationException("Database is not accessible or ready", ex);
             }
         }
@@ -304,21 +305,22 @@ namespace SacksDataLayer.Services.Implementations
                 {
                     var fileName = Path.GetFileName(filePath);
                     var errorMessage = $"No supplier configuration found for file: {fileName}";
-                    Console.WriteLine($"🎯 ❌ {errorMessage}");
-                    Console.WriteLine("💡 Add a supplier configuration with matching fileNamePatterns in supplier-formats.json");
+                    _logger.LogError("No supplier configuration found for file: {FileName}", fileName);
+                    _logger.LogError(errorMessage);
+                    _logger.LogInformation("Add a supplier configuration with matching fileNamePatterns in supplier-formats.json");
                     
                     throw new InvalidOperationException(errorMessage);
                 }
 
                 _logger.LogSupplierDetection(Path.GetFileName(filePath), supplierConfig.Name, "FilePattern", correlationId);
-                Console.WriteLine($"🎯 ✅ Auto-detected supplier: {supplierConfig.Name}");
-                Console.WriteLine($"   📝 Description: {supplierConfig.Description}");
+                _logger.LogInformation("Auto-detected supplier: {SupplierName} for file: {FileName}", supplierConfig.Name, Path.GetFileName(filePath));
+                _logger.LogInformation("Detected supplier: {SupplierName}", supplierConfig.Name);
                 
                 return supplierConfig;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"🎯 ❌ Supplier detection failed: {ex.Message}");
+                _logger.LogError("Supplier detection failed: {ErrorMessage}", ex.Message);
                 throw;
             }
         }
@@ -330,7 +332,7 @@ namespace SacksDataLayer.Services.Implementations
         {
             try
             {
-                Console.WriteLine("📖 Reading file data with memory monitoring...");
+                _logger.LogDebug("Reading file data with memory monitoring...");
                 
                 var fileData = await _fileValidationService.ReadFileDataAsync(filePath, cancellationToken);
                 
@@ -341,13 +343,14 @@ namespace SacksDataLayer.Services.Implementations
                     throw new InvalidOperationException($"File has too many rows: {rowCount:N0}. Maximum allowed: {MAX_ROWS_PER_FILE:N0}");
                 }
                 
-                Console.WriteLine($"📖 ✅ Successfully read {rowCount:N0} rows from file");
+                _logger.LogInformation("Successfully read {RowCount:N0} rows from file: {FileName}", rowCount, Path.GetFileName(filePath));
+                _logger.LogDebug("Read {RowCount:N0} rows", rowCount);
                 
                 return fileData;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"📖 ❌ File reading failed: {ex.Message}");
+                _logger.LogError("File reading failed: {ErrorMessage}", ex.Message);
                 throw;
             }
         }
@@ -359,25 +362,26 @@ namespace SacksDataLayer.Services.Implementations
         {
             try
             {
-                Console.WriteLine("\n🔍 Validating file structure with enhanced checks:");
+                _logger.LogDebug("Validating file structure with enhanced checks");
                 var validationResult = _fileValidationService.ValidateFileStructureAsync(fileData, supplierConfig, cancellationToken);
                 
-                // Display detailed validation results
+                // Log detailed validation results
                 if (validationResult.FileHeaders.Any())
                 {
-                    Console.WriteLine($"📋 Found {validationResult.ColumnCount} columns: {string.Join(", ", validationResult.FileHeaders.Take(5))}{(validationResult.FileHeaders.Count > 5 ? "..." : "")}");
+                    _logger.LogDebug("Found {ColumnCount} columns: {Headers}", validationResult.ColumnCount, 
+                        string.Join(", ", validationResult.FileHeaders.Take(5)) + (validationResult.FileHeaders.Count > 5 ? "..." : ""));
                 }
 
                 if (validationResult.ExpectedColumnCount > 0)
                 {
-                    var status = validationResult.ColumnCount == validationResult.ExpectedColumnCount ? "✅" : "⚠️";
-                    Console.WriteLine($"   {status} Expected {validationResult.ExpectedColumnCount} columns, found {validationResult.ColumnCount}");
+                    _logger.LogDebug("Expected {ExpectedColumns} columns, found {ActualColumns}", 
+                        validationResult.ExpectedColumnCount, validationResult.ColumnCount);
                 }
 
-                // Display warnings
+                // Display warnings to user
                 foreach (var warning in validationResult.ValidationWarnings)
                 {
-                    Console.WriteLine($"⚠️  {warning}");
+                    _logger.LogWarning("{Warning}", warning);
                 }
 
                 // 🆕 ENHANCEMENT: Validate dataStartRowIndex configuration
@@ -391,21 +395,23 @@ namespace SacksDataLayer.Services.Implementations
                 // Handle validation errors
                 if (!validationResult.IsValid)
                 {
-                    Console.WriteLine("🔍 ❌ File structure validation failed:");
+                    _logger.LogError("File structure validation failed: {Errors}", string.Join("; ", validationResult.ValidationErrors));
+                    _logger.LogError("File structure validation failed:");
                     foreach (var error in validationResult.ValidationErrors)
                     {
-                        Console.WriteLine($"   • {error}");
+                        _logger.LogError("   • {Error}", error);
                     }
                     
                     var errorMessage = $"File structure validation failed: {string.Join("; ", validationResult.ValidationErrors)}";
                     throw new InvalidDataException(errorMessage);
                 }
 
-                Console.WriteLine("🔍 ✅ File structure validation passed!");
+                _logger.LogDebug("File structure validation passed");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"🔍 ❌ Structure validation failed: {ex.Message}");
+                _logger.LogError(ex, "Structure validation failed for file: {FilePath}", fileData.FilePath);
+                _logger.LogError("Structure validation failed: {ErrorMessage}", ex.Message);
                 throw;
             }
         }
@@ -428,7 +434,7 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                Console.WriteLine($"\n🚀 Processing file as Supplier Offer with transaction-based optimizations...");
+                _logger.LogInformation("Processing file as Supplier Offer with transaction-based optimizations");
                 
                 // Execute all database operations within a single transaction
                 await _unitOfWork.ExecuteInTransactionAsync(async (ct) =>
@@ -441,24 +447,24 @@ namespace SacksDataLayer.Services.Implementations
                     };
 
                     // Step 1: Create or get supplier
-                    Console.WriteLine($"   🏢 Creating/finding supplier: {supplierConfig.Name}");
+                    _logger.LogDebug("Creating/finding supplier: {SupplierName}", supplierConfig.Name);
                     var supplier = await _databaseService.CreateOrGetSupplierAsync(supplierConfig, "BulletproofProcessor", ct);
                     
                     // Step 1.5: Save changes to get the supplier ID
                     await _unitOfWork.SaveChangesAsync(ct);
-                    Console.WriteLine($"   🏢 ✅ Supplier ready: {supplier.Name} (ID: {supplier.Id})");
+                    _logger.LogDebug("Supplier ready: {SupplierName} (ID: {SupplierId})", supplier.Name, supplier.Id);
                     
                     // Step 2: Validate that offer does not already exist
-                    Console.WriteLine($"   🔍 Checking for existing offer with name: {Path.GetFileName(filePath)}");
+                    _logger.LogDebug("Checking for existing offer with name: {FileName}", Path.GetFileName(filePath));
                     await _databaseService.ValidateOfferDoesNotExistAsync(
                         supplier.Id, 
                         Path.GetFileName(filePath), 
                         supplier.Name, 
                         ct);
-                    Console.WriteLine($"   ✅ No duplicate offer found - proceeding with processing");
+                    _logger.LogDebug("No duplicate offer found - proceeding with processing");
 
                     // Step 3: Create new offer
-                    Console.WriteLine($"   📋 Creating offer for file: {Path.GetFileName(filePath)}");
+                    _logger.LogDebug("Creating offer for file: {FileName}", Path.GetFileName(filePath));
                     var offer = await _databaseService.CreateOfferAsync(
                         supplier,
                         Path.GetFileName(filePath),
@@ -470,10 +476,10 @@ namespace SacksDataLayer.Services.Implementations
                     
                     // Step 2.5: Save changes to get the offer ID
                     await _unitOfWork.SaveChangesAsync(ct);
-                    Console.WriteLine($"   📋 ✅ Offer created: {offer.OfferName} (ID: {offer.Id})");
+                    _logger.LogDebug("Offer created: {OfferName} (ID: {OfferId})", offer.OfferName, offer.Id);
 
                     // Step 3: Analyze file data (independent of database state)
-                    Console.WriteLine($"   � Analyzing file data without database dependencies...");
+                    _logger.LogDebug("Analyzing file data without database dependencies");
                     
                     var analysisResult = await AnalyzeFileDataAsync(fileData, 
                         supplier, supplierConfig, context.ProcessingDate, "BulletproofProcessor", ct);
@@ -481,22 +487,22 @@ namespace SacksDataLayer.Services.Implementations
                     if (analysisResult.Errors.Any())
                     {
                         var errorMessage = $"Analysis errors: {string.Join(", ", analysisResult.Errors)}";
-                        Console.WriteLine($"   🔄 ❌ {errorMessage}");
+                        _logger.LogError(errorMessage);
                         throw new InvalidDataException(errorMessage);
                     }
 
                     var productCount = analysisResult.SupplierOffer.OfferProducts.Count();
-                    Console.WriteLine($"   📦 ✅ Analyzed {productCount:N0} product offers from file");
+                    _logger.LogInformation("Analyzed {ProductCount:N0} product offers from file", productCount);
 
                     // Step 4: Database operations - Insert/Update based on current database state
-                    Console.WriteLine($"   💾 Performing database insert/update operations in single transaction...");
+                    _logger.LogDebug("Performing database insert/update operations in single transaction");
                     
                     var batchResult = await _databaseService.InsertOrUpdateSupplierOfferAsync(
                         analysisResult.SupplierOffer, offer, supplierConfig, "BulletproofProcessor", ct);
 
                     // Step 5: Final save for all remaining changes
                     await _unitOfWork.SaveChangesAsync(ct);
-                    Console.WriteLine($"   💾 ✅ All changes committed successfully in single transaction");
+                    _logger.LogDebug("All changes committed successfully in single transaction");
 
                     stopwatch.Stop();
 
@@ -508,14 +514,14 @@ namespace SacksDataLayer.Services.Implementations
             catch (DuplicateOfferException ex)
             {
                 stopwatch.Stop();
-                Console.WriteLine($"\n   ⚠️ DUPLICATE OFFER DETECTED");
-                Console.WriteLine($"   📋 Supplier: {ex.SupplierName}");
-                Console.WriteLine($"   📄 File: {ex.FileName}");
-                Console.WriteLine($"   🚫 Existing Offer: {ex.OfferName}");
-                Console.WriteLine($"\n   💡 SOLUTION:");
-                Console.WriteLine($"   ➡️  Rename the file '{ex.FileName}' to a different name");
-                Console.WriteLine($"   ➡️  Or delete/deactivate the existing offer first");
-                Console.WriteLine($"   ➡️  Processing has been stopped to prevent duplicates");
+                _logger.LogWarning("DUPLICATE OFFER DETECTED");
+                _logger.LogWarning("Supplier: {SupplierName}", ex.SupplierName);
+                _logger.LogWarning("File: {FileName}", ex.FileName);
+                _logger.LogWarning("Existing Offer: {OfferName}", ex.OfferName);
+                _logger.LogInformation("SOLUTION:");
+                _logger.LogInformation("Rename the file '{FileName}' to a different name", ex.FileName);
+                _logger.LogInformation("Or delete/deactivate the existing offer first");
+                _logger.LogInformation("Processing has been stopped to prevent duplicates");
                 
                 _logger.LogWarning("Duplicate offer validation failed: {Message}", ex.Message);
                 
@@ -525,12 +531,12 @@ namespace SacksDataLayer.Services.Implementations
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                Console.WriteLine($"   ❌ Failed to process Supplier Offer: {ex.Message}");
-                Console.WriteLine($"   🔄 All changes have been automatically rolled back");
+                _logger.LogError("Failed to process Supplier Offer: {ErrorMessage}", ex.Message);
+                _logger.LogInformation("All changes have been automatically rolled back");
                 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
-                    Console.WriteLine($"   🐛 Debug - Processing time before failure: {stopwatch.ElapsedMilliseconds}ms");
+                    _logger.LogDebug("Processing time before failure: {ElapsedMs}ms", stopwatch.ElapsedMilliseconds);
                 }
                 
                 throw;
@@ -540,36 +546,31 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// 📊 ENHANCED: Display comprehensive processing results
         /// </summary>
-        private static void DisplayProcessingResults(
+        private void DisplayProcessingResults(
             SupplierEntity supplier, 
             SupplierOfferEntity offer, 
             FileProcessingBatchResult batchResult, 
             long processingTimeMs)
         {
-            Console.WriteLine($"\n   📈 🎯 BULLETPROOF PROCESSING RESULTS:");
-            Console.WriteLine($"      🏢 Supplier: {supplier.Name} (ID: {supplier.Id})");
-            Console.WriteLine($"      📋 Offer: {offer.OfferName} (ID: {offer.Id})");
-            Console.WriteLine($"      ➕ Products created: {batchResult.ProductsCreated:N0}");
-            Console.WriteLine($"      🔄 Products updated: {batchResult.ProductsUpdated:N0}");
-            Console.WriteLine($"      ➕ Offer-products created: {batchResult.OfferProductsCreated:N0}");
-            Console.WriteLine($"      🔄 Offer-products updated: {batchResult.OfferProductsUpdated:N0}");
+            // Show only essential summary to user
+            _logger.LogInformation("Processing complete:");
+            _logger.LogInformation("{OfferName}", offer.OfferName);
+            _logger.LogInformation("Created: {ProductsCreated:N0} products, {OfferProductsCreated:N0} offers", batchResult.ProductsCreated, batchResult.OfferProductsCreated);
+            
+            if (batchResult.ProductsUpdated > 0 || batchResult.OfferProductsUpdated > 0)
+            {
+                _logger.LogInformation("Updated: {ProductsUpdated:N0} products, {OfferProductsUpdated:N0} offers", batchResult.ProductsUpdated, batchResult.OfferProductsUpdated);
+            }
             
             if (batchResult.Errors > 0)
             {
-                Console.WriteLine($"      ⚠️ Errors: {batchResult.Errors:N0}");
-                if (batchResult.Errors > 5)
-                    Console.WriteLine($"         (Only first 5 errors shown in logs)");
+                _logger.LogWarning("Errors: {Errors:N0}", batchResult.Errors);
             }
             
-            Console.WriteLine($"      ⏱️ Processing time: {processingTimeMs:N0}ms ({processingTimeMs / 1000.0:F1}s)");
-            
-            // Performance indicators
-            var totalOperations = batchResult.ProductsCreated + batchResult.ProductsUpdated + 
-                                batchResult.OfferProductsCreated + batchResult.OfferProductsUpdated;
-            if (totalOperations > 0 && processingTimeMs > 0)
+            // Performance indicators for significant processing times only
+            if (processingTimeMs > 5000) // Only show if > 5 seconds
             {
-                var operationsPerSecond = (totalOperations * 1000.0) / processingTimeMs;
-                Console.WriteLine($"      🚀 Performance: {operationsPerSecond:F1} operations/second");
+                _logger.LogInformation("Time: {ProcessingTime:F1}s", processingTimeMs / 1000.0);
             }
         }
 

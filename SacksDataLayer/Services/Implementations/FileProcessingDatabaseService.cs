@@ -66,8 +66,8 @@ namespace SacksDataLayer.Services.Implementations
                 _logger.LogInformation("Starting insert/update operations for {ProductCount} products", 
                     analysisOffer.OfferProducts.Count);
 
-                Console.WriteLine($"   🔍 DEBUG: InsertOrUpdateSupplierOfferAsync called with {analysisOffer.OfferProducts.Count} products");
-                Console.WriteLine($"   🔍 DEBUG: Database offer ID: {dbOffer.Id}");
+                _logger.LogDebug("InsertOrUpdateSupplierOfferAsync called with {ProductCount} products for offer ID: {OfferId}", 
+                    analysisOffer.OfferProducts.Count, dbOffer.Id);
 
                 // Step 1: Get all unique EANs from the analysis result
                 var productEANs = analysisOffer.OfferProducts
@@ -81,7 +81,8 @@ namespace SacksDataLayer.Services.Implementations
                     .Where(p => productEANs.Contains(p.EAN))
                     .ToDictionaryAsync(p => p.EAN, p => p, cancellationToken);
 
-                Console.WriteLine($"   🔍 DEBUG: Found {existingProducts.Count} existing products out of {productEANs.Count} EANs");
+                _logger.LogDebug("Found {ExistingCount} existing products out of {TotalCount} EANs", 
+                    existingProducts.Count, productEANs.Count);
 
                 var productsToCreate = new List<ProductEntity>();
                 var productsToUpdate = new List<ProductEntity>();
@@ -158,7 +159,8 @@ namespace SacksDataLayer.Services.Implementations
                     _logger.LogInformation("Added {Count} offer-product relationships", offerProductsToCreate.Count);
                 }
 
-                Console.WriteLine($"   🔍 DEBUG: Final result - Products Created={result.ProductsCreated}, Updated={result.ProductsUpdated}, OfferProducts Created={result.OfferProductsCreated}, Updated={result.OfferProductsUpdated}, Errors={result.Errors}");
+                _logger.LogDebug("Final result - Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}, Updated={OfferProductsUpdated}, Errors={Errors}", 
+                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated, result.Errors);
 
                 _logger.LogInformation("Completed insert/update operations: {ProductsCreated} products created, {ProductsUpdated} updated, " +
                     "{OfferProductsCreated} offer-products created, {Errors} errors",
@@ -337,16 +339,13 @@ namespace SacksDataLayer.Services.Implementations
                 _logger.LogInformation("Processing batch of {ProductCount} products for offer: {OfferId}", 
                     products.Count, offer.Id);
 
-                // Filter out products without EAN
+                // Filter out products without EAN - this is normal, not an error
                 var validProducts = products.Where(p => !string.IsNullOrWhiteSpace(p.Product.EAN)).ToList();
-                var invalidCount = products.Count - validProducts.Count;
-                result.Errors += invalidCount;
+                var skippedCount = products.Count - validProducts.Count;
 
-                if (invalidCount > 0)
+                if (skippedCount > 0)
                 {
-                    var errorMessage = $"Skipped {invalidCount} records without valid EAN";
-                    result.ErrorMessages.Add(errorMessage);
-                    _logger.LogWarning("Skipped {InvalidCount} records without valid EAN in batch", invalidCount);
+                    _logger.LogInformation("Skipped {SkippedCount} records without EAN (normal behavior)", skippedCount);
                 }
 
                 if (!validProducts.Any())
@@ -379,7 +378,8 @@ namespace SacksDataLayer.Services.Implementations
                     "{OfferProductsCreated} offer-products created, {OfferProductsUpdated} updated, {Errors} errors",
                     result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated, result.Errors);
 
-                Console.WriteLine($"   🔍 DEBUG: Final result being returned - Products Created={result.ProductsCreated}, Updated={result.ProductsUpdated}, OfferProducts Created={result.OfferProductsCreated}, Updated={result.OfferProductsUpdated}, Errors={result.Errors}");
+                _logger.LogDebug("Final result being returned - Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}, Updated={OfferProductsUpdated}, Errors={Errors}", 
+                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated, result.Errors);
 
                 return result;
             }
@@ -473,8 +473,9 @@ namespace SacksDataLayer.Services.Implementations
                 var offerProductsToCreate = new List<OfferProductEntity>();
                 var offerProductsToUpdate = new List<OfferProductEntity>();
 
-                Console.WriteLine($"   🔍 DEBUG: ProcessOfferProductsAsync called with {validProducts.Count} products");
-                Console.WriteLine($"   🔍 DEBUG: Current result counts BEFORE: Products Created={result.ProductsCreated}, Updated={result.ProductsUpdated}, OfferProducts Created={result.OfferProductsCreated}, Updated={result.OfferProductsUpdated}");
+                _logger.LogDebug("ProcessOfferProductsAsync called with {ProductCount} products", validProducts.Count);
+                _logger.LogDebug("Current result counts BEFORE: Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}, Updated={OfferProductsUpdated}", 
+                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated);
 
                 foreach (var productData in validProducts)
                 {
@@ -545,8 +546,10 @@ namespace SacksDataLayer.Services.Implementations
                 // Update counts for modified offer products
                 result.OfferProductsUpdated += offerProductsToUpdate.Count;
 
-                Console.WriteLine($"   🔍 DEBUG: OfferProducts processing completed. Created {offerProductsToCreate.Count}, Updated {offerProductsToUpdate.Count}");
-                Console.WriteLine($"   🔍 DEBUG: Current result counts AFTER: Products Created={result.ProductsCreated}, Updated={result.ProductsUpdated}, OfferProducts Created={result.OfferProductsCreated}, Updated={result.OfferProductsUpdated}");
+                _logger.LogDebug("OfferProducts processing completed. Created {CreatedCount}, Updated {UpdatedCount}", 
+                    offerProductsToCreate.Count, offerProductsToUpdate.Count);
+                _logger.LogDebug("Current result counts AFTER: Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}, Updated={OfferProductsUpdated}", 
+                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated);
 
                 _logger.LogInformation("Processed offer products: {Created} created, {Updated} updated", 
                     offerProductsToCreate.Count, offerProductsToUpdate.Count);
