@@ -5,6 +5,7 @@ using SacksDataLayer.Entities;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using SacksDataLayer.Configuration;
 
 namespace SacksDataLayer.FileProcessing.Normalizers
 {
@@ -15,13 +16,17 @@ namespace SacksDataLayer.FileProcessing.Normalizers
     {
         private readonly SupplierConfiguration _configuration;
         private readonly Dictionary<string, Func<string, object?>> _dataTypeConverters;
+        private readonly DescriptionPropertyExtractor? _descriptionExtractor;
 
         public string SupplierName => _configuration.Name;
 
-        public ConfigurationBasedNormalizer(SupplierConfiguration configuration)
+        public ConfigurationBasedNormalizer(SupplierConfiguration configuration, PropertyNormalizer? propertyNormalizer = null)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _dataTypeConverters = InitializeDataTypeConverters();
+            
+            // Initialize description extractor if PropertyNormalizer is available
+            _descriptionExtractor = propertyNormalizer != null ? new DescriptionPropertyExtractor(propertyNormalizer) : null;
         }
 
         public bool CanHandle(string fileName, IEnumerable<RowData> firstFewRows)
@@ -193,6 +198,21 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     // Classify and assign value based on property classification
                     await AssignValueByClassificationAsync(
                         product, offerProperties, targetProperty, processedValue, columnProperty.Classification);
+                }
+
+                // Extract additional properties from description if available and extractor is configured
+                if (_descriptionExtractor is not null && !string.IsNullOrEmpty(product.Description))
+                {
+                    var extractedProperties = _descriptionExtractor.ExtractPropertiesFromDescription(product.Description);
+                    
+                    // Add extracted properties to product's dynamic properties if they don't already exist
+                    foreach (var extractedProp in extractedProperties)
+                    {
+                        if (!product.DynamicProperties.ContainsKey(extractedProp.Key) && extractedProp.Value != null)
+                        {
+                            product.SetDynamicProperty(extractedProp.Key, extractedProp.Value);
+                        }
+                    }
                 }
 
                 // Ensure product has valid name
@@ -580,14 +600,45 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             var nameComponents = new List<string>();
             
-            if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
-                nameComponents.Add(family.ToString()!);
+            // Try to build a meaningful name from extracted/mapped properties
+            if (product.DynamicProperties.TryGetValue("Brand", out var brand) && brand != null)
+                nameComponents.Add(brand.ToString()!);
+            
+            if (product.DynamicProperties.TryGetValue("ProductLine", out var line) && line != null)
+                nameComponents.Add(line.ToString()!);
+            
             if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
                 nameComponents.Add(category.ToString()!);
-            if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
-                nameComponents.Add(itemName.ToString()!);
+            
+            if (product.DynamicProperties.TryGetValue("Size", out var size) && size != null)
+                nameComponents.Add(size.ToString()!);
+            
+            if (product.DynamicProperties.TryGetValue("Gender", out var gender) && gender != null)
+                nameComponents.Add($"for {gender}");
+            
+            if (product.DynamicProperties.TryGetValue("Concentration", out var concentration) && concentration != null)
+                nameComponents.Add(concentration.ToString()!);
 
-            return nameComponents.Any() ? string.Join(" - ", nameComponents) : "Unknown Product";
+            // Legacy properties for backward compatibility
+            if (!nameComponents.Any())
+            {
+                if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
+                    nameComponents.Add(family.ToString()!);
+                if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
+                    nameComponents.Add(itemName.ToString()!);
+            }
+            
+            // If no meaningful properties found, use description
+            if (!nameComponents.Any() && !string.IsNullOrWhiteSpace(product.Description))
+            {
+                // Truncate description if too long for a name
+                var desc = product.Description.Length > 50 
+                    ? product.Description.Substring(0, 50) + "..." 
+                    : product.Description;
+                nameComponents.Add(desc);
+            }
+
+            return nameComponents.Any() ? string.Join(" ", nameComponents) : "Unknown Product";
         }
 
         /// <summary>

@@ -352,7 +352,7 @@ namespace SacksDataLayer.Services.Implementations
                 }
 
                 // Step 1: Prepare products for bulk create/update
-                var coreProperties = supplierConfig.PropertyClassification?.CoreProductProperties ?? new List<string>();
+                var coreProperties = supplierConfig.GetCoreProductProperties();
                 var productsForBulkOperation = PrepareProductsForBulkOperation(validProducts, coreProperties);
 
                 // Step 2: Bulk create/update products

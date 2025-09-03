@@ -133,9 +133,10 @@ namespace SacksConsoleApp
                 Console.WriteLine("   5️⃣  🔧 Create new supplier configuration (Interactive)");
                 Console.WriteLine("   6️⃣  ❓ Show help and feature information");
                 Console.WriteLine("   7️⃣  🗂️ Create database views");
-                Console.WriteLine("   8️⃣  🚪 Exit");                
+                Console.WriteLine("   8️⃣  � Test Description Property Extraction");
+                Console.WriteLine("   9️⃣  �🚪 Exit");                
                 Console.WriteLine();
-                Console.Write("👉 Enter your choice (1-8, or 0 to exit): ");
+                Console.Write("👉 Enter your choice (1-9, or 0 to exit): ");
 
                 var input = Console.ReadLine()?.Trim();
                 Console.WriteLine();
@@ -166,11 +167,14 @@ namespace SacksConsoleApp
                             await CreateDatabaseViews(serviceProvider);
                             break;
                         case "8":
+                            await TestDescriptionPropertyExtraction(serviceProvider);
+                            break;
+                        case "9":
                         case "0":
                             Console.WriteLine("👋 Thank you for using Sacks Product Management System!");
                             return;
                         default:
-                            Console.WriteLine("❌ Invalid choice. Please enter a number between 1-8 (or 0 to exit).");
+                            Console.WriteLine("❌ Invalid choice. Please enter a number between 1-9 (or 0 to exit).");
                             break;
                     }
                 }
@@ -236,8 +240,7 @@ namespace SacksConsoleApp
                     var supplierConfig = config.Suppliers[i];
                     Console.WriteLine($"\n✅ {i + 1}. {supplierConfig.Name} Configuration:");
                     Console.WriteLine($"   Column Properties: {supplierConfig.ColumnProperties?.Count ?? 0}");
-                    Console.WriteLine($"   Data Types: {supplierConfig.DataTypes?.Count ?? 0}");
-                    Console.WriteLine($"   Required Fields: {supplierConfig.Validation?.RequiredFields.Count ?? 0} ({string.Join(", ", supplierConfig.Validation?.RequiredFields ?? new List<string>())})");
+                    Console.WriteLine($"   Required Fields: {supplierConfig.GetRequiredFields().Count} ({string.Join(", ", supplierConfig.GetRequiredFields())})");
                     Console.WriteLine($"   File Patterns: {string.Join(", ", supplierConfig.Detection?.FileNamePatterns ?? new List<string>())}");
                     Console.WriteLine($"   Header Row: {supplierConfig.FileStructure?.HeaderRowIndex}");
                     Console.WriteLine($"   Data Start Row: {supplierConfig.FileStructure?.DataStartRowIndex}");
@@ -441,6 +444,9 @@ namespace SacksConsoleApp
             
             // Add file processing services (includes all file processing dependencies)
             services.AddFileProcessingServices();
+            
+            // Add PropertyNormalizer service for description extraction
+            services.AddSingleton<PropertyNormalizer>();
             
             // Add supplier configuration manager
             // Add file processing dependencies
@@ -834,6 +840,124 @@ namespace SacksConsoleApp
             {
                 Console.WriteLine($"❌ Error creating database views: {ex.Message}");
                 _logger?.LogError(ex, "Error creating database views");
+            }
+        }
+
+        private static async Task TestDescriptionPropertyExtraction(ServiceProvider serviceProvider)
+        {
+            Console.WriteLine("=== 🔍 DESCRIPTION PROPERTY EXTRACTION TEST ===\n");
+
+            try
+            {
+                var propertyNormalizer = serviceProvider.GetRequiredService<PropertyNormalizer>();
+                var descriptionExtractor = new DescriptionPropertyExtractor(propertyNormalizer);
+
+                Console.WriteLine("🧪 Testing Description Property Extraction with sample product descriptions...\n");
+
+                // Test cases with various product descriptions
+                var testDescriptions = new[]
+                {
+                    "Dior Sauvage Eau de Parfum 100ml for Men - Fresh Woody Fragrance",
+                    "Chanel No. 5 EDP 50ml Women Floral Aldehyde Parfum Classic",
+                    "Tom Ford Black Orchid 30ml Unisex Oriental Gourmand",
+                    "YSL Libre Eau de Toilette 90ml Ladies Fresh Floral",
+                    "Armani Code EDT 75ml Masculine Woody Spicy Cologne",
+                    "Versace Bright Crystal 200ml Female Body Spray Fruity",
+                    "Calvin Klein Eternity 125ml for Him Aftershave Lotion",
+                    "Hugo Boss Bottled Night 150ml Men Eau Fraiche",
+                    "Estée Lauder Advanced Night Repair Serum 30ml Anti-aging Treatment",
+                    "L'Oréal Paris Revitalift Moisturizer 50g Face Cream",
+                    "MAC Ruby Woo Lipstick 3g Red Matte Lip Makeup",
+                    "Urban Decay Naked Eyeshadow Palette 12 pieces Eye Makeup",
+                    "Maybelline Fit Me Foundation 30ml Medium Coverage Base",
+                    "NARS Orgasm Blush 4.8g Peachy Pink Cheek Color",
+                    "Pantene Pro-V Shampoo 400ml Damaged Hair Repair",
+                    "Dove Intensive Repair Conditioner 200ml Dry Hair Treatment",
+                    "Neutrogena Hydrating Face Cleanser 200ml Gentle Formula",
+                    "CeraVe Daily Moisturizer with SPF 30 52ml Sun Protection",
+                    "The Ordinary Hyaluronic Acid Serum 30ml Hydrating Treatment",
+                    "Olay Regenerist Micro-Sculpting Cream 50g Anti-Aging Night Cream"
+                };
+
+                Console.WriteLine($"📝 Testing {testDescriptions.Length} sample descriptions:\n");
+
+                int successCount = 0;
+                
+                foreach (var (description, index) in testDescriptions.Select((desc, idx) => (desc, idx + 1)))
+                {
+                    Console.WriteLine($"🔬 Test #{index}: {description}");
+                    Console.WriteLine(new string('-', 80));
+
+                    var extractedProperties = descriptionExtractor.ExtractPropertiesFromDescription(description);
+
+                    if (extractedProperties.Any())
+                    {
+                        successCount++;
+                        Console.WriteLine("✅ Extracted Properties:");
+                        
+                        foreach (var prop in extractedProperties.OrderBy(p => p.Key))
+                        {
+                            Console.WriteLine($"   🏷️  {prop.Key}: {prop.Value}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("❌ No properties extracted");
+                    }
+
+                    Console.WriteLine();
+                }
+
+                // Summary
+                Console.WriteLine(new string('=', 80));
+                Console.WriteLine($"📊 EXTRACTION SUMMARY:");
+                Console.WriteLine($"   Total Descriptions Tested: {testDescriptions.Length}");
+                Console.WriteLine($"   Successful Extractions: {successCount}");
+                Console.WriteLine($"   Success Rate: {(double)successCount / testDescriptions.Length:P1}");
+                Console.WriteLine();
+
+                // Interactive test
+                Console.WriteLine("🎯 INTERACTIVE TEST:");
+                Console.WriteLine("Enter your own product description to test extraction (or press Enter to skip):");
+                Console.Write("👉 ");
+                
+                var userInput = Console.ReadLine()?.Trim();
+                
+                if (!string.IsNullOrEmpty(userInput))
+                {
+                    Console.WriteLine($"\n🔬 Testing: {userInput}");
+                    Console.WriteLine(new string('-', 80));
+                    
+                    var userExtractedProperties = descriptionExtractor.ExtractPropertiesFromDescription(userInput);
+                    
+                    if (userExtractedProperties.Any())
+                    {
+                        Console.WriteLine("✅ Extracted Properties:");
+                        foreach (var prop in userExtractedProperties.OrderBy(p => p.Key))
+                        {
+                            Console.WriteLine($"   🏷️  {prop.Key}: {prop.Value}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("❌ No properties extracted from your description");
+                        Console.WriteLine("💡 Try including brand names, sizes (50ml, 100g), gender (for men/women), or categories (perfume, lipstick, etc.)");
+                    }
+                }
+
+                Console.WriteLine("\n🎯 FEATURE BENEFITS:");
+                Console.WriteLine("   ✅ Automatically extracts Brand, Size, Gender, Category, Concentration");
+                Console.WriteLine("   ✅ Supports multiple languages and variations");
+                Console.WriteLine("   ✅ Normalizes extracted values for consistency");
+                Console.WriteLine("   ✅ Integrates with existing product processing pipeline");
+                Console.WriteLine("   ✅ Helps populate missing product properties from descriptions");
+
+                await Task.CompletedTask; // For async compatibility
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error during description property extraction test: {ex.Message}");
+                _logger?.LogError(ex, "Error testing description property extraction");
             }
         }
         

@@ -6,6 +6,7 @@ using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
 using SacksDataLayer.Extensions;
 using SacksDataLayer.Exceptions;
+using SacksDataLayer.Configuration;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -41,6 +42,7 @@ namespace SacksDataLayer.Services.Implementations
         private readonly IFileProcessingDatabaseService _databaseService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<FileProcessingService> _logger;
+        private readonly PropertyNormalizer _propertyNormalizer;
         
         // Circuit breaker for resilience
         private readonly SemaphoreSlim _processingLock = new(1, 1);
@@ -61,7 +63,8 @@ namespace SacksDataLayer.Services.Implementations
             ISupplierConfigurationService supplierConfigurationService,
             IFileProcessingDatabaseService databaseService,
             IUnitOfWork unitOfWork,
-            ILogger<FileProcessingService> logger)
+            ILogger<FileProcessingService> logger,
+            PropertyNormalizer propertyNormalizer)
         {
             // Comprehensive null validation with detailed messages
             _fileValidationService = fileValidationService ?? 
@@ -74,6 +77,8 @@ namespace SacksDataLayer.Services.Implementations
                 throw new ArgumentNullException(nameof(unitOfWork), "Unit of Work is required for transaction management");
             _logger = logger ?? 
                 throw new ArgumentNullException(nameof(logger), "Logger is required for diagnostics and monitoring");
+            _propertyNormalizer = propertyNormalizer ?? 
+                throw new ArgumentNullException(nameof(propertyNormalizer), "Property normalizer is required for data processing");
         }
 
         #endregion
@@ -601,7 +606,7 @@ namespace SacksDataLayer.Services.Implementations
                 SupplierOffer = null // No database entity during analysis
             };
             
-            var normalizer = new ConfigurationBasedNormalizer(supplierConfig);
+            var normalizer = new ConfigurationBasedNormalizer(supplierConfig, _propertyNormalizer);
             var analysisResult = await normalizer.NormalizeAsync(fileData, analysisContext);
             
             return analysisResult;
@@ -658,21 +663,6 @@ namespace SacksDataLayer.Services.Implementations
                     _logger.LogInformation(
                         "✅ FileStructure DataStartRowIndex: {DataStartRow} (1-based) is valid for file with {RowCount} rows",
                         config.FileStructure.DataStartRowIndex, rowCount);
-                }
-
-                // Check validation configuration (1-based indexing) 
-                if (config.Validation?.DataStartRowIndex > 0)
-                {
-                    if (config.Validation.DataStartRowIndex > rowCount)
-                    {
-                        throw new InvalidOperationException(
-                            $"❌ VALIDATION ERROR: Validation.DataStartRowIndex ({config.Validation.DataStartRowIndex}) " +
-                            $"exceeds file row count ({rowCount}). File: {Path.GetFileName(filePath)}");
-                    }
-
-                    _logger.LogInformation(
-                        "✅ Validation DataStartRowIndex: {ValidationStartRow} (1-based) is valid for file with {RowCount} rows",
-                        config.Validation.DataStartRowIndex, rowCount);
                 }
             }
             catch (Exception ex) when (!(ex is InvalidOperationException))
