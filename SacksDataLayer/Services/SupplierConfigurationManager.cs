@@ -454,15 +454,34 @@ namespace SacksDataLayer.FileProcessing.Services
             var currentFileName = Path.GetFileName(excelFilePath);
             var suggestedPatterns = GenerateFileNamePatterns(currentFileName, supplierName);
             
+            Console.WriteLine();
+            Console.WriteLine("📁 FILE NAMING PATTERNS");
+            Console.WriteLine("=======================");
+            Console.WriteLine($"Current file: {currentFileName}");
+            Console.WriteLine("Suggested patterns:");
+            
             _logger?.LogInformation("Suggested patterns based on '{CurrentFileName}':", currentFileName);
             for (int i = 0; i < suggestedPatterns.Count; i++)
             {
                 _logger?.LogInformation("   {Index}. {Pattern}", i + 1, suggestedPatterns[i]);
+                Console.WriteLine($"   {i + 1}. {suggestedPatterns[i]}");
             }
             
-            // NOTE: Interactive input removed - using suggested patterns automatically
-            _logger?.LogInformation("Using suggested patterns automatically in non-interactive mode");
-            var additionalPatterns = new List<string>(); // No additional patterns in non-interactive mode
+            Console.WriteLine();
+            Console.Write("❓ Add additional file patterns? (y/n, default: n): ");
+            var addPatternsInput = Console.ReadLine()?.Trim().ToLower();
+            var additionalPatterns = new List<string>();
+            
+            if (addPatternsInput == "y" || addPatternsInput == "yes")
+            {
+                Console.WriteLine("Enter additional patterns (one per line, empty line to finish):");
+                string? pattern;
+                while (!string.IsNullOrWhiteSpace(pattern = Console.ReadLine()?.Trim()))
+                {
+                    additionalPatterns.Add(pattern);
+                    Console.WriteLine($"   ✅ Added: {pattern}");
+                }
+            }
             
             var allPatterns = suggestedPatterns.Concat(additionalPatterns).Distinct().ToList();
 
@@ -487,6 +506,39 @@ namespace SacksDataLayer.FileProcessing.Services
             _logger?.LogInformation("   • Supplier: {SupplierName}", supplierConfig.Name);
             _logger?.LogInformation("   • Columns mapped: {ColumnCount}", columnProperties.Count);
             _logger?.LogInformation("   • File patterns: {PatternCount}", allPatterns.Count);
+
+            // Display final configuration summary
+            Console.WriteLine();
+            Console.WriteLine("📋 CONFIGURATION SUMMARY");
+            Console.WriteLine("=========================");
+            Console.WriteLine($"Supplier Name: {supplierConfig.Name}");
+            Console.WriteLine($"Header Row: {supplierConfig.FileStructure.HeaderRowIndex}");
+            Console.WriteLine($"Data Start Row: {supplierConfig.FileStructure.DataStartRowIndex}");
+            Console.WriteLine($"Expected Columns: {supplierConfig.FileStructure.ExpectedColumnCount}");
+            Console.WriteLine();
+            Console.WriteLine("Column Mappings:");
+            foreach (var (column, property) in columnProperties)
+            {
+                var req = property.IsRequired ? "Required" : "Optional";
+                var unique = property.IsUnique ? ", Unique" : "";
+                var skip = property.SkipEntireRow ? ", SkipRow" : "";
+                Console.WriteLine($"   {column}: {property.DisplayName} → {property.TargetProperty} ({property.Classification}, {req}{unique}{skip})");
+            }
+            Console.WriteLine();
+            Console.WriteLine("File Patterns:");
+            foreach (var pattern in allPatterns)
+            {
+                Console.WriteLine($"   • {pattern}");
+            }
+            Console.WriteLine();
+            Console.Write("❓ Save this configuration? (y/n, default: y): ");
+            var saveInput = Console.ReadLine()?.Trim().ToLower();
+            if (saveInput == "n" || saveInput == "no")
+            {
+                Console.WriteLine("❌ Configuration cancelled by user.");
+                throw new OperationCanceledException("Configuration creation cancelled by user");
+            }
+            Console.WriteLine("✅ Configuration approved for saving.");
 
             return supplierConfig;
         }
@@ -557,7 +609,6 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Creates column mappings interactively with user input
-        /// NOTE: Console interactions have been replaced with logging - method is no longer interactive
         /// </summary>
         private Dictionary<string, ColumnProperty> CreateColumnMappingsInteractively(
             FileData fileData, int headerRowIndex, int expectedColumnCount)
@@ -571,6 +622,9 @@ namespace SacksDataLayer.FileProcessing.Services
             }
 
             _logger?.LogInformation("COLUMN MAPPING CONFIGURATION");
+            Console.WriteLine();
+            Console.WriteLine("🗂️  COLUMN MAPPING CONFIGURATION");
+            Console.WriteLine("==================================");
 
             for (int i = 0; i < Math.Min(headerRow.Cells.Count, expectedColumnCount); i++)
             {
@@ -580,13 +634,17 @@ namespace SacksDataLayer.FileProcessing.Services
                 if (string.IsNullOrWhiteSpace(cellValue))
                 {
                     _logger?.LogInformation("Column {ColumnLetter}: (empty) - skipping", columnLetter);
+                    Console.WriteLine($"📍 Column {columnLetter}: (empty) - skipping");
                     continue;
                 }
 
                 _logger?.LogInformation("Column {ColumnLetter}: '{CellValue}'", columnLetter, cellValue);
+                Console.WriteLine();
+                Console.WriteLine($"📍 Column {columnLetter}: '{cellValue}'");
                 
                 // Show sample data from this column
                 _logger?.LogInformation("   Sample data:");
+                Console.WriteLine("   📊 Sample data:");
                 for (int sampleRow = headerRowIndex + 1; sampleRow < Math.Min(headerRowIndex + 6, fileData.RowCount); sampleRow++)
                 {
                     var dataRow = fileData.GetRow(sampleRow);
@@ -594,28 +652,114 @@ namespace SacksDataLayer.FileProcessing.Services
                     if (!string.IsNullOrWhiteSpace(sampleValue))
                     {
                         _logger?.LogInformation("      • {SampleValue}", sampleValue);
+                        Console.WriteLine($"      • {sampleValue}");
                     }
                 }
 
                 // Suggest mapping based on header name
                 var suggestedMapping = SuggestPropertyMapping(cellValue);
                 _logger?.LogInformation("Suggested mapping: {TargetProperty} ({Classification})", suggestedMapping.targetProperty, suggestedMapping.classification);
+                Console.WriteLine($"   💡 Suggested mapping: {suggestedMapping.targetProperty} ({suggestedMapping.classification})");
                 
-                // NOTE: Interactive input removed - automatically accepting suggested mapping
-                _logger?.LogInformation("Auto-accepting suggested mapping in non-interactive mode");
-                var targetProperty = suggestedMapping.targetProperty; // Use suggested mapping automatically
+                // Interactive input for target property
+                var availableProperties = new[] { 
+                    "Name", "EAN", "Brand", "Category", "Size", "Description", "Gender", "Line", "Unit",
+                    "Price", "Reference", "InStock", "Capacity", "Custom" 
+                };
+                Console.WriteLine($"   📋 Common target properties:");
+                for (int idx = 0; idx < availableProperties.Length - 1; idx++) // Exclude "Custom" from numbered list
+                {
+                    var propOpt = availableProperties[idx];
+                    var defaultMarker = propOpt == suggestedMapping.targetProperty ? " (suggested)" : "";
+                    Console.WriteLine($"      {idx + 1}. {propOpt}{defaultMarker}");
+                }
+                Console.WriteLine($"      {availableProperties.Length}. Custom (enter your own)");
+                Console.Write($"   ❓ Select target property (1-{availableProperties.Length}, or press Enter for '{suggestedMapping.targetProperty}'): ");
+                var userInput = Console.ReadLine()?.Trim();
+                
+                string targetProperty;
+                if (string.IsNullOrEmpty(userInput))
+                {
+                    targetProperty = suggestedMapping.targetProperty;
+                }
+                else if (int.TryParse(userInput, out var choice) && choice >= 1 && choice <= availableProperties.Length)
+                {
+                    if (choice == availableProperties.Length) // Custom option
+                    {
+                        Console.Write($"   ❓ Enter custom target property: ");
+                        targetProperty = Console.ReadLine()?.Trim() ?? suggestedMapping.targetProperty;
+                    }
+                    else
+                    {
+                        targetProperty = availableProperties[choice - 1];
+                    }
+                }
+                else
+                {
+                    // Allow direct entry if not a number
+                    targetProperty = userInput;
+                }
                 
                 // Show what was accepted
-                _logger?.LogInformation("   ✅ Accepted suggested mapping: {TargetProperty}", targetProperty);
+                _logger?.LogInformation("   ✅ Selected mapping: {TargetProperty}", targetProperty);
+                Console.WriteLine($"   ✅ Mapping: {columnLetter} → {targetProperty}");
                 
-                // Since we're automatically accepting suggestions, use suggested classification
-                string classification = suggestedMapping.classification;
-                _logger?.LogInformation("   ✅ Using suggested classification: {Classification}", classification);
+                // Interactive input for classification
+                var availableClassifications = new[] { "coreProduct", "offer", "metadata", "ignored" };
+                Console.WriteLine($"   📋 Available classifications:");
+                for (int idx = 0; idx < availableClassifications.Length; idx++)
+                {
+                    var classOpt = availableClassifications[idx];
+                    var defaultMarker = classOpt == suggestedMapping.classification ? " (default)" : "";
+                    Console.WriteLine($"      {idx + 1}. {classOpt}{defaultMarker}");
+                }
+                Console.Write($"   ❓ Select classification (1-{availableClassifications.Length}, or press Enter for '{suggestedMapping.classification}'): ");
+                var classificationInput = Console.ReadLine()?.Trim();
+                
+                string classification;
+                if (string.IsNullOrEmpty(classificationInput))
+                {
+                    classification = suggestedMapping.classification;
+                }
+                else if (int.TryParse(classificationInput, out var choice) && choice >= 1 && choice <= availableClassifications.Length)
+                {
+                    classification = availableClassifications[choice - 1];
+                }
+                else
+                {
+                    // Allow custom classification if not a number
+                    classification = classificationInput;
+                }
+                _logger?.LogInformation("   ✅ Selected classification: {Classification}", classification);
                 
                 // Determine data type based on sample data
                 var dataType = DetermineDataType(fileData, headerRowIndex, i);
                 
                 _logger?.LogInformation("   📊 Detected data type: {DataType}", dataType.type);
+                Console.WriteLine($"   📊 Detected data type: {dataType.type}");
+                
+                // Interactive validation settings
+                Console.WriteLine($"   ⚙️  Validation settings:");
+                
+                // Auto-suggest based on target property
+                var suggestedIsRequired = targetProperty.Contains("name", StringComparison.OrdinalIgnoreCase) || 
+                                        targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase);
+                var suggestedIsUnique = targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase) || 
+                                      targetProperty.Contains("id", StringComparison.OrdinalIgnoreCase);
+                
+                Console.Write($"      ❓ Is this field required? (y/n, default: {(suggestedIsRequired ? "y" : "n")}): ");
+                var requiredInput = Console.ReadLine()?.Trim().ToLower();
+                var isRequired = string.IsNullOrEmpty(requiredInput) ? suggestedIsRequired : 
+                               (requiredInput == "y" || requiredInput == "yes");
+                
+                Console.Write($"      ❓ Should this field be unique? (y/n, default: {(suggestedIsUnique ? "y" : "n")}): ");
+                var uniqueInput = Console.ReadLine()?.Trim().ToLower();
+                var isUnique = string.IsNullOrEmpty(uniqueInput) ? suggestedIsUnique : 
+                             (uniqueInput == "y" || uniqueInput == "yes");
+                
+                Console.Write($"      ❓ Skip entire row if validation fails? (y/n, default: n): ");
+                var skipRowInput = Console.ReadLine()?.Trim().ToLower();
+                var skipEntireRow = skipRowInput == "y" || skipRowInput == "yes";
                 
                 var columnProperty = new ColumnProperty
                 {
@@ -628,8 +772,9 @@ namespace SacksDataLayer.FileProcessing.Services
                     MaxLength = dataType.maxLength,
                     Transformations = dataType.transformations,
                     Classification = classification,
-                    IsRequired = targetProperty.Contains("name", StringComparison.OrdinalIgnoreCase) || targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase),
-                    IsUnique = targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase) || targetProperty.Contains("id", StringComparison.OrdinalIgnoreCase)
+                    IsRequired = isRequired,
+                    IsUnique = isUnique,
+                    SkipEntireRow = skipEntireRow
                 };
 
                 columnProperties[columnLetter] = columnProperty;
