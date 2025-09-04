@@ -17,48 +17,31 @@ public class OfferProductEntity : Entity
     [Column(TypeName = "decimal(18,2)")]
     public decimal? Price { get; set; }
     
-    [MaxLength(50)]
-    public string? Capacity { get; set; }
+    public int? Quantity { get; set; }
     
-    [Column(TypeName = "decimal(18,4)")]
-    public decimal? Discount { get; set; }
-    
-    [MaxLength(50)]
-    public string? UnitOfMeasure { get; set; }
-    
-    public int? MinimumOrderQuantity { get; set; }
-    public int? MaximumOrderQuantity { get; set; }
-    
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal? ListPrice { get; set; }
-    
-    public bool IsAvailable { get; set; } = true;
-    
-    [MaxLength(255)]
-    public string? Notes { get; set; }
     
     // Additional product-specific properties as JSON
     [Column(TypeName = "nvarchar(max)")]
-    public string? ProductPropertiesJson { get; set; }
+    public string? OfferPropertiesJson { get; set; }
     
     // In-memory dictionary for additional properties (not mapped to database)
     [NotMapped]
-    public Dictionary<string, object?> ProductProperties { get; set; } = new();
+    public Dictionary<string, object?> OfferProperties { get; set; } = new();
     
     // Navigation properties
     public virtual SupplierOfferEntity Offer { get; set; } = null!;
     public virtual ProductEntity Product { get; set; } = null!;
     
     // Methods to handle dynamic properties
-    public void SetProductProperty(string key, object? value)
+    public void SetOfferProperty(string key, object? value)
     {
-        ProductProperties[key] = value;
-        SerializeProductProperties();
+        OfferProperties[key] = value;
+        SerializeOfferProperties();
     }
     
-    public T? GetProductProperty<T>(string key)
+    public T? GetOfferProperty<T>(string key)
     {
-        if (ProductProperties.TryGetValue(key, out var value) && value != null)
+        if (OfferProperties.TryGetValue(key, out var value) && value != null)
         {
             if (value is JsonElement element)
             {
@@ -68,19 +51,19 @@ public class OfferProductEntity : Entity
         }
         return default;
     }
-    
-    public void SerializeProductProperties()
+
+    public void SerializeOfferProperties()
     {
-        ProductPropertiesJson = ProductProperties.Count > 0 
-            ? JsonSerializer.Serialize(ProductProperties) 
+        OfferPropertiesJson = OfferProperties.Count > 0 
+            ? JsonSerializer.Serialize(OfferProperties) 
             : null;
     }
-    
-    public void DeserializeProductProperties()
+
+    public void DeserializeOfferProperties()
     {
-        if (!string.IsNullOrEmpty(ProductPropertiesJson))
+        if (!string.IsNullOrEmpty(OfferPropertiesJson))
         {
-            ProductProperties = JsonSerializer.Deserialize<Dictionary<string, object?>>(ProductPropertiesJson) 
+            OfferProperties = JsonSerializer.Deserialize<Dictionary<string, object?>>(OfferPropertiesJson) 
                              ?? new Dictionary<string, object?>();
         }
     }

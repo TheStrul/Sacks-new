@@ -14,6 +14,7 @@
       "columnProperties": {
         "A": {
           "productPropertyKey": "EAN",
+          "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": false,
@@ -29,6 +30,7 @@
         },
         "B": {
           "productPropertyKey": "Ref",
+          "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
@@ -44,6 +46,7 @@
         },
         "C": {
           "productPropertyKey": "Brand",
+          "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
@@ -59,6 +62,7 @@
         },
         "D": {
           "productPropertyKey": "Description",
+          "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
@@ -74,6 +78,7 @@
         },
         "E": {
           "productPropertyKey": "Category",
+          "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
@@ -98,6 +103,7 @@
         },
         "F": {
           "productPropertyKey": "COO",
+          "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
@@ -113,35 +119,37 @@
         },
         "G": {
           "productPropertyKey": "Quantity",
-          "format": "currency",
+          "dataType": "int",
+          "format": "integer",
           "defaultValue": 0,
           "allowNull": true,
           "maxLength": null,
           "transformations": [
-            "removeSymbols",
-            "parseDecimal"
+            "trim",
+            "removeSymbols"
           ],
-          "isRequired": true,
+          "isRequired": false,
           "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
-          "skipEntireRow": true
+          "skipEntireRow": false
         },
         "H": {
           "productPropertyKey": "Price",
+          "dataType": "decimal",
           "format": "currency",
           "defaultValue": 0,
           "allowNull": true,
           "maxLength": null,
           "transformations": [
-            "removeSymbols",
-            "parseDecimal"
+            "trim",
+            "removeSymbols"
           ],
-          "isRequired": true,
+          "isRequired": false,
           "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
-          "skipEntireRow": true
+          "skipEntireRow": false
         }
       },
       "fileStructure": {
@@ -391,6 +399,30 @@
           "fabricado_en",
           "fabriqu\u00E9_en",
           "prodotto_in"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "Ref": {
+        "key": "Ref",
+        "displayName": "Reference",
+        "description": "Supplier reference code for the product",
+        "dataType": "string",
+        "classification": "offer",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 13,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "ref",
+          "reference",
+          "code",
+          "sku",
+          "part_number",
+          "article_number"
         ],
         "format": null,
         "unit": null,

@@ -115,16 +115,14 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                                 statistics.ProductsCreated++;
                                 statistics.PricingRecordsProcessed++;
                                 
-                                // Check if this offer product has offer-specific data
-                                var hasOfferData = offerProduct.Price.HasValue ||
-                                                 !string.IsNullOrEmpty(offerProduct.Capacity) ||
-                                                 offerProduct.ProductProperties.Count > 0;
-                                
-                                if (hasOfferData)
+                // Check if this offer product has offer-specific data
+                var hasOfferData = offerProduct.Price.HasValue ||
+                                 offerProduct.Quantity.HasValue ||
+                                 offerProduct.OfferProperties.Count > 0;                                if (hasOfferData)
                                 {
                                     statistics.OfferProductsCreated++;
                                 }
-                                if (offerProduct.ProductProperties.ContainsKey("StockQuantity"))
+                                if (offerProduct.OfferProperties.ContainsKey("StockQuantity"))
                                 {
                                     statistics.StockRecordsProcessed++;
                                 }
@@ -397,7 +395,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     break;
                 default:
                     // Classify based on configuration
-                    if (classification == "coreProduct")
+                    if (classification == "coreproduct")
                     {
                         // Core product property - goes to ProductEntity.DynamicProperties
                         product.SetDynamicProperty(targetProperty, value);
@@ -510,8 +508,10 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             {
                 ["string"] = value => value,
                 ["int"] = value => int.TryParse(value, out int result) ? result : null,
+                ["integer"] = value => int.TryParse(value, out int result) ? result : null, // Alias for int
                 ["decimal"] = value => decimal.TryParse(value, NumberStyles.Currency, CultureInfo.InvariantCulture, out decimal result) ? result : null,
                 ["bool"] = value => ParseBooleanValue(value),
+                ["boolean"] = value => ParseBooleanValue(value), // Alias for bool
                 ["datetime"] = value => DateTime.TryParse(value, out DateTime result) ? result : null,
                 ["date"] = value => DateOnly.TryParse(value, out DateOnly result) ? result : null,
                 ["time"] = value => TimeOnly.TryParse(value, out TimeOnly result) ? result : null
@@ -558,7 +558,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             var offerProduct = new OfferProductEntity
             {
-                IsAvailable = true,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -575,32 +574,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                             offerProduct.Price = price;
                         mappedProperties.Add(prop.Key);
                         break;
-                    case "capacity":
-                        offerProduct.Capacity = prop.Value?.ToString();
-                        mappedProperties.Add(prop.Key);
-                        break;
-                    case "discount":
-                        if (decimal.TryParse(prop.Value?.ToString(), out decimal discount))
-                            offerProduct.Discount = discount;
-                        mappedProperties.Add(prop.Key);
-                        break;
-                    case "listprice":
-                        if (decimal.TryParse(prop.Value?.ToString(), out decimal listPrice))
-                            offerProduct.ListPrice = listPrice;
-                        mappedProperties.Add(prop.Key);
-                        break;
-                    case "unitofmeasure":
-                        offerProduct.UnitOfMeasure = prop.Value?.ToString();
-                        mappedProperties.Add(prop.Key);
-                        break;
-                    case "minimumorderquantity":
-                        if (int.TryParse(prop.Value?.ToString(), out int minQty))
-                            offerProduct.MinimumOrderQuantity = minQty;
-                        mappedProperties.Add(prop.Key);
-                        break;
-                    case "maximumorderquantity":
-                        if (int.TryParse(prop.Value?.ToString(), out int maxQty))
-                            offerProduct.MaximumOrderQuantity = maxQty;
+                    case "quantity":
+                        if (int.TryParse(prop.Value?.ToString(), out int quantity))
+                            offerProduct.Quantity = quantity;
                         mappedProperties.Add(prop.Key);
                         break;
                 }
@@ -615,7 +591,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             {
                 foreach (var prop in unmappedProperties)
                 {
-                    offerProduct.SetProductProperty(prop.Key, prop.Value);
+                    offerProduct.SetOfferProperty(prop.Key, prop.Value);
                 }
             }
 

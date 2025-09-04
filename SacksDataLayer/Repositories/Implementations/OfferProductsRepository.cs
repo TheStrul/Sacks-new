@@ -88,15 +88,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 throw new InvalidOperationException($"OfferProduct with ID {offerProduct.Id} not found");
 
             existingOfferProduct.Price = offerProduct.Price;
-            existingOfferProduct.Capacity = offerProduct.Capacity;
-            existingOfferProduct.Discount = offerProduct.Discount;
-            existingOfferProduct.UnitOfMeasure = offerProduct.UnitOfMeasure;
-            existingOfferProduct.MinimumOrderQuantity = offerProduct.MinimumOrderQuantity;
-            existingOfferProduct.MaximumOrderQuantity = offerProduct.MaximumOrderQuantity;
-            existingOfferProduct.ListPrice = offerProduct.ListPrice;
-            existingOfferProduct.Notes = offerProduct.Notes;
-            existingOfferProduct.IsAvailable = offerProduct.IsAvailable;
-            existingOfferProduct.ProductProperties = offerProduct.ProductProperties;
+            existingOfferProduct.OfferProperties = offerProduct.OfferProperties;
             existingOfferProduct.UpdateModified();
 
             return existingOfferProduct;

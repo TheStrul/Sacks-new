@@ -76,9 +76,6 @@ namespace SacksDataLayer.Configuration
         [JsonPropertyName("description")]
         public string? Description { get; set; }
 
-        [JsonPropertyName("dataType")]
-        public PropertyDataType DataType { get; set; } = PropertyDataType.String;
-
         [JsonPropertyName("classification")]
         public PropertyClassificationType Classification { get; set; } = PropertyClassificationType.CoreProduct;
 
@@ -94,23 +91,6 @@ namespace SacksDataLayer.Configuration
         [JsonPropertyName("displayOrder")]
         public int DisplayOrder { get; set; } = 0;
 
-        [JsonPropertyName("defaultValue")]
-        public object? DefaultValue { get; set; }
-
-        [JsonPropertyName("allowedValues")]
-        public List<string> AllowedValues { get; set; } = new();
-
-        [JsonPropertyName("aliases")]
-        public List<string> Aliases { get; set; } = new();
-
-        [JsonPropertyName("format")]
-        public string? Format { get; set; }
-
-        [JsonPropertyName("unit")]
-        public string? Unit { get; set; }
-
-        [JsonPropertyName("category")]
-        public string? Category { get; set; }
     }
 
     /// <summary>

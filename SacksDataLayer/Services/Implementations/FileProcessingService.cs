@@ -322,6 +322,19 @@ namespace SacksDataLayer.Services.Implementations
                 _logger.LogInformation("Auto-detected supplier: {SupplierName} for file: {FileName}", supplierConfig.Name, Path.GetFileName(filePath));
                 _logger.LogInformation("Detected supplier: {SupplierName}", supplierConfig.Name);
                 
+                // Resolve column properties with market configuration
+                _logger.LogDebug("Resolving column properties with market configuration for supplier: {SupplierName}", supplierConfig.Name);
+                
+                if (supplierConfig.EffectiveMarketConfiguration == null)
+                {
+                    _logger.LogWarning("No productPropertyConfiguration found in supplier-formats.json. All properties will use default 'coreProduct' classification.");
+                    _logger.LogWarning("To fix this: Add a 'productPropertyConfiguration' section to supplier-formats.json with proper property classifications.");
+                    return supplierConfig; // Early exit without resolution
+                }
+                
+                supplierConfig.ResolveColumnProperties();
+                _logger.LogDebug("Column properties resolved successfully for supplier: {SupplierName}", supplierConfig.Name);
+                
                 return supplierConfig;
             }
             catch (Exception ex)

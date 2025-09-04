@@ -117,7 +117,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
                     column.ResolveFromMarketConfig(effectiveConfig);
                 }
                 
-                if (column.Classification == "coreProduct" || column.Classification == "CoreProduct")
+                if (column.Classification == "coreproduct" || column.Classification == "CoreProduct")
                 {
                     result.Add(column.ProductPropertyKey);
                 }
@@ -227,6 +227,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
         public string ProductPropertyKey { get; set; } = string.Empty;
 
         // File Processing Specific Properties (Excel column mapping)
+        [JsonPropertyName("dataType")]
+        public string DataType { get; set; } = "string"; // Technical data type for processing (string, int, decimal, bool, etc.)
+
         [JsonPropertyName("format")]
         public string? Format { get; set; } // For dates, numbers, etc.
 
@@ -266,10 +269,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
         public string DisplayName { get; set; } = string.Empty; // Will be populated from market config
 
         [JsonIgnore]
-        public string Classification { get; set; } = "coreProduct"; // Will be populated from market config
-
-        [JsonIgnore]
-        public string DataType { get; set; } = "string"; // Will be populated from market config
+        public string Classification { get; set; } = "coreproduct"; // Will be populated from market config
 
         /// <summary>
         /// Resolves this column property using the market configuration
@@ -282,16 +282,10 @@ namespace SacksDataLayer.FileProcessing.Configuration
             {
                 DisplayName = marketProperty.DisplayName;
                 Classification = marketProperty.Classification.ToString().ToLowerInvariant();
-                DataType = marketProperty.DataType.ToString().ToLowerInvariant();
+                // Note: DataType remains as defined in the column configuration (supplier-specific)
                 
                 // Use market defaults if file-specific overrides are not set
                 IsRequired ??= marketProperty.IsRequired;
-                
-                // Merge allowed values if not specified in file config
-                if (AllowedValues.Count == 0 && marketProperty.AllowedValues.Count > 0)
-                {
-                    AllowedValues = new List<string>(marketProperty.AllowedValues);
-                }
             }
         }
 

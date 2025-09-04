@@ -61,9 +61,5 @@ namespace SacksDataLayer.Services.Interfaces
         Task<(IEnumerable<OfferProductEntity> OfferProducts, int TotalCount)> GetOfferProductsAsync(
             int pageNumber = 1, int pageSize = 50);
 
-        /// <summary>
-        /// Marks an offer-product as unavailable
-        /// </summary>
-        Task<bool> SetAvailabilityAsync(int id, bool isAvailable, string? modifiedBy = null);
     }
 }

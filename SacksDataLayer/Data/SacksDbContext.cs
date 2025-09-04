@@ -180,35 +180,17 @@ namespace SacksDataLayer.Data
                 entity.HasIndex(e => new { e.OfferId, e.ProductId })
                       .HasDatabaseName("IX_OfferProducts_Offer_Product");
 
-                entity.HasIndex(e => e.IsAvailable)
-                      .HasDatabaseName("IX_OfferProducts_IsAvailable");
-
                 // Property configurations
                 entity.Property(e => e.Price)
                       .HasColumnType("decimal(18,2)");
 
-                entity.Property(e => e.Discount)
-                      .HasColumnType("decimal(18,4)");
-
-                entity.Property(e => e.ListPrice)
-                      .HasColumnType("decimal(18,2)");
-
-                entity.Property(e => e.Capacity)
-                      .HasMaxLength(50);
-
-                entity.Property(e => e.UnitOfMeasure)
-                      .HasMaxLength(50);
-
-                entity.Property(e => e.Notes)
-                      .HasMaxLength(255);
-
-                // Configure ProductPropertiesJson as JSON column (SQL Server compatible)
-                entity.Property(e => e.ProductPropertiesJson)
+                // Configure OfferPropertiesJson as JSON column (SQL Server compatible)
+                entity.Property(e => e.OfferPropertiesJson)
                       .HasColumnType("nvarchar(max)")
-                      .HasColumnName("ProductProperties");
+                      .HasColumnName("OfferProperties");
 
-                // Configure the ProductProperties to be ignored by EF (since it's handled by JSON property)
-                entity.Ignore(e => e.ProductProperties);
+                // Configure the OfferProperties to be ignored by EF (since it's handled by JSON property)
+                entity.Ignore(e => e.OfferProperties);
 
                 // Foreign key relationships
                 entity.HasOne(e => e.Offer)
@@ -268,7 +250,7 @@ namespace SacksDataLayer.Data
 
             foreach (var entry in offerProductEntries)
             {
-                entry.Entity.SerializeProductProperties();
+                entry.Entity.SerializeOfferProperties();
             }
         }
     }

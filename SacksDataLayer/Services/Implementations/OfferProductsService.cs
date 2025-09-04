@@ -87,7 +87,7 @@ namespace SacksDataLayer.Services.Implementations
             if (existingOfferProduct != null)
             {
                 // Update existing relationship
-                existingOfferProduct.ProductPropertiesJson = offerPropertiesJson;
+                existingOfferProduct.OfferPropertiesJson = offerPropertiesJson;
                 return await UpdateOfferProductAsync(existingOfferProduct, createdBy);
             }
             else
@@ -97,7 +97,7 @@ namespace SacksDataLayer.Services.Implementations
                 {
                     OfferId = offerId,
                     ProductId = productId,
-                    ProductPropertiesJson = offerPropertiesJson
+                    OfferPropertiesJson = offerPropertiesJson
                 };
 
                 return await CreateOfferProductAsync(newOfferProduct, createdBy);
@@ -167,17 +167,6 @@ namespace SacksDataLayer.Services.Implementations
             return Enumerable.Empty<OfferProductEntity>();
         }
 
-        public async Task<bool> SetAvailabilityAsync(int id, bool isAvailable, string? modifiedBy = null)
-        {
-            var offerProduct = await _repository.GetByIdAsync(id, CancellationToken.None);
-            if (offerProduct == null)
-                return false;
-
-            offerProduct.IsAvailable = isAvailable;
-            await _repository.UpdateAsync(offerProduct, CancellationToken.None);
-            return true;
-        }
-
         private async Task ValidateOfferProductAsync(OfferProductEntity offerProduct)
         {
             if (offerProduct == null)
@@ -188,6 +177,12 @@ namespace SacksDataLayer.Services.Implementations
 
             if (offerProduct.ProductId <= 0)
                 throw new ArgumentException("Valid product ID is required", nameof(offerProduct));
+
+            if (offerProduct.Price <= 0)
+                throw new ArgumentException("Price must be greater than zero", nameof(offerProduct));
+
+            if (offerProduct.Quantity <= 0)
+                throw new ArgumentException("Quantity must be greater than zero", nameof(offerProduct));
 
             // Additional business validation can be added here
             await Task.CompletedTask; // Placeholder for async validation

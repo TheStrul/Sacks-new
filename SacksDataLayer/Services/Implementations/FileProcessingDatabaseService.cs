@@ -125,17 +125,10 @@ namespace SacksDataLayer.Services.Implementations
                         OfferId = dbOffer.Id,
                         Product = dbProduct, // Navigation property will handle ID assignment
                         Price = analysisOfferProduct.Price,
-                        Capacity = analysisOfferProduct.Capacity,
-                        Discount = analysisOfferProduct.Discount,
-                        ListPrice = analysisOfferProduct.ListPrice,
-                        UnitOfMeasure = analysisOfferProduct.UnitOfMeasure,
-                        MinimumOrderQuantity = analysisOfferProduct.MinimumOrderQuantity,
-                        MaximumOrderQuantity = analysisOfferProduct.MaximumOrderQuantity,
-                        IsAvailable = analysisOfferProduct.IsAvailable,
                         CreatedAt = DateTime.UtcNow,
-                        ProductProperties = analysisOfferProduct.ProductProperties
+                        OfferProperties = analysisOfferProduct.OfferProperties
                     };
-                    offerProduct.SerializeProductProperties();
+                    offerProduct.SerializeOfferProperties();
 
                     offerProductsToCreate.Add(offerProduct);
                 }
@@ -487,20 +480,13 @@ namespace SacksDataLayer.Services.Implementations
                         {
                             // Update existing offer product
                             existingOfferProduct.Price = productData.Price;
-                            existingOfferProduct.Capacity = productData.Capacity;
-                            existingOfferProduct.Discount = productData.Discount;
-                            existingOfferProduct.ListPrice = productData.ListPrice;
-                            existingOfferProduct.UnitOfMeasure = productData.UnitOfMeasure;
-                            existingOfferProduct.MinimumOrderQuantity = productData.MinimumOrderQuantity;
-                            existingOfferProduct.MaximumOrderQuantity = productData.MaximumOrderQuantity;
-                            existingOfferProduct.IsAvailable = productData.IsAvailable;
                             existingOfferProduct.UpdateModified();
 
                             // Update dynamic properties
-                            existingOfferProduct.ProductProperties.Clear();
-                            foreach (var prop in productData.ProductProperties)
+                            existingOfferProduct.OfferProperties.Clear();
+                            foreach (var prop in productData.OfferProperties)
                             {
-                                existingOfferProduct.SetProductProperty(prop.Key, prop.Value);
+                                existingOfferProduct.SetOfferProperty(prop.Key, prop.Value);
                             }
 
                             offerProductsToUpdate.Add(existingOfferProduct);
@@ -513,20 +499,13 @@ namespace SacksDataLayer.Services.Implementations
                                 OfferId = offer.Id,
                                 ProductId = savedProduct.Id,
                                 Price = productData.Price,
-                                Capacity = productData.Capacity,
-                                Discount = productData.Discount,
-                                ListPrice = productData.ListPrice,
-                                UnitOfMeasure = productData.UnitOfMeasure,
-                                MinimumOrderQuantity = productData.MinimumOrderQuantity,
-                                MaximumOrderQuantity = productData.MaximumOrderQuantity,
-                                IsAvailable = productData.IsAvailable,
                                 CreatedAt = DateTime.UtcNow
                             };
 
                             // Copy dynamic properties
-                            foreach (var prop in productData.ProductProperties)
+                            foreach (var prop in productData.OfferProperties)
                             {
-                                newOfferProduct.SetProductProperty(prop.Key, prop.Value);
+                                newOfferProduct.SetOfferProperty(prop.Key, prop.Value);
                             }
 
                             offerProductsToCreate.Add(newOfferProduct);
