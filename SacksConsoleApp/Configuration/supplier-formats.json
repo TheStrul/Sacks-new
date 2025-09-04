@@ -91,13 +91,12 @@
           "validationPatterns": [],
           "allowedValues": [
             "Perfume",
-            "Tester",
-            "Skin Cream",
-            "Body Lotion",
             "Deodorant",
-            "Gift Set",
-            "Miniature",
-            "Sample"
+            "EDC",
+            "EDT",
+            "EDP",
+            "NICHE",
+            "COFFRET"
           ],
           "skipEntireRow": true
         },

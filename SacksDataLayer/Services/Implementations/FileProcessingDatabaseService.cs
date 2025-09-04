@@ -125,6 +125,7 @@ namespace SacksDataLayer.Services.Implementations
                         OfferId = dbOffer.Id,
                         Product = dbProduct, // Navigation property will handle ID assignment
                         Price = analysisOfferProduct.Price,
+                        Quantity = analysisOfferProduct.Quantity,
                         CreatedAt = DateTime.UtcNow,
                         OfferProperties = analysisOfferProduct.OfferProperties
                     };

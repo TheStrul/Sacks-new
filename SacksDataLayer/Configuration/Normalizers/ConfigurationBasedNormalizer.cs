@@ -19,7 +19,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         public string? ErrorMessage { get; set; }
 
         public static ValidationResult Valid() => new() { IsValid = true };
-        public static ValidationResult Invalid(bool skipEntireRow = false, string? errorMessage = null) => 
+        public static ValidationResult Invalid(bool skipEntireRow = false, string? errorMessage = null) =>
             new() { IsValid = false, SkipEntireRow = skipEntireRow, ErrorMessage = errorMessage };
     }
 
@@ -38,7 +38,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _dataTypeConverters = InitializeDataTypeConverters();
-            
+
             // Initialize description extractor if PropertyNormalizer is available
             _descriptionExtractor = propertyNormalizer != null ? new DescriptionPropertyExtractor(propertyNormalizer) : null;
         }
@@ -46,11 +46,11 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         public bool CanHandle(string fileName, IEnumerable<RowData> firstFewRows)
         {
             ArgumentNullException.ThrowIfNull(fileName);
-            
+
             var detection = _configuration.Detection;
             var lowerFileName = fileName.ToLowerInvariant();
 
-            return detection.FileNamePatterns.Any(pattern => 
+            return detection.FileNamePatterns.Any(pattern =>
                 IsPatternMatch(lowerFileName, pattern.ToLowerInvariant()));
         }
 
@@ -58,7 +58,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             ArgumentNullException.ThrowIfNull(fileData);
             ArgumentNullException.ThrowIfNull(context);
-            
+
             var startTime = DateTime.UtcNow;
             var result = new ProcessingResult
             {
@@ -97,16 +97,21 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
                 // Process data rows using FileStructure configuration
                 var dataStartIndex = _configuration.FileStructure?.DataStartRowIndex ?? 1;
-                var dataRows = fileData.DataRows
-                    .Skip(dataStartIndex)
-                    .Where(r => r.HasData); // Simplified: always skip empty rows for now
+                var allDataRows = fileData.DataRows.Skip(dataStartIndex).ToList();
+                var emptyRowsSkipped = allDataRows.Count(r => !r.HasData);
+                var dataRows = allDataRows.Where(r => r.HasData);
+
+                if (emptyRowsSkipped > 0)
+                {
+                    Console.WriteLine($"🔄 DEBUG: Skipped {emptyRowsSkipped} empty rows after row {dataStartIndex}");
+                }
 
                 foreach (var row in dataRows)
                 {
                     try
                     {
                         var offerProduct = await NormalizeRowAsync(row, context, fileData.FilePath, supplierOffer);
-                        
+
                         if (offerProduct != null)
                         {
                             if (IsValidOfferProduct(offerProduct))
@@ -114,11 +119,11 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                                 offerProducts.Add(offerProduct);
                                 statistics.ProductsCreated++;
                                 statistics.PricingRecordsProcessed++;
-                                
-                // Check if this offer product has offer-specific data
-                var hasOfferData = offerProduct.Price.HasValue ||
-                                 offerProduct.Quantity.HasValue ||
-                                 offerProduct.OfferProperties.Count > 0;                                if (hasOfferData)
+
+                                // Check if this offer product has offer-specific data
+                                var hasOfferData = offerProduct.Price.HasValue ||
+                                                 offerProduct.Quantity.HasValue ||
+                                                 offerProduct.OfferProperties.Count > 0; if (hasOfferData)
                                 {
                                     statistics.OfferProductsCreated++;
                                 }
@@ -131,7 +136,12 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                             {
                                 statistics.ProductsSkipped++;
                                 statistics.OrphanedCommercialRecords++;
+                                Console.WriteLine($"🔄 DEBUG: Skipped invalid product in row {row.Index}: Product='{offerProduct.Product?.Name ?? "null"}', EAN='{offerProduct.Product?.EAN ?? "null"}' (missing required data)");
                             }
+                        }
+                        else
+                        {
+                            //Console.WriteLine($"🔄 DEBUG: Skipped entire row {row.Index}: Row validation failed or marked for skipping");
                         }
                     }
                     catch (Exception ex)
@@ -164,8 +174,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// Normalizes a single row using unified ColumnProperties configuration
         /// </summary>
         private async Task<OfferProductEntity?> NormalizeRowAsync(
-            RowData row, 
-            ProcessingContext context, 
+            RowData row,
+            ProcessingContext context,
             string sourceFile,
             SupplierOfferEntity? supplierOffer)
         {
@@ -173,21 +183,27 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             {
                 var product = new ProductEntity();
                 var offerProperties = new Dictionary<string, object?>();
-                
+
                 // Process each configured column property
                 foreach (var columnConfig in _configuration.ColumnProperties)
                 {
                     var columnKey = columnConfig.Key; // Excel column (A, B, C, etc.)
                     var columnProperty = columnConfig.Value;
                     var targetProperty = columnProperty.TargetProperty ?? columnProperty.DisplayName;
-                    
+
                     if (string.IsNullOrEmpty(targetProperty))
+                    {
+                        Console.WriteLine($"🔄 DEBUG: Skipped column {columnKey} in row {row.Index}: No target property defined");
                         continue;
+                    }
 
                     // Get column index
                     var columnIndex = GetColumnIndex(columnKey);
                     if (columnIndex < 0 || columnIndex >= row.Cells.Count)
+                    {
+                        Console.WriteLine($"🔄 DEBUG: Skipped column {columnKey} in row {row.Index}: Invalid column index {columnIndex} (row has {row.Cells.Count} cells)");
                         continue;
+                    }
 
                     // Extract and process cell value
                     var rawValue = row.Cells[columnIndex].Value?.Trim();
@@ -201,7 +217,10 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     // Apply transformations and type conversion
                     var processedValue = await ProcessCellValueAsync(rawValue, columnProperty);
                     if (processedValue == null && !columnProperty.AllowNull)
+                    {
+                        Console.WriteLine($"🔄 DEBUG: Skipped column {columnKey} in row {row.Index}: Processed value is null but AllowNull=false (raw='{rawValue}')");
                         continue;
+                    }
 
                     // Validate processed value
                     var validationResult = await ValidateValueAsync(processedValue, columnProperty, targetProperty);
@@ -210,9 +229,11 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         if (validationResult.SkipEntireRow)
                         {
                             // Skip the entire row - return null to indicate row should be skipped
+                            //Console.WriteLine($"🔄 DEBUG: Skipping entire row {row.Index}: Validation failed for column {columnKey} with value '{processedValue}' - {validationResult.ErrorMessage}");
                             return null;
                         }
                         // Skip just this column
+                        Console.WriteLine($"🔄 DEBUG: Skipped column {columnKey} in row {row.Index}: Validation failed for value '{processedValue}' - {validationResult.ErrorMessage}");
                         continue;
                     }
 
@@ -225,7 +246,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 if (_descriptionExtractor is not null && !string.IsNullOrEmpty(product.Description))
                 {
                     var extractedProperties = _descriptionExtractor.ExtractPropertiesFromDescription(product.Description);
-                    
+
                     // Add extracted properties to product's dynamic properties if they don't already exist
                     foreach (var extractedProp in extractedProperties)
                     {
@@ -283,12 +304,12 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         private async Task<object?> ProcessCellValueAsync(string rawValue, ColumnProperty columnProperty)
         {
             await Task.CompletedTask; // For async consistency
-            
+
             try
             {
                 // Apply configured transformations
                 var transformedValue = ApplyTransformations(rawValue, columnProperty.Transformations);
-                
+
                 // Convert to target type
                 if (_dataTypeConverters.TryGetValue(columnProperty.DataType.ToLowerInvariant(), out var converter))
                 {
@@ -310,12 +331,12 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         private async Task<ValidationResult> ValidateValueAsync(object? value, ColumnProperty columnProperty, string targetProperty)
         {
             await Task.CompletedTask; // For async consistency
-            
+
             // Check required field validation
             if (columnProperty.IsRequired == true && value == null)
             {
                 return ValidationResult.Invalid(
-                    columnProperty.SkipEntireRow, 
+                    columnProperty.SkipEntireRow,
                     $"Required field '{targetProperty}' is null");
             }
 
@@ -355,17 +376,17 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// Sets default value if configured for empty cells
         /// </summary>
         private async Task SetDefaultValueIfConfiguredAsync(
-            ProductEntity product, 
-            Dictionary<string, object?> offerProperties, 
-            ColumnProperty columnProperty, 
+            ProductEntity product,
+            Dictionary<string, object?> offerProperties,
+            ColumnProperty columnProperty,
             string targetProperty)
         {
             await Task.CompletedTask; // For async consistency
-            
+
             if (columnProperty.DefaultValue != null)
             {
                 await AssignValueByClassificationAsync(
-                    product, offerProperties, targetProperty, 
+                    product, offerProperties, targetProperty,
                     columnProperty.DefaultValue, columnProperty.Classification);
             }
         }
@@ -374,14 +395,14 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// Assigns value to appropriate entity based on classification
         /// </summary>
         private async Task AssignValueByClassificationAsync(
-            ProductEntity product, 
-            Dictionary<string, object?> offerProperties, 
-            string targetProperty, 
-            object? value, 
+            ProductEntity product,
+            Dictionary<string, object?> offerProperties,
+            string targetProperty,
+            object? value,
             string classification)
         {
             await Task.CompletedTask; // For async consistency
-            
+
             switch (targetProperty.ToLowerInvariant())
             {
                 case "name":
@@ -524,7 +545,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 return false;
 
             value = value.Trim().ToLowerInvariant();
-            
+
             return value switch
             {
                 "yes" or "y" or "true" or "1" or "active" or "enabled" or "on" => true,
@@ -604,23 +625,23 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         private string ConstructProductNameFromProperties(ProductEntity product)
         {
             var nameComponents = new List<string>();
-            
+
             // Try to build a meaningful name from extracted/mapped properties
             if (product.DynamicProperties.TryGetValue("Brand", out var brand) && brand != null)
                 nameComponents.Add(brand.ToString()!);
-            
+
             if (product.DynamicProperties.TryGetValue("ProductLine", out var line) && line != null)
                 nameComponents.Add(line.ToString()!);
-            
+
             if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
                 nameComponents.Add(category.ToString()!);
-            
+
             if (product.DynamicProperties.TryGetValue("Size", out var size) && size != null)
                 nameComponents.Add(size.ToString()!);
-            
+
             if (product.DynamicProperties.TryGetValue("Gender", out var gender) && gender != null)
                 nameComponents.Add($"for {gender}");
-            
+
             if (product.DynamicProperties.TryGetValue("Concentration", out var concentration) && concentration != null)
                 nameComponents.Add(concentration.ToString()!);
 
@@ -632,13 +653,13 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
                     nameComponents.Add(itemName.ToString()!);
             }
-            
+
             // If no meaningful properties found, use description
             if (!nameComponents.Any() && !string.IsNullOrWhiteSpace(product.Description))
             {
                 // Truncate description if too long for a name
-                var desc = product.Description.Length > 50 
-                    ? product.Description.Substring(0, 50) + "..." 
+                var desc = product.Description.Length > 50
+                    ? product.Description.Substring(0, 50) + "..."
                     : product.Description;
                 nameComponents.Add(desc);
             }
@@ -653,8 +674,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             // For supplier offers, require valid product with EAN
             return offerProduct?.Product != null &&
-                   !string.IsNullOrEmpty(offerProduct.Product.Name) && 
-                   offerProduct.Product.Name != "Unknown Product" && 
+                   !string.IsNullOrEmpty(offerProduct.Product.Name) &&
+                   offerProduct.Product.Name != "Unknown Product" &&
                    !string.IsNullOrEmpty(offerProduct.Product.EAN);
         }
 
