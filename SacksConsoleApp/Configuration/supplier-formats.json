@@ -1,3 +1,476 @@
 {
-  "version": "2.1"
+  "version": "2.1",
+  "suppliers": [
+    {
+      "name": "ACE",
+      "detection": {
+        "fileNamePatterns": [
+          "ace 31.8.25.xlsx",
+          "ace 31.8.25.xls",
+          "ace*.xlsx",
+          "ace *.*.*.xlsx"
+        ]
+      },
+      "columnProperties": {
+        "A": {
+          "productPropertyKey": "EAN",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols",
+            "parseDecimal"
+          ],
+          "isRequired": true,
+          "isUnique": true,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "B": {
+          "productPropertyKey": "Ref",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [
+            "trim"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "C": {
+          "productPropertyKey": "Brand",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [
+            "trim"
+          ],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "D": {
+          "productPropertyKey": "Description",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 500,
+          "transformations": [
+            "trim"
+          ],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "E": {
+          "productPropertyKey": "Category",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [
+            "trim"
+          ],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [
+            "Perfume",
+            "Tester",
+            "Skin Cream",
+            "Body Lotion",
+            "Deodorant",
+            "Gift Set",
+            "Miniature",
+            "Sample"
+          ],
+          "skipEntireRow": true
+        },
+        "F": {
+          "productPropertyKey": "COO",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [
+            "trim"
+          ],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "G": {
+          "productPropertyKey": "Quantity",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols",
+            "parseDecimal"
+          ],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "H": {
+          "productPropertyKey": "Price",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols",
+            "parseDecimal"
+          ],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        }
+      },
+      "fileStructure": {
+        "dataStartRowIndex": 2,
+        "expectedColumnCount": 8,
+        "headerRowIndex": 1
+      }
+    }
+  ],
+  "productPropertyConfiguration": {
+    "version": "1.0",
+    "productType": "perfume",
+    "properties": {
+      "EAN": {
+        "key": "EAN",
+        "displayName": "EAN Code",
+        "description": "European Article Number (barcode)",
+        "dataType": "string",
+        "classification": "coreProduct",
+        "isFilterable": false,
+        "isSortable": false,
+        "isRequired": true,
+        "displayOrder": 1,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "ean",
+          "barcode",
+          "upc",
+          "gtin",
+          "ean13",
+          "ean8",
+          "code_barre"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "Category": {
+        "key": "Category",
+        "displayName": "Product Category",
+        "description": "Type of product to filter specific categories during processing",
+        "dataType": "string",
+        "classification": "coreProduct",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 2,
+        "defaultValue": null,
+        "allowedValues": [
+          "Perfume",
+          "Tester",
+          "Skin Cream",
+          "Body Lotion",
+          "Deodorant",
+          "Gift Set",
+          "Miniature",
+          "Sample"
+        ],
+        "aliases": [
+          "category",
+          "type",
+          "product_type",
+          "kind",
+          "cat\u00E9gorie",
+          "tipo",
+          "categoria",
+          "art"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "Brand": {
+        "key": "Brand",
+        "displayName": "Brand",
+        "description": "Product brand or manufacturer",
+        "dataType": "string",
+        "classification": "coreProduct",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 3,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "brand",
+          "marca",
+          "marque",
+          "marchio",
+          "manufacturer",
+          "make"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "Description": {
+        "key": "Description",
+        "displayName": "Description",
+        "description": "Product description",
+        "dataType": "string",
+        "classification": "coreProduct",
+        "isFilterable": true,
+        "isSortable": false,
+        "isRequired": false,
+        "displayOrder": 4,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "description",
+          "desc",
+          "details",
+          "notes",
+          "descriptif",
+          "descripci\u00F3n",
+          "descrizione"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "Gender": {
+        "key": "Gender",
+        "displayName": "Gender",
+        "description": "Target gender for the perfume",
+        "dataType": "string",
+        "classification": "coreProduct",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 5,
+        "defaultValue": null,
+        "allowedValues": [
+          "Men",
+          "Women",
+          "Unisex"
+        ],
+        "aliases": [
+          "gender",
+          "sex",
+          "for",
+          "genre",
+          "sexe",
+          "target",
+          "destin\u00E9"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "Volume": {
+        "key": "Volume",
+        "displayName": "Volume",
+        "description": "Volume or size of the perfume",
+        "dataType": "string",
+        "classification": "coreProduct",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 6,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "volume",
+          "size",
+          "vol",
+          "ml",
+          "capacity",
+          "contenu",
+          "contenuto",
+          "contenido",
+          "taille"
+        ],
+        "format": null,
+        "unit": "ml",
+        "category": null
+      },
+      "IsSet": {
+        "key": "IsSet",
+        "displayName": "Is Set",
+        "description": "Whether it is a single product or few products in a set",
+        "dataType": "boolean",
+        "classification": "coreProduct",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 7,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "isset",
+          "is_set",
+          "set",
+          "kit",
+          "pack",
+          "ensemble",
+          "conjunto",
+          "set_prodotti"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "Decoded": {
+        "key": "Decoded",
+        "displayName": "Decoded",
+        "description": "Whether the product can be tracked by RF",
+        "dataType": "boolean",
+        "classification": "coreProduct",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 8,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "decoded",
+          "rf",
+          "trackable",
+          "rfid",
+          "tracking",
+          "traceable"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "COO": {
+        "key": "COO",
+        "displayName": "Country of Origin",
+        "description": "Country of origin",
+        "dataType": "string",
+        "classification": "coreProduct",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 9,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "coo",
+          "country",
+          "origin",
+          "country_of_origin",
+          "made_in",
+          "fabricado_en",
+          "fabriqu\u00E9_en",
+          "prodotto_in"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "Price": {
+        "key": "Price",
+        "displayName": "Price",
+        "description": "Product price from offers",
+        "dataType": "decimal",
+        "classification": "offer",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 10,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "price",
+          "cost",
+          "amount",
+          "prix",
+          "precio",
+          "prezzo"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "Currency": {
+        "key": "Currency",
+        "displayName": "Currency",
+        "description": "Currency of the price",
+        "dataType": "string",
+        "classification": "offer",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 11,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "currency",
+          "cur",
+          "devise",
+          "moneda",
+          "valuta",
+          "w\u00E4hrung"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      },
+      "Quantity": {
+        "key": "Quantity",
+        "displayName": "Quantity",
+        "description": "Available stock quantity",
+        "dataType": "integer",
+        "classification": "offer",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "displayOrder": 12,
+        "defaultValue": null,
+        "allowedValues": [],
+        "aliases": [
+          "quantity",
+          "qty",
+          "stock",
+          "available",
+          "inventory",
+          "quantit\u00E9",
+          "cantidad",
+          "quantit\u00E0"
+        ],
+        "format": null,
+        "unit": null,
+        "category": null
+      }
+    }
+  }
 }

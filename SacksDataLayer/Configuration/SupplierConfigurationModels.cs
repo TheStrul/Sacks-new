@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using SacksDataLayer.Configuration;
 using SacksDataLayer.FileProcessing.Models;
 
 namespace SacksDataLayer.FileProcessing.Configuration
@@ -13,6 +14,54 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("suppliers")]
         public List<SupplierConfiguration> Suppliers { get; set; } = new();
+
+        [JsonPropertyName("productPropertyConfiguration")]
+        public ProductPropertyConfiguration? ProductPropertyConfiguration { get; set; }
+
+        /// <summary>
+        /// Resolves all supplier column properties using the embedded market configuration
+        /// </summary>
+        public void ResolveAllSupplierProperties()
+        {
+            if (ProductPropertyConfiguration == null) return;
+
+            foreach (var supplier in Suppliers)
+            {
+                supplier.ParentConfiguration = this;
+                supplier.ResolveColumnProperties(ProductPropertyConfiguration);
+            }
+        }
+
+        /// <summary>
+        /// Gets a supplier configuration by name with resolved properties
+        /// </summary>
+        public SupplierConfiguration? GetResolvedSupplierConfiguration(string supplierName)
+        {
+            var supplier = Suppliers.FirstOrDefault(s => 
+                string.Equals(s.Name, supplierName, StringComparison.OrdinalIgnoreCase));
+            
+            if (supplier != null)
+            {
+                supplier.ParentConfiguration = this;
+                if (ProductPropertyConfiguration != null)
+                {
+                    supplier.ResolveColumnProperties(ProductPropertyConfiguration);
+                }
+            }
+            
+            return supplier;
+        }
+
+        /// <summary>
+        /// Ensures all suppliers have their parent reference set
+        /// </summary>
+        public void EnsureParentReferences()
+        {
+            foreach (var supplier in Suppliers)
+            {
+                supplier.ParentConfiguration = this;
+            }
+        }
     }
 
     /// <summary>
@@ -32,64 +81,152 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("fileStructure")]
         public FileStructureConfiguration FileStructure { get; set; } = new();
 
+        /// <summary>
+        /// Reference to parent configuration (not serialized)
+        /// </summary>
+        [JsonIgnore]
+        public SuppliersConfiguration? ParentConfiguration { get; set; }
+
+        /// <summary>
+        /// Gets the effective market configuration (from parent if available)
+        /// </summary>
+        [JsonIgnore]
+        public ProductPropertyConfiguration? EffectiveMarketConfiguration => 
+            ParentConfiguration?.ProductPropertyConfiguration;
+
 
         /// <summary>
         /// Gets core product properties from column-level classification settings
         /// </summary>
-        public List<string> GetCoreProductProperties()
+        public List<string> GetCoreProductProperties(ProductPropertyConfiguration? marketConfig = null)
         {
-            return ColumnProperties?
-                .Where(kvp => kvp.Value.Classification == "coreProduct")
-                .Select(kvp => kvp.Value.TargetProperty ?? kvp.Value.DisplayName ?? kvp.Key)
-                .Where(s => !string.IsNullOrEmpty(s))
-                .ToList() ?? new List<string>();
+            var result = new List<string>();
+            
+            if (ColumnProperties == null) return result;
+
+            // Use provided config, or fall back to effective market configuration
+            var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
+
+            foreach (var kvp in ColumnProperties)
+            {
+                var column = kvp.Value;
+                
+                // Resolve from market config if available
+                if (effectiveConfig != null)
+                {
+                    column.ResolveFromMarketConfig(effectiveConfig);
+                }
+                
+                if (column.Classification == "coreProduct" || column.Classification == "CoreProduct")
+                {
+                    result.Add(column.ProductPropertyKey);
+                }
+            }
+            
+            return result.Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
         }
 
         /// <summary>
         /// Gets offer properties from column-level classification settings
         /// </summary>
-        public List<string> GetOfferProperties()
+        public List<string> GetOfferProperties(ProductPropertyConfiguration? marketConfig = null)
         {
-            return ColumnProperties?
-                .Where(kvp => kvp.Value.Classification == "offer")
-                .Select(kvp => kvp.Value.TargetProperty ?? kvp.Value.DisplayName ?? kvp.Key)
-                .Where(s => !string.IsNullOrEmpty(s))
-                .ToList() ?? new List<string>();
-        }
+            var result = new List<string>();
+            
+            if (ColumnProperties == null) return result;
 
+            // Use provided config, or fall back to effective market configuration
+            var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
+
+            foreach (var kvp in ColumnProperties)
+            {
+                var column = kvp.Value;
+                
+                // Resolve from market config if available
+                if (effectiveConfig != null)
+                {
+                    column.ResolveFromMarketConfig(effectiveConfig);
+                }
+                
+                if (column.Classification == "offer" || column.Classification == "Offer")
+                {
+                    result.Add(column.ProductPropertyKey);
+                }
+            }
+            
+            return result.Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
+        }
 
         /// <summary>
         /// Gets required fields from column-level validation settings
         /// </summary>
-        public List<string> GetRequiredFields()
+        public List<string> GetRequiredFields(ProductPropertyConfiguration? marketConfig = null)
         {
-            return ColumnProperties?
-                .Where(kvp => kvp.Value.IsRequired)
-                .Select(kvp => kvp.Value.TargetProperty ?? kvp.Value.DisplayName ?? kvp.Key)
-                .Where(s => !string.IsNullOrEmpty(s))
-                .ToList() ?? new List<string>();
+            var result = new List<string>();
+            
+            if (ColumnProperties == null) return result;
+
+            // Use provided config, or fall back to effective market configuration
+            var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
+
+            foreach (var kvp in ColumnProperties)
+            {
+                var column = kvp.Value;
+                
+                // Resolve from market config if available
+                if (effectiveConfig != null)
+                {
+                    column.ResolveFromMarketConfig(effectiveConfig);
+                }
+                
+                if (column.IsRequired == true)
+                {
+                    result.Add(column.ProductPropertyKey);
+                }
+            }
+            
+            return result.Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
         }
 
+        /// <summary>
+        /// Resolves all column properties using market configuration
+        /// </summary>
+        public void ResolveColumnProperties(ProductPropertyConfiguration? marketConfig = null)
+        {
+            if (ColumnProperties == null) return;
+
+            // Use provided config, or fall back to effective market configuration
+            var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
+            if (effectiveConfig == null) return;
+
+            foreach (var column in ColumnProperties.Values)
+            {
+                column.ResolveFromMarketConfig(effectiveConfig);
+            }
+        }
+
+        /// <summary>
+        /// Resolves all column properties using the effective market configuration
+        /// </summary>
+        public void ResolveColumnProperties()
+        {
+            ResolveColumnProperties(EffectiveMarketConfiguration);
+        }
     }
 
     /// <summary>
-    /// Unified column property configuration - flattened structure
+    /// Unified column property configuration - references market property definition
     /// </summary>
     public class ColumnProperty
     {
-        [JsonPropertyName("targetProperty")]
-        public string? TargetProperty { get; set; }
+        /// <summary>
+        /// Reference to the property key in the market configuration (e.g., "EAN", "Brand", "Category")
+        /// This establishes the relationship between Excel column and market property
+        /// </summary>
+        [JsonPropertyName("productPropertyKey")]
+        public string ProductPropertyKey { get; set; } = string.Empty;
 
-        [JsonPropertyName("displayName")]
-        public string DisplayName { get; set; } = string.Empty;
-
-        [JsonPropertyName("classification")]
-        public string Classification { get; set; } = "coreProduct"; // "coreProduct" or "offer"
-
-        // Data Type Properties (flattened from DataTypeConfiguration)
-        [JsonPropertyName("dataType")]
-        public string DataType { get; set; } = "string"; // string, decimal, int, bool, datetime
-
+        // File Processing Specific Properties (Excel column mapping)
         [JsonPropertyName("format")]
         public string? Format { get; set; } // For dates, numbers, etc.
 
@@ -105,12 +242,12 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("transformations")]
         public List<string> Transformations { get; set; } = new(); // e.g., "trim", "lowercase", "removeSymbols"
 
-        // Validation Properties (flattened from ColumnValidationConfiguration)
+        // File-specific validation overrides (optional - can override market defaults)
         [JsonPropertyName("isRequired")]
-        public bool IsRequired { get; set; } = false;
+        public bool? IsRequired { get; set; } // null = use market default
 
         [JsonPropertyName("isUnique")]
-        public bool IsUnique { get; set; } = false;
+        public bool? IsUnique { get; set; } // null = use market default
 
         [JsonPropertyName("validationPatterns")]
         public List<string> ValidationPatterns { get; set; } = new();
@@ -120,28 +257,54 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("skipEntireRow")]
         public bool SkipEntireRow { get; set; } = false;
-    }
 
-    /// <summary>
-    /// Validation configuration for individual columns - DEPRECATED: Properties moved to ColumnProperty
-    /// </summary>
-    [Obsolete("Use flattened properties in ColumnProperty instead")]
-    public class ColumnValidationConfiguration
-    {
-        [JsonPropertyName("isRequired")]
-        public bool IsRequired { get; set; } = false;
+        // Computed Properties (derived from market configuration)
+        [JsonIgnore]
+        public string? TargetProperty => ProductPropertyKey;
 
-        [JsonPropertyName("isUnique")]
-        public bool IsUnique { get; set; } = false;
+        [JsonIgnore] 
+        public string DisplayName { get; set; } = string.Empty; // Will be populated from market config
 
-        [JsonPropertyName("validationPatterns")]
-        public List<string> ValidationPatterns { get; set; } = new();
+        [JsonIgnore]
+        public string Classification { get; set; } = "coreProduct"; // Will be populated from market config
 
-        [JsonPropertyName("allowedValues")]
-        public List<string> AllowedValues { get; set; } = new();
+        [JsonIgnore]
+        public string DataType { get; set; } = "string"; // Will be populated from market config
 
-        [JsonPropertyName("skipEntireRow")]
-        public bool SkipEntireRow { get; set; } = false;
+        /// <summary>
+        /// Resolves this column property using the market configuration
+        /// </summary>
+        public void ResolveFromMarketConfig(ProductPropertyConfiguration marketConfig)
+        {
+            ArgumentNullException.ThrowIfNull(marketConfig);
+            
+            if (marketConfig.Properties.TryGetValue(ProductPropertyKey, out var marketProperty))
+            {
+                DisplayName = marketProperty.DisplayName;
+                Classification = marketProperty.Classification.ToString().ToLowerInvariant();
+                DataType = marketProperty.DataType.ToString().ToLowerInvariant();
+                
+                // Use market defaults if file-specific overrides are not set
+                IsRequired ??= marketProperty.IsRequired;
+                
+                // Merge allowed values if not specified in file config
+                if (AllowedValues.Count == 0 && marketProperty.AllowedValues.Count > 0)
+                {
+                    AllowedValues = new List<string>(marketProperty.AllowedValues);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks if this column maps to a market property
+        /// </summary>
+        public bool HasValidMarketMapping(ProductPropertyConfiguration marketConfig)
+        {
+            if (marketConfig == null) return false;
+            
+            return !string.IsNullOrEmpty(ProductPropertyKey) && 
+                   marketConfig.Properties.ContainsKey(ProductPropertyKey);
+        }
     }
 
     /// <summary>
@@ -166,31 +329,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
     {
         [JsonPropertyName("fileNamePatterns")]
         public List<string> FileNamePatterns { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Configuration for data type parsing and conversion - DEPRECATED: Properties moved to ColumnProperty
-    /// </summary>
-    [Obsolete("Use flattened properties in ColumnProperty instead")]
-    public class DataTypeConfiguration
-    {
-        [JsonPropertyName("type")]
-        public string Type { get; set; } = "string"; // string, decimal, int, bool, datetime
-
-        [JsonPropertyName("format")]
-        public string? Format { get; set; } // For dates, numbers, etc.
-
-        [JsonPropertyName("defaultValue")]
-        public object? DefaultValue { get; set; }
-
-        [JsonPropertyName("allowNull")]
-        public bool AllowNull { get; set; } = true;
-
-        [JsonPropertyName("maxLength")]
-        public int? MaxLength { get; set; }
-
-        [JsonPropertyName("transformations")]
-        public List<string> Transformations { get; set; } = new(); // e.g., "trim", "lowercase", "removeSymbols"
     }
 
     /// <summary>
@@ -224,10 +362,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("version")]
         public string Version { get; set; } = "2.1";
-
-        // Legacy properties for backward compatibility
-        [JsonIgnore]
-        public List<string> Notes { get; set; } = new();
     }
 
     /// <summary>
@@ -288,12 +422,5 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("validationPatterns")]
         public List<string> ValidationPatterns { get; set; } = new();
-    }
-
-    // Legacy enum for backward compatibility
-    public enum PropertyClassification
-    {
-        CoreProduct,
-        Offer
     }
 }

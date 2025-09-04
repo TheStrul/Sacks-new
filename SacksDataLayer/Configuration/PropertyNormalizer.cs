@@ -287,5 +287,79 @@ namespace SacksDataLayer.Configuration
         {
             return _keyMappings.Values.Distinct().OrderBy(k => k).ToList();
         }
+
+        /// <summary>
+        /// Gets all original values that normalize to the specified normalized value
+        /// </summary>
+        /// <param name="normalizedKey">The normalized property key</param>
+        /// <param name="normalizedValue">The normalized value to find variations for</param>
+        /// <returns>List of all original values that would normalize to this value</returns>
+        public List<string> GetOriginalValuesForNormalized(string normalizedKey, string normalizedValue)
+        {
+            var variations = new List<string> { normalizedValue };
+
+            if (_valueMappings.TryGetValue(normalizedKey, out var valueMap))
+            {
+                // Find all original keys that map to this normalized value
+                var originalValues = valueMap
+                    .Where(kvp => string.Equals(kvp.Value, normalizedValue, StringComparison.OrdinalIgnoreCase))
+                    .Select(kvp => kvp.Key)
+                    .ToList();
+
+                variations.AddRange(originalValues);
+            }
+
+            return variations.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        /// <summary>
+        /// Gets all original keys that normalize to the specified normalized key
+        /// </summary>
+        /// <param name="normalizedKey">The normalized property key</param>
+        /// <returns>List of all original keys that would normalize to this key</returns>
+        public List<string> GetOriginalKeysForNormalized(string normalizedKey)
+        {
+            var variations = new List<string> { normalizedKey };
+
+            // Find all original keys that map to this normalized key
+            var originalKeys = _keyMappings
+                .Where(kvp => string.Equals(kvp.Value, normalizedKey, StringComparison.OrdinalIgnoreCase))
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            variations.AddRange(originalKeys);
+
+            return variations.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        /// <summary>
+        /// Gets a complete mapping of normalized values to their original variations
+        /// for a specific property key
+        /// </summary>
+        /// <param name="normalizedKey">The normalized property key</param>
+        /// <returns>Dictionary mapping normalized values to lists of original variations</returns>
+        public Dictionary<string, List<string>> GetCompleteValueMappingForProperty(string normalizedKey)
+        {
+            var result = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+            if (_valueMappings.TryGetValue(normalizedKey, out var valueMap))
+            {
+                // Group by normalized value
+                var groupedByNormalized = valueMap.GroupBy(kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
+
+                foreach (var group in groupedByNormalized)
+                {
+                    var normalizedValue = group.Key;
+                    var originalValues = group.Select(kvp => kvp.Key).ToList();
+                    
+                    // Add the normalized value itself
+                    originalValues.Add(normalizedValue);
+                    
+                    result[normalizedValue] = originalValues.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                }
+            }
+
+            return result;
+        }
     }
 }

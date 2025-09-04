@@ -7,19 +7,21 @@ using SacksDataLayer.FileProcessing.Services;
 namespace SacksDataLayer.Extensions
 {
     /// <summary>
-    /// Extension methods for registering perfume-specific services
+    /// Extension methods for registering dynamic product services
     /// </summary>
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Register perfume product services for familiar filtering/sorting with normalization
+        /// Adds dynamic product configuration services to the service collection
         /// </summary>
-        /// <param name="services">Service collection</param>
-        /// <returns>Service collection for chaining</returns>
-        public static IServiceCollection AddPerfumeServices(this IServiceCollection services)
+        public static IServiceCollection AddDynamicProductServices(this IServiceCollection services)
         {
+            // Register configuration manager as singleton
+            services.AddSingleton<ProductPropertyConfigurationManager>();
+            
+            // Register property normalizer as singleton (it's stateless)
             services.AddSingleton<PropertyNormalizer>();
-            services.AddScoped<IPerfumeProductService, PerfumeProductService>();
+            
             return services;
         }
 

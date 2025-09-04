@@ -1,0 +1,58 @@
+{
+  "name": "Ace Supplier",
+  "detection": {
+    "fileNamePatterns": ["*ace*.xlsx", "*ace*.xls"]
+  },
+  "columnProperties": {
+    "A": {
+      "productPropertyKey": "EAN",
+      "transformations": ["trim"],
+      "isRequired": true
+    },
+    "B": {
+      "productPropertyKey": "Category",
+      "transformations": ["trim", "lowercase"],
+      "allowedValues": ["perfume", "tester"]
+    },
+    "C": {
+      "productPropertyKey": "Brand",
+      "transformations": ["trim"]
+    },
+    "D": {
+      "productPropertyKey": "Description",
+      "transformations": ["trim"],
+      "maxLength": 500
+    },
+    "E": {
+      "productPropertyKey": "Gender",
+      "transformations": ["trim", "lowercase"],
+      "allowedValues": ["men", "women", "unisex"]
+    },
+    "F": {
+      "productPropertyKey": "Volume",
+      "transformations": ["trim", "removeSymbols"],
+      "validationPatterns": ["^\\d+\\s*(ml|ML|oz|OZ)?$"]
+    },
+    "G": {
+      "productPropertyKey": "Price",
+      "transformations": ["trim", "removeCommas"],
+      "format": "decimal"
+    },
+    "H": {
+      "productPropertyKey": "Currency",
+      "transformations": ["trim", "uppercase"],
+      "defaultValue": "EUR"
+    },
+    "I": {
+      "productPropertyKey": "Quantity",
+      "transformations": ["trim"],
+      "format": "integer",
+      "defaultValue": 0
+    }
+  },
+  "fileStructure": {
+    "headerRowIndex": 0,
+    "dataStartRowIndex": 1,
+    "hasHeaderRow": true
+  }
+}

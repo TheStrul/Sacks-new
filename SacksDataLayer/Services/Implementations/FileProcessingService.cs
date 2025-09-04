@@ -7,6 +7,7 @@ using SacksDataLayer.Entities;
 using SacksDataLayer.Extensions;
 using SacksDataLayer.Exceptions;
 using SacksDataLayer.Configuration;
+using SacksDataLayer.Models;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;

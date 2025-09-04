@@ -1,6 +1,7 @@
 using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.FileProcessing.Models;
 using SacksDataLayer.Entities;
+using SacksDataLayer.Models;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;

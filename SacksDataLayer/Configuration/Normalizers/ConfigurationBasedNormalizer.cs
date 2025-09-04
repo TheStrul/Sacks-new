@@ -314,7 +314,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             await Task.CompletedTask; // For async consistency
             
             // Check required field validation
-            if (columnProperty.IsRequired && value == null)
+            if (columnProperty.IsRequired == true && value == null)
             {
                 return ValidationResult.Invalid(
                     columnProperty.SkipEntireRow, 

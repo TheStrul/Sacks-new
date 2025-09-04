@@ -3,6 +3,7 @@ using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
 using SacksDataLayer.Data;
 using SacksDataLayer.Exceptions;
+using SacksDataLayer.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using System;

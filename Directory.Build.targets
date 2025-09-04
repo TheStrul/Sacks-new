@@ -1,0 +1,5 @@
+<Project>
+  <Target Name="Run" Condition="'$(MSBuildProjectDirectory)' == '$(MSBuildThisFileDirectory.TrimEnd('\''))'">
+    <Exec Command="dotnet run --project SacksConsoleApp\SacksConsoleApp.csproj $(RunArguments)" />
+  </Target>
+</Project>

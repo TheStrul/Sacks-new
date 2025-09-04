@@ -39,12 +39,6 @@ namespace SacksDataLayer.Models
         public string? ProductLine { get; set; }
 
         /// <summary>
-        /// Fragrance family (Floral, Oriental, Fresh, etc.)
-        /// Maps to DynamicProperties["FragranceFamily"]
-        /// </summary>
-        public string? FragranceFamily { get; set; }
-
-        /// <summary>
         /// Price range filter
         /// </summary>
         public decimal? MinPrice { get; set; }
@@ -99,7 +93,6 @@ namespace SacksDataLayer.Models
         public string? Concentration { get; set; }
         public string? Brand { get; set; }
         public string? ProductLine { get; set; }
-        public string? FragranceFamily { get; set; }
         
         // Price from offers (if needed)
         public decimal? MinPrice { get; set; }
