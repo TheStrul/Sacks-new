@@ -768,83 +768,66 @@ namespace SacksConsoleApp
 
                 Console.WriteLine("🔧 Creating view: vw_ProductsWithOffers...");
 
-                // Drop view if it exists and create new one
-                var sql = @"
-                    IF OBJECT_ID('vw_ProductsWithOffers', 'V') IS NOT NULL
-                        DROP VIEW vw_ProductsWithOffers;
+                // Use a transaction for atomicity
+                using var transaction = await context.Database.BeginTransactionAsync();
+                
+                try
+                {
+                    // Drop view if it exists
+                    var dropSql = @"
+                        IF OBJECT_ID('dbo.vw_ProductsWithOffers', 'V') IS NOT NULL
+                            DROP VIEW dbo.vw_ProductsWithOffers;";
                     
-                    EXEC('
-                    CREATE VIEW vw_ProductsWithOffers AS
-                    SELECT 
-                        -- Product Information
-                        p.Id AS ProductId,
-                        p.Name AS ProductName,
-                        p.Description AS ProductDescription,
-                        p.EAN AS ProductEAN,
-                        p.DynamicProperties AS ProductDynamicProperties,
-                        p.CreatedAt AS ProductCreatedAt,
-                        p.ModifiedAt AS ProductModifiedAt,
-                        
-                        -- Offer Product Information
-                        op.Id AS OfferProductId,
-                        op.Price,
-                        op.Capacity,
-                        op.Discount,
-                        op.UnitOfMeasure,
-                        op.MinimumOrderQuantity,
-                        op.MaximumOrderQuantity,
-                        op.ListPrice,
-                        op.IsAvailable,
-                        op.Notes AS OfferProductNotes,
-                        op.ProductProperties AS OfferProductProperties,
-                        op.CreatedAt AS OfferProductCreatedAt,
-                        op.ModifiedAt AS OfferProductModifiedAt,
-                        
-                        -- Supplier Offer Information
-                        so.Id AS SupplierOfferId,
-                        so.OfferName,
-                        so.Description AS OfferDescription,
-                        so.Currency,
-                        so.ValidFrom,
-                        so.ValidTo,
-                        so.IsActive AS OfferIsActive,
-                        so.OfferType,
-                        so.Version AS OfferVersion,
-                        so.CreatedAt AS OfferCreatedAt,
-                        so.ModifiedAt AS OfferModifiedAt,
-                        
-                        -- Supplier Information
-                        s.Id AS SupplierId,
-                        s.Name AS SupplierName,
-                        s.Description AS SupplierDescription,
-                        s.Industry AS SupplierIndustry,
-                        s.Region AS SupplierRegion,
-                        s.ContactName AS SupplierContactName,
-                        s.ContactEmail AS SupplierContactEmail,
-                        s.Company AS SupplierCompany,
-                        s.FileFrequency AS SupplierFileFrequency,
-                        s.CreatedAt AS SupplierCreatedAt,
-                        s.ModifiedAt AS SupplierModifiedAt
+                    await context.Database.ExecuteSqlRawAsync(dropSql);
 
-                    FROM Products p
-                    INNER JOIN OfferProducts op ON p.Id = op.ProductId
-                    INNER JOIN SupplierOffers so ON op.OfferId = so.Id
-                    INNER JOIN Suppliers s ON so.SupplierId = s.Id
-                    ')";
+                    // Create the view with proper schema qualification and simple EAN grouping
+                    var createSql = @"
+                        CREATE VIEW dbo.vw_ProductsWithOffers AS
+                        SELECT 
+                            -- Product Information
+                            p.EAN AS ProductEAN,
+                            ISNULL(p.Name, '') AS ProductName,
+                            ISNULL(p.Description, '') AS ProductDescription,
+                            
+                            -- Offer Product Information
+                            ISNULL(op.Price, 0) AS Price,
+                            ISNULL(op.Quantity, 0) AS Quantity,
+                            
+                            -- Supplier Offer Information
+                            ISNULL(so.Currency, 'EUR') AS Currency,
+                            so.CreatedAt AS OfferCreatedAt,
+                            so.ModifiedAt AS OfferModifiedAt,
+                            
+                            -- Supplier Information
+                            ISNULL(s.Name, '') AS SupplierName
 
-                await context.Database.ExecuteSqlRawAsync(sql);
-                Console.WriteLine("✅ View 'vw_ProductsWithOffers' created successfully!");
+                        FROM dbo.Products p
+                        INNER JOIN dbo.OfferProducts op ON p.Id = op.ProductId
+                        INNER JOIN dbo.SupplierOffers so ON op.OfferId = so.Id
+                        INNER JOIN dbo.Suppliers s ON so.SupplierId = s.Id
+                        WHERE p.EAN IS NOT NULL AND p.EAN != '';";
+
+                    await context.Database.ExecuteSqlRawAsync(createSql);
+                    
+                    await transaction.CommitAsync();
+                    Console.WriteLine("✅ View 'vw_ProductsWithOffers' created successfully!");
+                }
+                catch (Exception viewEx)
+                {
+                    await transaction.RollbackAsync();
+                    throw new InvalidOperationException($"Failed to create database view: {viewEx.Message}", viewEx);
+                }
 
                 Console.WriteLine("\n📊 Testing the view...");
-                var testSql = "SELECT COUNT(*) FROM vw_ProductsWithOffers";
+                var testSql = "SELECT COUNT(*) AS RecordCount FROM dbo.vw_ProductsWithOffers";
                 var count = await context.Database.SqlQueryRaw<int>(testSql).FirstAsync();
                 Console.WriteLine($"✅ View contains {count:N0} records");
 
                 Console.WriteLine("\n🎯 USAGE EXAMPLES:");
-                Console.WriteLine("   • SELECT * FROM vw_ProductsWithOffers WHERE SupplierName = 'UNLIMITED'");
-                Console.WriteLine("   • SELECT ProductName, Price, SupplierName FROM vw_ProductsWithOffers WHERE Price > 100");
-                Console.WriteLine("   • SELECT SupplierName, COUNT(*) FROM vw_ProductsWithOffers GROUP BY SupplierName");
-                Console.WriteLine("   • SELECT * FROM vw_ProductsWithOffers WHERE ProductEAN LIKE '%123%'");
+                Console.WriteLine("   • SELECT * FROM dbo.vw_ProductsWithOffers WHERE SupplierName = 'UNLIMITED'");
+                Console.WriteLine("   • SELECT ProductName, Price, SupplierName FROM dbo.vw_ProductsWithOffers WHERE Price > 100");
+                Console.WriteLine("   • SELECT ProductEAN, COUNT(*) FROM dbo.vw_ProductsWithOffers GROUP BY ProductEAN");
+                Console.WriteLine("   • SELECT * FROM dbo.vw_ProductsWithOffers WHERE ProductEAN LIKE '%123%'");
 
                 Console.WriteLine("\n✅ Database views created successfully!");
             }
