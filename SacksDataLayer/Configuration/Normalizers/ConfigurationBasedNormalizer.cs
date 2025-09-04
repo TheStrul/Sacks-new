@@ -446,18 +446,146 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
             foreach (var transformation in transformations)
             {
-                value = transformation.ToLowerInvariant() switch
+                // Check if transformation has parameters (separated by :)
+                var parts = transformation.Split(':', 2, StringSplitOptions.RemoveEmptyEntries);
+                var transformType = parts[0].ToLowerInvariant();
+                var parameters = parts.Length > 1 ? parts[1] : null;
+
+                value = transformType switch
                 {
-                    "trim" => value.Trim(),
                     "lowercase" => value.ToLowerInvariant(),
                     "uppercase" => value.ToUpperInvariant(),
                     "removesymbols" => Regex.Replace(value, @"[^\d.,]", ""),
                     "removecommas" => value.Replace(",", ""),
                     "removespaces" => value.Replace(" ", ""),
+                    "extractafterpattern" => ExtractAfterPattern(value, parameters ?? "*:"),
+                    "maptobool" => MapToBool(value, parameters ?? "SET:true,REG:false"),
                     _ => value
                 };
             }
 
+            return value;
+        }
+
+        private string ExtractAfterPattern(string value, string pattern)
+        {
+            if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(pattern))
+                return value;
+
+            // Handle wildcard patterns
+            if (pattern.Contains("*"))
+            {
+                return ExtractAfterWildcardPattern(value, pattern);
+            }
+
+            // Split the pattern by pipe (|) to get individual prefixes
+            var prefixes = pattern.Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var prefix in prefixes)
+            {
+                var trimmedPrefix = prefix.Trim();
+                if (value.StartsWith(trimmedPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Extract everything after the prefix and trim whitespace
+                    return value.Substring(trimmedPrefix.Length).Trim();
+                }
+            }
+
+            // If no prefix is found, return the original value
+            return value;
+        }
+
+        private string ExtractAfterWildcardPattern(string value, string pattern)
+        {
+            // Convert wildcard pattern to regex pattern
+            var regexPattern = ConvertWildcardToRegex(pattern);
+            
+            try
+            {
+                var match = Regex.Match(value, regexPattern, RegexOptions.IgnoreCase);
+                if (match.Success)
+                {
+                    // If there are capture groups, return the first one, otherwise return the full match
+                    if (match.Groups.Count > 1)
+                    {
+                        return match.Groups[1].Value.Trim();
+                    }
+                    return match.Value.Trim();
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                // Log regex error and return original value
+                Console.WriteLine($"🔄 DEBUG: Invalid regex pattern '{regexPattern}' for wildcard '{pattern}': {ex.Message}");
+            }
+            
+            // If no match or error, return original value
+            return value;
+        }
+
+        private string ConvertWildcardToRegex(string wildcardPattern)
+        {
+            // Handle common wildcard patterns and convert them to regex
+            // Available patterns:
+            // "*:" - Extract text between first and second colon (e.g., "REGULARs:D&G:P1DV1C02" → "D&G")
+            // "*:*" - Same as above but more explicit
+            // "after:" - Extract everything after first colon
+            // "between:|" - Extract text between first and second pipe
+            // "between:;" - Extract text between first and second semicolon
+            // "between:X" - Extract text between first and second occurrence of character X
+            // "prefix:*" - Extract everything after any uppercase prefix followed by colon
+            return wildcardPattern switch
+            {
+                "*:" => @"^[^:]*:([^:]+):", // Extract text between first and second colon
+                "*:*" => @"^[^:]*:([^:]+):.*", // Extract text between first and second colon (same as above but more explicit)
+                "after:" => @"^[^:]*:(.+)$", // Extract everything after first colon
+                "between:|" => @"^[^|]*\|([^|]+)\|", // Extract text between first and second pipe
+                "between:;" => @"^[^;]*;([^;]+);", // Extract text between first and second semicolon
+                "prefix:*" => @"^[A-Z]+:(.+)$", // Extract everything after any uppercase prefix followed by colon
+                _ => HandleCustomWildcardPattern(wildcardPattern)
+            };
+        }
+
+        private string HandleCustomWildcardPattern(string pattern)
+        {
+            // Handle more complex patterns
+            if (pattern.StartsWith("between:") && pattern.Length > 8)
+            {
+                var delimiter = pattern.Substring(8, 1);
+                var escapedDelimiter = Regex.Escape(delimiter);
+                return $@"^[^{escapedDelimiter}]*{escapedDelimiter}([^{escapedDelimiter}]+){escapedDelimiter}";
+            }
+            
+            // For simple wildcard patterns, convert * to .* and escape special chars
+            var regexPattern = Regex.Escape(pattern).Replace(@"\*", "(.*)");
+            return regexPattern;
+        }
+
+        private string MapToBool(string value, string mappingParameters)
+        {
+            if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(mappingParameters))
+                return value;
+
+            // Parse mapping parameters: "SET:true,REG:false"
+            var mappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            
+            var pairs = mappingParameters.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var pair in pairs)
+            {
+                var keyValue = pair.Split(':', 2, StringSplitOptions.RemoveEmptyEntries);
+                if (keyValue.Length == 2)
+                {
+                    mappings[keyValue[0].Trim()] = keyValue[1].Trim();
+                }
+            }
+
+            // Look up the value in the mappings
+            if (mappings.TryGetValue(value.Trim(), out var mappedValue))
+            {
+                return mappedValue;
+            }
+
+            // Return original value if no mapping found
             return value;
         }
 
@@ -563,11 +691,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             {
                 OfferName = $"{SupplierName} - {context.SourceFileName}",
                 Description = $"Offer created from file: {context.SourceFileName}",
-                ValidFrom = context.ProcessingDate,
-                ValidTo = context.ProcessingDate.AddYears(1), // Default 1 year validity
-                IsActive = true,
-                OfferType = "File Import",
-                Version = "1.0",
                 CreatedAt = context.ProcessingDate
             };
         }

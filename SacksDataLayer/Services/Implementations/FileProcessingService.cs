@@ -473,14 +473,14 @@ namespace SacksDataLayer.Services.Implementations
                     await _unitOfWork.SaveChangesAsync(ct);
                     _logger.LogDebug("Supplier ready: {SupplierName} (ID: {SupplierId})", supplier.Name, supplier.Id);
                     
-                    // Step 2: Validate that offer does not already exist
+                    // Step 2: Ensure no duplicate offer (dev mode: delete existing if found)
                     _logger.LogDebug("Checking for existing offer with name: {FileName}", Path.GetFileName(filePath));
-                    await _databaseService.ValidateOfferDoesNotExistAsync(
+                    await _databaseService.EnsureOfferCanBeProcessedAsync(
                         supplier.Id, 
                         Path.GetFileName(filePath), 
                         supplier.Name, 
                         ct);
-                    _logger.LogDebug("No duplicate offer found - proceeding with processing");
+                    _logger.LogDebug("Offer validation passed - proceeding with processing");
 
                     // Step 3: Create new offer
                     _logger.LogDebug("Creating offer for file: {FileName}", Path.GetFileName(filePath));

@@ -19,9 +19,7 @@
           "defaultValue": null,
           "allowNull": false,
           "maxLength": 50,
-          "transformations": [
-            "trim"
-          ],
+          "transformations": [],
           "isRequired": true,
           "isUnique": true,
           "validationPatterns": [],
@@ -35,9 +33,7 @@
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
-          "transformations": [
-            "trim"
-          ],
+          "transformations": [],
           "isRequired": false,
           "isUnique": false,
           "validationPatterns": [],
@@ -51,9 +47,7 @@
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
-          "transformations": [
-            "trim"
-          ],
+          "transformations": [],
           "isRequired": true,
           "isUnique": false,
           "validationPatterns": [],
@@ -68,7 +62,7 @@
           "allowNull": true,
           "maxLength": 500,
           "transformations": [
-            "trim"
+            "extractAfterPattern:*:"
           ],
           "isRequired": true,
           "isUnique": false,
@@ -83,9 +77,7 @@
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
-          "transformations": [
-            "trim"
-          ],
+          "transformations": [],
           "isRequired": true,
           "isUnique": false,
           "validationPatterns": [],
@@ -107,9 +99,7 @@
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
-          "transformations": [
-            "trim"
-          ],
+          "transformations": [],
           "isRequired": true,
           "isUnique": false,
           "validationPatterns": [],
@@ -124,7 +114,6 @@
           "allowNull": true,
           "maxLength": null,
           "transformations": [
-            "trim",
             "removeSymbols"
           ],
           "isRequired": false,
@@ -141,7 +130,6 @@
           "allowNull": true,
           "maxLength": null,
           "transformations": [
-            "trim",
             "removeSymbols"
           ],
           "isRequired": false,
@@ -175,9 +163,7 @@
           "defaultValue": null,
           "allowNull": false,
           "maxLength": 50,
-          "transformations": [
-            "trim"
-          ],
+          "transformations": [],
           "isRequired": true,
           "isUnique": true,
           "validationPatterns": [
@@ -193,9 +179,7 @@
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
-          "transformations": [
-            "trim"
-          ],
+          "transformations": [],
           "isRequired": true,
           "isUnique": false,
           "validationPatterns": [],
@@ -209,9 +193,7 @@
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
-          "transformations": [
-            "trim"
-          ],
+          "transformations": [],
           "isRequired": true,
           "isUnique": false,
           "validationPatterns": [],
@@ -226,7 +208,6 @@
           "allowNull": true,
           "maxLength": null,
           "transformations": [
-            "trim",
             "removeSymbols"
           ],
           "isRequired": false,
@@ -259,9 +240,7 @@
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
-          "transformations": [
-            "trim"
-          ],
+          "transformations": [],
           "isRequired": false,
           "isUnique": false,
           "validationPatterns": [],
@@ -272,6 +251,132 @@
       "fileStructure": {
         "dataStartRowIndex": 2,
         "expectedColumnCount": 6,
+        "headerRowIndex": 1
+      }
+    },
+    {
+      "name": "HAND",
+      "detection": {
+        "fileNamePatterns": [
+          "hand 31.8.25.xlsx",
+          "hand 31.8.25.xls",
+          "hand*.xlsx",
+          "hand *.*.*.xlsx"
+        ]
+      },
+      "columnProperties": {
+        "A": {
+          "productPropertyKey": "Description",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 500,
+          "transformations": [
+            "extractAfterPattern:*:"
+          ],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "B": {
+          "productPropertyKey": "Ref",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "C": {
+          "productPropertyKey": "EAN",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": false,
+          "maxLength": 50,
+          "transformations": [],
+          "isRequired": true,
+          "isUnique": true,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "D": {
+          "productPropertyKey": "IsSet",
+          "dataType": "bool",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "mapToBool:SET:true,REG:false"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": ["SET", "REG"],
+          "skipEntireRow": false
+        },
+        "E": {
+          "productPropertyKey": "Description",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 500,
+          "transformations": [
+            "extractAfterPattern:*:"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "F": {
+          "productPropertyKey": "Quantity",
+          "dataType": "int",
+          "format": "integer",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "G": {
+          "productPropertyKey": "Price",
+          "dataType": "decimal",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        }
+      },
+      "fileStructure": {
+        "dataStartRowIndex": 2,
+        "expectedColumnCount": 7,
         "headerRowIndex": 1
       }
     }

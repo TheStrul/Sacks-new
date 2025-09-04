@@ -99,7 +99,7 @@
                         if (!reader.IsDBNull(cellIndex))
                         {
                             var rawValue = reader.GetValue(cellIndex);
-                            cellValue = rawValue?.ToString() ?? string.Empty;
+                            cellValue = rawValue?.ToString()?.Trim() ?? string.Empty;
                         }
                         
                         var cellData = new CellData(cellIndex, cellValue);

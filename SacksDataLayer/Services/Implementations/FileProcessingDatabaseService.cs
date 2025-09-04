@@ -1,5 +1,6 @@
 using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.Services.Interfaces;
+using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Entities;
 using SacksDataLayer.Data;
 using SacksDataLayer.Exceptions;
@@ -23,6 +24,7 @@ namespace SacksDataLayer.Services.Implementations
         private readonly IProductsService _productsService;
         private readonly ISuppliersService _suppliersService;
         private readonly ISupplierOffersService _supplierOffersService;
+        private readonly ISupplierOffersRepository _supplierOffersRepository;
         private readonly IOfferProductsService _offerProductsService;
         private readonly ILogger<FileProcessingDatabaseService> _logger;
 
@@ -31,6 +33,7 @@ namespace SacksDataLayer.Services.Implementations
             IProductsService productsService,
             ISuppliersService suppliersService,
             ISupplierOffersService supplierOffersService,
+            ISupplierOffersRepository supplierOffersRepository,
             IOfferProductsService offerProductsService,
             ILogger<FileProcessingDatabaseService> logger)
         {
@@ -38,6 +41,7 @@ namespace SacksDataLayer.Services.Implementations
             _productsService = productsService ?? throw new ArgumentNullException(nameof(productsService));
             _suppliersService = suppliersService ?? throw new ArgumentNullException(nameof(suppliersService));
             _supplierOffersService = supplierOffersService ?? throw new ArgumentNullException(nameof(supplierOffersService));
+            _supplierOffersRepository = supplierOffersRepository ?? throw new ArgumentNullException(nameof(supplierOffersRepository));
             _offerProductsService = offerProductsService ?? throw new ArgumentNullException(nameof(offerProductsService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -225,9 +229,10 @@ namespace SacksDataLayer.Services.Implementations
         }
 
         /// <summary>
-        /// Validates that an offer does not already exist for the supplier and file name
+        /// Ensures no duplicate offer exists - deletes existing offer if found (dev mode).
+        /// In development mode, deletes existing offer if found to allow re-processing.
         /// </summary>
-        public async Task ValidateOfferDoesNotExistAsync(
+        public async Task EnsureOfferCanBeProcessedAsync(
             int supplierId, 
             string fileName, 
             string supplierName, 
@@ -243,23 +248,33 @@ namespace SacksDataLayer.Services.Implementations
                 // Create the expected offer name using the same logic as CreateOfferFromFileAsync
                 var expectedOfferName = $"{supplierName} - {fileName}";
                 
-                var offerExists = await _supplierOffersService.OfferExistsAsync(supplierId, expectedOfferName, cancellationToken);
+                var existingOffer = await _supplierOffersRepository.GetBySupplierAndOfferNameAsync(supplierId, expectedOfferName, cancellationToken);
                 
-                if (offerExists)
+                if (existingOffer != null)
                 {
-                    _logger.LogWarning("Duplicate offer detected: {SupplierName} - {OfferName}", supplierName, expectedOfferName);
-                    throw new DuplicateOfferException(supplierName, expectedOfferName, fileName);
+                    _logger.LogWarning("🔄 DEV MODE: Existing offer found - deleting and replacing: {SupplierName} - {OfferName}", supplierName, expectedOfferName);
+                    _logger.LogInformation("Deleting existing offer ID: {OfferId} with {ProductCount} products", 
+                        existingOffer.Id, existingOffer.OfferProducts?.Count ?? 0);
+                    
+                    // Delete the existing offer (cascade will automatically delete all OfferProducts)
+                    var deleteSuccess = await _supplierOffersService.DeleteOfferAsync(existingOffer.Id);
+                    
+                    if (deleteSuccess)
+                    {
+                        _logger.LogInformation("✅ Successfully deleted existing offer: {OfferName}", expectedOfferName);
+                    }
+                    else
+                    {
+                        _logger.LogError("❌ Failed to delete existing offer: {OfferName}", expectedOfferName);
+                        throw new InvalidOperationException($"Failed to delete existing offer '{expectedOfferName}' for supplier '{supplierName}'");
+                    }
                 }
                 
                 _logger.LogDebug("Offer validation passed for: {SupplierName} - {FileName}", supplierName, fileName);
             }
-            catch (DuplicateOfferException)
+            catch (Exception ex) when (!(ex is InvalidOperationException))
             {
-                throw; // Re-throw our custom exception
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to validate offer existence for supplier: {SupplierName}, file: {FileName}", 
+                _logger.LogError(ex, "Failed to validate/replace offer for supplier: {SupplierName}, file: {FileName}", 
                     supplierName, fileName);
                 throw;
             }
