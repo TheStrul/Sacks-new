@@ -204,6 +204,18 @@ namespace SacksConsoleApp
             Console.WriteLine($"✅ Configuration loaded successfully");
             Console.WriteLine($"   Version: {config.Version}");
             Console.WriteLine($"   Suppliers: {config.Suppliers.Count}");
+            
+            // Test ProductPropertyConfiguration
+            if (config.ProductPropertyConfiguration != null)
+            {
+                Console.WriteLine($"   📋 ProductPropertyConfiguration: {config.ProductPropertyConfiguration.Properties.Count} properties");
+                Console.WriteLine($"   Product Type: {config.ProductPropertyConfiguration.ProductType}");
+                Console.WriteLine($"   Config Version: {config.ProductPropertyConfiguration.Version}");
+            }
+            else
+            {
+                Console.WriteLine("   ⚠️  No ProductPropertyConfiguration found!");
+            }
 
             // Test 2: Validate configuration
             Console.WriteLine("\n🔄 Test 2: Validating configuration...");

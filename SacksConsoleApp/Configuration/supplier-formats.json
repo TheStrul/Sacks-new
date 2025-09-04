@@ -14,13 +14,12 @@
       "columnProperties": {
         "A": {
           "productPropertyKey": "EAN",
-          "format": "currency",
-          "defaultValue": 0,
-          "allowNull": true,
-          "maxLength": null,
+          "format": null,
+          "defaultValue": null,
+          "allowNull": false,
+          "maxLength": 50,
           "transformations": [
-            "removeSymbols",
-            "parseDecimal"
+            "trim"
           ],
           "isRequired": true,
           "isUnique": true,
