@@ -20,18 +20,7 @@ public class SupplierOfferEntity : Entity
     
     [MaxLength(20)]
     public string? Currency { get; set; }
-    
-    public DateTime? ValidFrom { get; set; }
-    public DateTime? ValidTo { get; set; }
-    
-    public bool IsActive { get; set; } = true;
-    
-    [MaxLength(100)]
-    public string? OfferType { get; set; } // e.g., "Standard", "Promotional", "Bulk"
-    
-    [MaxLength(50)]
-    public string? Version { get; set; }
-    
+        
     // Navigation properties
     public virtual SupplierEntity Supplier { get; set; } = null!;
     public virtual ICollection<OfferProductEntity> OfferProducts { get; set; } = new List<OfferProductEntity>();
