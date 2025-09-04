@@ -214,7 +214,22 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         continue;
                     }
 
-                    // Apply transformations and type conversion
+                    // Validate raw value first (before transformation)
+                    var validationResult = await ValidateValueAsync(rawValue, columnProperty, targetProperty);
+                    if (!validationResult.IsValid)
+                    {
+                        if (validationResult.SkipEntireRow)
+                        {
+                            // Skip the entire row - return null to indicate row should be skipped
+                            //Console.WriteLine($"🔄 DEBUG: Skipping entire row {row.Index}: Validation failed for column {columnKey} with value '{rawValue}' - {validationResult.ErrorMessage}");
+                            return null;
+                        }
+                        // Skip just this column
+                        Console.WriteLine($"🔄 DEBUG: Skipped column {columnKey} in row {row.Index}: Validation failed for value '{rawValue}' - {validationResult.ErrorMessage}");
+                        continue;
+                    }
+
+                    // Apply transformations and type conversion after validation passes
                     var processedValue = await ProcessCellValueAsync(rawValue, columnProperty);
                     if (processedValue == null && !columnProperty.AllowNull)
                     {
@@ -222,20 +237,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         continue;
                     }
 
-                    // Validate processed value
-                    var validationResult = await ValidateValueAsync(processedValue, columnProperty, targetProperty);
-                    if (!validationResult.IsValid)
-                    {
-                        if (validationResult.SkipEntireRow)
-                        {
-                            // Skip the entire row - return null to indicate row should be skipped
-                            //Console.WriteLine($"🔄 DEBUG: Skipping entire row {row.Index}: Validation failed for column {columnKey} with value '{processedValue}' - {validationResult.ErrorMessage}");
-                            return null;
-                        }
-                        // Skip just this column
-                        Console.WriteLine($"🔄 DEBUG: Skipped column {columnKey} in row {row.Index}: Validation failed for value '{processedValue}' - {validationResult.ErrorMessage}");
-                        continue;
-                    }
+                    // Skip the second validation since we already validated the raw value
+                    // The processedValue is now ready to be classified and assigned
 
                     // Classify and assign value based on property classification
                     await AssignValueByClassificationAsync(
@@ -326,7 +329,52 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         }
 
         /// <summary>
-        /// Validates processed value against column validation rules
+        /// Validates raw string value against column validation rules (before transformation)
+        /// </summary>
+        private async Task<ValidationResult> ValidateValueAsync(string rawValue, ColumnProperty columnProperty, string targetProperty)
+        {
+            await Task.CompletedTask; // For async consistency
+
+            // Check required field validation
+            if (columnProperty.IsRequired == true && string.IsNullOrWhiteSpace(rawValue))
+            {
+                return ValidationResult.Invalid(
+                    columnProperty.SkipEntireRow,
+                    $"Required field '{targetProperty}' is empty");
+            }
+
+            // Check allowed values if configured (validate against raw values before transformation)
+            if (columnProperty.AllowedValues.Count > 0)
+            {
+                if (!columnProperty.AllowedValues.Contains(rawValue, StringComparer.OrdinalIgnoreCase))
+                {
+                    return ValidationResult.Invalid(
+                        columnProperty.SkipEntireRow,
+                        $"Value '{rawValue}' is not in allowed values for '{targetProperty}'");
+                }
+            }
+
+            // Check validation patterns if configured (validate against raw values)
+            if (columnProperty.ValidationPatterns.Count > 0)
+            {
+                if (!string.IsNullOrEmpty(rawValue))
+                {
+                    var matchesPattern = columnProperty.ValidationPatterns
+                        .Any(pattern => Regex.IsMatch(rawValue, pattern, RegexOptions.IgnoreCase));
+                    if (!matchesPattern)
+                    {
+                        return ValidationResult.Invalid(
+                            columnProperty.SkipEntireRow,
+                            $"Value '{rawValue}' does not match validation patterns for '{targetProperty}'");
+                    }
+                }
+            }
+
+            return ValidationResult.Valid();
+        }
+
+        /// <summary>
+        /// Validates processed value against column validation rules (after transformation) - Legacy method
         /// </summary>
         private async Task<ValidationResult> ValidateValueAsync(object? value, ColumnProperty columnProperty, string targetProperty)
         {

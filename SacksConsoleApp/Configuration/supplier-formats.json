@@ -266,7 +266,7 @@
       },
       "columnProperties": {
         "A": {
-          "productPropertyKey": "Description",
+          "productPropertyKey": "Brand",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
