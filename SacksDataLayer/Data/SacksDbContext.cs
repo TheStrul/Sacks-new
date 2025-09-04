@@ -105,27 +105,6 @@ namespace SacksDataLayer.Data
 
                 entity.Property(e => e.Description)
                       .HasMaxLength(500);
-
-                entity.Property(e => e.Industry)
-                      .HasMaxLength(100);
-
-                entity.Property(e => e.Region)
-                      .HasMaxLength(100);
-
-                entity.Property(e => e.ContactName)
-                      .HasMaxLength(255);
-
-                entity.Property(e => e.ContactEmail)
-                      .HasMaxLength(255);
-
-                entity.Property(e => e.Company)
-                      .HasMaxLength(255);
-
-                entity.Property(e => e.FileFrequency)
-                      .HasMaxLength(50);
-
-                entity.Property(e => e.Notes)
-                      .HasColumnType("TEXT");
             });
 
             // Configure SupplierOfferEntity

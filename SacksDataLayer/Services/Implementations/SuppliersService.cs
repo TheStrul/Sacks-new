@@ -107,8 +107,7 @@ namespace SacksDataLayer.Services.Implementations
         /// Creates or gets an existing supplier based on configuration
         /// </summary>
         public async Task<SupplierEntity> CreateOrGetSupplierFromConfigAsync(string supplierName, 
-            string? description = null, string? industry = null, string? region = null, 
-            string? createdBy = null)
+            string? description = null, string? createdBy = null)
         {
             if (string.IsNullOrWhiteSpace(supplierName))
                 throw new ArgumentException("Supplier name cannot be null or empty", nameof(supplierName));
@@ -125,8 +124,6 @@ namespace SacksDataLayer.Services.Implementations
             {
                 Name = supplierName,
                 Description = description,
-                Industry = industry,
-                Region = region,
                 CreatedAt = DateTime.UtcNow
             };
 

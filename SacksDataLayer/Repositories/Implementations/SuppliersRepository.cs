@@ -101,8 +101,7 @@ namespace SacksDataLayer.Repositories.Implementations
             return await _context.Suppliers
                 .Include(s => s.Offers)
                 .Where(s => s.Name.Contains(searchTerm) || 
-                           (s.Description != null && s.Description.Contains(searchTerm)) ||
-                           (s.Company != null && s.Company.Contains(searchTerm)))
+                           (s.Description != null && s.Description.Contains(searchTerm)))
                 .ToListAsync(cancellationToken);
         }
     }
