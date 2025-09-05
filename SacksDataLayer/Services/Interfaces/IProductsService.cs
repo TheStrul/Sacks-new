@@ -1,3 +1,4 @@
+using SacksDataLayer.DTOs;
 using SacksDataLayer.Entities;
 
 namespace SacksDataLayer.Services.Interfaces
@@ -83,6 +84,13 @@ namespace SacksDataLayer.Services.Interfaces
         /// Gets total product count
         /// </summary>
         Task<int> GetProductCountAsync();
+
+        /// <summary>
+        /// Gets products that have offers from multiple suppliers
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Products with multiple supplier offers including price comparison</returns>
+        Task<IEnumerable<ProductWithMultipleSuppliersDto>> GetProductsWithMultipleSuppliersAsync(CancellationToken cancellationToken = default);
 
         #endregion
     }

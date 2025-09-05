@@ -129,4 +129,43 @@ namespace SacksDataLayer.DTOs
         public string Value { get; set; } = string.Empty;
         public int Count { get; set; }
     }
+
+    /// <summary>
+    /// DTO for products with multiple supplier offers
+    /// </summary>
+    public class ProductWithMultipleSuppliersDto
+    {
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string? EAN { get; set; }
+        public string? Brand { get; set; }
+        public string? Gender { get; set; }
+        public string? Size { get; set; }
+        public string? Concentration { get; set; }
+        public int SupplierCount { get; set; }
+        public int OfferCount { get; set; }
+        public decimal? MinPrice { get; set; }
+        public decimal? MaxPrice { get; set; }
+        public decimal? PriceDifference { get; set; }
+        public decimal? PriceDifferencePercentage { get; set; }
+        public string? Currency { get; set; }
+        public List<SupplierOfferSummaryDto> Offers { get; set; } = new List<SupplierOfferSummaryDto>();
+    }
+
+    /// <summary>
+    /// DTO for supplier offer summary
+    /// </summary>
+    public class SupplierOfferSummaryDto
+    {
+        public int SupplierId { get; set; }
+        public string SupplierName { get; set; } = string.Empty;
+        public int OfferId { get; set; }
+        public string? OfferName { get; set; }
+        public decimal? Price { get; set; }
+        public string? Currency { get; set; }
+        public int? Quantity { get; set; }
+        public decimal? PricePerMl { get; set; }
+        public bool IsLowestPrice { get; set; }
+        public bool IsHighestPrice { get; set; }
+    }
 }
