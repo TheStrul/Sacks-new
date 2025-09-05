@@ -21,7 +21,11 @@ namespace SacksDataLayer.Configuration
             // Extract just the filename if a path was provided
             var actualFileName = Path.GetFileName(fileName);
             
-            // Standard search locations for configuration files
+            // Get current working directory for debugging
+            var currentDir = Environment.CurrentDirectory;
+            logger?.LogDebug("Searching for configuration file: {FileName} from working directory: {WorkingDir}", fileName, currentDir);
+            
+            // Standard search locations for configuration files (enhanced for VS2022 compatibility)
             var searchPaths = new[]
             {
                 // If a relative path was provided, try it as-is first
@@ -44,13 +48,25 @@ namespace SacksDataLayer.Configuration
                 Path.Combine("..", "SacksConsoleApp", "Configuration", actualFileName),
                 Path.Combine("..", "SacksDataLayer", "Configuration", actualFileName),
                 
-                // Grandparent directory configurations
+                // Grandparent directory configurations (for VS2022 bin/Debug/net9.0)
                 Path.Combine("..", "..", "Configuration", actualFileName),
                 Path.Combine("..", "..", "SacksConsoleApp", "Configuration", actualFileName),
-                Path.Combine("..", "..", "SacksDataLayer", "Configuration", actualFileName)
+                Path.Combine("..", "..", "SacksDataLayer", "Configuration", actualFileName),
+                
+                // Great-grandparent directory configurations (for nested bin folders)
+                Path.Combine("..", "..", "..", "Configuration", actualFileName),
+                Path.Combine("..", "..", "..", "SacksConsoleApp", "Configuration", actualFileName),
+                Path.Combine("..", "..", "..", "SacksDataLayer", "Configuration", actualFileName),
+                
+                // VS2022 specific: bin/Debug/net9.0 to solution root
+                Path.Combine("..", "..", "..", "..", "SacksConsoleApp", "Configuration", actualFileName),
+                Path.Combine("..", "..", "..", "..", "SacksDataLayer", "Configuration", actualFileName),
+                
+                // AppContext.BaseDirectory fallback
+                Path.Combine(AppContext.BaseDirectory, actualFileName),
+                Path.Combine(AppContext.BaseDirectory, "Configuration", actualFileName),
+                Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "SacksConsoleApp", "Configuration", actualFileName)
             };
-
-            logger?.LogDebug("Searching for configuration file: {FileName}", fileName);
 
             foreach (var searchPath in searchPaths)
             {
@@ -72,7 +88,8 @@ namespace SacksDataLayer.Configuration
                 }
             }
 
-            logger?.LogWarning("Configuration file not found: {FileName}. Searched {PathCount} locations.", fileName, searchPaths.Length);
+            logger?.LogWarning("Configuration file not found: {FileName}. Searched {PathCount} locations from working directory: {WorkingDir}", 
+                fileName, searchPaths.Length, currentDir);
             return null;
         }
 
@@ -88,7 +105,13 @@ namespace SacksDataLayer.Configuration
             var filePath = FindConfigurationFile(fileName, logger);
             if (filePath == null)
             {
-                throw new FileNotFoundException($"Configuration file not found: {fileName}");
+                var currentDir = Environment.CurrentDirectory;
+                var baseDir = AppContext.BaseDirectory;
+                throw new FileNotFoundException(
+                    $"Configuration file not found: {fileName}\n" +
+                    $"Working Directory: {currentDir}\n" +
+                    $"AppContext.BaseDirectory: {baseDir}\n" +
+                    $"Ensure the file exists in SacksConsoleApp/Configuration/ folder relative to the solution root.");
             }
             return filePath;
         }

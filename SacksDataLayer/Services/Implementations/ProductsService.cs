@@ -202,13 +202,34 @@ namespace SacksDataLayer.Services.Implementations
             
             var productsToCreate = new List<ProductEntity>();
             var productsToUpdate = new List<ProductEntity>();
+            var processedEANs = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // Track EANs within this batch
             int errors = 0;
 
             foreach (var product in productList)
             {
                 try
                 {
-                    if (!string.IsNullOrWhiteSpace(product.EAN) && existingProducts.TryGetValue(product.EAN, out var existingProduct))
+                    // Skip if EAN is empty
+                    if (string.IsNullOrWhiteSpace(product.EAN))
+                    {
+                        // For products without EAN, allow them to be created (they won't violate unique constraint)
+                        product.CreatedAt = DateTime.UtcNow;
+                        productsToCreate.Add(product);
+                        continue;
+                    }
+
+                    // Check if EAN already processed in this batch
+                    if (processedEANs.Contains(product.EAN))
+                    {
+                        Console.WriteLine($"⚠️ Skipping duplicate EAN '{product.EAN}' within the same batch (Product: {product.Name})");
+                        errors++;
+                        continue;
+                    }
+
+                    // Mark EAN as processed
+                    processedEANs.Add(product.EAN);
+
+                    if (existingProducts.TryGetValue(product.EAN, out var existingProduct))
                     {
                         // Update existing product
                         existingProduct.Name = product.Name;

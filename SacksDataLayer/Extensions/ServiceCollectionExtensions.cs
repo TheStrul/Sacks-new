@@ -3,6 +3,7 @@ using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Services.Implementations;
 using SacksDataLayer.Configuration;
 using SacksDataLayer.FileProcessing.Services;
+using Microsoft.Extensions.Logging;
 
 namespace SacksDataLayer.Extensions
 {
@@ -42,15 +43,43 @@ namespace SacksDataLayer.Extensions
             // Register configuration-based services with factory pattern
             services.AddScoped<ConfigurationBasedPropertyNormalizer>(serviceProvider =>
             {
+                var logger = serviceProvider.GetService<ILogger<ConfigurationBasedPropertyNormalizer>>();
                 var manager = serviceProvider.GetRequiredService<PropertyNormalizationConfigurationManager>();
-                var config = manager.LoadConfigurationAsync(normalizationConfigPath).GetAwaiter().GetResult();
+                
+                // Use ConfigurationFileLocator to find the file in VS2022 and VSCode
+                string configFilePath;
+                try
+                {
+                    configFilePath = ConfigurationFileLocator.FindConfigurationFileOrThrow(normalizationConfigPath, logger);
+                }
+                catch (FileNotFoundException ex)
+                {
+                    logger?.LogError(ex, "Configuration file not found: {FileName}", normalizationConfigPath);
+                    throw new InvalidOperationException($"Required configuration file '{normalizationConfigPath}' not found. Please ensure it exists in the Configuration folder.", ex);
+                }
+                
+                var config = manager.LoadConfigurationAsync(configFilePath).GetAwaiter().GetResult();
                 return new ConfigurationBasedPropertyNormalizer(config);
             });
             
             services.AddScoped<ConfigurationBasedDescriptionPropertyExtractor>(serviceProvider =>
             {
+                var logger = serviceProvider.GetService<ILogger<ConfigurationBasedDescriptionPropertyExtractor>>();
                 var manager = serviceProvider.GetRequiredService<PropertyNormalizationConfigurationManager>();
-                var config = manager.LoadConfigurationAsync(normalizationConfigPath).GetAwaiter().GetResult();
+                
+                // Use ConfigurationFileLocator to find the file in VS2022 and VSCode
+                string configFilePath;
+                try
+                {
+                    configFilePath = ConfigurationFileLocator.FindConfigurationFileOrThrow(normalizationConfigPath, logger);
+                }
+                catch (FileNotFoundException ex)
+                {
+                    logger?.LogError(ex, "Configuration file not found: {FileName}", normalizationConfigPath);
+                    throw new InvalidOperationException($"Required configuration file '{normalizationConfigPath}' not found. Please ensure it exists in the Configuration folder.", ex);
+                }
+                
+                var config = manager.LoadConfigurationAsync(configFilePath).GetAwaiter().GetResult();
                 return new ConfigurationBasedDescriptionPropertyExtractor(config);
             });
             

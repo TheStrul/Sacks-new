@@ -255,6 +255,199 @@
       }
     },
     {
+      "name": "CHK",
+      "detection": {
+        "fileNamePatterns": [
+          "chk 31.8.25.xlsx",
+          "chk 31.8.25.xls",
+          "chk*.xlsx",
+          "chk *.*.*.xlsx"
+        ]
+      },
+      "columnProperties": {
+        "A": {
+          "productPropertyKey": "EAN",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": false,
+          "maxLength": 50,
+          "transformations": [],
+          "isRequired": true,
+          "isUnique": true,
+          "validationPatterns": [
+            "^\\d+$"
+          ],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "B": {
+          "productPropertyKey": "Ref",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "C": {
+          "productPropertyKey": "Description",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 500,
+          "transformations": [],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "D": {
+          "productPropertyKey": "Ref",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "E": {
+          "productPropertyKey": "Gender",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 20,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "F": {
+          "productPropertyKey": "Volume",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 20,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "G": {
+          "productPropertyKey": "Units",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 20,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "I": {
+          "productPropertyKey": "Price",
+          "dataType": "decimal",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols",
+            "parseDecimal"
+          ],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "J": {
+          "productPropertyKey": "Quantity",
+          "dataType": "int",
+          "format": "integer",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "K": {
+          "productPropertyKey": "Incoming",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "L": {
+          "productPropertyKey": "COO",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "M": {
+          "productPropertyKey": "T1",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 50,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        }
+      },
+      "fileStructure": {
+        "dataStartRowIndex": 2,
+        "expectedColumnCount": 13,
+        "headerRowIndex": 1
+      }
+    },
+    {
       "name": "HAND",
       "detection": {
         "fileNamePatterns": [
@@ -377,6 +570,142 @@
       "fileStructure": {
         "dataStartRowIndex": 2,
         "expectedColumnCount": 7,
+        "headerRowIndex": 1
+      }
+    },
+    {
+      "name": "JIZAN",
+      "detection": {
+        "fileNamePatterns": [
+          "jiz 31.08.25.xlsx",
+          "jiz 31.08.25.xls",
+          "jizan*.xlsx",
+          "jiz*.xlsx",
+          "jizan *.*.*.xlsx"
+        ]
+      },
+      "columnProperties": {
+        "B": {
+          "productPropertyKey": "EAN",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": false,
+          "maxLength": 50,
+          "transformations": [],
+          "isRequired": true,
+          "isUnique": true,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "C": {
+          "productPropertyKey": "Brand",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "D": {
+          "productPropertyKey": "Description",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 500,
+          "transformations": [],
+          "isRequired": true,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "E": {
+          "productPropertyKey": "IsSet",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [
+            "REGULAR",
+            "SET",
+            "NICHE",
+            "EDT",
+            "EDP",
+            "EDC",
+            "Perfume",
+            "Deodorant",
+            "COFFRET",
+            "ACCESSORIES",
+            "CANDLES"
+          ],
+          "skipEntireRow": false
+        },
+        "F": {
+          "productPropertyKey": "Niche",
+          "dataType": "string",
+          "format": null,
+          "defaultValue": null,
+          "allowNull": true,
+          "maxLength": 100,
+          "transformations": [],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": false
+        },
+        "G": {
+          "productPropertyKey": "Quantity",
+          "dataType": "int",
+          "format": "integer",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+          },
+        "H": {
+          "productPropertyKey": "Price",
+          "dataType": "decimal",
+          "format": "currency",
+          "defaultValue": 0,
+          "allowNull": true,
+          "maxLength": null,
+          "transformations": [
+            "removeSymbols",
+            "parseDecimal"
+          ],
+          "isRequired": false,
+          "isUnique": false,
+          "validationPatterns": [
+            "^(?:[2-9]\\d|[1-9]\\d{2,})(?:\\.\\d+)?$"
+          ],
+          "allowedValues": [],
+          "skipEntireRow": true
+        }       
+      },
+      "fileStructure": {
+        "dataStartRowIndex": 2,
+        "expectedColumnCount": 8,
         "headerRowIndex": 1
       }
     }
