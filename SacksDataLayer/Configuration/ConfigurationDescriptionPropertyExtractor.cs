@@ -7,15 +7,15 @@ namespace SacksDataLayer.Configuration
     /// Configuration-driven property extractor that replaces hardcoded extraction patterns
     /// Uses ProductPropertyNormalizationConfiguration for all patterns and transformations
     /// </summary>
-    public class ConfigurationBasedDescriptionPropertyExtractor
+    public class ConfigurationDescriptionPropertyExtractor
     {
         private readonly ProductPropertyNormalizationConfiguration _configuration;
-        private readonly ConfigurationBasedPropertyNormalizer _normalizer;
+        private readonly ConfigurationPropertyNormalizer _normalizer;
 
-        public ConfigurationBasedDescriptionPropertyExtractor(ProductPropertyNormalizationConfiguration configuration)
+        public ConfigurationDescriptionPropertyExtractor(ProductPropertyNormalizationConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            _normalizer = new ConfigurationBasedPropertyNormalizer(configuration);
+            _normalizer = new ConfigurationPropertyNormalizer(configuration);
         }
 
         /// <summary>
@@ -150,15 +150,15 @@ namespace SacksDataLayer.Configuration
         }
 
         /// <summary>
-        /// Creates a ConfigurationBasedDescriptionPropertyExtractor from configuration file
+        /// Creates a ConfigurationDescriptionPropertyExtractor from configuration file
         /// </summary>
-        public static async Task<ConfigurationBasedDescriptionPropertyExtractor> CreateFromConfigurationAsync(
+        public static async Task<ConfigurationDescriptionPropertyExtractor> CreateFromConfigurationAsync(
             string configurationFilePath, 
             CancellationToken cancellationToken = default)
         {
             var manager = new PropertyNormalizationConfigurationManager();
             var config = await manager.LoadConfigurationAsync(configurationFilePath, cancellationToken);
-            return new ConfigurationBasedDescriptionPropertyExtractor(config);
+            return new ConfigurationDescriptionPropertyExtractor(config);
         }
     }
 }

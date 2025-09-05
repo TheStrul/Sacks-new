@@ -7,13 +7,13 @@ namespace SacksDataLayer.Configuration
     /// Configuration-driven normalizer that replaces hardcoded property mappings
     /// Uses ProductPropertyNormalizationConfiguration for all mappings
     /// </summary>
-    public class ConfigurationBasedPropertyNormalizer
+    public class ConfigurationPropertyNormalizer
     {
         private readonly ProductPropertyNormalizationConfiguration _configuration;
 
         public ProductPropertyNormalizationConfiguration Configuration => _configuration;
 
-        public ConfigurationBasedPropertyNormalizer(ProductPropertyNormalizationConfiguration configuration)
+        public ConfigurationPropertyNormalizer(ProductPropertyNormalizationConfiguration configuration)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
@@ -180,15 +180,15 @@ namespace SacksDataLayer.Configuration
         }
 
         /// <summary>
-        /// Creates a ConfigurationBasedPropertyNormalizer from configuration file
+        /// Creates a ConfigurationPropertyNormalizer from configuration file
         /// </summary>
-        public static async Task<ConfigurationBasedPropertyNormalizer> CreateFromConfigurationAsync(
+        public static async Task<ConfigurationPropertyNormalizer> CreateFromConfigurationAsync(
             string configurationFilePath, 
             CancellationToken cancellationToken = default)
         {
             var manager = new PropertyNormalizationConfigurationManager();
             var config = await manager.LoadConfigurationAsync(configurationFilePath, cancellationToken);
-            return new ConfigurationBasedPropertyNormalizer(config);
+            return new ConfigurationPropertyNormalizer(config);
         }
     }
 }

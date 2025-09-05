@@ -6,7 +6,7 @@ namespace SacksDataLayer.FileProcessing.Interfaces
     /// <summary>
     /// Interface for normalizing supplier-specific data into ProductEntity for supplier offers
     /// </summary>
-    public interface ISupplierProductNormalizer
+    public interface IOfferNormalizer
     {
         /// <summary>
         /// Gets the supplier name this normalizer handles

@@ -3,9 +3,8 @@
 // </copyright>
 
 using System.Text;
-using Microsoft.Extensions.Logging;
 
-namespace SacksConsoleApp
+namespace QMobileDeviceServiceMenu
 {
     /// <summary>
     /// Windows Forms UI for viewing service logs with real-time monitoring
@@ -15,71 +14,41 @@ namespace SacksConsoleApp
     {
         private readonly LogViewerModel _model;
         private readonly LogViewerController _controller;
-        private readonly ILogger<LogViewerForm>? _logger;
 
         /// <summary>
-        /// Shows the log viewer for the most recent Sacks application log file
+        /// Shows the log viewer for the most recent service log file - Windows Forms compatible version
         /// </summary>
-        /// <param name="serviceProvider">Optional service provider for dependency injection</param>
-        public static void ShowSacksLogs(IServiceProvider? serviceProvider = null)
+        /// <param name="serviceDirectory">The directory where the service is located</param>
+        public static void ShowServiceLogs(string serviceDirectory)
         {
-            var logger = serviceProvider?.GetService(typeof(ILogger<LogViewerForm>)) as ILogger<LogViewerForm>;
-            
-            // Find the logs directory relative to application
-            var baseDirectory = AppContext.BaseDirectory;
-            var logsDirectory = Path.Combine(baseDirectory, "logs");
+            string logsDirectory = Path.Combine(serviceDirectory, "logs");
 
             if (!Directory.Exists(logsDirectory))
             {
-                // Try alternative locations for logs
-                var alternatives = new[]
-                {
-                    Path.Combine(Environment.CurrentDirectory, "logs"),
-                    Path.Combine(Environment.CurrentDirectory, "..", "logs"),
-                    Path.Combine(Environment.CurrentDirectory, "..", "..", "..", "logs")
-                };
-
-                foreach (var alt in alternatives)
-                {
-                    if (Directory.Exists(alt))
-                    {
-                        logsDirectory = alt;
-                        break;
-                    }
-                }
-
-                if (!Directory.Exists(logsDirectory))
-                {
-                    Console.WriteLine($"❌ Logs directory not found. Checked:");
-                    Console.WriteLine($"   • {Path.Combine(baseDirectory, "logs")}");
-                    foreach (var alt in alternatives)
-                    {
-                        Console.WriteLine($"   • {alt}");
-                    }
-                    Console.WriteLine("Make sure the application has been started at least once to create log files.");
-                    Console.WriteLine("Press any key to return to menu...");
-                    Console.ReadKey();
-                    return;
-                }
+                MessageBox.Show($"Logs directory not found: {logsDirectory}\n\nMake sure the service has been started at least once to create log files.",
+                    "Logs Directory Not Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
             }
 
-            var logFile = LogViewerController.GetMostRecentLogFile(baseDirectory);
+            var logFile = LogViewerController.GetMostRecentLogFile(serviceDirectory);
             if (logFile == null)
             {
-                Console.WriteLine($"⚠️  No log files found in: {logsDirectory}");
-                Console.WriteLine("Make sure the application has been started and has written some logs.");
-                Console.WriteLine("Press any key to return to menu...");
-                Console.ReadKey();
+                MessageBox.Show($"No log files found in: {logsDirectory}",
+                    "No Log Files Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             try
             {
-                Console.WriteLine("✅ Opening log viewer in Windows Form...");
-                Console.WriteLine("💡 You can now use both the log viewer and this menu simultaneously!");
-
-                // Initialize Windows Forms context if not already done
-                if (!Application.MessageLoop)
+                // If Application.MessageLoop is already running (WinForms app), just show the form
+                if (Application.MessageLoop)
+                {
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                    var logForm = new LogViewerForm(logFile);
+#pragma warning restore CA2000
+                    logForm.Show(); // Non-modal form - will manage its own disposal
+                }
+                else
                 {
                     // Create and run the form on a separate thread with proper Windows Forms context
                     var formThread = new Thread(() =>
@@ -87,7 +56,7 @@ namespace SacksConsoleApp
                         Application.EnableVisualStyles();
                         Application.SetCompatibleTextRenderingDefault(false);
 
-                        var logForm = new LogViewerForm(logFile, logger);
+                        using var logForm = new LogViewerForm(logFile);
                         Application.Run(logForm); // This creates a proper message loop
                     })
                     {
@@ -96,34 +65,12 @@ namespace SacksConsoleApp
 
                     formThread.SetApartmentState(ApartmentState.STA);
                     formThread.Start();
-
-                    Console.WriteLine("✅ Log viewer window opened successfully!");
                 }
-                else
-                {
-                    // If Application.MessageLoop is already running, just show the form
-                    var logForm = new LogViewerForm(logFile, logger);
-                    logForm.Show();
-                }
-
-                Console.WriteLine("📋 Log Viewer Features:");
-                Console.WriteLine("   • Real-time monitoring of log file changes");
-                Console.WriteLine("   • Filter by log levels (Error, Warning, Info, Debug)");
-                Console.WriteLine("   • Search functionality (Ctrl+F or F3 for find next)");
-                Console.WriteLine("   • Auto-scroll for new entries");
-                Console.WriteLine("   • Color-coded log levels");
-                Console.WriteLine("   • Right-click to copy selected text");
-                Console.WriteLine();
-                Console.WriteLine("💡 You can continue using this menu while the log viewer is open");
-                Console.WriteLine("Press any key to return to menu...");
-                Console.ReadKey();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error opening Windows Form: {ex.Message}");
-                logger?.LogError(ex, "Error opening log viewer form");
-                Console.WriteLine("Press any key to continue...");
-                Console.ReadKey();
+                MessageBox.Show($"Error opening log viewer:\n{ex.Message}",
+                    "Log Viewer Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -137,18 +84,13 @@ namespace SacksConsoleApp
         /// <summary>
         /// Constructor with log file path
         /// </summary>
-        public LogViewerForm(string logFilePath, ILogger<LogViewerForm>? logger = null)
+        public LogViewerForm(string logFilePath)
         {
-            _logger = logger;
-            
             // Enable double buffering to reduce flicker
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.DoubleBuffer, true);
 
             _model = new LogViewerModel { LogFilePath = logFilePath };
-            
-            // Create controller with logger support
-            var controllerLogger = logger?.CreateChildLogger("Controller");
-            _controller = new LogViewerController(_model, controllerLogger);
+            _controller = new LogViewerController(_model);
 
             InitializeComponent();
 
@@ -191,7 +133,7 @@ namespace SacksConsoleApp
         private void InitializeControls()
         {
             // Set form title
-            this.Text = $"Sacks Log Viewer - {_model.LogFileName}";
+            this.Text = $"Service Log Viewer - {_model.LogFileName}";
 
             // Initialize checkboxes based on current model state
             UpdateCheckboxStates();
@@ -397,10 +339,9 @@ namespace SacksConsoleApp
                     logTextBox.SelectionLength = Math.Min(selectionLength, logTextBox.Text.Length - logTextBox.SelectionStart);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Fallback to simple method if RTF generation fails
-                _logger?.LogWarning(ex, "RTF generation failed, falling back to simple append");
                 logTextBox.Clear();
                 foreach (var line in lines)
                 {
@@ -519,12 +460,11 @@ namespace SacksConsoleApp
                         statusLabel.Text = $"Copied {selectedText.Length} characters to clipboard";
 
                         // Restore original status after 2 seconds
-                        var timer = new System.Windows.Forms.Timer { Interval = 2000 };
+                        using var timer = new System.Windows.Forms.Timer { Interval = 2000 };
                         timer.Tick += (s, args) =>
                         {
                             statusLabel.Text = originalStatus;
                             timer.Stop();
-                            timer.Dispose();
                         };
                         timer.Start();
                     }
@@ -532,7 +472,6 @@ namespace SacksConsoleApp
                 catch (Exception ex)
                 {
                     // Handle clipboard errors gracefully
-                    _logger?.LogWarning(ex, "Failed to copy text to clipboard");
                     statusLabel.Text = $"Failed to copy to clipboard: {ex.Message}";
                 }
             }
@@ -542,9 +481,9 @@ namespace SacksConsoleApp
 
         private void ShowColorLegend()
         {
-            var legendForm = new Form
+            using var legendForm = new Form
             {
-                Text = "Sacks Log Color Legend",
+                Text = "Log Color Legend",
                 Size = new Size(450, 350),
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
@@ -563,12 +502,12 @@ namespace SacksConsoleApp
                 Margin = new Padding(10),
             };
 
-            // Add color legend entries for Serilog patterns
-            AddLegendEntry(legendText, "Serilog Log Level Patterns:", Color.White);
-            AddLegendEntry(legendText, "[yyyy-MM-dd HH:mm:ss.fff zzz ERR]: Error messages", LogViewerModel.LogLevelColors["ERR"]);
-            AddLegendEntry(legendText, "[yyyy-MM-dd HH:mm:ss.fff zzz WRN]: Warning messages", LogViewerModel.LogLevelColors["WRN"]);
-            AddLegendEntry(legendText, "[yyyy-MM-dd HH:mm:ss.fff zzz INF]: Information messages", LogViewerModel.LogLevelColors["INF"]);
-            AddLegendEntry(legendText, "[yyyy-MM-dd HH:mm:ss.fff zzz DBG]: Debug messages", LogViewerModel.LogLevelColors["DBG"]);
+            // Add color legend entries for Microsoft .NET logging patterns only
+            AddLegendEntry(legendText, "Microsoft .NET Logging Patterns:", Color.White);
+            AddLegendEntry(legendText, "[16:57:34.918 ERR]: Error messages", LogViewerModel.LogLevelColors["ERR"]);
+            AddLegendEntry(legendText, "[16:57:34.918 WRN]: Warning messages", LogViewerModel.LogLevelColors["WRN"]);
+            AddLegendEntry(legendText, "[16:57:34.918 INF]: Information messages", LogViewerModel.LogLevelColors["INF"]);
+            AddLegendEntry(legendText, "[16:57:34.918 DBG]: Debug messages", LogViewerModel.LogLevelColors["DBG"]);
             AddLegendEntry(legendText, "Other/Default text", LogViewerModel.LogLevelColors["Default"]);
 
             AddLegendEntry(legendText, "", Color.White); // Empty line
@@ -576,12 +515,6 @@ namespace SacksConsoleApp
             AddLegendEntry(legendText, "• Use checkboxes to select multiple log levels", Color.LightGray);
             AddLegendEntry(legendText, "• 'All' checkbox selects/deselects all levels", Color.LightGray);
             AddLegendEntry(legendText, "• Individual checkboxes allow custom filtering", Color.LightGray);
-
-            AddLegendEntry(legendText, "", Color.White); // Empty line
-            AddLegendEntry(legendText, "Keyboard Shortcuts:", Color.White);
-            AddLegendEntry(legendText, "• Ctrl+F: Focus search box", Color.LightGray);
-            AddLegendEntry(legendText, "• F3: Find next occurrence", Color.LightGray);
-            AddLegendEntry(legendText, "• Right-click: Copy selected text to clipboard", Color.LightGray);
 
             legendForm.Controls.Add(legendText);
             legendForm.ShowDialog(this);
@@ -651,18 +584,6 @@ namespace SacksConsoleApp
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 statusLabel.Text = $"Monitoring: {_model.LogFileName} | '{searchTerm}' not found";
             }
-        }
-    }
-
-    /// <summary>
-    /// Extension methods for ILogger to create child loggers
-    /// </summary>
-    internal static class LoggerExtensions
-    {
-        internal static ILogger<T> CreateChildLogger<T>(this ILogger parent, string categoryName)
-        {
-            // This is a simplified implementation; in a real scenario you might want to use a proper logger factory
-            return parent as ILogger<T> ?? throw new InvalidOperationException("Cannot create child logger");
         }
     }
 }

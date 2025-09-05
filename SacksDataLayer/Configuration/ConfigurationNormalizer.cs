@@ -26,21 +26,21 @@ namespace SacksDataLayer.FileProcessing.Normalizers
     /// <summary>
     /// Configuration-driven normalizer using unified ColumnProperties structure
     /// </summary>
-    public class ConfigurationBasedNormalizer : ISupplierProductNormalizer
+    public class ConfigurationNormalizer : IOfferNormalizer
     {
         private readonly SupplierConfiguration _configuration;
         private readonly Dictionary<string, Func<string, object?>> _dataTypeConverters;
-        private readonly ConfigurationBasedDescriptionPropertyExtractor? _descriptionExtractor;
+        private readonly ConfigurationDescriptionPropertyExtractor? _descriptionExtractor;
 
         public string SupplierName => _configuration.Name;
 
-        public ConfigurationBasedNormalizer(SupplierConfiguration configuration, ConfigurationBasedPropertyNormalizer? propertyNormalizer = null)
+        public ConfigurationNormalizer(SupplierConfiguration configuration, ConfigurationPropertyNormalizer? propertyNormalizer = null)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _dataTypeConverters = InitializeDataTypeConverters();
 
-            // Initialize description extractor if ConfigurationBasedPropertyNormalizer is available
-            _descriptionExtractor = propertyNormalizer != null ? new ConfigurationBasedDescriptionPropertyExtractor(propertyNormalizer.Configuration) : null;
+            // Initialize description extractor if ConfigurationPropertyNormalizer is available
+            _descriptionExtractor = propertyNormalizer != null ? new ConfigurationDescriptionPropertyExtractor(propertyNormalizer.Configuration) : null;
         }
 
         public bool CanHandle(string fileName, IEnumerable<RowData> firstFewRows)

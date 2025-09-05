@@ -1,0 +1,126 @@
+{
+  "version": "1.0",
+  "productType": "Perfume",
+  "properties": {
+    "EAN": {
+      "key": "EAN",
+      "displayName": "EAN",
+      "description": "European Article Number",
+      "classification": "CoreProduct",
+      "isFilterable": false,
+      "isSortable": true,
+      "isRequired": true,
+      "displayOrder": 1
+    },
+    "Brand": {
+      "key": "Brand",
+      "displayName": "Brand",
+      "description": "Product brand or manufacturer",
+      "classification": "CoreProduct",
+      "isFilterable": true,
+      "isSortable": true,
+      "isRequired": true,
+      "displayOrder": 2
+    },
+    "Name": {
+      "key": "Name",
+      "displayName": "Product Name",
+      "description": "Full product name",
+      "classification": "CoreProduct",
+      "isFilterable": false,
+      "isSortable": true,
+      "isRequired": true,
+      "displayOrder": 3
+    },
+    "Description": {
+      "key": "Description",
+      "displayName": "Description",
+      "description": "Product description",
+      "classification": "CoreProduct",
+      "isFilterable": false,
+      "isSortable": false,
+      "isRequired": false,
+      "displayOrder": 4
+    },
+    "Gender": {
+      "key": "Gender",
+      "displayName": "Gender",
+      "description": "Target gender (Men/Women/Unisex)",
+      "classification": "CoreProduct",
+      "isFilterable": true,
+      "isSortable": true,
+      "isRequired": false,
+      "displayOrder": 5
+    },
+    "Size": {
+      "key": "Size",
+      "displayName": "Size",
+      "description": "Product volume/size",
+      "classification": "CoreProduct",
+      "isFilterable": true,
+      "isSortable": true,
+      "isRequired": false,
+      "displayOrder": 6
+    },
+    "Concentration": {
+      "key": "Concentration",
+      "displayName": "Concentration",
+      "description": "Perfume concentration type",
+      "classification": "CoreProduct",
+      "isFilterable": true,
+      "isSortable": true,
+      "isRequired": false,
+      "displayOrder": 7
+    },
+    "FragranceFamily": {
+      "key": "FragranceFamily",
+      "displayName": "Fragrance Family",
+      "description": "Olfactory family classification",
+      "classification": "CoreProduct",
+      "isFilterable": true,
+      "isSortable": true,
+      "isRequired": false,
+      "displayOrder": 8
+    },
+    "ProductLine": {
+      "key": "ProductLine",
+      "displayName": "Product Line",
+      "description": "Product line or collection",
+      "classification": "CoreProduct",
+      "isFilterable": true,
+      "isSortable": true,
+      "isRequired": false,
+      "displayOrder": 9
+    },
+    "Price": {
+      "key": "Price",
+      "displayName": "Price",
+      "description": "Product price",
+      "classification": "Offer",
+      "isFilterable": true,
+      "isSortable": true,
+      "isRequired": false,
+      "displayOrder": 10
+    },
+    "Currency": {
+      "key": "Currency",
+      "displayName": "Currency",
+      "description": "Price currency",
+      "classification": "Offer",
+      "isFilterable": true,
+      "isSortable": false,
+      "isRequired": false,
+      "displayOrder": 11
+    },
+    "Quantity": {
+      "key": "Quantity",
+      "displayName": "Quantity",
+      "description": "Available quantity",
+      "classification": "Offer",
+      "isFilterable": false,
+      "isSortable": true,
+      "isRequired": false,
+      "displayOrder": 12
+    }
+  }
+}

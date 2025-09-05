@@ -847,8 +847,8 @@ namespace SacksConsoleApp
 
             try
             {
-                var propertyNormalizer = serviceProvider.GetRequiredService<ConfigurationBasedPropertyNormalizer>();
-                var descriptionExtractor = new ConfigurationBasedDescriptionPropertyExtractor(propertyNormalizer.Configuration);
+                var propertyNormalizer = serviceProvider.GetRequiredService<ConfigurationPropertyNormalizer>();
+                var descriptionExtractor = new ConfigurationDescriptionPropertyExtractor(propertyNormalizer.Configuration);
 
                 Console.WriteLine("🧪 Testing Description Property Extraction with sample product descriptions...\n");
 

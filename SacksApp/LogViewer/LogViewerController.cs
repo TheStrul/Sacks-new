@@ -2,33 +2,30 @@
 // Copyright (c) PlaceholderCompany. All rights reserved.
 // </copyright>
 
-using Microsoft.Extensions.Logging;
-
-namespace SacksConsoleApp
+namespace QMobileDeviceServiceMenu
 {
     /// <summary>
     /// Controller for log viewer business logic, separated from UI concerns.
     /// Manages real-time log file monitoring, filtering, and search functionality.
     /// </summary>
-    internal class LogViewerController : IDisposable
+    internal sealed class LogViewerController : IDisposable
     {
         private readonly LogViewerModel _model;
         private readonly System.Windows.Forms.Timer _refreshTimer;
-        private readonly ILogger<LogViewerController>? _logger;
         private bool _disposed = false;
 
         /// <summary>
-        /// Event triggered when new log lines are available for display
+        /// Event raised when new log lines are available for display.
         /// </summary>
         internal event EventHandler<LogLinesEventArgs>? NewLogLines;
 
         /// <summary>
-        /// Event triggered when the status message should be updated
+        /// Event raised when the status message should be updated.
         /// </summary>
         internal event EventHandler<string>? StatusUpdated;
 
         /// <summary>
-        /// Event triggered when a search operation is completed
+        /// Event raised when a search operation is completed.
         /// </summary>
         internal event EventHandler<SearchResultEventArgs>? SearchCompleted;
 
@@ -36,16 +33,12 @@ namespace SacksConsoleApp
         /// Initializes a new instance of the LogViewerController.
         /// </summary>
         /// <param name="model">The log viewer model containing state and configuration.</param>
-        /// <param name="logger">Optional logger for diagnostics.</param>
-        internal LogViewerController(LogViewerModel model, ILogger<LogViewerController>? logger = null)
+        internal LogViewerController(LogViewerModel model)
         {
             _model = model ?? throw new ArgumentNullException(nameof(model));
-            _logger = logger;
-            
             _refreshTimer = new System.Windows.Forms.Timer
             {
-                Interval = 1000, // Check for new log entries every second
-                Enabled = false
+                Interval = 1000
             };
             _refreshTimer.Tick += RefreshTimer_Tick;
         }
@@ -55,12 +48,13 @@ namespace SacksConsoleApp
         /// </summary>
         internal void Initialize()
         {
-            _logger?.LogDebug("Initializing log viewer controller for file: {LogFilePath}", _model.LogFilePath);
-            
+            if (string.IsNullOrEmpty(_model.LogFilePath))
+            {
+                return;
+            }
+
             LoadInitialLogContent();
             StartRealTimeMonitoring();
-            
-            _logger?.LogInformation("Log viewer controller initialized successfully");
         }
 
         /// <summary>
@@ -79,7 +73,6 @@ namespace SacksConsoleApp
                 _model.SelectedLogLevels.Remove(level);
             }
 
-            _logger?.LogDebug("Updated log level filter: {Level} = {IsSelected}", level, isSelected);
             RefreshLogDisplay();
         }
 
@@ -98,7 +91,6 @@ namespace SacksConsoleApp
                 _model.SelectedLogLevels.Clear();
             }
 
-            _logger?.LogDebug("Set all log levels to: {IsSelected}", isSelected);
             RefreshLogDisplay();
         }
 
@@ -109,7 +101,6 @@ namespace SacksConsoleApp
         internal void SetAutoScroll(bool enabled)
         {
             _model.AutoScroll = enabled;
-            _logger?.LogDebug("Auto-scroll set to: {Enabled}", enabled);
         }
 
         /// <summary>
@@ -131,7 +122,6 @@ namespace SacksConsoleApp
             }
 
             _model.LastSearchTerm = searchTerm;
-            _logger?.LogDebug("Searching logs for term: {SearchTerm}, FindNext: {FindNext}", searchTerm, findNext);
 
             OnSearchCompleted(new SearchResultEventArgs
             {
@@ -142,49 +132,20 @@ namespace SacksConsoleApp
         }
 
         /// <summary>
-        /// Gets the most recent log file from the logs directory.
+        /// Gets the most recent log file from the service directory.
         /// </summary>
-        /// <param name="serviceDirectory">The directory where the application is located (optional).</param>
+        /// <param name="serviceDirectory">The directory where the service is installed.</param>
         /// <returns>Path to the most recent log file, or null if none found.</returns>
-        internal static string? GetMostRecentLogFile(string? serviceDirectory = null)
+        internal static string? GetMostRecentLogFile(string serviceDirectory)
         {
-            // Default to current application directory if not specified
-            var baseDirectory = serviceDirectory ?? AppContext.BaseDirectory;
-            var logsDirectory = Path.Combine(baseDirectory, "logs");
+            string logsDirectory = Path.Combine(serviceDirectory, "logs");
 
             if (!Directory.Exists(logsDirectory))
             {
-                // Try alternative locations
-                var alternatives = new[]
-                {
-                    Path.Combine(Environment.CurrentDirectory, "logs"),
-                    Path.Combine(Environment.CurrentDirectory, "..", "logs"),
-                    Path.Combine(Environment.CurrentDirectory, "..", "..", "..", "logs")
-                };
-
-                foreach (var alt in alternatives)
-                {
-                    if (Directory.Exists(alt))
-                    {
-                        logsDirectory = alt;
-                        break;
-                    }
-                }
-
-                if (!Directory.Exists(logsDirectory))
-                {
-                    return null;
-                }
+                return null;
             }
 
-            // Look for Serilog-generated log files with pattern: sacks-*.log
-            var logFiles = Directory.GetFiles(logsDirectory, "sacks-*.log");
-            if (logFiles.Length == 0)
-            {
-                // Fallback to any .log files
-                logFiles = Directory.GetFiles(logsDirectory, "*.log");
-            }
-
+            var logFiles = Directory.GetFiles(logsDirectory, "*.log");
             if (logFiles.Length == 0)
             {
                 return null;
@@ -197,73 +158,33 @@ namespace SacksConsoleApp
         {
             if (!File.Exists(_model.LogFilePath))
             {
-                _logger?.LogWarning("Log file not found: {LogFilePath}", _model.LogFilePath);
                 return;
             }
 
-            try
+            var lines = ReadLogFileLines();
+            var filteredLines = lines.Where(_model.ShouldDisplayLine).ToList();
+
+            OnNewLogLines(new LogLinesEventArgs
             {
-                var lines = ReadLogFileLines();
-                var filteredLines = lines.Where(_model.ShouldDisplayLine).ToList();
+                Lines = filteredLines,
+                ClearFirst = true,
+                AutoScroll = _model.AutoScroll
+            });
 
-                _logger?.LogDebug("Loaded {TotalLines} lines, {FilteredLines} after filtering", lines.Count, filteredLines.Count);
-
-                OnNewLogLines(new LogLinesEventArgs
-                {
-                    Lines = filteredLines,
-                    ClearFirst = true,
-                    AutoScroll = false // Don't auto-scroll on initial load
-                });
-
-                OnStatusUpdated($"Loaded {filteredLines.Count} log entries");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error loading initial log content from {LogFilePath}", _model.LogFilePath);
-                OnStatusUpdated($"Error loading log file: {ex.Message}");
-            }
+            var fileInfo = new FileInfo(_model.LogFilePath);
+            _model.LastFilePosition = fileInfo.Length;
         }
 
         private void StartRealTimeMonitoring()
         {
-            if (!File.Exists(_model.LogFilePath))
-            {
-                _logger?.LogWarning("Cannot start monitoring - log file not found: {LogFilePath}", _model.LogFilePath);
-                return;
-            }
-
-            try
-            {
-                var fileInfo = new FileInfo(_model.LogFilePath);
-                _model.LastFilePosition = fileInfo.Length;
-                _model.IsMonitoring = true;
-                _refreshTimer.Start();
-
-                _logger?.LogDebug("Started real-time monitoring of {LogFilePath} from position {Position}", 
-                    _model.LogFilePath, _model.LastFilePosition);
-                OnStatusUpdated("Real-time monitoring started");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error starting real-time monitoring for {LogFilePath}", _model.LogFilePath);
-                OnStatusUpdated($"Error starting monitoring: {ex.Message}");
-            }
+            _model.IsMonitoring = true;
+            _refreshTimer.Start();
+            OnStatusUpdated("Real-time monitoring active");
         }
 
         private void RefreshTimer_Tick(object? sender, EventArgs e)
         {
-            if (!_model.IsMonitoring)
-                return;
-
-            try
-            {
-                CheckForNewLogEntries();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error checking for new log entries");
-                OnStatusUpdated($"Monitoring error: {ex.Message}");
-            }
+            CheckForNewLogEntries();
         }
 
         private void CheckForNewLogEntries()
@@ -274,113 +195,88 @@ namespace SacksConsoleApp
             }
 
             var fileInfo = new FileInfo(_model.LogFilePath);
-            
-            // Check if file has grown
             if (fileInfo.Length > _model.LastFilePosition)
             {
                 var newLines = ReadNewLogLines(_model.LastFilePosition);
-                var filteredLines = newLines.Where(_model.ShouldDisplayLine).ToList();
-
-                if (filteredLines.Count > 0)
+                if (newLines.Count > 0)
                 {
-                    _logger?.LogDebug("Found {NewLines} new lines, {FilteredLines} after filtering", 
-                        newLines.Count, filteredLines.Count);
+                    var filteredLines = newLines.Where(_model.ShouldDisplayLine).ToList();
 
-                    OnNewLogLines(new LogLinesEventArgs
+                    if (filteredLines.Count > 0)
                     {
-                        Lines = filteredLines,
-                        ClearFirst = false,
-                        AutoScroll = _model.AutoScroll
-                    });
-                }
+                        OnNewLogLines(new LogLinesEventArgs
+                        {
+                            Lines = filteredLines,
+                            ClearFirst = false,
+                            AutoScroll = _model.AutoScroll
+                        });
+                    }
 
-                _model.LastFilePosition = fileInfo.Length;
+                    _model.LastFilePosition = fileInfo.Length;
+                    OnStatusUpdated($"Updated: {DateTime.Now:HH:mm:ss}");
+                }
             }
         }
 
         private void RefreshLogDisplay()
         {
-            try
+            if (!File.Exists(_model.LogFilePath))
             {
-                var lines = ReadLogFileLines();
-                var filteredLines = lines.Where(_model.ShouldDisplayLine).ToList();
-
-                _logger?.LogDebug("Refreshing display with {TotalLines} lines, {FilteredLines} after filtering", 
-                    lines.Count, filteredLines.Count);
-
-                OnNewLogLines(new LogLinesEventArgs
-                {
-                    Lines = filteredLines,
-                    ClearFirst = true,
-                    AutoScroll = false
-                });
-
-                OnStatusUpdated($"Display refreshed - {filteredLines.Count} entries");
+                return;
             }
-            catch (Exception ex)
+
+            var lines = ReadLogFileLines();
+            var filteredLines = lines.Where(_model.ShouldDisplayLine).ToList();
+
+            OnNewLogLines(new LogLinesEventArgs
             {
-                _logger?.LogError(ex, "Error refreshing log display");
-                OnStatusUpdated($"Refresh error: {ex.Message}");
-            }
+                Lines = filteredLines,
+                ClearFirst = true,
+                AutoScroll = _model.AutoScroll
+            });
         }
 
         private List<string> ReadLogFileLines()
         {
-            var lines = new List<string>();
-
-            if (!File.Exists(_model.LogFilePath))
-            {
-                return lines;
-            }
-
             try
             {
-                using var fileStream = new FileStream(_model.LogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                using var reader = new StreamReader(fileStream);
-                
+                using var stream = new FileStream(_model.LogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var reader = new StreamReader(stream);
+
+                var lines = new List<string>();
                 string? line;
                 while ((line = reader.ReadLine()) != null)
                 {
                     lines.Add(line);
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error reading log file: {LogFilePath}", _model.LogFilePath);
-                throw;
-            }
 
-            return lines;
+                return lines;
+            }
+            catch (IOException)
+            {
+                return new List<string> { "Error: Unable to read log file" };
+            }
         }
 
         private List<string> ReadNewLogLines(long startPosition)
         {
-            var lines = new List<string>();
-
-            if (!File.Exists(_model.LogFilePath))
-            {
-                return lines;
-            }
+            var newLines = new List<string>();
 
             try
             {
-                using var fileStream = new FileStream(_model.LogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                fileStream.Seek(startPosition, SeekOrigin.Begin);
-                
-                using var reader = new StreamReader(fileStream);
+                using var stream = new FileStream(_model.LogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                stream.Seek(startPosition, SeekOrigin.Begin);
+                using var reader = new StreamReader(stream);
+
                 string? line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    lines.Add(line);
+                    newLines.Add(line);
                 }
             }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error reading new log lines from position {Position}", startPosition);
-                throw;
-            }
+            catch (IOException) { }
 
-            return lines;
+            return newLines;
         }
 
         private void OnNewLogLines(LogLinesEventArgs args)
@@ -404,10 +300,7 @@ namespace SacksConsoleApp
             {
                 _refreshTimer?.Stop();
                 _refreshTimer?.Dispose();
-                _model.IsMonitoring = false;
                 _disposed = true;
-                
-                _logger?.LogDebug("Log viewer controller disposed");
             }
         }
     }
@@ -415,7 +308,7 @@ namespace SacksConsoleApp
     /// <summary>
     /// Event arguments for new log lines being added to the display.
     /// </summary>
-    internal class LogLinesEventArgs : EventArgs
+    internal sealed class LogLinesEventArgs : EventArgs
     {
         /// <summary>
         /// Gets or sets the list of log lines to display.
@@ -436,7 +329,7 @@ namespace SacksConsoleApp
     /// <summary>
     /// Event arguments for search operation results.
     /// </summary>
-    internal class SearchResultEventArgs : EventArgs
+    internal sealed class SearchResultEventArgs : EventArgs
     {
         /// <summary>
         /// Gets or sets the search term that was used.

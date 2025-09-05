@@ -8,7 +8,7 @@
 ### 1. Dynamic Configuration System Implementation
 **Replaced hardcoded PerfumeProductService with configuration-driven approach:**
 
-- **ProductPropertyConfiguration** (`product-properties-perfume.json`) - Defines market properties (12 customer-specified properties: EAN, Category, Brand, Description, Gender, Volume, IsSet, Decoded, COO, Price, Currency, Quantity)
+- **ProductPropertyConfiguration** (`product-properties-perfume.json`) - Defines market properties (12 customer-specified properties: EAN, Category, Brand, Description, Gender, Volume, Type, Decoded, COO, Price, Currency, Quantity)
 - **SupplierConfiguration** - Maps Excel file columns to market properties using reference-based architecture
 - **PropertyNormalizer** - Handles data transformation and normalization
 - **ProductPropertyConfigurationManager** - Loads/saves market configurations

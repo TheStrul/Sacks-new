@@ -22,8 +22,8 @@ namespace SacksDataLayer.Extensions
             services.AddSingleton<PropertyNormalizationConfigurationManager>();
             
             // Register configuration-based services as scoped (they need configuration loaded)
-            services.AddScoped<ConfigurationBasedPropertyNormalizer>();
-            services.AddScoped<ConfigurationBasedDescriptionPropertyExtractor>();
+            services.AddScoped<ConfigurationPropertyNormalizer>();
+            services.AddScoped<ConfigurationDescriptionPropertyExtractor>();
             
             return services;
         }
@@ -41,9 +41,9 @@ namespace SacksDataLayer.Extensions
             services.AddSingleton<PropertyNormalizationConfigurationManager>();
             
             // Register configuration-based services with factory pattern
-            services.AddScoped<ConfigurationBasedPropertyNormalizer>(serviceProvider =>
+            services.AddScoped<ConfigurationPropertyNormalizer>(serviceProvider =>
             {
-                var logger = serviceProvider.GetService<ILogger<ConfigurationBasedPropertyNormalizer>>();
+                var logger = serviceProvider.GetService<ILogger<ConfigurationPropertyNormalizer>>();
                 var manager = serviceProvider.GetRequiredService<PropertyNormalizationConfigurationManager>();
                 
                 // Use ConfigurationFileLocator to find the file in VS2022 and VSCode
@@ -59,12 +59,12 @@ namespace SacksDataLayer.Extensions
                 }
                 
                 var config = manager.LoadConfigurationAsync(configFilePath).GetAwaiter().GetResult();
-                return new ConfigurationBasedPropertyNormalizer(config);
+                return new ConfigurationPropertyNormalizer(config);
             });
             
-            services.AddScoped<ConfigurationBasedDescriptionPropertyExtractor>(serviceProvider =>
+            services.AddScoped<ConfigurationDescriptionPropertyExtractor>(serviceProvider =>
             {
-                var logger = serviceProvider.GetService<ILogger<ConfigurationBasedDescriptionPropertyExtractor>>();
+                var logger = serviceProvider.GetService<ILogger<ConfigurationDescriptionPropertyExtractor>>();
                 var manager = serviceProvider.GetRequiredService<PropertyNormalizationConfigurationManager>();
                 
                 // Use ConfigurationFileLocator to find the file in VS2022 and VSCode
@@ -80,7 +80,7 @@ namespace SacksDataLayer.Extensions
                 }
                 
                 var config = manager.LoadConfigurationAsync(configFilePath).GetAwaiter().GetResult();
-                return new ConfigurationBasedDescriptionPropertyExtractor(config);
+                return new ConfigurationDescriptionPropertyExtractor(config);
             });
             
             return services;

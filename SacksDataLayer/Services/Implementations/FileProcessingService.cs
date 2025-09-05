@@ -43,7 +43,7 @@ namespace SacksDataLayer.Services.Implementations
         private readonly IFileProcessingDatabaseService _databaseService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<FileProcessingService> _logger;
-        private readonly ConfigurationBasedPropertyNormalizer _propertyNormalizer;
+        private readonly ConfigurationPropertyNormalizer _propertyNormalizer;
         
         // Circuit breaker for resilience
         private readonly SemaphoreSlim _processingLock = new(1, 1);
@@ -65,7 +65,7 @@ namespace SacksDataLayer.Services.Implementations
             IFileProcessingDatabaseService databaseService,
             IUnitOfWork unitOfWork,
             ILogger<FileProcessingService> logger,
-            ConfigurationBasedPropertyNormalizer propertyNormalizer)
+            ConfigurationPropertyNormalizer propertyNormalizer)
         {
             // Comprehensive null validation with detailed messages
             _fileValidationService = fileValidationService ?? 
@@ -620,7 +620,7 @@ namespace SacksDataLayer.Services.Implementations
                 SupplierOffer = null // No database entity during analysis
             };
             
-            var normalizer = new ConfigurationBasedNormalizer(supplierConfig, _propertyNormalizer);
+            var normalizer = new ConfigurationNormalizer(supplierConfig, _propertyNormalizer);
             var analysisResult = await normalizer.NormalizeAsync(fileData, analysisContext);
             
             return analysisResult;

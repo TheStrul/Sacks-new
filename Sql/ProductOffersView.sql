@@ -10,7 +10,7 @@ SELECT
     JSON_VALUE(p.DynamicProperties, '$.Gender') AS Gender,
     JSON_VALUE(p.DynamicProperties, '$.Concentration') AS Concentration,
     JSON_VALUE(p.DynamicProperties, '$.Size') AS Size,
-    JSON_VALUE(p.DynamicProperties, '$.IsSet') AS IsSet,
+    JSON_VALUE(p.DynamicProperties, '$.Type') AS Type,
     JSON_VALUE(p.DynamicProperties, '$.Decoded') AS Decoded,
     JSON_VALUE(p.DynamicProperties, '$.COO') AS COO,
     JSON_VALUE(p.DynamicProperties, '$.ProductLine') AS Line,
