@@ -457,8 +457,11 @@ namespace SacksConsoleApp
             // Add file processing services (includes all file processing dependencies)
             services.AddFileProcessingServices();
             
-            // Add PropertyNormalizer service for description extraction
-            services.AddSingleton<PropertyNormalizer>();
+            // Add configuration-based property normalization services
+            services.AddDynamicProductServices(
+                propertyConfigPath: "product-property-configuration.json",
+                normalizationConfigPath: "perfume-property-normalization.json"
+            );
             
             // Add supplier configuration manager
             // Add file processing dependencies
@@ -844,8 +847,8 @@ namespace SacksConsoleApp
 
             try
             {
-                var propertyNormalizer = serviceProvider.GetRequiredService<PropertyNormalizer>();
-                var descriptionExtractor = new DescriptionPropertyExtractor(propertyNormalizer);
+                var propertyNormalizer = serviceProvider.GetRequiredService<ConfigurationBasedPropertyNormalizer>();
+                var descriptionExtractor = new ConfigurationBasedDescriptionPropertyExtractor(propertyNormalizer.Configuration);
 
                 Console.WriteLine("🧪 Testing Description Property Extraction with sample product descriptions...\n");
 

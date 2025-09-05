@@ -1,42 +1,18 @@
 using System.ComponentModel.DataAnnotations;
+using SacksDataLayer.Configuration;
 
 namespace SacksDataLayer.Models
 {
     /// <summary>
-    /// Well-known product properties for perfume market filtering/sorting
-    /// Maps to dynamic properties in ProductEntity
+    /// Dynamic product filter model that adapts to configured filterable properties
+    /// Replaces hardcoded PerfumeFilterModel with configuration-driven approach
     /// </summary>
-    public class PerfumeFilterModel
+    public class ProductFilterModel
     {
         /// <summary>
-        /// Product gender (Men, Women, Unisex)
-        /// Maps to DynamicProperties["Gender"]
+        /// Dynamic property filters - key is the normalized property key
         /// </summary>
-        public string? Gender { get; set; }
-
-        /// <summary>
-        /// Product size/volume (e.g., "50ml", "100ml")
-        /// Maps to DynamicProperties["Size"] or DynamicProperties["Volume"]
-        /// </summary>
-        public string? Size { get; set; }
-
-        /// <summary>
-        /// Fragrance concentration (EDT, EDP, Parfum, etc.)
-        /// Maps to DynamicProperties["Concentration"]
-        /// </summary>
-        public string? Concentration { get; set; }
-
-        /// <summary>
-        /// Brand name
-        /// Maps to DynamicProperties["Brand"]
-        /// </summary>
-        public string? Brand { get; set; }
-
-        /// <summary>
-        /// Product line/collection
-        /// Maps to DynamicProperties["Line"] or DynamicProperties["Collection"]
-        /// </summary>
-        public string? ProductLine { get; set; }
+        public Dictionary<string, object?> PropertyFilters { get; set; } = new();
 
         /// <summary>
         /// Price range filter
@@ -48,27 +24,90 @@ namespace SacksDataLayer.Models
         /// Text search in name/description
         /// </summary>
         public string? SearchText { get; set; }
+
+        /// <summary>
+        /// Sets a property filter value
+        /// </summary>
+        public void SetPropertyFilter(string propertyKey, object? value)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(propertyKey);
+            PropertyFilters[propertyKey] = value;
+        }
+
+        /// <summary>
+        /// Gets a property filter value
+        /// </summary>
+        public T? GetPropertyFilter<T>(string propertyKey)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(propertyKey);
+            
+            if (PropertyFilters.TryGetValue(propertyKey, out var value) && value is T typedValue)
+            {
+                return typedValue;
+            }
+            return default;
+        }
+
+        /// <summary>
+        /// Removes a property filter
+        /// </summary>
+        public void RemovePropertyFilter(string propertyKey)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(propertyKey);
+            PropertyFilters.Remove(propertyKey);
+        }
+
+        /// <summary>
+        /// Creates a filter model from configuration and filter values
+        /// </summary>
+        public static ProductFilterModel CreateFromConfiguration(
+            ProductPropertyNormalizationConfiguration config,
+            Dictionary<string, object?>? filterValues = null)
+        {
+            ArgumentNullException.ThrowIfNull(config);
+
+            var model = new ProductFilterModel();
+
+            if (filterValues != null)
+            {
+                foreach (var kvp in filterValues)
+                {
+                    model.SetPropertyFilter(kvp.Key, kvp.Value);
+                }
+            }
+
+            return model;
+        }
     }
+
 
     /// <summary>
-    /// Sorting options for perfume products
+    /// Dynamic sorting options that adapt to configured sortable properties
     /// </summary>
-    public class PerfumeSortModel
+    public class ProductSortModel
     {
-        public PerfumeSortField SortBy { get; set; } = PerfumeSortField.Name;
+        public string SortBy { get; set; } = "Name";
         public SortDirection Direction { get; set; } = SortDirection.Ascending;
-    }
 
-    public enum PerfumeSortField
-    {
-        Name,
-        Brand,
-        Size,
-        Concentration,
-        Gender,
-        Price,
-        CreatedAt,
-        UpdatedAt
+        /// <summary>
+        /// Creates sort model from configuration
+        /// </summary>
+        public static ProductSortModel CreateFromConfiguration(
+            ProductPropertyNormalizationConfiguration config,
+            string? sortBy = null,
+            SortDirection? direction = null)
+        {
+            ArgumentNullException.ThrowIfNull(config);
+
+            var defaultSort = config.SortableProperties.FirstOrDefault() ?? 
+                             new SortablePropertyDefinition { Key = "Name", DefaultDirection = SortDirection.Ascending };
+
+            return new ProductSortModel
+            {
+                SortBy = sortBy ?? defaultSort.Key,
+                Direction = direction ?? defaultSort.DefaultDirection
+            };
+        }
     }
 
     public enum SortDirection
@@ -78,29 +117,41 @@ namespace SacksDataLayer.Models
     }
 
     /// <summary>
-    /// Paginated result for perfume products
+    /// Dynamic result model that adapts to configured properties
     /// </summary>
-    public class PerfumeProductResult
+    public class ProductResult
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string EAN { get; set; } = string.Empty;
         public string? Description { get; set; }
         
-        // Mapped properties from DynamicProperties
-        public string? Gender { get; set; }
-        public string? Size { get; set; }
-        public string? Concentration { get; set; }
-        public string? Brand { get; set; }
-        public string? ProductLine { get; set; }
+        /// <summary>
+        /// Dynamic properties from ProductEntity.DynamicProperties
+        /// </summary>
+        public Dictionary<string, object?> Properties { get; set; } = new();
         
-        // Price from offers (if needed)
-        public decimal? MinPrice { get; set; }
-        public decimal? MaxPrice { get; set; }
-        
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        /// <summary>
+        /// Gets a typed property value
+        /// </summary>
+        public T? GetProperty<T>(string propertyKey)
+        {
+            if (Properties.TryGetValue(propertyKey, out var value) && value is T typedValue)
+            {
+                return typedValue;
+            }
+            return default;
+        }
+
+        /// <summary>
+        /// Sets a property value
+        /// </summary>
+        public void SetProperty(string propertyKey, object? value)
+        {
+            Properties[propertyKey] = value;
+        }
     }
+
 
     /// <summary>
     /// Paginated response

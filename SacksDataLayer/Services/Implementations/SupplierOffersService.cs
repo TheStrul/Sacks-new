@@ -29,12 +29,6 @@ namespace SacksDataLayer.Services.Implementations
             return await _repository.GetBySupplierIdAsync(supplierId, CancellationToken.None);
         }
 
-        public async Task<IEnumerable<SupplierOfferEntity>> GetActiveOffersBySupplierAsync(int supplierId)
-        {
-            var offers = await _repository.GetBySupplierIdAsync(supplierId, CancellationToken.None);
-            return offers.Where(o => o.IsActive);
-        }
-
         public async Task<IEnumerable<SupplierOfferEntity>> GetOffersByProductAsync(int productId)
         {
             return await _repository.GetByProductIdAsync(productId, CancellationToken.None);
@@ -81,11 +75,6 @@ namespace SacksDataLayer.Services.Implementations
                 OfferName = $"{supplier.Name} - {fileName}",
                 Description = $"Automatic import from file: {fileName}",
                 Currency = currency ?? "USD",
-                ValidFrom = processingDate,
-                ValidTo = null, // No expiration for file imports
-                IsActive = true,
-                OfferType = offerType,
-                Version = processingDate.ToString("yyyy-MM-dd HH:mm")
             };
 
             return await _repository.CreateAsync(offer, CancellationToken.None);
@@ -98,19 +87,6 @@ namespace SacksDataLayer.Services.Implementations
 
             var existingOffer = await _repository.GetBySupplierAndOfferNameAsync(supplierId, offerName, cancellationToken);
             return existingOffer != null;
-        }
-
-        public async Task<bool> DeactivateOfferAsync(int offerId, string? modifiedBy = null)
-        {
-            var offer = await _repository.GetByIdAsync(offerId, CancellationToken.None);
-            if (offer == null)
-                return false;
-
-            offer.IsActive = false;
-            offer.UpdateModified();
-
-            await _repository.UpdateAsync(offer, CancellationToken.None);
-            return true;
         }
 
         public async Task<bool> DeleteOfferAsync(int id)
@@ -168,14 +144,6 @@ namespace SacksDataLayer.Services.Implementations
             if (!string.IsNullOrEmpty(offer.Currency) && offer.Currency.Length > 20)
                 throw new ArgumentException("Currency cannot exceed 20 characters", nameof(offer));
 
-            if (!string.IsNullOrEmpty(offer.OfferType) && offer.OfferType.Length > 100)
-                throw new ArgumentException("Offer type cannot exceed 100 characters", nameof(offer));
-
-            if (!string.IsNullOrEmpty(offer.Version) && offer.Version.Length > 50)
-                throw new ArgumentException("Version cannot exceed 50 characters", nameof(offer));
-
-            if (offer.ValidFrom.HasValue && offer.ValidTo.HasValue && offer.ValidFrom > offer.ValidTo)
-                throw new ArgumentException("Valid from date cannot be later than valid to date");
 
             await Task.CompletedTask; // For async consistency
         }

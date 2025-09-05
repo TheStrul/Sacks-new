@@ -117,15 +117,6 @@ namespace SacksDataLayer.Data
                 entity.HasIndex(e => e.SupplierId)
                       .HasDatabaseName("IX_SupplierOffers_Supplier");
 
-                entity.HasIndex(e => e.IsActive)
-                      .HasDatabaseName("IX_SupplierOffers_IsActive");
-
-                entity.HasIndex(e => e.ValidFrom)
-                      .HasDatabaseName("IX_SupplierOffers_ValidFrom");
-
-                entity.HasIndex(e => e.ValidTo)
-                      .HasDatabaseName("IX_SupplierOffers_ValidTo");
-
                 // Property configurations
                 entity.Property(e => e.OfferName)
                       .HasMaxLength(255);
@@ -135,12 +126,6 @@ namespace SacksDataLayer.Data
 
                 entity.Property(e => e.Currency)
                       .HasMaxLength(20);
-
-                entity.Property(e => e.OfferType)
-                      .HasMaxLength(100);
-
-                entity.Property(e => e.Version)
-                      .HasMaxLength(50);
 
                 // Foreign key relationships
                 entity.HasOne(e => e.Supplier)

@@ -18,10 +18,6 @@ namespace SacksDataLayer.Services.Interfaces
         /// </summary>
         Task<IEnumerable<SupplierOfferEntity>> GetOffersBySupplierAsync(int supplierId);
 
-        /// <summary>
-        /// Gets all active offers for a specific supplier
-        /// </summary>
-        Task<IEnumerable<SupplierOfferEntity>> GetActiveOffersBySupplierAsync(int supplierId);
 
         /// <summary>
         /// Gets offers for a specific product
@@ -50,10 +46,6 @@ namespace SacksDataLayer.Services.Interfaces
         /// </summary>
         Task<bool> OfferExistsAsync(int supplierId, string offerName, CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Deactivates an offer (sets IsActive = false)
-        /// </summary>
-        Task<bool> DeactivateOfferAsync(int offerId, string? modifiedBy = null);
 
         /// <summary>
         /// Deletes an offer

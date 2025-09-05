@@ -1,0 +1,291 @@
+{
+  "version": "1.0",
+  "productType": "Perfume",
+  "keyMappings": {
+    "gender": "Gender",
+    "sex": "Gender",
+    "for": "Gender",
+    "genre": "Gender",
+    "sexe": "Gender",
+    "target": "Gender",
+    "destiné": "Gender",
+    "size": "Size",
+    "volume": "Size",
+    "vol": "Size",
+    "ml": "Size",
+    "capacity": "Size",
+    "contenu": "Size",
+    "contenuto": "Size",
+    "contenido": "Size",
+    "concentration": "Concentration",
+    "con": "Concentration",
+    "type": "Concentration",
+    "%": "Concentration",
+    "conc": "Concentration",
+    "strength": "Concentration",
+    "force": "Concentration",
+    "brand": "Brand",
+    "marca": "Brand",
+    "marque": "Brand",
+    "marchio": "Brand",
+    "manufacturer": "Brand",
+    "make": "Brand",
+    "line": "ProductLine",
+    "collection": "ProductLine",
+    "serie": "ProductLine",
+    "série": "ProductLine",
+    "range": "ProductLine",
+    "fragrancefamily": "FragranceFamily",
+    "fragrance_family": "FragranceFamily",
+    "fragrance family": "FragranceFamily",
+    "scent_family": "FragranceFamily",
+    "perfume_type": "FragranceFamily",
+    "olfactory": "FragranceFamily",
+    "olfactif": "FragranceFamily"
+  },
+  "valueMappings": {
+    "Gender": {
+      "m": "Men",
+      "man": "Men",
+      "men": "Men",
+      "male": "Men",
+      "homme": "Men",
+      "hombre": "Men",
+      "uomo": "Men",
+      "masculino": "Men",
+      "w": "Women",
+      "her": "Women",
+      "woman": "Women",
+      "women": "Women",
+      "wom": "Women",
+      "female": "Women",
+      "femme": "Women",
+      "mujer": "Women",
+      "donna": "Women",
+      "feminino": "Women",
+      "u": "Unisex",
+      "unisex": "Unisex",
+      "unisexe": "Unisex",
+      "mixte": "Unisex"
+    },
+    "Size": {
+      "50": "50ml",
+      "100": "100ml",
+      "125": "125ml",
+      "200": "200ml",
+      "250": "250ml",
+      "mini": "5ml",
+      "travel": "15ml",
+      "sample": "2ml"
+    },
+    "Concentration": {
+      "edt": "Eau de Toilette",
+      "eau de toilette": "Eau de Toilette",
+      "edp": "Eau de Parfum",
+      "eau de parfum": "Eau de Parfum",
+      "parfum": "Parfum",
+      "perfume": "Parfum",
+      "edc": "Eau de Cologne",
+      "eau de cologne": "Eau de Cologne",
+      "edm": "Eau de Mist",
+      "body mist": "Body Mist",
+      "aftershave": "Aftershave"
+    },
+    "FragranceFamily": {
+      "fresh": "Fresh",
+      "citrus": "Citrus",
+      "floral": "Floral",
+      "oriental": "Oriental",
+      "woody": "Woody",
+      "chypre": "Chypre",
+      "fougere": "Fougère",
+      "gourmand": "Gourmand",
+      "aquatic": "Aquatic",
+      "green": "Green",
+      "spicy": "Spicy",
+      "fruity": "Fruity",
+      "aromatic": "Aromatic"
+    }
+  },
+  "extractionPatterns": {
+    "Size": [
+      {
+        "pattern": "(\\d+)\\s*ml",
+        "groupIndex": 1,
+        "priority": 1,
+        "transformation": "lowercase",
+        "description": "Extract ml volume from text"
+      },
+      {
+        "pattern": "(\\d+)\\s*(ml|ML)",
+        "groupIndex": 1,
+        "priority": 2,
+        "transformation": "lowercase",
+        "description": "Extract volume with case variations"
+      }
+    ],
+    "Gender": [
+      {
+        "pattern": "\\b(men|man|male|homme|hombre|uomo)\\b",
+        "groupIndex": 1,
+        "priority": 1,
+        "transformation": "lowercase",
+        "description": "Extract male gender indicators"
+      },
+      {
+        "pattern": "\\b(women|woman|female|femme|mujer|donna|wom|her)\\b",
+        "groupIndex": 1,
+        "priority": 1,
+        "transformation": "lowercase",
+        "description": "Extract female gender indicators"
+      },
+      {
+        "pattern": "\\b(unisex|unisexe|mixte)\\b",
+        "groupIndex": 1,
+        "priority": 1,
+        "transformation": "lowercase",
+        "description": "Extract unisex indicators"
+      }
+    ],
+    "Concentration": [
+      {
+        "pattern": "\\b(EDT|eau de toilette)\\b",
+        "groupIndex": 1,
+        "priority": 1,
+        "transformation": "lowercase",
+        "description": "Extract Eau de Toilette"
+      },
+      {
+        "pattern": "\\b(EDP|eau de parfum)\\b",
+        "groupIndex": 1,
+        "priority": 1,
+        "transformation": "lowercase",
+        "description": "Extract Eau de Parfum"
+      },
+      {
+        "pattern": "\\b(parfum|perfume)\\b",
+        "groupIndex": 1,
+        "priority": 1,
+        "transformation": "lowercase",
+        "description": "Extract Parfum concentration"
+      }
+    ],
+    "FragranceFamily": [
+      {
+        "pattern": "\\b(fresh|citrus|floral|oriental|woody|chypre|fougere|gourmand|aquatic|green|spicy|fruity|aromatic)\\b",
+        "groupIndex": 1,
+        "priority": 1,
+        "transformation": "lowercase",
+        "description": "Extract fragrance family indicators"
+      }
+    ]
+  },
+  "filterableProperties": [
+    {
+      "key": "Gender",
+      "displayName": "Gender",
+      "dataType": "String",
+      "possibleValues": ["Men", "Women", "Unisex"],
+      "isRangeFilter": false,
+      "displayOrder": 1
+    },
+    {
+      "key": "Size",
+      "displayName": "Size",
+      "dataType": "String",
+      "possibleValues": ["5ml", "15ml", "50ml", "100ml", "125ml", "200ml", "250ml"],
+      "isRangeFilter": false,
+      "displayOrder": 2
+    },
+    {
+      "key": "Concentration",
+      "displayName": "Concentration",
+      "dataType": "String",
+      "possibleValues": ["Eau de Toilette", "Eau de Parfum", "Parfum", "Eau de Cologne", "Body Mist", "Aftershave"],
+      "isRangeFilter": false,
+      "displayOrder": 3
+    },
+    {
+      "key": "Brand",
+      "displayName": "Brand",
+      "dataType": "String",
+      "possibleValues": [],
+      "isRangeFilter": false,
+      "displayOrder": 4
+    },
+    {
+      "key": "ProductLine",
+      "displayName": "Product Line",
+      "dataType": "String",
+      "possibleValues": [],
+      "isRangeFilter": false,
+      "displayOrder": 5
+    },
+    {
+      "key": "FragranceFamily",
+      "displayName": "Fragrance Family",
+      "dataType": "String",
+      "possibleValues": ["Fresh", "Citrus", "Floral", "Oriental", "Woody", "Chypre", "Fougère", "Gourmand", "Aquatic", "Green", "Spicy", "Fruity", "Aromatic"],
+      "isRangeFilter": false,
+      "displayOrder": 6
+    }
+  ],
+  "sortableProperties": [
+    {
+      "key": "Name",
+      "displayName": "Name",
+      "dataType": "String",
+      "defaultDirection": "Ascending",
+      "displayOrder": 1
+    },
+    {
+      "key": "Brand",
+      "displayName": "Brand",
+      "dataType": "String",
+      "defaultDirection": "Ascending",
+      "displayOrder": 2
+    },
+    {
+      "key": "Size",
+      "displayName": "Size",
+      "dataType": "String",
+      "defaultDirection": "Ascending",
+      "displayOrder": 3
+    },
+    {
+      "key": "Concentration",
+      "displayName": "Concentration",
+      "dataType": "String",
+      "defaultDirection": "Ascending",
+      "displayOrder": 4
+    },
+    {
+      "key": "Gender",
+      "displayName": "Gender",
+      "dataType": "String",
+      "defaultDirection": "Ascending",
+      "displayOrder": 5
+    },
+    {
+      "key": "CreatedAt",
+      "displayName": "Created Date",
+      "dataType": "DateTime",
+      "defaultDirection": "Descending",
+      "displayOrder": 6
+    },
+    {
+      "key": "UpdatedAt",
+      "displayName": "Updated Date",
+      "dataType": "DateTime",
+      "defaultDirection": "Descending",
+      "displayOrder": 7
+    },
+    {
+      "key": "FragranceFamily",
+      "displayName": "Fragrance Family",
+      "dataType": "String",
+      "defaultDirection": "Ascending",
+      "displayOrder": 8
+    }
+  ]
+}

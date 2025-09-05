@@ -323,7 +323,7 @@
           "isUnique": false,
           "validationPatterns": [],
           "allowedValues": ["SET", "REG"],
-          "skipEntireRow": false
+          "skipEntireRow": true
         },
         "E": {
           "productPropertyKey": "Description",

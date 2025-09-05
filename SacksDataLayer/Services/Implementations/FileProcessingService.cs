@@ -43,7 +43,7 @@ namespace SacksDataLayer.Services.Implementations
         private readonly IFileProcessingDatabaseService _databaseService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<FileProcessingService> _logger;
-        private readonly PropertyNormalizer _propertyNormalizer;
+        private readonly ConfigurationBasedPropertyNormalizer _propertyNormalizer;
         
         // Circuit breaker for resilience
         private readonly SemaphoreSlim _processingLock = new(1, 1);
@@ -65,7 +65,7 @@ namespace SacksDataLayer.Services.Implementations
             IFileProcessingDatabaseService databaseService,
             IUnitOfWork unitOfWork,
             ILogger<FileProcessingService> logger,
-            PropertyNormalizer propertyNormalizer)
+            ConfigurationBasedPropertyNormalizer propertyNormalizer)
         {
             // Comprehensive null validation with detailed messages
             _fileValidationService = fileValidationService ?? 

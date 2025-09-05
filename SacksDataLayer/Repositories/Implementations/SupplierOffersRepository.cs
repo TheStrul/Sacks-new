@@ -25,14 +25,6 @@ namespace SacksDataLayer.Repositories.Implementations
                 .FirstOrDefaultAsync(so => so.Id == id, cancellationToken);
         }
 
-        public async Task<SupplierOfferEntity?> GetActiveOfferAsync(int productId, int supplierId, CancellationToken cancellationToken)
-        {
-            return await _context.SupplierOffers
-                .Include(so => so.Supplier)
-                .Include(so => so.OfferProducts)
-                .FirstOrDefaultAsync(so => so.SupplierId == supplierId && so.IsActive && 
-                                          so.OfferProducts.Any(op => op.ProductId == productId), cancellationToken);
-        }
 
         public Task<SupplierOfferEntity> CreateAsync(SupplierOfferEntity offer, CancellationToken cancellationToken)
         {
@@ -82,19 +74,6 @@ namespace SacksDataLayer.Repositories.Implementations
             return true;
         }
 
-        public async Task DeactivateOldOffersAsync(int productId, int supplierId, CancellationToken cancellationToken)
-        {
-            var oldOffers = await _context.SupplierOffers
-                .Where(so => so.SupplierId == supplierId && so.IsActive &&
-                            so.OfferProducts.Any(op => op.ProductId == productId))
-                .ToListAsync(cancellationToken);
-
-            foreach (var offer in oldOffers)
-            {
-                offer.IsActive = false;
-                offer.UpdateModified();
-            }
-        }
 
         public async Task<SupplierOfferEntity?> GetBySupplierAndOfferNameAsync(int supplierId, string offerName, CancellationToken cancellationToken)
         {

@@ -16,11 +16,43 @@ namespace SacksDataLayer.Extensions
         /// </summary>
         public static IServiceCollection AddDynamicProductServices(this IServiceCollection services)
         {
-            // Register configuration manager as singleton
+            // Register configuration managers as singleton
             services.AddSingleton<ProductPropertyConfigurationManager>();
+            services.AddSingleton<PropertyNormalizationConfigurationManager>();
             
-            // Register property normalizer as singleton (it's stateless)
-            services.AddSingleton<PropertyNormalizer>();
+            // Register configuration-based services as scoped (they need configuration loaded)
+            services.AddScoped<ConfigurationBasedPropertyNormalizer>();
+            services.AddScoped<ConfigurationBasedDescriptionPropertyExtractor>();
+            
+            return services;
+        }
+
+        /// <summary>
+        /// Adds dynamic product configuration services with specific configuration files
+        /// </summary>
+        public static IServiceCollection AddDynamicProductServices(
+            this IServiceCollection services, 
+            string propertyConfigPath, 
+            string normalizationConfigPath)
+        {
+            // Register configuration managers as singleton
+            services.AddSingleton<ProductPropertyConfigurationManager>();
+            services.AddSingleton<PropertyNormalizationConfigurationManager>();
+            
+            // Register configuration-based services with factory pattern
+            services.AddScoped<ConfigurationBasedPropertyNormalizer>(serviceProvider =>
+            {
+                var manager = serviceProvider.GetRequiredService<PropertyNormalizationConfigurationManager>();
+                var config = manager.LoadConfigurationAsync(normalizationConfigPath).GetAwaiter().GetResult();
+                return new ConfigurationBasedPropertyNormalizer(config);
+            });
+            
+            services.AddScoped<ConfigurationBasedDescriptionPropertyExtractor>(serviceProvider =>
+            {
+                var manager = serviceProvider.GetRequiredService<PropertyNormalizationConfigurationManager>();
+                var config = manager.LoadConfigurationAsync(normalizationConfigPath).GetAwaiter().GetResult();
+                return new ConfigurationBasedDescriptionPropertyExtractor(config);
+            });
             
             return services;
         }
@@ -37,6 +69,7 @@ namespace SacksDataLayer.Extensions
             services.AddScoped<IFileProcessingDatabaseService, FileProcessingDatabaseService>();
             services.AddScoped<IFileProcessingService, FileProcessingService>();
             services.AddScoped<SupplierConfigurationManager>();
+            services.AddScoped<DataNormalizationService>();
             return services;
         }
 

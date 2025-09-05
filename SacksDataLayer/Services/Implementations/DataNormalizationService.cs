@@ -12,12 +12,12 @@ namespace SacksDataLayer.Services.Implementations
     public class DataNormalizationService
     {
         private readonly SacksDbContext _context;
-        private readonly PropertyNormalizer _normalizer;
+        private readonly ConfigurationBasedPropertyNormalizer _normalizer;
         private readonly ILogger<DataNormalizationService> _logger;
 
         public DataNormalizationService(
             SacksDbContext context, 
-            PropertyNormalizer normalizer,
+            ConfigurationBasedPropertyNormalizer normalizer,
             ILogger<DataNormalizationService> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));

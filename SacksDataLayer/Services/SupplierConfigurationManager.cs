@@ -54,23 +54,7 @@ namespace SacksDataLayer.FileProcessing.Services
         /// <exception cref="FileNotFoundException">Thrown when configuration file is not found</exception>
         public static string FindConfigurationFile()
         {
-            var possiblePaths = new[]
-            {
-                Path.Combine("..", "SacksDataLayer", "Configuration", "supplier-formats.json"),
-                Path.Combine("SacksDataLayer", "Configuration", "supplier-formats.json"),
-                Path.Combine("Configuration", "supplier-formats.json"),
-                "supplier-formats.json"
-            };
-
-            foreach (var path in possiblePaths)
-            {
-                if (File.Exists(path))
-                {
-                    return path;
-                }
-            }
-
-            throw new FileNotFoundException("Configuration file 'supplier-formats.json' not found in any of the expected locations.");
+            return ConfigurationFileLocator.FindConfigurationFileOrThrow("supplier-formats.json");
         }
 
         /// <summary>
