@@ -20,19 +20,25 @@ namespace SacksDataLayer.Models
         public int ProductsUpdated { get; set; }
 
         /// <summary>
+        /// Number of products updated
+        /// </summary>
+        public int ProductsNoChanged { get; set; }
+
+        /// <summary>
         /// Number of offer-product relationships created
         /// </summary>
         public int OfferProductsCreated { get; set; }
 
-        /// <summary>
-        /// Number of offer-product relationships updated
-        /// </summary>
-        public int OfferProductsUpdated { get; set; }
 
         /// <summary>
         /// Number of errors encountered
         /// </summary>
         public int Errors { get; set; }
+
+        /// <summary>
+        /// Number of wornings encountered
+        /// </summary>
+        public int Wornings { get; set; }
 
         /// <summary>
         /// Processing time in milliseconds
@@ -47,7 +53,7 @@ namespace SacksDataLayer.Models
         /// <summary>
         /// Total number of items processed (success + errors)
         /// </summary>
-        public int TotalProcessed => ProductsCreated + ProductsUpdated + OfferProductsCreated + OfferProductsUpdated + Errors;
+        public int TotalProcessed => ProductsCreated + ProductsUpdated + ProductsNoChanged + OfferProductsCreated + Errors;
 
     }
 }

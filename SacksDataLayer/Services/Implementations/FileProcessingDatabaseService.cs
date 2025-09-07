@@ -24,7 +24,6 @@ namespace SacksDataLayer.Services.Implementations
         private readonly IProductsService _productsService;
         private readonly ISuppliersService _suppliersService;
         private readonly ISupplierOffersService _supplierOffersService;
-        private readonly ISupplierOffersRepository _supplierOffersRepository;
         private readonly IOfferProductsService _offerProductsService;
         private readonly ILogger<FileProcessingDatabaseService> _logger;
 
@@ -33,7 +32,6 @@ namespace SacksDataLayer.Services.Implementations
             IProductsService productsService,
             ISuppliersService suppliersService,
             ISupplierOffersService supplierOffersService,
-            ISupplierOffersRepository supplierOffersRepository,
             IOfferProductsService offerProductsService,
             ILogger<FileProcessingDatabaseService> logger)
         {
@@ -41,7 +39,6 @@ namespace SacksDataLayer.Services.Implementations
             _productsService = productsService ?? throw new ArgumentNullException(nameof(productsService));
             _suppliersService = suppliersService ?? throw new ArgumentNullException(nameof(suppliersService));
             _supplierOffersService = supplierOffersService ?? throw new ArgumentNullException(nameof(supplierOffersService));
-            _supplierOffersRepository = supplierOffersRepository ?? throw new ArgumentNullException(nameof(supplierOffersRepository));
             _offerProductsService = offerProductsService ?? throw new ArgumentNullException(nameof(offerProductsService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -51,8 +48,8 @@ namespace SacksDataLayer.Services.Implementations
         /// This method handles the database state-dependent operations
         /// </summary>
         public async Task<FileProcessingResult> InsertOrUpdateSupplierOfferAsync(
-            SupplierOfferEntity analysisOffer,
-            SupplierOfferEntity dbOffer,
+            SupplierOfferAnnex analysisOffer,
+            SupplierOfferAnnex dbOffer,
             SupplierConfiguration supplierConfig,
             string? createdBy = null,
             CancellationToken cancellationToken = default)
@@ -91,7 +88,7 @@ namespace SacksDataLayer.Services.Implementations
 
                 var productsToCreate = new List<ProductEntity>();
                 var productsToUpdate = new List<ProductEntity>();
-                var offerProductsToCreate = new List<OfferProductEntity>();
+                var offerProductsToCreate = new List<OfferProductAnnex>();
 
                 // Step 3: Process each product offer from analysis
                 foreach (var analysisOfferProduct in analysisOffer.OfferProducts)
@@ -104,7 +101,6 @@ namespace SacksDataLayer.Services.Implementations
                     {
                         // Update existing product
                         existingProduct.Name = analysisProduct.Name;
-                        existingProduct.Description = analysisProduct.Description;
                         existingProduct.DynamicProperties = analysisProduct.DynamicProperties;
                         existingProduct.ModifiedAt = DateTime.UtcNow;
                         
@@ -124,7 +120,7 @@ namespace SacksDataLayer.Services.Implementations
                     }
 
                     // Create offer-product relationship
-                    var offerProduct = new OfferProductEntity
+                    var offerProduct = new OfferProductAnnex
                     {
                         OfferId = dbOffer.Id,
                         Product = dbProduct, // Navigation property will handle ID assignment
@@ -158,8 +154,8 @@ namespace SacksDataLayer.Services.Implementations
                     _logger.LogInformation("Added {Count} offer-product relationships", offerProductsToCreate.Count);
                 }
 
-                _logger.LogDebug("Final result - Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}, Updated={OfferProductsUpdated}, Errors={Errors}", 
-                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated, result.Errors);
+                _logger.LogDebug("Final result - Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}, Errors={Errors}", 
+                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.Errors);
 
                 _logger.LogInformation("Completed insert/update operations: {ProductsCreated} products created, {ProductsUpdated} updated, " +
                     "{OfferProductsCreated} offer-products created, {Errors} errors",
@@ -248,8 +244,10 @@ namespace SacksDataLayer.Services.Implementations
                 // Create the expected offer name using the same logic as CreateOfferFromFileAsync
                 var expectedOfferName = $"{supplierName} - {fileName}";
                 
-                var existingOffer = await _supplierOffersRepository.GetBySupplierAndOfferNameAsync(supplierId, expectedOfferName, cancellationToken);
                 
+                var existingOffers = await _supplierOffersService.GetOffersBySupplierAsync(supplierId);
+                var existingOffer = existingOffers.FirstOrDefault(o => o.OfferName!.Equals(expectedOfferName, StringComparison.OrdinalIgnoreCase));
+
                 if (existingOffer != null)
                 {
                     _logger.LogWarning("🔄 REPROCESSING: Existing offer found - deleting and replacing: {SupplierName} - {OfferName}", supplierName, expectedOfferName);
@@ -290,7 +288,7 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// Creates a new offer for the file processing session
         /// </summary>
-        public async Task<SupplierOfferEntity> CreateOfferAsync(
+        public async Task<SupplierOfferAnnex> CreateOfferAsync(
             SupplierEntity supplier,
             string fileName,
             DateTime processingDate,
@@ -333,8 +331,8 @@ namespace SacksDataLayer.Services.Implementations
         /// Processes a batch of products with optimized bulk operations
         /// </summary>
         public async Task<FileProcessingResult> ProcessProductAsync(
-            List<OfferProductEntity> products,
-            SupplierOfferEntity offer,
+            List<OfferProductAnnex> products,
+            SupplierOfferAnnex offer,
             SupplierConfiguration supplierConfig,
             string? createdBy = null,
             CancellationToken cancellationToken = default)
@@ -350,8 +348,8 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                _logger.LogInformation("Processing batch of {ProductCount} products for offer: {OfferId}", 
-                    products.Count, offer.Id);
+                _logger.LogInformation("Processing batch of {ProductCount} products for offer: {OfferName}", 
+                    products.Count, offer.OfferName);
 
                 // 🔧 FIX: Clear EF change tracker to prevent entity tracking conflicts when reprocessing files
                 _context.ChangeTracker.Clear();
@@ -377,15 +375,14 @@ namespace SacksDataLayer.Services.Implementations
                 var productsForBulkOperation = PrepareProductsForBulkOperation(validProducts, coreProperties);
 
                 // Step 2: Bulk create/update products with proper entity state management
-                var (created, updated, bulkErrors) = await _productsService.BulkCreateOrUpdateProductsOptimizedAsync(
+                var res = await _productsService.BulkCreateOrUpdateProductsOptimizedAsync(
                     productsForBulkOperation, processorName);
 
-                result.ProductsCreated += created;
-                result.ProductsUpdated += updated;
-                result.Errors += bulkErrors;
-
-                _logger.LogInformation("Bulk processed products: {Created} created, {Updated} updated, {Errors} errors",
-                    created, updated, bulkErrors);
+                result.ProductsCreated += res.Created;
+                result.ProductsUpdated += res.Updated;
+                result.Wornings += res.Warnings;
+                result.ProductsNoChanged += res.NoChanges;
+                result.Errors += res.Errors;
 
                 // Step 3: Process offer-products
                 _logger.LogInformation("About to process offer-products for {ProductCount} products", validProducts.Count);
@@ -393,11 +390,11 @@ namespace SacksDataLayer.Services.Implementations
                 _logger.LogInformation("Completed offer-products processing");
 
                 _logger.LogInformation("Completed batch processing: {ProductsCreated} products created, {ProductsUpdated} updated, " +
-                    "{OfferProductsCreated} offer-products created, {OfferProductsUpdated} updated, {Errors} errors",
-                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated, result.Errors);
+                    "{OfferProductsCreated} offer-products created,  {Errors} errors",
+                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated,  result.Errors);
 
-                _logger.LogDebug("Final result being returned - Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}, Updated={OfferProductsUpdated}, Errors={Errors}", 
-                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated, result.Errors);
+                _logger.LogDebug("Final result being returned - Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}, Errors={Errors}", 
+                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.Errors);
 
                 return result;
             }
@@ -410,7 +407,7 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        private List<ProductEntity> PrepareProductsForBulkOperation(List<OfferProductEntity> validProducts, List<string> coreProperties)
+        private List<ProductEntity> PrepareProductsForBulkOperation(List<OfferProductAnnex> validProducts, List<string> coreProperties)
         {
             var productsForBulkOperation = new List<ProductEntity>();
 
@@ -419,7 +416,6 @@ namespace SacksDataLayer.Services.Implementations
                 var productEntity = new ProductEntity
                 {
                     Name = productData.Product.Name,
-                    Description = productData.Product.Description,
                     EAN = productData.Product.EAN
                 };
 
@@ -470,8 +466,8 @@ namespace SacksDataLayer.Services.Implementations
         /// Processes offer-products for the given products and offer
         /// </summary>
         private async Task ProcessOfferProductsAsync(
-            List<OfferProductEntity> validProducts,
-            SupplierOfferEntity offer,
+            List<OfferProductAnnex> validProducts,
+            SupplierOfferAnnex offer,
             SupplierConfiguration supplierConfig,
             string processorName,
             FileProcessingResult result,
@@ -488,55 +484,34 @@ namespace SacksDataLayer.Services.Implementations
                     .Where(p => productEANs.Contains(p.EAN))
                     .ToDictionaryAsync(p => p.EAN, p => p, cancellationToken);
 
-                var offerProductsToCreate = new List<OfferProductEntity>();
-                var offerProductsToUpdate = new List<OfferProductEntity>();
+                var offerProductsToCreate = new List<OfferProductAnnex>();
 
                 _logger.LogDebug("ProcessOfferProductsAsync called with {ProductCount} products", validProducts.Count);
-                _logger.LogDebug("Current result counts BEFORE: Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}, Updated={OfferProductsUpdated}", 
-                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated);
+                _logger.LogDebug("Current result counts BEFORE: Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated} ", 
+                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated);
 
                 foreach (var productData in validProducts)
                 {
                     if (savedProducts.TryGetValue(productData.Product.EAN, out var savedProduct))
                     {
-                        // Check if offer product already exists
-                        var existingOfferProduct = await _context.OfferProducts
-                            .FirstOrDefaultAsync(op => op.OfferId == offer.Id && op.ProductId == savedProduct.Id, cancellationToken);
-
-                        if (existingOfferProduct != null)
+                        // No need to check if offer product already exists - we have no support in update offer
+                        // Create new offer product
+                        var newOfferProduct = new OfferProductAnnex
                         {
-                            // Update existing offer product
-                            existingOfferProduct.Price = productData.Price;
-                            existingOfferProduct.UpdateModified();
+                            OfferId = offer.Id,
+                            ProductId = savedProduct.Id,
+                            Description = productData.Description,
+                            Price = productData.Price,
+                            CreatedAt = DateTime.UtcNow
+                        };
 
-                            // Update dynamic properties
-                            existingOfferProduct.OfferProperties.Clear();
-                            foreach (var prop in productData.OfferProperties)
-                            {
-                                existingOfferProduct.SetOfferProperty(prop.Key, prop.Value);
-                            }
-
-                            offerProductsToUpdate.Add(existingOfferProduct);
-                        }
-                        else
+                        // Copy dynamic properties
+                        foreach (var prop in productData.OfferProperties)
                         {
-                            // Create new offer product
-                            var newOfferProduct = new OfferProductEntity
-                            {
-                                OfferId = offer.Id,
-                                ProductId = savedProduct.Id,
-                                Price = productData.Price,
-                                CreatedAt = DateTime.UtcNow
-                            };
-
-                            // Copy dynamic properties
-                            foreach (var prop in productData.OfferProperties)
-                            {
-                                newOfferProduct.SetOfferProperty(prop.Key, prop.Value);
-                            }
-
-                            offerProductsToCreate.Add(newOfferProduct);
+                            newOfferProduct.SetOfferProperty(prop.Key, prop.Value);
                         }
+
+                        offerProductsToCreate.Add(newOfferProduct);
                     }
                 }
 
@@ -547,16 +522,12 @@ namespace SacksDataLayer.Services.Implementations
                     result.OfferProductsCreated += offerProductsToCreate.Count;
                 }
 
-                // Update counts for modified offer products
-                result.OfferProductsUpdated += offerProductsToUpdate.Count;
 
-                _logger.LogDebug("OfferProducts processing completed. Created {CreatedCount}, Updated {UpdatedCount}", 
-                    offerProductsToCreate.Count, offerProductsToUpdate.Count);
-                _logger.LogDebug("Current result counts AFTER: Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}, Updated={OfferProductsUpdated}", 
-                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated, result.OfferProductsUpdated);
+                _logger.LogDebug("OfferProducts processing completed. Created {CreatedCount}", 
+                    offerProductsToCreate.Count);
+                _logger.LogDebug("Current result counts AFTER: Products Created={ProductsCreated}, Updated={ProductsUpdated}, OfferProducts Created={OfferProductsCreated}", 
+                    result.ProductsCreated, result.ProductsUpdated, result.OfferProductsCreated);
 
-                _logger.LogInformation("Processed offer products: {Created} created, {Updated} updated", 
-                    offerProductsToCreate.Count, offerProductsToUpdate.Count);
             }
             catch (Exception ex)
             {

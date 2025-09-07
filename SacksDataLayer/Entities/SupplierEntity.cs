@@ -11,5 +11,5 @@ public class SupplierEntity : Entity
     public string? Description { get; set; }
         
     // Navigation property
-    public virtual ICollection<SupplierOfferEntity> Offers { get; set; } = new List<SupplierOfferEntity>();
+    public virtual ICollection<SupplierOfferAnnex> Offers { get; set; } = new List<SupplierOfferAnnex>();
 }

@@ -11,33 +11,33 @@ namespace SacksDataLayer.Services.Interfaces
         /// <summary>
         /// Gets a supplier offer by ID
         /// </summary>
-        Task<SupplierOfferEntity?> GetOfferAsync(int id);
+        Task<SupplierOfferAnnex?> GetOfferAsync(int id);
 
         /// <summary>
         /// Gets all offers for a specific supplier
         /// </summary>
-        Task<IEnumerable<SupplierOfferEntity>> GetOffersBySupplierAsync(int supplierId);
+        Task<IEnumerable<SupplierOfferAnnex>> GetOffersBySupplierAsync(int supplierId);
 
 
         /// <summary>
         /// Gets offers for a specific product
         /// </summary>
-        Task<IEnumerable<SupplierOfferEntity>> GetOffersByProductAsync(int productId);
+        Task<IEnumerable<SupplierOfferAnnex>> GetOffersByProductAsync(int productId);
 
         /// <summary>
         /// Creates a new supplier offer
         /// </summary>
-        Task<SupplierOfferEntity> CreateOfferAsync(SupplierOfferEntity offer, string? createdBy = null);
+        Task<SupplierOfferAnnex> CreateOfferAsync(SupplierOfferAnnex offer, string? createdBy = null);
 
         /// <summary>
         /// Updates an existing supplier offer
         /// </summary>
-        Task<SupplierOfferEntity> UpdateOfferAsync(SupplierOfferEntity offer, string? modifiedBy = null);
+        Task<SupplierOfferAnnex> UpdateOfferAsync(SupplierOfferAnnex offer, string? modifiedBy = null);
 
         /// <summary>
         /// Creates a new offer from file processing context
         /// </summary>
-        Task<SupplierOfferEntity> CreateOfferFromFileAsync(int supplierId, string fileName, 
+        Task<SupplierOfferAnnex> CreateOfferFromFileAsync(int supplierId, string fileName, 
             DateTime processingDate, string? currency = null, string? offerType = "File Import", 
             string? createdBy = null);
 
@@ -55,12 +55,12 @@ namespace SacksDataLayer.Services.Interfaces
         /// <summary>
         /// Gets offers with pagination
         /// </summary>
-        Task<(IEnumerable<SupplierOfferEntity> Offers, int TotalCount)> GetOffersAsync(
+        Task<(IEnumerable<SupplierOfferAnnex> Offers, int TotalCount)> GetOffersAsync(
             int pageNumber = 1, int pageSize = 50);
 
         /// <summary>
         /// Searches offers by various criteria
         /// </summary>
-        Task<IEnumerable<SupplierOfferEntity>> SearchOffersAsync(string searchTerm);
+        Task<IEnumerable<SupplierOfferAnnex>> SearchOffersAsync(string searchTerm);
     }
 }

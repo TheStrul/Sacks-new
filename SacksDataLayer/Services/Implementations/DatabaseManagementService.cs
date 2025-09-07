@@ -51,32 +51,20 @@ namespace SacksDataLayer.Services.Implementations
                 // Execute all operations within a single transaction
                 await _unitOfWork.ExecuteInTransactionAsync(async (cancellationToken) =>
                 {
+                    // Clear the DbContext change tracker FIRST to remove any cached/tracked entities
+                    _context.ChangeTracker.Clear();
+                    
                     // Get counts before deletion for reporting
                     var beforeCounts = await GetTableCountsAsync();
                     result.DeletedCounts = beforeCounts;
                     
-                    // Delete in reverse order of dependencies (child tables first)
-                    
-                    // 1. OfferProducts (depends on both SupplierOffers and Products)
-                    var offerProducts = await _offerProductsRepository.GetAllAsync(cancellationToken);
-                    _offerProductsRepository.RemoveRange(offerProducts);
+                    // Use raw SQL commands to delete data in correct order (faster and avoids EF tracking issues)
+                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM OfferProducts", cancellationToken);
+                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM SupplierOffers", cancellationToken);
+                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM Products", cancellationToken);
+                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM Suppliers", cancellationToken);
 
-                    // 2. SupplierOffers (depends on Suppliers)
-                    var supplierOffers = await _supplierOffersRepository.GetAllAsync(cancellationToken);
-                    _supplierOffersRepository.RemoveRange(supplierOffers);
-
-                    // 3. Products (independent table)
-                    var products = await _productsRepository.GetAllAsync(cancellationToken);
-                    _productsRepository.RemoveRange(products);
-
-                    // 4. Suppliers (independent table)
-                    var suppliers = await _suppliersRepository.GetAllAsync(cancellationToken);
-                    _suppliersRepository.RemoveRange(suppliers);
-
-                    // Save all changes within the transaction
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                    // Clear the DbContext change tracker to remove any cached/tracked entities
+                    // Clear the DbContext change tracker again after deletion
                     _context.ChangeTracker.Clear();
                 }, CancellationToken.None);
 
@@ -88,7 +76,7 @@ namespace SacksDataLayer.Services.Implementations
                 result.Success = true;
                 
                 var totalDeleted = result.DeletedCounts.Values.Sum();
-                result.Message = $"Successfully cleared all data using repository methods! Deleted {totalDeleted:N0} total records.";
+                result.Message = $"Successfully cleared all data! Deleted {totalDeleted:N0} total records.";
 
                 return result;
             }
@@ -97,7 +85,7 @@ namespace SacksDataLayer.Services.Implementations
                 stopwatch.Stop();
                 result.ElapsedMilliseconds = stopwatch.ElapsedMilliseconds;
                 result.Success = false;
-                result.Message = $"Error clearing database using repository methods: {ex.Message}";
+                result.Message = $"Error clearing database: {ex.Message}";
                 result.Errors.Add(ex.Message);
 
                 return result;

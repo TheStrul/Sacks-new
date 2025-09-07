@@ -7,7 +7,7 @@ namespace SacksDataLayer.Entities;
 /// <summary>
 /// Junction table linking offers to products with specific pricing and terms
 /// </summary>
-public class OfferProductEntity : Entity
+public class OfferProductAnnex : Annex
 {
     // Foreign Keys
     public int OfferId { get; set; } 
@@ -19,6 +19,11 @@ public class OfferProductEntity : Entity
     
     public int? Quantity { get; set; }
     
+    /// <summary>
+    /// Supplier's description of the product (supplier-specific)
+    /// </summary>
+    [StringLength(2000)]
+    public string? Description { get; set; }
     
     // Additional product-specific properties as JSON
     [Column(TypeName = "nvarchar(max)")]
@@ -29,7 +34,7 @@ public class OfferProductEntity : Entity
     public Dictionary<string, object?> OfferProperties { get; set; } = new();
     
     // Navigation properties
-    public virtual SupplierOfferEntity Offer { get; set; } = null!;
+    public virtual SupplierOfferAnnex Offer { get; set; } = null!;
     public virtual ProductEntity Product { get; set; } = null!;
     
     // Methods to handle dynamic properties

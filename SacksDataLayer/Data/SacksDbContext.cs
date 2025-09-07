@@ -26,12 +26,12 @@ namespace SacksDataLayer.Data
         /// <summary>
         /// Supplier offers table
         /// </summary>
-        public DbSet<SupplierOfferEntity> SupplierOffers { get; set; }
+        public DbSet<SupplierOfferAnnex> SupplierOffers { get; set; }
 
         /// <summary>
         /// Offer products junction table
         /// </summary>
-        public DbSet<OfferProductEntity> OfferProducts { get; set; }
+        public DbSet<OfferProductAnnex> OfferProducts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -64,9 +64,6 @@ namespace SacksDataLayer.Data
                 entity.Property(e => e.Name)
                       .IsRequired()
                       .HasMaxLength(255);
-
-                entity.Property(e => e.Description)
-                      .HasMaxLength(2000);
 
                 entity.Property(e => e.EAN)
                       .HasMaxLength(100);
@@ -107,8 +104,8 @@ namespace SacksDataLayer.Data
                       .HasMaxLength(500);
             });
 
-            // Configure SupplierOfferEntity
-            modelBuilder.Entity<SupplierOfferEntity>(entity =>
+            // Configure SupplierOfferAnnex
+            modelBuilder.Entity<SupplierOfferAnnex>(entity =>
             {
                 // Primary key
                 entity.HasKey(e => e.Id);
@@ -134,8 +131,8 @@ namespace SacksDataLayer.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Configure OfferProductEntity (Junction Table)
-            modelBuilder.Entity<OfferProductEntity>(entity =>
+            // Configure OfferProductAnnex (Junction Table)
+            modelBuilder.Entity<OfferProductAnnex>(entity =>
             {
                 // Primary key
                 entity.HasKey(e => e.Id);
@@ -147,6 +144,9 @@ namespace SacksDataLayer.Data
                 // Property configurations
                 entity.Property(e => e.Price)
                       .HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.Description)
+                      .HasMaxLength(2000);
 
                 // Configure OfferPropertiesJson as JSON column (SQL Server compatible)
                 entity.Property(e => e.OfferPropertiesJson)
@@ -208,8 +208,8 @@ namespace SacksDataLayer.Data
                 }
             }
 
-            // Handle OfferProductEntity serialization before saving
-            var offerProductEntries = ChangeTracker.Entries<OfferProductEntity>()
+            // Handle OfferProductAnnex serialization before saving
+            var offerProductEntries = ChangeTracker.Entries<OfferProductAnnex>()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
 
             foreach (var entry in offerProductEntries)

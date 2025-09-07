@@ -64,16 +64,11 @@ namespace SacksDataLayer.Services.Interfaces
         /// </summary>
         Task<ProductEntity> CreateOrUpdateProductAsync(ProductEntity product, string? userContext = null);
 
-        /// <summary>
-        /// Bulk creates or updates products
-        /// </summary>
-        Task<(int Created, int Updated, int Errors)> BulkCreateOrUpdateProductsAsync(
-            IEnumerable<ProductEntity> products, string? userContext = null);
 
         /// <summary>
         /// 🚀 PERFORMANCE OPTIMIZED: Bulk create/update with minimal database calls
         /// </summary>
-        Task<(int Created, int Updated, int Errors)> BulkCreateOrUpdateProductsOptimizedAsync(
+        Task<ProductImportResult> BulkCreateOrUpdateProductsOptimizedAsync(
             IEnumerable<ProductEntity> products, string? userContext = null);
 
         #endregion
@@ -86,5 +81,14 @@ namespace SacksDataLayer.Services.Interfaces
         Task<int> GetProductCountAsync();
 
         #endregion
+    }
+
+    public struct ProductImportResult
+    {
+        public int Created;
+        public int Updated;
+        public int NoChanges;
+        public int Errors;
+        public int Warnings;
     }
 }

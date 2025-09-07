@@ -11,12 +11,17 @@ namespace SacksDataLayer.Services.Implementations
     /// </summary>
     public class ProductsService : IProductsService
     {
-        private readonly IProductsRepository _repository;
+        private readonly ITransactionalProductsRepository _repository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<ProductsService> _logger;
 
-        public ProductsService(IProductsRepository repository, ILogger<ProductsService> logger)
+        public ProductsService(
+            ITransactionalProductsRepository repository, 
+            IUnitOfWork unitOfWork,
+            ILogger<ProductsService> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -60,15 +65,20 @@ namespace SacksDataLayer.Services.Implementations
             if (string.IsNullOrWhiteSpace(product.Name))
                 throw new ArgumentException("Product name is required", nameof(product));
 
-            // Check for duplicate EAN if provided
-            if (!string.IsNullOrWhiteSpace(product.EAN))
+            return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
             {
-                var existingProduct = await _repository.GetByEANAsync(product.EAN, CancellationToken.None);
-                if (existingProduct != null)
-                    throw new InvalidOperationException($"Product with EAN '{product.EAN}' already exists");
-            }
+                // Check for duplicate EAN if provided
+                if (!string.IsNullOrWhiteSpace(product.EAN))
+                {
+                    var existingProduct = await _repository.GetByEANAsync(product.EAN, ct);
+                    if (existingProduct != null)
+                        throw new InvalidOperationException($"Product with EAN '{product.EAN}' already exists");
+                }
 
-            return await _repository.CreateAsync(product, createdBy, CancellationToken.None);
+                _repository.Add(product, createdBy);
+                await _unitOfWork.SaveChangesAsync(ct);
+                return product;
+            });
         }
 
         public async Task<ProductEntity> UpdateProductAsync(ProductEntity product, string? modifiedBy = null)
@@ -80,25 +90,43 @@ namespace SacksDataLayer.Services.Implementations
             if (string.IsNullOrWhiteSpace(product.Name))
                 throw new ArgumentException("Product name is required", nameof(product));
 
-            // Check if product exists
-            var existingProduct = await _repository.GetByIdAsync(product.Id, CancellationToken.None);
-            if (existingProduct == null)
-                throw new InvalidOperationException($"Product with ID {product.Id} not found");
-
-            // Check for duplicate EAN if changed
-            if (!string.IsNullOrWhiteSpace(product.EAN) && product.EAN != existingProduct.EAN)
+            return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
             {
-                var duplicateProduct = await _repository.GetByEANAsync(product.EAN, CancellationToken.None);
-                if (duplicateProduct != null)
-                    throw new InvalidOperationException($"Product with EAN '{product.EAN}' already exists");
-            }
+                // Check if product exists
+                var existingProduct = await _repository.GetByIdAsync(product.Id, ct);
+                if (existingProduct == null)
+                    throw new InvalidOperationException($"Product with ID {product.Id} not found");
 
-            return await _repository.UpdateAsync(product, modifiedBy, CancellationToken.None);
+                // Check for duplicate EAN if changed
+                if (!string.IsNullOrWhiteSpace(product.EAN) && product.EAN != existingProduct.EAN)
+                {
+                    var duplicateProduct = await _repository.GetByEANAsync(product.EAN, ct);
+                    if (duplicateProduct != null)
+                        throw new InvalidOperationException($"Product with EAN '{product.EAN}' already exists");
+                }
+
+                // Update properties
+                existingProduct.Name = product.Name;
+                existingProduct.DynamicProperties = product.DynamicProperties;
+                existingProduct.ModifiedAt = DateTime.UtcNow;
+
+                _repository.Update(existingProduct, modifiedBy);
+                await _unitOfWork.SaveChangesAsync(ct);
+                return existingProduct;
+            });
         }
 
         public async Task<bool> DeleteProductAsync(int id)
         {
-            return await _repository.DeleteAsync(id, CancellationToken.None);
+            return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
+            {
+                var success = await _repository.RemoveByIdAsync(id, ct);
+                if (success)
+                {
+                    await _unitOfWork.SaveChangesAsync(ct);
+                }
+                return success;
+            });
         }
 
         public async Task<IEnumerable<ProductEntity>> SearchProductsByNameAsync(string searchTerm)
@@ -128,7 +156,6 @@ namespace SacksDataLayer.Services.Implementations
             {
                 // Update existing product
                 existingProduct.Name = product.Name;
-                existingProduct.Description = product.Description;
                 existingProduct.DynamicProperties = product.DynamicProperties;
 
                 return await UpdateProductAsync(existingProduct, userContext);
@@ -140,63 +167,17 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        public async Task<(int Created, int Updated, int Errors)> BulkCreateOrUpdateProductsAsync(
-            IEnumerable<ProductEntity> products, string? userContext = null)
-        {
-            if (products == null || !products.Any())
-                return (0, 0, 0);
-
-            int created = 0, updated = 0, errors = 0;
-
-            foreach (var product in products)
-            {
-                try
-                {
-                    ProductEntity? existingProduct = null;
-                    
-                    // Try to find existing product by EAN
-                    if (!string.IsNullOrWhiteSpace(product.EAN))
-                    {
-                        existingProduct = await _repository.GetByEANAsync(product.EAN, CancellationToken.None);
-                    }
-
-                    if (existingProduct != null)
-                    {
-                        // Update existing product
-                        existingProduct.Name = product.Name;
-                        existingProduct.Description = product.Description;
-                        existingProduct.DynamicProperties = product.DynamicProperties;
-                        
-                        await UpdateProductAsync(existingProduct, userContext);
-                        updated++;
-                    }
-                    else
-                    {
-                        // Create new product
-                        await CreateProductAsync(product, userContext);
-                        created++;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Log error but continue with other products
-                    _logger.LogError(ex, "Error processing product {ProductName} (EAN: {ProductEAN}): {ErrorMessage}", 
-                        product.Name, product.EAN, ex.Message);
-                    errors++;
-                }
-            }
-
-            return (created, updated, errors);
-        }
 
         /// <summary>
         /// 🚀 PERFORMANCE OPTIMIZED: Bulk create/update with minimal database calls
+        /// NOTE: Does not manage transactions - caller must handle transaction scope
         /// </summary>
-        public async Task<(int Created, int Updated, int Errors)> BulkCreateOrUpdateProductsOptimizedAsync(
+        public async Task<ProductImportResult> BulkCreateOrUpdateProductsOptimizedAsync(
             IEnumerable<ProductEntity> products, string? userContext = null)
         {
+            ProductImportResult  result = new();
             if (products == null || !products.Any())
-                return (0, 0, 0);
+                return result;
 
             var productList = products.ToList();
             var eans = productList.Where(p => !string.IsNullOrWhiteSpace(p.EAN)).Select(p => p.EAN).ToList();
@@ -207,27 +188,18 @@ namespace SacksDataLayer.Services.Implementations
             var productsToCreate = new List<ProductEntity>();
             var productsToUpdate = new List<ProductEntity>();
             var processedEANs = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // Track EANs within this batch
-            int errors = 0;
 
             foreach (var product in productList)
             {
                 try
                 {
-                    // Skip if EAN is empty
-                    if (string.IsNullOrWhiteSpace(product.EAN))
-                    {
-                        // For products without EAN, allow them to be created (they won't violate unique constraint)
-                        product.CreatedAt = DateTime.UtcNow;
-                        productsToCreate.Add(product);
-                        continue;
-                    }
+                    // no need to check if EAN is empty - been done on caller
 
                     // Check if EAN already processed in this batch
                     if (processedEANs.Contains(product.EAN))
                     {
-                        _logger.LogWarning("Skipping duplicate EAN '{ProductEAN}' within the same batch (Product: {ProductName})", 
+                        _logger.LogDebug("Skipping duplicate EAN '{ProductEAN}' within the same batch (Product: {ProductName})", 
                             product.EAN, product.Name);
-                        errors++;
                         continue;
                     }
 
@@ -236,12 +208,24 @@ namespace SacksDataLayer.Services.Implementations
 
                     if (existingProducts.TryGetValue(product.EAN, out var existingProduct))
                     {
-                        // Update existing product
-                        existingProduct.Name = product.Name;
-                        existingProduct.Description = product.Description;
-                        existingProduct.DynamicProperties = product.DynamicProperties;
-                        existingProduct.ModifiedAt = DateTime.UtcNow;
-                        productsToUpdate.Add(existingProduct);
+                        // check if the new product has changes compared to existing one
+                        if (existingProduct.DynamicPropertiesJson == product.DynamicPropertiesJson)
+                        {
+                            // No changes, skip update
+                            result.NoChanges++;
+                        }
+                        else
+                        {
+                            _logger.LogInformation($"Updating {product.Name} ({product.EAN}), from {existingProduct.DynamicPropertiesJson} to {product.DynamicPropertiesJson}");
+
+                            // Update existing product
+                            existingProduct.Name = product.Name;
+                            existingProduct.DynamicPropertiesJson = product.DynamicPropertiesJson;
+                            existingProduct.DynamicProperties = product.DynamicProperties;
+                            existingProduct.ModifiedAt = DateTime.UtcNow;
+
+                            productsToUpdate.Add(existingProduct);
+                        }
                     }
                     else
                     {
@@ -254,22 +238,25 @@ namespace SacksDataLayer.Services.Implementations
                 {
                     _logger.LogError(ex, "Error processing product {ProductName} (EAN: {ProductEAN}): {ErrorMessage}", 
                         product.Name, product.EAN, ex.Message);
-                    errors++;
+                    result.Errors++;
                 }
             }
 
             // 🚀 BULK OPERATIONS instead of individual saves
             if (productsToCreate.Any())
             {
-                await _repository.CreateBulkAsync(productsToCreate, userContext, CancellationToken.None);
+                _repository.AddRange(productsToCreate, userContext);
             }
             
             if (productsToUpdate.Any())
             {
-                await _repository.UpdateBulkAsync(productsToUpdate, userContext, CancellationToken.None);
+                _repository.UpdateRange(productsToUpdate, userContext);
             }
 
-            return (productsToCreate.Count, productsToUpdate.Count, errors);
+            result.Created = productsToCreate.Count;
+            result.Updated = productsToUpdate.Count;
+
+            return result;
         }
 
         public async Task<int> GetProductCountAsync()

@@ -13,27 +13,27 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// <summary>
         /// Gets an offer-product relationship by its ID
         /// </summary>
-        Task<OfferProductEntity?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<OfferProductAnnex?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all offer-product relationships for a specific offer
         /// </summary>
-        Task<IEnumerable<OfferProductEntity>> GetByOfferIdAsync(int offerId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<OfferProductAnnex>> GetByOfferIdAsync(int offerId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all offer-product relationships for a specific product
         /// </summary>
-        Task<IEnumerable<OfferProductEntity>> GetByProductIdAsync(int productId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<OfferProductAnnex>> GetByProductIdAsync(int productId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets a specific offer-product relationship
         /// </summary>
-        Task<OfferProductEntity?> GetByOfferAndProductAsync(int offerId, int productId, CancellationToken cancellationToken = default);
+        Task<OfferProductAnnex?> GetByOfferAndProductAsync(int offerId, int productId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all offer-product relationships
         /// </summary>
-        Task<IEnumerable<OfferProductEntity>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<OfferProductAnnex>> GetAllAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets offer-product count
@@ -48,37 +48,37 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// Adds an offer-product relationship to the context (does not save)
         /// </summary>
         /// <param name="offerProduct">Offer-product relationship to add</param>
-        void Add(OfferProductEntity offerProduct);
+        void Add(OfferProductAnnex offerProduct);
 
         /// <summary>
         /// Adds multiple offer-product relationships to the context (does not save)
         /// </summary>
         /// <param name="offerProducts">Offer-product relationships to add</param>
-        void AddRange(IEnumerable<OfferProductEntity> offerProducts);
+        void AddRange(IEnumerable<OfferProductAnnex> offerProducts);
 
         /// <summary>
         /// Updates an offer-product relationship in the context (does not save)
         /// </summary>
         /// <param name="offerProduct">Offer-product relationship to update</param>
-        void Update(OfferProductEntity offerProduct);
+        void Update(OfferProductAnnex offerProduct);
 
         /// <summary>
         /// Updates multiple offer-product relationships in the context (does not save)
         /// </summary>
         /// <param name="offerProducts">Offer-product relationships to update</param>
-        void UpdateRange(IEnumerable<OfferProductEntity> offerProducts);
+        void UpdateRange(IEnumerable<OfferProductAnnex> offerProducts);
 
         /// <summary>
         /// Removes an offer-product relationship from the context (does not save)
         /// </summary>
         /// <param name="offerProduct">Offer-product relationship to remove</param>
-        void Remove(OfferProductEntity offerProduct);
+        void Remove(OfferProductAnnex offerProduct);
 
         /// <summary>
         /// Removes multiple offer-product relationships from the context (does not save)
         /// </summary>
         /// <param name="offerProducts">Offer-product relationships to remove</param>
-        void RemoveRange(IEnumerable<OfferProductEntity> offerProducts);
+        void RemoveRange(IEnumerable<OfferProductAnnex> offerProducts);
 
         /// <summary>
         /// Removes an offer-product relationship by ID from the context (does not save)

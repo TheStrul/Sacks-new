@@ -11,7 +11,7 @@ namespace SacksDataLayer.FileProcessing.Models
         /// <summary>
         /// Supplier offer metadata (one per file processing session)
         /// </summary>
-        public SupplierOfferEntity SupplierOffer { get; set; } = new();
+        public SupplierOfferAnnex SupplierOffer { get; set; } = new();
 
         public ProcessingStatistics Statistics { get; set; } = new();
         public List<string> Warnings { get; set; } = new();
@@ -61,6 +61,6 @@ namespace SacksDataLayer.FileProcessing.Models
         /// <summary>
         /// Optional offer metadata for commercial processing
         /// </summary>
-        public SupplierOfferEntity? SupplierOffer { get; set; }
+        public SupplierOfferAnnex? SupplierOffer { get; set; }
     }
 }

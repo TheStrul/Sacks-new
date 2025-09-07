@@ -11,11 +11,15 @@ namespace SacksDataLayer.Services.Implementations
     /// </summary>
     public class SuppliersService : ISuppliersService
     {
-        private readonly ISuppliersRepository _suppliersRepository;
+        private readonly ITransactionalSuppliersRepository _suppliersRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public SuppliersService(ISuppliersRepository suppliersRepository)
+        public SuppliersService(
+            ITransactionalSuppliersRepository suppliersRepository, 
+            IUnitOfWork unitOfWork)
         {
             _suppliersRepository = suppliersRepository ?? throw new ArgumentNullException(nameof(suppliersRepository));
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         /// <summary>
@@ -65,14 +69,19 @@ namespace SacksDataLayer.Services.Implementations
             if (string.IsNullOrWhiteSpace(supplier.Name))
                 throw new ArgumentException("Supplier name is required", nameof(supplier));
 
-            // Check if supplier with the same name already exists
-            var existingSupplier = await _suppliersRepository.GetByNameAsync(supplier.Name, CancellationToken.None);
-            if (existingSupplier != null)
-                throw new InvalidOperationException($"Supplier with name '{supplier.Name}' already exists");
+            return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
+            {
+                // Check if supplier with the same name already exists
+                var existingSupplier = await _suppliersRepository.GetByNameAsync(supplier.Name, ct);
+                if (existingSupplier != null)
+                    throw new InvalidOperationException($"Supplier with name '{supplier.Name}' already exists");
 
-            supplier.CreatedAt = DateTime.UtcNow;
-
-            return await _suppliersRepository.CreateAsync(supplier, CancellationToken.None);
+                supplier.CreatedAt = DateTime.UtcNow;
+                _suppliersRepository.Add(supplier);
+                
+                await _unitOfWork.SaveChangesAsync(ct);
+                return supplier;
+            });
         }
 
         /// <summary>
@@ -89,22 +98,32 @@ namespace SacksDataLayer.Services.Implementations
             if (string.IsNullOrWhiteSpace(supplier.Name))
                 throw new ArgumentException("Supplier name is required", nameof(supplier));
 
-            var existingSupplier = await _suppliersRepository.GetByIdAsync(supplier.Id, CancellationToken.None);
-            if (existingSupplier == null)
-                throw new InvalidOperationException($"Supplier with ID {supplier.Id} not found");
+            return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
+            {
+                var existingSupplier = await _suppliersRepository.GetByIdAsync(supplier.Id, ct);
+                if (existingSupplier == null)
+                    throw new InvalidOperationException($"Supplier with ID {supplier.Id} not found");
 
-            // Check if another supplier with the same name exists (excluding current supplier)
-            var nameConflict = await _suppliersRepository.GetByNameAsync(supplier.Name, CancellationToken.None);
-            if (nameConflict != null && nameConflict.Id != supplier.Id)
-                throw new InvalidOperationException($"Another supplier with name '{supplier.Name}' already exists");
+                // Check if another supplier with the same name exists (excluding current supplier)
+                var nameConflict = await _suppliersRepository.GetByNameAsync(supplier.Name, ct);
+                if (nameConflict != null && nameConflict.Id != supplier.Id)
+                    throw new InvalidOperationException($"Another supplier with name '{supplier.Name}' already exists");
 
-            supplier.UpdateModified();
+                // Update properties
+                existingSupplier.Name = supplier.Name;
+                existingSupplier.Description = supplier.Description;
+                existingSupplier.UpdateModified();
 
-            return await _suppliersRepository.UpdateAsync(supplier, CancellationToken.None);
+                _suppliersRepository.Update(existingSupplier);
+                await _unitOfWork.SaveChangesAsync(ct);
+                
+                return existingSupplier;
+            });
         }
 
         /// <summary>
         /// Creates or gets an existing supplier based on configuration
+        /// NOTE: Does not manage transactions - caller must handle transaction scope
         /// </summary>
         public async Task<SupplierEntity> CreateOrGetSupplierFromConfigAsync(string supplierName, 
             string? description = null, string? createdBy = null)
@@ -119,7 +138,7 @@ namespace SacksDataLayer.Services.Implementations
                 return existingSupplier;
             }
 
-            // Create new supplier
+            // Create new supplier without transaction wrapper (caller manages transaction)
             var newSupplier = new SupplierEntity
             {
                 Name = supplierName,
@@ -127,7 +146,8 @@ namespace SacksDataLayer.Services.Implementations
                 CreatedAt = DateTime.UtcNow
             };
 
-            return await _suppliersRepository.CreateAsync(newSupplier, CancellationToken.None);
+            _suppliersRepository.Add(newSupplier);
+            return newSupplier;
         }
 
         /// <summary>
@@ -138,11 +158,15 @@ namespace SacksDataLayer.Services.Implementations
             if (id <= 0)
                 throw new ArgumentException("Supplier ID must be greater than 0", nameof(id));
 
-            var supplier = await _suppliersRepository.GetByIdAsync(id, CancellationToken.None);
-            if (supplier == null)
-                return false;
-
-            return await _suppliersRepository.DeleteAsync(id, CancellationToken.None);
+            return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
+            {
+                var success = await _suppliersRepository.RemoveByIdAsync(id, ct);
+                if (success)
+                {
+                    await _unitOfWork.SaveChangesAsync(ct);
+                }
+                return success;
+            });
         }
 
         /// <summary>

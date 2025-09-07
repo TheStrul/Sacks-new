@@ -6,7 +6,7 @@ namespace SacksDataLayer.Entities;
 /// <summary>
 /// Represents a supplier's offer/catalog (like a price list or promotion)
 /// </summary>
-public class SupplierOfferEntity : Entity
+public class SupplierOfferAnnex : Annex
 {
     // Foreign Key
     public int SupplierId { get; set; }
@@ -23,5 +23,5 @@ public class SupplierOfferEntity : Entity
         
     // Navigation properties
     public virtual SupplierEntity Supplier { get; set; } = null!;
-    public virtual ICollection<OfferProductEntity> OfferProducts { get; set; } = new List<OfferProductEntity>();
+    public virtual ICollection<OfferProductAnnex> OfferProducts { get; set; } = new List<OfferProductAnnex>();
 }

@@ -11,44 +11,44 @@ namespace SacksDataLayer.Services.Interfaces
         /// <summary>
         /// Gets an offer-product relationship by ID
         /// </summary>
-        Task<OfferProductEntity?> GetOfferProductAsync(int id);
+        Task<OfferProductAnnex?> GetOfferProductAsync(int id);
 
         /// <summary>
         /// Gets all offer-product relationships for a specific offer
         /// </summary>
-        Task<IEnumerable<OfferProductEntity>> GetOfferProductsByOfferAsync(int offerId);
+        Task<IEnumerable<OfferProductAnnex>> GetOfferProductsByOfferAsync(int offerId);
 
         /// <summary>
         /// Gets all offer-product relationships for a specific product
         /// </summary>
-        Task<IEnumerable<OfferProductEntity>> GetOfferProductsByProductAsync(int productId);
+        Task<IEnumerable<OfferProductAnnex>> GetOfferProductsByProductAsync(int productId);
 
         /// <summary>
         /// Gets a specific offer-product relationship
         /// </summary>
-        Task<OfferProductEntity?> GetOfferProductAsync(int offerId, int productId);
+        Task<OfferProductAnnex?> GetOfferProductAsync(int offerId, int productId);
 
         /// <summary>
         /// Creates a new offer-product relationship
         /// </summary>
-        Task<OfferProductEntity> CreateOfferProductAsync(OfferProductEntity offerProduct, string? createdBy = null);
+        Task<OfferProductAnnex> CreateOfferProductAsync(OfferProductAnnex offerProduct, string? createdBy = null);
 
         /// <summary>
         /// Updates an existing offer-product relationship
         /// </summary>
-        Task<OfferProductEntity> UpdateOfferProductAsync(OfferProductEntity offerProduct, string? modifiedBy = null);
+        Task<OfferProductAnnex> UpdateOfferProductAsync(OfferProductAnnex offerProduct, string? modifiedBy = null);
 
         /// <summary>
         /// Creates or updates an offer-product relationship
         /// </summary>
-        Task<OfferProductEntity> CreateOrUpdateOfferProductAsync(int offerId, int productId, 
+        Task<OfferProductAnnex> CreateOrUpdateOfferProductAsync(int offerId, int productId, 
             Dictionary<string, object?> offerProperties, string? createdBy = null);
 
         /// <summary>
         /// Bulk creates offer-product relationships
         /// </summary>
-        Task<IEnumerable<OfferProductEntity>> BulkCreateOfferProductsAsync(
-            IEnumerable<OfferProductEntity> offerProducts, string? createdBy = null);
+        Task<IEnumerable<OfferProductAnnex>> BulkCreateOfferProductsAsync(
+            IEnumerable<OfferProductAnnex> offerProducts, string? createdBy = null);
 
         /// <summary>
         /// Deletes an offer-product relationship
@@ -58,7 +58,7 @@ namespace SacksDataLayer.Services.Interfaces
         /// <summary>
         /// Gets offer-products with pagination
         /// </summary>
-        Task<(IEnumerable<OfferProductEntity> OfferProducts, int TotalCount)> GetOfferProductsAsync(
+        Task<(IEnumerable<OfferProductAnnex> OfferProducts, int TotalCount)> GetOfferProductsAsync(
             int pageNumber = 1, int pageSize = 50);
 
     }

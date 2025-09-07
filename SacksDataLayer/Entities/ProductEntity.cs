@@ -17,12 +17,6 @@ namespace SacksDataLayer.Entities
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
-        /// Product description
-        /// </summary>
-        [StringLength(2000)]
-        public string? Description { get; set; }
-
-        /// <summary>
         /// Product EAN (European Article Number)
         /// </summary>
         [StringLength(100)]
@@ -38,7 +32,7 @@ namespace SacksDataLayer.Entities
         /// <summary>
         /// Navigation property to supplier offers for this product
         /// </summary>
-        public virtual ICollection<OfferProductEntity> OfferProducts { get; set; } = new List<OfferProductEntity>();
+        public virtual ICollection<OfferProductAnnex> OfferProducts { get; set; } = new List<OfferProductAnnex>();
 
         /// <summary>
         /// JSON representation of dynamic properties for database storage

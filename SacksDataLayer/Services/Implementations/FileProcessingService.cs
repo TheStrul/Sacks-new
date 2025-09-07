@@ -566,7 +566,7 @@ namespace SacksDataLayer.Services.Implementations
         /// </summary>
         private void DisplayProcessingResults(
             SupplierEntity supplier, 
-            SupplierOfferEntity offer, 
+            SupplierOfferAnnex offer, 
             FileProcessingResult batchResult, 
             long processingTimeMs)
         {
@@ -575,9 +575,9 @@ namespace SacksDataLayer.Services.Implementations
             _logger.LogInformation("{OfferName}", offer.OfferName);
             _logger.LogInformation("Created: {ProductsCreated:N0} products, {OfferProductsCreated:N0} offers", batchResult.ProductsCreated, batchResult.OfferProductsCreated);
             
-            if (batchResult.ProductsUpdated > 0 || batchResult.OfferProductsUpdated > 0)
+            if (batchResult.ProductsUpdated > 0)
             {
-                _logger.LogInformation("Updated: {ProductsUpdated:N0} products, {OfferProductsUpdated:N0} offers", batchResult.ProductsUpdated, batchResult.OfferProductsUpdated);
+                _logger.LogInformation("Updated: {ProductsUpdated:N0} products", batchResult.ProductsUpdated);
             }
             
             if (batchResult.Errors > 0)

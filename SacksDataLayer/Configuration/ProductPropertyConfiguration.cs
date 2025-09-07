@@ -121,7 +121,7 @@ namespace SacksDataLayer.Configuration
 
         /// <summary>
         /// Offer-specific properties that vary by supplier/offer
-        /// Stored in OfferProductEntity.ProductProperties
+        /// Stored in OfferProductAnnex.ProductProperties
         /// </summary>
         Offer
     }

@@ -12,49 +12,49 @@ namespace SacksDataLayer.Services.Implementations
     /// </summary>
     public class OfferProductsService : IOfferProductsService
     {
-        private readonly IOfferProductsRepository _repository;
-        private readonly ISupplierOffersRepository _offersRepository;
-        private readonly IProductsRepository _productsRepository;
+        private readonly ITransactionalOfferProductsRepository _offerProductsRepository;
+        private readonly ITransactionalSupplierOffersRepository _offersRepository;
+        private readonly ITransactionalProductsRepository _productsRepository;
         private readonly ILogger<OfferProductsService> _logger;
 
         public OfferProductsService(
-            IOfferProductsRepository repository,
-            ISupplierOffersRepository offersRepository,
-            IProductsRepository productsRepository,
+            ITransactionalOfferProductsRepository offerProductsRepository,
+            ITransactionalSupplierOffersRepository offersRepository,
+            ITransactionalProductsRepository productsRepository,
             ILogger<OfferProductsService> logger)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _offerProductsRepository = offerProductsRepository ?? throw new ArgumentNullException(nameof(offerProductsRepository));
             _offersRepository = offersRepository ?? throw new ArgumentNullException(nameof(offersRepository));
             _productsRepository = productsRepository ?? throw new ArgumentNullException(nameof(productsRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<OfferProductEntity?> GetOfferProductAsync(int id)
+        public async Task<OfferProductAnnex?> GetOfferProductAsync(int id)
         {
-            return await _repository.GetByIdAsync(id, CancellationToken.None);
+            return await _offerProductsRepository.GetByIdAsync(id, CancellationToken.None);
         }
 
-        public async Task<IEnumerable<OfferProductEntity>> GetOfferProductsByOfferAsync(int offerId)
+        public async Task<IEnumerable<OfferProductAnnex>> GetOfferProductsByOfferAsync(int offerId)
         {
-            return await _repository.GetByOfferIdAsync(offerId, CancellationToken.None);
+            return await _offerProductsRepository.GetByOfferIdAsync(offerId, CancellationToken.None);
         }
 
-        public async Task<IEnumerable<OfferProductEntity>> GetOfferProductsByProductAsync(int productId)
+        public async Task<IEnumerable<OfferProductAnnex>> GetOfferProductsByProductAsync(int productId)
         {
-            return await _repository.GetByProductIdAsync(productId, CancellationToken.None);
+            return await _offerProductsRepository.GetByProductIdAsync(productId, CancellationToken.None);
         }
 
-        public async Task<OfferProductEntity?> GetOfferProductAsync(int offerId, int productId)
+        public async Task<OfferProductAnnex?> GetOfferProductAsync(int offerId, int productId)
         {
-            return await _repository.GetByOfferAndProductAsync(offerId, productId, CancellationToken.None);
+            return await _offerProductsRepository.GetByOfferAndProductAsync(offerId, productId, CancellationToken.None);
         }
 
-        public async Task<OfferProductEntity> CreateOfferProductAsync(OfferProductEntity offerProduct, string? createdBy = null)
+        public async Task<OfferProductAnnex> CreateOfferProductAsync(OfferProductAnnex offerProduct, string? createdBy = null)
         {
             // Validate the offer-product relationship
             await ValidateOfferProductAsync(offerProduct);
 
-            // Verify offer exists
+            // Verify offer not allready exists
             var offer = await _offersRepository.GetByIdAsync(offerProduct.OfferId, CancellationToken.None);
             if (offer == null)
                 throw new InvalidOperationException($"Offer with ID {offerProduct.OfferId} not found");
@@ -64,27 +64,31 @@ namespace SacksDataLayer.Services.Implementations
             if (product == null)
                 throw new InvalidOperationException($"Product with ID {offerProduct.ProductId} not found");
 
-            return await _repository.CreateAsync(offerProduct, CancellationToken.None);
+            _offerProductsRepository.Add(offerProduct);
+
+            return offerProduct;
         }
 
-        public async Task<OfferProductEntity> UpdateOfferProductAsync(OfferProductEntity offerProduct, string? modifiedBy = null)
+        public async Task<OfferProductAnnex> UpdateOfferProductAsync(OfferProductAnnex offerProduct, string? modifiedBy = null)
         {
             // Validate the offer-product relationship
             await ValidateOfferProductAsync(offerProduct);
 
             // Check if offer-product exists
-            var existingOfferProduct = await _repository.GetByIdAsync(offerProduct.Id, CancellationToken.None);
+            var existingOfferProduct = await _offerProductsRepository.GetByIdAsync(offerProduct.Id, CancellationToken.None);
             if (existingOfferProduct == null)
                 throw new InvalidOperationException($"Offer-product with ID {offerProduct.Id} not found");
 
-            return await _repository.UpdateAsync(offerProduct, CancellationToken.None);
+            _offerProductsRepository.Update(offerProduct);
+
+            return offerProduct;
         }
 
-        public async Task<OfferProductEntity> CreateOrUpdateOfferProductAsync(int offerId, int productId,
+        public async Task<OfferProductAnnex> CreateOrUpdateOfferProductAsync(int offerId, int productId,
             Dictionary<string, object?> offerProperties, string? createdBy = null)
         {
             // Try to find existing offer-product relationship
-            var existingOfferProduct = await _repository.GetByOfferAndProductAsync(offerId, productId, CancellationToken.None);
+            var existingOfferProduct = await _offerProductsRepository.GetByOfferAndProductAsync(offerId, productId, CancellationToken.None);
 
             var offerPropertiesJson = JsonSerializer.Serialize(offerProperties);
 
@@ -97,7 +101,7 @@ namespace SacksDataLayer.Services.Implementations
             else
             {
                 // Create new relationship
-                var newOfferProduct = new OfferProductEntity
+                var newOfferProduct = new OfferProductAnnex
                 {
                     OfferId = offerId,
                     ProductId = productId,
@@ -108,12 +112,12 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        public async Task<IEnumerable<OfferProductEntity>> BulkCreateOfferProductsAsync(
-            IEnumerable<OfferProductEntity> offerProducts, string? createdBy = null)
+        public async Task<IEnumerable<OfferProductAnnex>> BulkCreateOfferProductsAsync(
+            IEnumerable<OfferProductAnnex> offerProducts, string? createdBy = null)
         {
             ArgumentNullException.ThrowIfNull(offerProducts);
             
-            var results = new List<OfferProductEntity>();
+            var results = new List<OfferProductAnnex>();
 
             foreach (var offerProduct in offerProducts)
             {
@@ -138,7 +142,7 @@ namespace SacksDataLayer.Services.Implementations
         {
             try
             {
-                await _repository.DeleteAsync(id, CancellationToken.None);
+                await _offerProductsRepository.RemoveByIdAsync(id);
                 return true;
             }
             catch
@@ -147,7 +151,7 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        public Task<(IEnumerable<OfferProductEntity> OfferProducts, int TotalCount)> GetOfferProductsAsync(
+        public Task<(IEnumerable<OfferProductAnnex> OfferProducts, int TotalCount)> GetOfferProductsAsync(
             int pageNumber = 1, int pageSize = 50)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -156,23 +160,23 @@ namespace SacksDataLayer.Services.Implementations
 
             // Note: This is a simplified implementation
             // Since we don't have GetAllAsync, we can't implement proper pagination
-            // In a real scenario, you'd add GetAllAsync to the repository interface
-            return Task.FromResult<(IEnumerable<OfferProductEntity>, int)>((Enumerable.Empty<OfferProductEntity>(), 0));
+            // In a real scenario, you'd add GetAllAsync to the offerProductsRepository interface
+            return Task.FromResult<(IEnumerable<OfferProductAnnex>, int)>((Enumerable.Empty<OfferProductAnnex>(), 0));
         }
 
-        public async Task<IEnumerable<OfferProductEntity>> SearchOfferProductsAsync(string searchTerm)
+        public async Task<IEnumerable<OfferProductAnnex>> SearchOfferProductsAsync(string searchTerm)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
-                return Enumerable.Empty<OfferProductEntity>();
+                return Enumerable.Empty<OfferProductAnnex>();
 
             // Note: This is a simplified implementation
             // Since we don't have a comprehensive search method, this is a placeholder
-            // In a real scenario, you'd implement search in the repository
+            // In a real scenario, you'd implement search in the offerProductsRepository
             await Task.CompletedTask;
-            return Enumerable.Empty<OfferProductEntity>();
+            return Enumerable.Empty<OfferProductAnnex>();
         }
 
-        private async Task ValidateOfferProductAsync(OfferProductEntity offerProduct)
+        private async Task ValidateOfferProductAsync(OfferProductAnnex offerProduct)
         {
             if (offerProduct == null)
                 throw new ArgumentNullException(nameof(offerProduct));

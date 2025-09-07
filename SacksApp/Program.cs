@@ -226,10 +226,10 @@ namespace SacksApp
             });
 
             // Add repositories
-            services.AddScoped<IProductsRepository, ProductsRepository>();
-            services.AddScoped<ISuppliersRepository, SuppliersRepository>();
-            services.AddScoped<ISupplierOffersRepository, SupplierOffersRepository>();
-            services.AddScoped<IOfferProductsRepository, OfferProductsRepository>();
+            services.AddScoped<ITransactionalProductsRepository, TransactionalProductsRepository>();
+            services.AddScoped<ITransactionalSuppliersRepository, TransactionalSuppliersRepository>();
+            services.AddScoped<ITransactionalSupplierOffersRepository, TransactionalSupplierOffersRepository>();
+            services.AddScoped<ITransactionalOfferProductsRepository, TransactionalOfferProductsRepository>();
 
             // Add Unit of Work for transaction management
             services.AddUnitOfWork();

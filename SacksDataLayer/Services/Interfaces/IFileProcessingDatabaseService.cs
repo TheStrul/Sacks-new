@@ -56,7 +56,7 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="createdBy">User who created the offer</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Supplier offer entity</returns>
-        Task<SupplierOfferEntity> CreateOfferAsync(
+        Task<SupplierOfferAnnex> CreateOfferAsync(
             SupplierEntity supplier,
             string fileName,
             DateTime processingDate,
@@ -76,8 +76,8 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Processing results with statistics</returns>
         Task<FileProcessingResult> InsertOrUpdateSupplierOfferAsync(
-            SupplierOfferEntity analysisOffer,
-            SupplierOfferEntity dbOffer,
+            SupplierOfferAnnex analysisOffer,
+            SupplierOfferAnnex dbOffer,
             SupplierConfiguration supplierConfig,
             string? createdBy = null,
             CancellationToken cancellationToken = default);
@@ -92,8 +92,8 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Processing results with statistics</returns>
         Task<FileProcessingResult> ProcessProductAsync(
-            List<OfferProductEntity> products,
-            SupplierOfferEntity offer,
+            List<OfferProductAnnex> products,
+            SupplierOfferAnnex offer,
             SupplierConfiguration supplierConfig,
             string? createdBy = null,
             CancellationToken cancellationToken = default);

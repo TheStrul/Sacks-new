@@ -72,7 +72,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
             try
             {
-                var offerProducts = new List<OfferProductEntity>();
+                var offerProducts = new List<OfferProductAnnex>();
                 var statistics = new ProcessingStatistics();
                 var warnings = new List<string>();
                 var errors = new List<string>();
@@ -177,11 +177,11 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Normalizes a single row using unified ColumnProperties configuration
         /// </summary>
-        private async Task<OfferProductEntity?> NormalizeRowAsync(
+        private async Task<OfferProductAnnex?> NormalizeRowAsync(
             RowData row,
             ProcessingContext context,
             string sourceFile,
-            SupplierOfferEntity? supplierOffer)
+            SupplierOfferAnnex? supplierOffer)
         {
             try
             {
@@ -254,9 +254,12 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 }
 
                 // Extract additional properties from description if available and extractor is configured
-                if (_descriptionExtractor is not null && !string.IsNullOrEmpty(product.Description))
+                // Note: Description is now stored in OfferProductAnnex, so this extraction logic would need
+                // to be moved to after the OfferProduct creation or access the description from offerProperties
+                var description = offerProperties.TryGetValue("description", out var descValue) ? descValue?.ToString() : null;
+                if (_descriptionExtractor is not null && !string.IsNullOrEmpty(description))
                 {
-                    var extractedProperties = _descriptionExtractor.ExtractPropertiesFromDescription(product.Description);
+                    var extractedProperties = _descriptionExtractor.ExtractPropertiesFromDescription(description);
 
                     // Add extracted properties to product's dynamic properties if they don't already exist
                     foreach (var extractedProp in extractedProperties)
@@ -465,7 +468,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     product.Name = value?.ToString() ?? "";
                     break;
                 case "description":
-                    product.Description = value?.ToString();
+                    // Description is now supplier-specific and goes to OfferProductAnnex
+                    offerProperties["description"] = value?.ToString();
                     break;
                 case "ean":
                     product.EAN = value?.ToString() ?? "";
@@ -479,7 +483,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     }
                     else if (classification == "offer")
                     {
-                        // Offer property - goes to OfferProductEntity
+                        // Offer property - goes to OfferProductAnnex
                         offerProperties[targetProperty] = value;
                     }
                     else
@@ -742,9 +746,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Creates a SupplierOffer entity from processing context
         /// </summary>
-        private SupplierOfferEntity CreateSupplierOfferFromContext(ProcessingContext context)
+        private SupplierOfferAnnex CreateSupplierOfferFromContext(ProcessingContext context)
         {
-            return new SupplierOfferEntity
+            return new SupplierOfferAnnex
             {
                 OfferName = $"{SupplierName} - {context.SourceFileName}",
                 Description = $"Offer created from file: {context.SourceFileName}",
@@ -755,9 +759,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Creates an OfferProduct entity from offer properties
         /// </summary>
-        private OfferProductEntity CreateOfferProductEntity(Dictionary<string, object?> offerProperties, SupplierOfferEntity? supplierOffer)
+        private OfferProductAnnex CreateOfferProductEntity(Dictionary<string, object?> offerProperties, SupplierOfferAnnex? supplierOffer)
         {
-            var offerProduct = new OfferProductEntity
+            var offerProduct = new OfferProductAnnex
             {
                 CreatedAt = DateTime.UtcNow
             };
@@ -778,6 +782,10 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     case "quantity":
                         if (int.TryParse(prop.Value?.ToString(), out int quantity))
                             offerProduct.Quantity = quantity;
+                        mappedProperties.Add(prop.Key);
+                        break;
+                    case "description":
+                        offerProduct.Description = prop.Value?.ToString();
                         mappedProperties.Add(prop.Key);
                         break;
                 }
@@ -834,14 +842,13 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     nameComponents.Add(itemName.ToString()!);
             }
 
-            // If no meaningful properties found, use description
-            if (!nameComponents.Any() && !string.IsNullOrWhiteSpace(product.Description))
+            // If no meaningful properties found, use EAN or fallback
+            if (!nameComponents.Any())
             {
-                // Truncate description if too long for a name
-                var desc = product.Description.Length > 50
-                    ? product.Description.Substring(0, 50) + "..."
-                    : product.Description;
-                nameComponents.Add(desc);
+                if (!string.IsNullOrWhiteSpace(product.EAN))
+                {
+                    nameComponents.Add($"Product {product.EAN}");
+                }
             }
 
             return nameComponents.Any() ? string.Join(" ", nameComponents) : "Unknown Product";
@@ -850,7 +857,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Validates an offer product for supplier offers
         /// </summary>
-        private bool IsValidOfferProduct(OfferProductEntity offerProduct)
+        private bool IsValidOfferProduct(OfferProductAnnex offerProduct)
         {
             // For supplier offers, require valid product with EAN
             return offerProduct?.Product != null &&
