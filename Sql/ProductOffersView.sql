@@ -5,25 +5,22 @@ SELECT
     p.EAN,
     JSON_VALUE(p.DynamicProperties, '$.Category') AS Category,
     JSON_VALUE(p.DynamicProperties, '$.Brand') AS Brand,
+    JSON_VALUE(p.DynamicProperties, '$.ProductLine') AS Line,
+    op.Description,
     p.Name,
-    p.Description,
     JSON_VALUE(p.DynamicProperties, '$.Gender') AS Gender,
     JSON_VALUE(p.DynamicProperties, '$.Concentration') AS Concentration,
-    JSON_VALUE(p.DynamicProperties, '$.Size') AS Size,
-    JSON_VALUE(p.DynamicProperties, '$.Type') AS Type,
+    JSON_VALUE(p.DynamicProperties, '$.Size') AS Volume,
+    JSON_VALUE(p.DynamicProperties, '$.Type') AS Set,
     JSON_VALUE(p.DynamicProperties, '$.Decoded') AS Decoded,
     JSON_VALUE(p.DynamicProperties, '$.COO') AS COO,
-    JSON_VALUE(p.DynamicProperties, '$.ProductLine') AS Line,
-    
-    -- Offer information
-    so.OfferName,
-    op.Price,
-    op.Quantity,
-    so.Currency,
-    so.Description AS OfferDescription,
     
     -- Supplier information
     s.Name AS SupplierName,
+    so.CreatedAt As "Date Offer",
+    op.Price,
+    so.Currency,
+    op.Quantity,
     
     -- Add row number for each product to identify multiple offers
     ROW_NUMBER() OVER (PARTITION BY p.EAN ORDER BY op.Price ASC) AS OfferRank,
