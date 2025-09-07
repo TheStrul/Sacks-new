@@ -28,32 +28,25 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// Normalizes all product dynamic properties in the database
         /// </summary>
-        /// <param name="batchSize">Number of products to process in each batch</param>
         /// <param name="dryRun">If true, shows what would be changed without saving</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Summary of normalization results</returns>
         public async Task<NormalizationSummary> NormalizeAllProductsAsync(
-            int batchSize = 100, 
             bool dryRun = false, 
             CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Starting data normalization. DryRun: {DryRun}, BatchSize: {BatchSize}", dryRun, batchSize);
+            _logger.LogInformation("Starting data normalization. DryRun: {DryRun}", dryRun);
 
             var summary = new NormalizationSummary();
             var totalProducts = await _context.Products.CountAsync(cancellationToken);
-            var processed = 0;
 
             _logger.LogInformation("Total products to process: {TotalProducts}", totalProducts);
 
-            while (processed < totalProducts)
-            {
-                var batch = await _context.Products
+                var proc = await _context.Products
                     .Where(p => p.DynamicPropertiesJson != null)
-                    .Skip(processed)
-                    .Take(batchSize)
                     .ToListAsync(cancellationToken);
 
-                foreach (var product in batch)
+                foreach (var product in proc)
                 {
                     try
                     {
@@ -98,19 +91,15 @@ namespace SacksDataLayer.Services.Implementations
                         summary.ErrorProducts++;
                         _logger.LogError(ex, "Unexpected error processing product {ProductId}", product.Id);
                     }
-                }
 
-                if (!dryRun && batch.Any())
+
+                if (!dryRun)
                 {
                     await _context.SaveChangesAsync(cancellationToken);
-                    _logger.LogInformation("Saved batch of {BatchCount} products", batch.Count);
                 }
 
-                processed += batch.Count;
-                
                 // Log progress
-                var percentage = (processed * 100) / totalProducts;
-                _logger.LogInformation("Progress: {Processed}/{Total} ({Percentage}%)", processed, totalProducts, percentage);
+                var percentage = totalProducts * 100 / totalProducts;
             }
 
             _logger.LogInformation("Data normalization completed. Summary: {Summary}", summary);

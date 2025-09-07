@@ -10,10 +10,9 @@ namespace SacksDataLayer.FileProcessing.Services
 {
     /// <summary>
     /// Manages loading and updating supplier configurations from JSON files
-    /// </summary>
+    /// /// </summary>
     public class SupplierConfigurationManager
     {
-        private readonly string _configurationFilePath;
         private SuppliersConfiguration? _configuration;
         private DateTime _lastLoadTime;
         private readonly JsonSerializerOptions _jsonOptions;
@@ -21,16 +20,22 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Creates a new instance with IConfiguration support (recommended)
-        /// </summary>
+        /// /// </summary>
         public SupplierConfigurationManager(IConfiguration configuration, ILogger<SupplierConfigurationManager>? logger = null)
         {
             ArgumentNullException.ThrowIfNull(configuration);
+
+            // Try to get from root level first (loaded from supplier-formats.json)
+            _configuration = configuration.Get<SuppliersConfiguration>();
             
-            var configPath = configuration["SupplierConfiguration:ConfigurationFilePath"] 
-                ?? throw new InvalidOperationException("SupplierConfiguration:ConfigurationFilePath not found in configuration");
+            // If that fails, try the "SupplierFormats" section
+            _configuration ??= configuration.GetSection("SupplierFormats").Get<SuppliersConfiguration>();
             
-            // Try to find the source Configuration folder instead of using output directory
-            _configurationFilePath = FindSourceConfigurationPath(configPath);
+            if (_configuration == null)
+            {
+                throw new InvalidOperationException("Failed to bind SupplierFormats configuration. Ensure supplier-formats.json is loaded correctly.");
+            }
+
             _logger = logger;
             _jsonOptions = CreateJsonOptions();
         }
@@ -48,84 +53,18 @@ namespace SacksDataLayer.FileProcessing.Services
         }
 
         /// <summary>
-        /// Automatically finds the supplier configuration file in common locations
-        /// </summary>
-        /// <returns>Path to the configuration file</returns>
-        /// <exception cref="FileNotFoundException">Thrown when configuration file is not found</exception>
-        public static string FindConfigurationFile()
-        {
-            return ConfigurationFileLocator.FindConfigurationFileOrThrow("supplier-formats.json");
-        }
-
-        /// <summary>
-        /// Finds the source configuration path (in source code) instead of output directory
-        /// </summary>
-        private string FindSourceConfigurationPath(string configPath)
-        {
-            var currentDirectory = Environment.CurrentDirectory;
-            
-            // Strategy 1: Check if we're running from project folder (dotnet run)
-            var strategy1 = Path.Combine(currentDirectory, configPath);
-            if (File.Exists(strategy1))
-            {
-                return Path.GetFullPath(strategy1);
-            }
-
-            // Strategy 2: Search upward for solution file, then go to SacksConsoleApp/Configuration
-            var searchDir = new DirectoryInfo(currentDirectory);
-            while (searchDir != null)
-            {
-                var solutionFile = searchDir.GetFiles("*.sln").FirstOrDefault();
-                if (solutionFile != null)
-                {
-                    var solutionConfigPath = Path.Combine(searchDir.FullName, "SacksConsoleApp", configPath);
-                    if (File.Exists(solutionConfigPath))
-                    {
-                        return solutionConfigPath;
-                    }
-                }
-                searchDir = searchDir.Parent;
-            }
-
-            // Strategy 3: Check if we're running from bin folder (Visual Studio/output directory)
-            var strategy3 = Path.Combine(currentDirectory, "..", "..", "..", configPath);
-            if (File.Exists(strategy3))
-            {
-                return Path.GetFullPath(strategy3);
-            }
-
-            // Fallback: Use the original method if source file not found
-            var fallbackPath = Path.Combine(AppContext.BaseDirectory, configPath);
-            if (File.Exists(fallbackPath))
-            {
-                return fallbackPath;
-            }
-
-            // Last resort: return the expected path and let error handling deal with it
-            return Path.Combine(currentDirectory, configPath);
-        }
-
-        /// <summary>
         /// Gets all supplier configurations
-        /// </summary>
+        /// /// </summary>
         public async Task<SuppliersConfiguration> GetConfigurationAsync()
         {
             await EnsureConfigurationLoadedAsync();
             return _configuration!;
         }
 
-        /// <summary>
-        /// Gets configuration for a specific supplier by name
-        /// </summary>
-        public async Task<SupplierConfiguration?> GetSupplierConfigurationAsync(string supplierName)
-        {
-            var config = await GetConfigurationAsync();
-            return config.GetResolvedSupplierConfiguration(supplierName);
-        }
 
         /// <summary>
         /// Gets all supplier configurations ordered by name
-        /// </summary>
+        /// /// </summary>
         public async Task<List<SupplierConfiguration>> GetSupplierConfigurationsByPriorityAsync()
         {
             var config = await GetConfigurationAsync();
@@ -144,7 +83,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Adds a new supplier configuration
-        /// </summary>
+        /// /// </summary>
         public async Task AddSupplierConfigurationAsync(SupplierConfiguration supplierConfig)
         {
             ArgumentNullException.ThrowIfNull(supplierConfig);
@@ -166,16 +105,15 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Reloads configuration from file
-        /// </summary>
+        /// /// </summary>
         public async Task ReloadConfigurationAsync()
         {
-            _configuration = null;
             await EnsureConfigurationLoadedAsync();
         }
 
         /// <summary>
         /// Validates the configuration file
-        /// </summary>
+        /// /// </summary>
         public async Task<ConfigurationValidationResult> ValidateConfigurationAsync()
         {
             var result = new ConfigurationValidationResult();
@@ -223,8 +161,8 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Auto-detects supplier configuration from file path/name
-        /// </summary>
-        public async Task<SupplierConfiguration?> DetectSupplierFromFileAsync(string filePath)
+        /// /// </summary>
+        public SupplierConfiguration? DetectSupplierFromFileAsync(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath))
                 throw new ArgumentException("File path cannot be null or empty", nameof(filePath));
@@ -233,12 +171,10 @@ namespace SacksDataLayer.FileProcessing.Services
             {
                 var fileName = Path.GetFileName(filePath);
                 var fileNameLowerCase = fileName.ToLowerInvariant(); // Convert to lowercase for matching
-                _logger?.LogInformation("Detecting supplier configuration for file: {FileName} (matching as: {FileNameLower})", fileName, fileNameLowerCase);
+                _logger?.LogDebug("Detecting supplier configuration for file: {FileName} (matching as: {FileNameLower})", fileName, fileNameLowerCase);
                 
-                var config = await GetConfigurationAsync();
-
                 // Try to match against each supplier's file name patterns using lowercase filename
-                foreach (var supplier in config.Suppliers)
+                foreach (var supplier in _configuration!.Suppliers)
                 {
                     if (supplier.Detection?.FileNamePatterns?.Any() == true)
                     {
@@ -248,11 +184,11 @@ namespace SacksDataLayer.FileProcessing.Services
                             var patternLowerCase = pattern.ToLowerInvariant();
                             if (IsFileNameMatch(fileNameLowerCase, patternLowerCase))
                             {
-                                _logger?.LogInformation("Matched supplier '{SupplierName}' with pattern '{Pattern}' (as '{PatternLower}') for file '{FileName}'", 
+                                _logger?.LogDebug("Matched supplier '{SupplierName}' with pattern '{Pattern}' (as '{PatternLower}') for file '{FileName}'", 
                                     supplier.Name, pattern, patternLowerCase, fileName);
                                 
                                 // Set parent reference before returning
-                                supplier.ParentConfiguration = config;
+                                supplier.ParentConfiguration = _configuration;
                                 return supplier;
                             }
                         }
@@ -272,7 +208,7 @@ namespace SacksDataLayer.FileProcessing.Services
         /// <summary>
         /// Checks if a file name matches a pattern (supports wildcards)
         /// Note: Both fileName and pattern should already be normalized to the same case
-        /// </summary>
+        /// /// </summary>
         private bool IsFileNameMatch(string fileName, string pattern)
         {
             if (string.IsNullOrWhiteSpace(pattern) || string.IsNullOrWhiteSpace(fileName))
@@ -289,52 +225,20 @@ namespace SacksDataLayer.FileProcessing.Services
 
         private async Task EnsureConfigurationLoadedAsync()
         {
-            if (_configuration == null || ShouldReload())
-            {
-                await LoadConfigurationAsync();
-            }
+            // Configuration is loaded in constructor, no need to reload from file
+            await Task.CompletedTask;
         }
 
         private bool ShouldReload()
         {
-            try
-            {
-                var fileInfo = new FileInfo(_configurationFilePath);
-                return fileInfo.Exists && fileInfo.LastWriteTime > _lastLoadTime;
-            }
-            catch
-            {
-                return false;
-            }
+            // Since we're loading from IConfiguration, we don't support file reloading
+            return false;
         }
 
         private async Task LoadConfigurationAsync()
         {
-            try
-            {
-
-                var json = await File.ReadAllTextAsync(_configurationFilePath);
-                _configuration = JsonSerializer.Deserialize<SuppliersConfiguration>(json, _jsonOptions);
-                _lastLoadTime = DateTime.UtcNow;
-
-                if (_configuration == null)
-                {
-                    throw new InvalidOperationException("Failed to deserialize configuration file");
-                }
-
-                // Load ProductPropertyConfiguration if not already embedded
-                if (_configuration.ProductPropertyConfiguration == null)
-                {
-                    await LoadProductPropertyConfigurationAsync();
-                }
-
-                // Ensure parent references are set after loading
-                _configuration.EnsureParentReferences();
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Failed to load configuration from '{_configurationFilePath}': {ex.Message}", ex);
-            }
+            // Configuration is already loaded in constructor
+            await Task.CompletedTask;
         }
 
         /// <summary>
@@ -342,63 +246,23 @@ namespace SacksDataLayer.FileProcessing.Services
         /// </summary>
         private async Task LoadProductPropertyConfigurationAsync()
         {
-            try
-            {
-                // Look for product-properties-perfume.json in the same directory as supplier-formats.json
-                var configDir = Path.GetDirectoryName(_configurationFilePath);
-                if (string.IsNullOrEmpty(configDir))
-                    return;
-
-                var productPropertiesPath = Path.Combine(configDir, "product-properties-perfume.json");
-                
-                if (!File.Exists(productPropertiesPath))
-                {
-                    _logger?.LogWarning("ProductPropertyConfiguration file not found at: {FilePath}", productPropertiesPath);
-                    return;
-                }
-
-                var json = await File.ReadAllTextAsync(productPropertiesPath);
-                var productConfig = JsonSerializer.Deserialize<ProductPropertyConfiguration>(json, _jsonOptions);
-                
-                if (productConfig != null && _configuration != null)
-                {
-                    _configuration.ProductPropertyConfiguration = productConfig;
-                    _logger?.LogInformation("Loaded ProductPropertyConfiguration with {PropertyCount} properties", 
-                        productConfig.Properties.Count);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Failed to load ProductPropertyConfiguration");
-                // Don't throw - this is optional for backward compatibility
-            }
+            // ProductPropertyConfiguration is already embedded in the loaded configuration
+            await Task.CompletedTask;
         }
 
         private async Task SaveConfigurationAsync(SuppliersConfiguration config, string? filePath = null)
         {
-            var targetPath = filePath ?? _configurationFilePath;
-            
-            // Ensure directory exists
-            var directory = Path.GetDirectoryName(targetPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            var json = JsonSerializer.Serialize(config, _jsonOptions);
-            await File.WriteAllTextAsync(targetPath, json);
-            
-            if (filePath == null) // Only update cache if saving to main file
-            {
-                _configuration = config;
-                _lastLoadTime = DateTime.UtcNow;
-            }
+            // Since we're loading from IConfiguration, we don't support saving back to file
+            // This method is kept for interface compatibility
+            await Task.CompletedTask;
+            _configuration = config;
+            _lastLoadTime = DateTime.UtcNow;
         }
 
         /// <summary>
-        /// Interactively analyzes an Excel file and creates a new supplier configuration
-        /// NOTE: Console interactions have been replaced with logging - method is no longer interactive
-        /// </summary>
+        /// Creates a supplier configuration from Excel file analysis (non-interactive)
+        /// All console interactions have been replaced with logging and sensible defaults
+        /// /// </summary>
         /// <param name="excelFilePath">Path to the Excel file to analyze</param>
         /// <param name="supplierName">Name for the new supplier (if null, will be derived from filename)</param>
         /// <returns>The created supplier configuration</returns>
@@ -410,8 +274,7 @@ namespace SacksDataLayer.FileProcessing.Services
             if (!File.Exists(excelFilePath))
                 throw new FileNotFoundException($"Excel file not found: {excelFilePath}");
 
-            _logger?.LogInformation("INTERACTIVE SUPPLIER CONFIGURATION CREATOR");
-            _logger?.LogInformation("Analyzing file: {FileName}", Path.GetFileName(excelFilePath));
+            _logger?.LogDebug("Starting supplier configuration creation for file: {FileName}", Path.GetFileName(excelFilePath));
 
             // Get the current configuration to access ProductPropertyConfiguration
             var currentConfig = await GetConfigurationAsync();
@@ -421,97 +284,47 @@ namespace SacksDataLayer.FileProcessing.Services
             var fileReader = new FileDataReader();
             var fileData = await fileReader.ReadFileAsync(excelFilePath);
 
-            _logger?.LogInformation("File analysis complete:");
-            _logger?.LogInformation("   • Total rows: {RowCount}", fileData.RowCount);
-            _logger?.LogInformation("   • Analyzing first 10 rows for structure...");
+            _logger?.LogDebug("File analysis complete - Total rows: {RowCount}", fileData.RowCount);
 
             // Step 2: Determine supplier name
             if (string.IsNullOrWhiteSpace(supplierName))
             {
                 var fileName = Path.GetFileNameWithoutExtension(excelFilePath);
-                var suggestedName = ExtractSupplierNameFromFileName(fileName);
-                
-                _logger?.LogInformation("Suggested supplier name from filename: '{SuggestedName}'", suggestedName);
-                Console.WriteLine($"📝 Suggested supplier name: '{suggestedName}'");
-                Console.Write("✏️  Enter supplier name (press Enter to accept suggestion): ");
-                var userInput = Console.ReadLine()?.Trim();
-                
-                supplierName = string.IsNullOrWhiteSpace(userInput) ? suggestedName : userInput;
+                supplierName = ExtractSupplierNameFromFileName(fileName);
+                _logger?.LogDebug("Auto-generated supplier name from filename: '{SupplierName}'", supplierName);
             }
-
-            _logger?.LogInformation("Supplier name: {SupplierName}", supplierName);
 
             // Step 3: Analyze file structure and find header row
             var (headerRowIndex, dataStartRowIndex, expectedColumnCount) = AnalyzeFileStructure(fileData);
             
-            _logger?.LogInformation("File structure analysis:");
-            _logger?.LogInformation("   • Detected header row: {HeaderRow} (Excel row number)", headerRowIndex + 1);
-            _logger?.LogInformation("   • Detected data start row: {DataStartRow} (Excel row number)", dataStartRowIndex + 1);
-            _logger?.LogInformation("   • Expected columns: {ExpectedColumns}", expectedColumnCount);
+            _logger?.LogDebug("File structure analysis - Header row: {HeaderRow}, Data start: {DataStartRow}, Expected columns: {ExpectedColumns}", 
+                headerRowIndex + 1, dataStartRowIndex + 1, expectedColumnCount);
 
-            // Step 4: Show header row and ask for confirmation
+            // Step 4: Log header row contents for review
             if (headerRowIndex >= 0 && headerRowIndex < fileData.RowCount)
             {
                 var headerRow = fileData.GetRow(headerRowIndex);
-                _logger?.LogInformation("Detected header row contents:");
-                Console.WriteLine();
-                Console.WriteLine($"📋 Detected header row (Excel row {headerRowIndex + 1}):");
+                _logger?.LogDebug("Detected header row (Excel row {HeaderRowNumber}):", headerRowIndex + 1);
                 for (int i = 0; i < headerRow?.Cells.Count; i++)
                 {
                     var cellValue = headerRow.Cells[i]?.Value?.ToString()?.Trim() ?? "";
                     var columnLetter = GetExcelColumnLetter(i);
-                    _logger?.LogInformation("   {ColumnLetter}: {CellValue}", columnLetter, cellValue);
-                    Console.WriteLine($"   {columnLetter}: {cellValue}");
-                }
-
-                Console.WriteLine();
-                Console.Write("❓ Is this the correct header row? (y/n): ");
-                var confirmation = Console.ReadLine()?.Trim().ToLower();
-                if (confirmation != "y" && confirmation != "yes")
-                {
-                    Console.WriteLine("❌ Header row confirmation cancelled. Please manually specify header row location or check the file structure.");
-                    throw new InvalidOperationException("Header row not confirmed by user");
+                    _logger?.LogDebug("   {ColumnLetter}: {CellValue}", columnLetter, cellValue);
                 }
             }
 
-            // Step 5: Create column mappings interactively
-            var columnProperties = CreateColumnMappingsInteractively(fileData, headerRowIndex, expectedColumnCount, marketConfig);
+            // Step 5: Create column mappings automatically (non-interactive)
+            var columnProperties = CreateColumnMappingsAutomatically(fileData, headerRowIndex, expectedColumnCount, marketConfig);
 
-            // Step 6: Determine file naming patterns
-            _logger?.LogInformation("File naming patterns:");
+            // Step 6: Generate file naming patterns automatically
             var currentFileName = Path.GetFileName(excelFilePath);
             var suggestedPatterns = GenerateFileNamePatterns(currentFileName, supplierName);
             
-            Console.WriteLine();
-            Console.WriteLine("📁 FILE NAMING PATTERNS");
-            Console.WriteLine("=======================");
-            Console.WriteLine($"Current file: {currentFileName}");
-            Console.WriteLine("Suggested patterns:");
-            
-            _logger?.LogInformation("Suggested patterns based on '{CurrentFileName}':", currentFileName);
+            _logger?.LogDebug("Generated file naming patterns based on '{CurrentFileName}':", currentFileName);
             for (int i = 0; i < suggestedPatterns.Count; i++)
             {
-                _logger?.LogInformation("   {Index}. {Pattern}", i + 1, suggestedPatterns[i]);
-                Console.WriteLine($"   {i + 1}. {suggestedPatterns[i]}");
+                _logger?.LogDebug("   {Index}. {Pattern}", i + 1, suggestedPatterns[i]);
             }
-            
-            Console.WriteLine();
-            Console.Write("❓ Add additional file patterns? (y/n, default: n): ");
-            var addPatternsInput = Console.ReadLine()?.Trim().ToLower();
-            var additionalPatterns = new List<string>();
-            
-            if (addPatternsInput == "y" || addPatternsInput == "yes")
-            {
-                Console.WriteLine("Enter additional patterns (one per line, empty line to finish):");
-                string? pattern;
-                while (!string.IsNullOrWhiteSpace(pattern = Console.ReadLine()?.Trim()))
-                {
-                    additionalPatterns.Add(pattern);
-                    Console.WriteLine($"   ✅ Added: {pattern}");
-                }
-            }
-            
-            var allPatterns = suggestedPatterns.Concat(additionalPatterns).Distinct().ToList();
 
             // Step 7: Create the supplier configuration
             var supplierConfig = new SupplierConfiguration
@@ -519,7 +332,7 @@ namespace SacksDataLayer.FileProcessing.Services
                 Name = supplierName,
                 Detection = new DetectionConfiguration
                 {
-                    FileNamePatterns = allPatterns
+                    FileNamePatterns = suggestedPatterns
                 },
                 ColumnProperties = columnProperties,
                 FileStructure = new FileStructureConfiguration
@@ -537,21 +350,19 @@ namespace SacksDataLayer.FileProcessing.Services
                 supplierConfig.ResolveColumnProperties(currentConfig.ProductPropertyConfiguration);
             }
 
-            _logger?.LogInformation("Supplier configuration created successfully!");
-            _logger?.LogInformation("   • Supplier: {SupplierName}", supplierConfig.Name);
-            _logger?.LogInformation("   • Columns mapped: {ColumnCount}", columnProperties.Count);
-            _logger?.LogInformation("   • File patterns: {PatternCount}", allPatterns.Count);
+            _logger?.LogDebug("Supplier configuration created successfully!");
+            _logger?.LogDebug("   • Supplier: {SupplierName}", supplierConfig.Name);
+            _logger?.LogDebug("   • Columns mapped: {ColumnCount}", columnProperties.Count);
+            _logger?.LogDebug("   • File patterns: {PatternCount}", suggestedPatterns.Count);
 
-            // Display final configuration summary
-            Console.WriteLine();
-            Console.WriteLine("📋 CONFIGURATION SUMMARY");
-            Console.WriteLine("=========================");
-            Console.WriteLine($"Supplier Name: {supplierConfig.Name}");
-            Console.WriteLine($"Header Row: {supplierConfig.FileStructure.HeaderRowIndex}");
-            Console.WriteLine($"Data Start Row: {supplierConfig.FileStructure.DataStartRowIndex}");
-            Console.WriteLine($"Expected Columns: {supplierConfig.FileStructure.ExpectedColumnCount}");
-            Console.WriteLine();
-            Console.WriteLine("Column Mappings:");
+            // Log final configuration summary
+            _logger?.LogDebug("Configuration Summary:");
+            _logger?.LogDebug("Supplier Name: {SupplierName}", supplierConfig.Name);
+            _logger?.LogDebug("Header Row: {HeaderRow}", supplierConfig.FileStructure.HeaderRowIndex);
+            _logger?.LogDebug("Data Start Row: {DataStartRow}", supplierConfig.FileStructure.DataStartRowIndex);
+            _logger?.LogDebug("Expected Columns: {ExpectedColumns}", supplierConfig.FileStructure.ExpectedColumnCount);
+            
+            _logger?.LogDebug("Column Mappings:");
             foreach (var (column, property) in columnProperties)
             {
                 var req = property.IsRequired == true ? "Required" : "Optional";
@@ -562,30 +373,22 @@ namespace SacksDataLayer.FileProcessing.Services
                 var displayName = !string.IsNullOrEmpty(property.DisplayName) ? property.DisplayName : property.ProductPropertyKey;
                 var classification = !string.IsNullOrEmpty(property.Classification) ? property.Classification : "unknown";
                 
-                Console.WriteLine($"   {column}: {displayName} → {property.ProductPropertyKey} ({classification}, {req}{unique}{skip})");
+                _logger?.LogDebug("   {Column}: {DisplayName} → {ProductPropertyKey} ({Classification}, {Requirements}{Unique}{Skip})", 
+                    column, displayName, property.ProductPropertyKey, classification, req, unique, skip);
             }
-            Console.WriteLine();
-            Console.WriteLine("File Patterns:");
-            foreach (var pattern in allPatterns)
+            
+            _logger?.LogDebug("File Patterns:");
+            foreach (var pattern in suggestedPatterns)
             {
-                Console.WriteLine($"   • {pattern}");
+                _logger?.LogDebug("   • {Pattern}", pattern);
             }
-            Console.WriteLine();
-            Console.Write("❓ Save this configuration? (y/n, default: y): ");
-            var saveInput = Console.ReadLine()?.Trim().ToLower();
-            if (saveInput == "n" || saveInput == "no")
-            {
-                Console.WriteLine("❌ Configuration cancelled by user.");
-                throw new OperationCanceledException("Configuration creation cancelled by user");
-            }
-            Console.WriteLine("✅ Configuration approved for saving.");
 
             return supplierConfig;
         }
 
         /// <summary>
         /// Extracts a supplier name from a filename
-        /// </summary>
+        /// /// </summary>
         private string ExtractSupplierNameFromFileName(string fileName)
         {
             // Remove common suffixes and patterns
@@ -605,7 +408,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Analyzes file structure to determine header and data start rows
-        /// </summary>
+        /// /// </summary>
         private (int headerRowIndex, int dataStartRowIndex, int expectedColumnCount) AnalyzeFileStructure(FileData fileData)
         {
             int headerRowIndex = 0;
@@ -648,9 +451,9 @@ namespace SacksDataLayer.FileProcessing.Services
         }
 
         /// <summary>
-        /// Creates column mappings interactively with user input
-        /// </summary>
-        private Dictionary<string, ColumnProperty> CreateColumnMappingsInteractively(
+        /// Creates column mappings automatically using intelligent defaults (non-interactive)
+        /// /// </summary>
+        private Dictionary<string, ColumnProperty> CreateColumnMappingsAutomatically(
             FileData fileData, int headerRowIndex, int expectedColumnCount, ProductPropertyConfiguration? marketConfig)
         {
             var columnProperties = new Dictionary<string, ColumnProperty>();
@@ -661,21 +464,7 @@ namespace SacksDataLayer.FileProcessing.Services
                 throw new InvalidOperationException("Header row not found");
             }
 
-            _logger?.LogInformation("COLUMN MAPPING CONFIGURATION");
-            Console.WriteLine();
-            Console.WriteLine("🗂️  COLUMN MAPPING CONFIGURATION");
-            Console.WriteLine("==================================");
-
-            if (marketConfig != null)
-            {
-                Console.WriteLine($"📋 Using market configuration with {marketConfig.Properties.Count} available properties");
-                Console.WriteLine();
-            }
-            else
-            {
-                Console.WriteLine("⚠️  No ProductPropertyConfiguration found - using basic property suggestions");
-                Console.WriteLine();
-            }
+            _logger?.LogDebug("Creating automatic column mappings...");
 
             for (int i = 0; i < Math.Min(headerRow.Cells.Count, expectedColumnCount); i++)
             {
@@ -684,161 +473,56 @@ namespace SacksDataLayer.FileProcessing.Services
                 
                 if (string.IsNullOrWhiteSpace(cellValue))
                 {
-                    _logger?.LogInformation("Column {ColumnLetter}: (empty) - skipping", columnLetter);
-                    Console.WriteLine($"📍 Column {columnLetter}: (empty) - skipping");
+                    _logger?.LogDebug("Column {ColumnLetter}: (empty) - skipping", columnLetter);
                     continue;
                 }
 
-                _logger?.LogInformation("Column {ColumnLetter}: '{CellValue}'", columnLetter, cellValue);
-                Console.WriteLine();
-                Console.WriteLine($"📍 Column {columnLetter}: '{cellValue}'");
+                _logger?.LogDebug("Processing column {ColumnLetter}: '{CellValue}'", columnLetter, cellValue);
                 
-                // Show sample data from this column
-                _logger?.LogInformation("   Sample data:");
-                Console.WriteLine("   📊 Sample data:");
+                // Log sample data from this column
+                var sampleValues = new List<string>();
                 for (int sampleRow = headerRowIndex + 1; sampleRow < Math.Min(headerRowIndex + 6, fileData.RowCount); sampleRow++)
                 {
                     var dataRow = fileData.GetRow(sampleRow);
                     var sampleValue = dataRow?.Cells.ElementAtOrDefault(i)?.Value?.ToString()?.Trim() ?? "";
                     if (!string.IsNullOrWhiteSpace(sampleValue))
                     {
-                        _logger?.LogInformation("      • {SampleValue}", sampleValue);
-                        Console.WriteLine($"      • {sampleValue}");
+                        sampleValues.Add(sampleValue);
                     }
                 }
 
-                // Suggest mapping based on header name
+                if (sampleValues.Any())
+                {
+                    _logger?.LogDebug("   Sample data: {SampleData}", string.Join(", ", sampleValues.Take(3)));
+                }
+
+                // Auto-suggest mapping based on header name
                 var suggestedMapping = SuggestPropertyMapping(cellValue);
-                _logger?.LogInformation("Suggested mapping: {TargetProperty} ({Classification})", suggestedMapping.targetProperty, suggestedMapping.classification);
-                Console.WriteLine($"   💡 Suggested mapping: {suggestedMapping.targetProperty} ({suggestedMapping.classification})");
+                _logger?.LogDebug("   Auto-mapped: {TargetProperty} ({Classification})", suggestedMapping.targetProperty, suggestedMapping.classification);
                 
-                // Interactive input for target property
-                string[] availableProperties;
-                if (marketConfig != null)
-                {
-                    // Use properties from market configuration
-                    availableProperties = marketConfig.Properties.Keys.OrderBy(k => k).ToArray();
-                    Console.WriteLine($"   📋 Available properties from market configuration:");
-                }
-                else
-                {
-                    // Fallback to hardcoded list if no market config
-                    availableProperties = new[] { 
-                        "Name", "EAN", "Brand", "Category", "Size", "Description", "Gender", "Line", "Unit",
-                        "Price", "Reference", "InStock", "Capacity"
-                    };
-                    Console.WriteLine($"   📋 Common target properties:");
-                }
-                for (int idx = 0; idx < availableProperties.Length; idx++)
-                {
-                    var propOpt = availableProperties[idx];
-                    var defaultMarker = propOpt == suggestedMapping.targetProperty ? " (suggested)" : "";
-                    
-                    // Show additional info from market config if available
-                    if (marketConfig?.Properties.TryGetValue(propOpt, out var propDefinition) == true)
-                    {
-                        Console.WriteLine($"      {idx + 1}. {propOpt} - {propDefinition.DisplayName} ({propDefinition.Classification}){defaultMarker}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"      {idx + 1}. {propOpt}{defaultMarker}");
-                    }
-                }
-                Console.WriteLine($"      {availableProperties.Length + 1}. Custom (enter your own)");
-                
-                string prompt = marketConfig != null 
-                    ? $"   ❓ Select target property (1-{availableProperties.Length + 1}, or press Enter for '{suggestedMapping.targetProperty}'): "
-                    : $"   ❓ Select target property (1-{availableProperties.Length + 1}, or press Enter for '{suggestedMapping.targetProperty}'): ";
-                Console.Write(prompt);
-                var userInput = Console.ReadLine()?.Trim();
-                
-                string targetProperty;
-                if (string.IsNullOrEmpty(userInput))
-                {
-                    targetProperty = suggestedMapping.targetProperty;
-                }
-                else if (int.TryParse(userInput, out var choice) && choice >= 1 && choice <= availableProperties.Length + 1)
-                {
-                    if (choice == availableProperties.Length + 1) // Custom option
-                    {
-                        Console.Write($"   ❓ Enter custom target property: ");
-                        targetProperty = Console.ReadLine()?.Trim() ?? suggestedMapping.targetProperty;
-                        
-                        // Warn if not in market config
-                        if (marketConfig != null && !marketConfig.Properties.ContainsKey(targetProperty))
-                        {
-                            Console.WriteLine($"   ⚠️  Warning: '{targetProperty}' is not defined in the market configuration");
-                        }
-                    }
-                    else
-                    {
-                        targetProperty = availableProperties[choice - 1];
-                    }
-                }
-                else
-                {
-                    // Allow direct entry if not a number
-                    targetProperty = userInput;
-                    
-                    // Warn if not in market config
-                    if (marketConfig != null && !marketConfig.Properties.ContainsKey(targetProperty))
-                    {
-                        Console.WriteLine($"   ⚠️  Warning: '{targetProperty}' is not defined in the market configuration");
-                    }
-                }
-                
-                // Show what was accepted
-                _logger?.LogInformation("   ✅ Selected mapping: {TargetProperty}", targetProperty);
-                Console.WriteLine($"   ✅ Mapping: {columnLetter} → {targetProperty}");
-                
-                // Show classification from market config if available
-                if (marketConfig?.Properties.TryGetValue(targetProperty, out var marketProperty) == true)
-                {
-                    Console.WriteLine($"   📋 Market configuration: {marketProperty.DisplayName} ({marketProperty.Classification})");
-                }                // Determine data type based on sample data
-                var dataType = DetermineDataType(fileData, headerRowIndex, i);
-                
-                _logger?.LogInformation("   📊 Detected data type: {DataType}", dataType.type);
-                Console.WriteLine($"   📊 Detected data type: {dataType.type}");
-                
-                // Interactive validation settings
-                Console.WriteLine($"   ⚙️  Validation settings:");
-                
-                // Auto-suggest based on target property and market config
-                bool suggestedIsRequired;
-                bool suggestedIsUnique;
+                var targetProperty = suggestedMapping.targetProperty;
+
+                // Use market config defaults if available
+                bool isRequired = false;
+                bool isUnique = false;
                 
                 if (marketConfig?.Properties.TryGetValue(targetProperty, out var marketProp) == true)
                 {
-                    // Use market configuration defaults
-                    suggestedIsRequired = marketProp.IsRequired;
-                    // ProductPropertyDefinition doesn't have IsUnique, so use heuristic
-                    suggestedIsUnique = targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase) || 
-                                      targetProperty.Contains("id", StringComparison.OrdinalIgnoreCase);
-                    Console.WriteLine($"   💡 Market defaults: Required={marketProp.IsRequired} (Unique suggestion: {suggestedIsUnique})");
+                    isRequired = marketProp.IsRequired;
+                    _logger?.LogDebug("   Market config applied: Required={IsRequired}", isRequired);
                 }
                 else
                 {
-                    // Fallback to heuristic suggestions
-                    suggestedIsRequired = targetProperty.Contains("name", StringComparison.OrdinalIgnoreCase) || 
-                                        targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase);
-                    suggestedIsUnique = targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase) || 
-                                      targetProperty.Contains("id", StringComparison.OrdinalIgnoreCase);
+                    // Fallback heuristics
+                    isRequired = targetProperty.Contains("name", StringComparison.OrdinalIgnoreCase) || 
+                                targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase);
                 }
                 
-                Console.Write($"      ❓ Is this field required? (y/n, default: {(suggestedIsRequired ? "y" : "n")}): ");
-                var requiredInput = Console.ReadLine()?.Trim().ToLower();
-                var isRequired = string.IsNullOrEmpty(requiredInput) ? suggestedIsRequired : 
-                               (requiredInput == "y" || requiredInput == "yes");
-                
-                Console.Write($"      ❓ Should this field be unique? (y/n, default: {(suggestedIsUnique ? "y" : "n")}): ");
-                var uniqueInput = Console.ReadLine()?.Trim().ToLower();
-                var isUnique = string.IsNullOrEmpty(uniqueInput) ? suggestedIsUnique : 
-                             (uniqueInput == "y" || uniqueInput == "yes");
-                
-                Console.Write($"      ❓ Skip entire row if validation fails? (y/n, default: n): ");
-                var skipRowInput = Console.ReadLine()?.Trim().ToLower();
-                var skipEntireRow = skipRowInput == "y" || skipRowInput == "yes";
+                isUnique = targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase) || 
+                          targetProperty.Contains("id", StringComparison.OrdinalIgnoreCase);
+
+                // Determine data type automatically
+                var dataType = DetermineDataType(fileData, headerRowIndex, i);
                 
                 var columnProperty = new ColumnProperty
                 {
@@ -850,11 +534,12 @@ namespace SacksDataLayer.FileProcessing.Services
                     Transformations = dataType.transformations,
                     IsRequired = isRequired,
                     IsUnique = isUnique,
-                    SkipEntireRow = skipEntireRow
+                    SkipEntireRow = false // Default to false for automatic mode
                 };
 
                 columnProperties[columnLetter] = columnProperty;
-                _logger?.LogInformation("   ✅ Mapped {ColumnLetter} → {TargetProperty}", columnLetter, targetProperty);
+                _logger?.LogDebug("   Mapped {ColumnLetter} → {TargetProperty} (Required: {IsRequired}, Unique: {IsUnique})", 
+                    columnLetter, targetProperty, isRequired, isUnique);
             }
 
             return columnProperties;
@@ -862,7 +547,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Suggests property mapping based on header text
-        /// </summary>
+        /// /// </summary>
         private (string targetProperty, string classification) SuggestPropertyMapping(string headerText)
         {
             var lower = headerText.ToLower();
@@ -899,7 +584,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Determines data type from sample data
-        /// </summary>
+        /// /// </summary>
         private (string type, string? format, object? defaultValue, bool allowNull, int? maxLength, List<string> transformations) DetermineDataType(FileData fileData, int headerRowIndex, int columnIndex)
         {
             var sampleValues = new List<string>();
@@ -939,7 +624,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Generates suggested file name patterns
-        /// </summary>
+        /// /// </summary>
         private List<string> GenerateFileNamePatterns(string fileName, string supplierName)
         {
             var patterns = new List<string>();
@@ -965,7 +650,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Converts column index to Excel column letter (A, B, C, etc.)
-        /// </summary>
+        /// /// </summary>
         private string GetExcelColumnLetter(int columnIndex)
         {
             string columnName = "";
@@ -979,7 +664,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
         /// <summary>
         /// Adds a new supplier configuration to the existing configuration file
-        /// </summary>
+        /// /// </summary>
         /// <param name="newSupplier">The supplier configuration to add</param>
         /// <param name="saveToFile">Whether to save immediately to file</param>
         /// <returns>True if added successfully, false if supplier already exists</returns>
@@ -994,11 +679,11 @@ namespace SacksDataLayer.FileProcessing.Services
             if (config.Suppliers.Any(s => s.Name.Equals(newSupplier.Name, StringComparison.OrdinalIgnoreCase)))
             {
                 _logger?.LogWarning("Supplier '{SupplierName}' already exists!", newSupplier.Name);
-                _logger?.LogInformation("Auto-replacing existing supplier in non-interactive mode");
+                _logger?.LogDebug("Auto-replacing existing supplier in non-interactive mode");
                 
                 // Remove existing supplier automatically in non-interactive mode
                 config.Suppliers.RemoveAll(s => s.Name.Equals(newSupplier.Name, StringComparison.OrdinalIgnoreCase));
-                _logger?.LogInformation("Replaced existing supplier configuration for '{SupplierName}'", newSupplier.Name);
+                _logger?.LogDebug("Replaced existing supplier configuration for '{SupplierName}'", newSupplier.Name);
             }
 
             // Set parent reference and add the new supplier
@@ -1008,8 +693,7 @@ namespace SacksDataLayer.FileProcessing.Services
             if (saveToFile)
             {
                 await SaveConfigurationAsync(config);
-                _logger?.LogInformation("Supplier '{SupplierName}' added to configuration file", newSupplier.Name);
-                _logger?.LogInformation("Configuration saved to: {ConfigurationPath}", _configurationFilePath);
+                _logger?.LogDebug("Supplier '{SupplierName}' added to configuration (in-memory)", newSupplier.Name);
             }
 
             return true;
@@ -1048,8 +732,8 @@ namespace SacksDataLayer.FileProcessing.Services
         
         /// <summary>
         /// Gets all Excel files in the specified directory that don't match any known supplier configuration pattern
-        /// </summary>
-        public async Task<List<string>> GetUnmatchedFilesAsync(string inputDirectory)
+        /// /// </summary>
+        public  List<string> GetUnmatchedFilesAsync(string inputDirectory)
         {
             if (string.IsNullOrWhiteSpace(inputDirectory) || !Directory.Exists(inputDirectory))
                 return new List<string>();
@@ -1064,21 +748,21 @@ namespace SacksDataLayer.FileProcessing.Services
 
                 foreach (var filePath in allExcelFiles)
                 {
-                    var supplierConfig = await DetectSupplierFromFileAsync(filePath);
+                    var supplierConfig = DetectSupplierFromFileAsync(filePath);
                     if (supplierConfig == null)
                     {
                         unmatchedFiles.Add(filePath);
                     }
                 }
 
-                _logger?.LogInformation("Found {UnmatchedCount} unmatched files out of {TotalFiles} Excel files", 
+                _logger?.LogDebug("Found {UnmatchedCount} unmatched files out of {TotalFiles} Excel files", 
                     unmatchedFiles.Count, allExcelFiles.Count);
 
                 return unmatchedFiles;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error getting unmatched files from directory: {Directory}", inputDirectory);
+                _logger?.LogError(ex, "Error getting unmatched files from directory: {InputDirectory}", inputDirectory);
                 return new List<string>();
             }
         }
@@ -1086,7 +770,7 @@ namespace SacksDataLayer.FileProcessing.Services
 
     /// <summary>
     /// Result of configuration validation
-    /// </summary>
+    /// /// </summary>
     public class ConfigurationValidationResult
     {
         public bool IsValid { get; set; }

@@ -28,28 +28,6 @@ namespace SacksDataLayer.Services.Implementations
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <summary>
-        /// Validates if a file exists at the specified path
-        /// </summary>
-        public Task<bool> ValidateFileExistsAsync(string filePath, CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            
-            try
-            {
-                var exists = File.Exists(filePath);
-                if (!exists)
-                {
-                    _logger.LogWarning("File not found: {FilePath}", filePath);
-                }
-                return Task.FromResult(exists);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating file existence for path: {FilePath}", filePath);
-                return Task.FromResult(false);
-            }
-        }
 
         /// <summary>
         /// Reads file data from the specified path

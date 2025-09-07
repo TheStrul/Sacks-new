@@ -6,6 +6,7 @@ using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using SacksDataLayer.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace SacksDataLayer.FileProcessing.Normalizers
 {
@@ -31,13 +32,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         private readonly SupplierConfiguration _configuration;
         private readonly Dictionary<string, Func<string, object?>> _dataTypeConverters;
         private readonly ConfigurationDescriptionPropertyExtractor? _descriptionExtractor;
+        private readonly ILogger<ConfigurationNormalizer>? _logger;
 
         public string SupplierName => _configuration.Name;
 
-        public ConfigurationNormalizer(SupplierConfiguration configuration, ConfigurationPropertyNormalizer? propertyNormalizer = null)
+        public ConfigurationNormalizer(SupplierConfiguration configuration, ConfigurationPropertyNormalizer? propertyNormalizer = null, ILogger<ConfigurationNormalizer>? logger = null)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _dataTypeConverters = InitializeDataTypeConverters();
+            _logger = logger;
 
             // Initialize description extractor if ConfigurationPropertyNormalizer is available
             _descriptionExtractor = propertyNormalizer != null ? new ConfigurationDescriptionPropertyExtractor(propertyNormalizer.Configuration) : null;
@@ -103,7 +106,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
                 if (emptyRowsSkipped > 0)
                 {
-                    Console.WriteLine($"🔄 DEBUG: Skipped {emptyRowsSkipped} empty rows after row {dataStartIndex}");
+                    _logger?.LogDebug("Skipped {EmptyRowsSkipped} empty rows after row {DataStartIndex}", emptyRowsSkipped, dataStartIndex);
                 }
 
                 foreach (var row in dataRows)
@@ -136,12 +139,13 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                             {
                                 statistics.ProductsSkipped++;
                                 statistics.OrphanedCommercialRecords++;
-                                Console.WriteLine($"🔄 DEBUG: Skipped invalid product in row {row.Index}: Product='{offerProduct.Product?.Name ?? "null"}', EAN='{offerProduct.Product?.EAN ?? "null"}' (missing required data)");
+                                _logger?.LogDebug("Skipped invalid product in row {RowIndex}: Product='{ProductName}', EAN='{ProductEAN}' (missing required data)", 
+                                    row.Index, offerProduct.Product?.Name ?? "null", offerProduct.Product?.EAN ?? "null");
                             }
                         }
                         else
                         {
-                            //Console.WriteLine($"🔄 DEBUG: Skipped entire row {row.Index}: Row validation failed or marked for skipping");
+                            _logger?.LogTrace("Skipped entire row {RowIndex}: Row validation failed or marked for skipping", row.Index);
                         }
                     }
                     catch (Exception ex)
@@ -193,7 +197,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
                     if (string.IsNullOrEmpty(targetProperty))
                     {
-                        Console.WriteLine($"🔄 DEBUG: Skipped column {columnKey} in row {row.Index}: No target property defined");
+                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: No target property defined", columnKey, row.Index);
                         continue;
                     }
 
@@ -201,7 +205,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     var columnIndex = GetColumnIndex(columnKey);
                     if (columnIndex < 0 || columnIndex >= row.Cells.Count)
                     {
-                        Console.WriteLine($"🔄 DEBUG: Skipped column {columnKey} in row {row.Index}: Invalid column index {columnIndex} (row has {row.Cells.Count} cells)");
+                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Invalid column index {ColumnIndex} (row has {CellCount} cells)", 
+                            columnKey, row.Index, columnIndex, row.Cells.Count);
                         continue;
                     }
 
@@ -221,11 +226,13 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         if (validationResult.SkipEntireRow)
                         {
                             // Skip the entire row - return null to indicate row should be skipped
-                            //Console.WriteLine($"🔄 DEBUG: Skipping entire row {row.Index}: Validation failed for column {columnKey} with value '{rawValue}' - {validationResult.ErrorMessage}");
+                            _logger?.LogTrace("Skipping entire row {RowIndex}: Validation failed for column {ColumnKey} with value '{RawValue}' - {ErrorMessage}",
+                                row.Index, columnKey, rawValue, validationResult.ErrorMessage);
                             return null;
                         }
                         // Skip just this column
-                        Console.WriteLine($"🔄 DEBUG: Skipped column {columnKey} in row {row.Index}: Validation failed for value '{rawValue}' - {validationResult.ErrorMessage}");
+                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Validation failed for value '{RawValue}' - {ErrorMessage}",
+                            columnKey, row.Index, rawValue, validationResult.ErrorMessage);
                         continue;
                     }
 
@@ -233,7 +240,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     var processedValue = await ProcessCellValueAsync(rawValue, columnProperty);
                     if (processedValue == null && !columnProperty.AllowNull)
                     {
-                        Console.WriteLine($"🔄 DEBUG: Skipped column {columnKey} in row {row.Index}: Processed value is null but AllowNull=false (raw='{rawValue}')");
+                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Processed value is null but AllowNull=false (raw='{RawValue}')",
+                            columnKey, row.Index, rawValue);
                         continue;
                     }
 
@@ -564,7 +572,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             catch (ArgumentException ex)
             {
                 // Log regex error and return original value
-                Console.WriteLine($"🔄 DEBUG: Invalid regex pattern '{regexPattern}' for wildcard '{pattern}': {ex.Message}");
+                _logger?.LogWarning("Invalid regex pattern '{RegexPattern}' for wildcard '{WildcardPattern}': {ErrorMessage}",
+                    regexPattern, pattern, ex.Message);
             }
             
             // If no match or error, return original value

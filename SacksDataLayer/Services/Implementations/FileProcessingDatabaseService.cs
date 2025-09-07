@@ -50,7 +50,7 @@ namespace SacksDataLayer.Services.Implementations
         /// Inserts or updates a supplier offer and all its products/offer-products in a single transaction
         /// This method handles the database state-dependent operations
         /// </summary>
-        public async Task<FileProcessingBatchResult> InsertOrUpdateSupplierOfferAsync(
+        public async Task<FileProcessingResult> InsertOrUpdateSupplierOfferAsync(
             SupplierOfferEntity analysisOffer,
             SupplierOfferEntity dbOffer,
             SupplierConfiguration supplierConfig,
@@ -63,7 +63,7 @@ namespace SacksDataLayer.Services.Implementations
             
             cancellationToken.ThrowIfCancellationRequested();
             
-            var result = new FileProcessingBatchResult();
+            var result = new FileProcessingResult();
             var processorName = createdBy ?? "FileProcessor";
             
             try
@@ -252,9 +252,12 @@ namespace SacksDataLayer.Services.Implementations
                 
                 if (existingOffer != null)
                 {
-                    _logger.LogWarning("🔄 DEV MODE: Existing offer found - deleting and replacing: {SupplierName} - {OfferName}", supplierName, expectedOfferName);
+                    _logger.LogWarning("🔄 REPROCESSING: Existing offer found - deleting and replacing: {SupplierName} - {OfferName}", supplierName, expectedOfferName);
                     _logger.LogInformation("Deleting existing offer ID: {OfferId} with {ProductCount} products", 
                         existingOffer.Id, existingOffer.OfferProducts?.Count ?? 0);
+                    
+                    // 🔧 FIX: Clear change tracker before deletion to prevent tracking conflicts
+                    _context.ChangeTracker.Clear();
                     
                     // Delete the existing offer (cascade will automatically delete all OfferProducts)
                     var deleteSuccess = await _supplierOffersService.DeleteOfferAsync(existingOffer.Id);
@@ -262,6 +265,10 @@ namespace SacksDataLayer.Services.Implementations
                     if (deleteSuccess)
                     {
                         _logger.LogInformation("✅ Successfully deleted existing offer: {OfferName}", expectedOfferName);
+                        
+                        // Clear change tracker again after deletion to ensure clean state
+                        _context.ChangeTracker.Clear();
+                        _logger.LogDebug("Cleared change tracker after offer deletion to ensure clean state");
                     }
                     else
                     {
@@ -325,7 +332,7 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// Processes a batch of products with optimized bulk operations
         /// </summary>
-        public async Task<FileProcessingBatchResult> ProcessProductBatchAsync(
+        public async Task<FileProcessingResult> ProcessProductAsync(
             List<OfferProductEntity> products,
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
@@ -338,13 +345,17 @@ namespace SacksDataLayer.Services.Implementations
             
             cancellationToken.ThrowIfCancellationRequested();
             
-            var result = new FileProcessingBatchResult();
+            var result = new FileProcessingResult();
             var processorName = createdBy ?? "FileProcessor";
             
             try
             {
                 _logger.LogInformation("Processing batch of {ProductCount} products for offer: {OfferId}", 
                     products.Count, offer.Id);
+
+                // 🔧 FIX: Clear EF change tracker to prevent entity tracking conflicts when reprocessing files
+                _context.ChangeTracker.Clear();
+                _logger.LogDebug("Cleared EF change tracker to prevent entity tracking conflicts during reprocessing");
 
                 // Filter out products without EAN - this is normal, not an error
                 var validProducts = products.Where(p => !string.IsNullOrWhiteSpace(p.Product.EAN)).ToList();
@@ -365,7 +376,7 @@ namespace SacksDataLayer.Services.Implementations
                 var coreProperties = supplierConfig.GetCoreProductProperties();
                 var productsForBulkOperation = PrepareProductsForBulkOperation(validProducts, coreProperties);
 
-                // Step 2: Bulk create/update products
+                // Step 2: Bulk create/update products with proper entity state management
                 var (created, updated, bulkErrors) = await _productsService.BulkCreateOrUpdateProductsOptimizedAsync(
                     productsForBulkOperation, processorName);
 
@@ -463,7 +474,7 @@ namespace SacksDataLayer.Services.Implementations
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
             string processorName,
-            FileProcessingBatchResult result,
+            FileProcessingResult result,
             CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("ProcessOfferProductsAsync called with {ProductCount} products for offer {OfferId}", 
@@ -552,6 +563,16 @@ namespace SacksDataLayer.Services.Implementations
                 _logger.LogError(ex, "Failed to process offer products for offer: {OfferId}", offer.Id);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Clears the EF change tracker to prevent entity tracking conflicts during reprocessing
+        /// </summary>
+        public Task ClearChangeTrackerAsync(CancellationToken cancellationToken = default)
+        {
+            _context.ChangeTracker.Clear();
+            _logger.LogDebug("EF change tracker cleared successfully");
+            return Task.CompletedTask;
         }
     }
 }

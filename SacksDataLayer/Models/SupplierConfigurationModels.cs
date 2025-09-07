@@ -12,6 +12,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("version")]
         public string Version { get; set; } = "2.1";
 
+        [JsonPropertyName("metadata")]
+        public string FullPath { get; set; } = ".";
+        
         [JsonPropertyName("suppliers")]
         public List<SupplierConfiguration> Suppliers { get; set; } = new();
 
@@ -104,7 +107,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
             
             if (ColumnProperties == null) return result;
 
-            // Use provided config, or fall back to effective market configuration
+            // Use provided config, or the effective market configuration
             var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
 
             foreach (var kvp in ColumnProperties)
@@ -135,7 +138,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
             
             if (ColumnProperties == null) return result;
 
-            // Use provided config, or fall back to effective market configuration
+            // Use provided config, or the effective market configuration
             var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
 
             foreach (var kvp in ColumnProperties)
@@ -166,7 +169,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
             
             if (ColumnProperties == null) return result;
 
-            // Use provided config, or fall back to effective market configuration
+            // Use provided config, or the effective market configuration
             var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
 
             foreach (var kvp in ColumnProperties)
@@ -195,7 +198,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
         {
             if (ColumnProperties == null) return;
 
-            // Use provided config, or fall back to effective market configuration
+            // Use provided config, or the effective market configuration
             var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
             if (effectiveConfig == null) return;
 

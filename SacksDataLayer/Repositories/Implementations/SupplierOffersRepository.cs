@@ -71,6 +71,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 return false;
 
             _context.SupplierOffers.Remove(offer);
+            _context.SaveChanges();
             return true;
         }
 

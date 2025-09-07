@@ -12,13 +12,6 @@ namespace SacksDataLayer.Services.Interfaces
     /// </summary>
     public interface IFileValidationService
     {
-        /// <summary>
-        /// Validates if a file exists at the specified path
-        /// </summary>
-        /// <param name="filePath">Path to the file</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>True if file exists, false otherwise</returns>
-        Task<bool> ValidateFileExistsAsync(string filePath, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Reads file data from the specified path

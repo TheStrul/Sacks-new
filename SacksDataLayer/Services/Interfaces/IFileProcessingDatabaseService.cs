@@ -75,7 +75,7 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="createdBy">User who created the data</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Processing results with statistics</returns>
-        Task<FileProcessingBatchResult> InsertOrUpdateSupplierOfferAsync(
+        Task<FileProcessingResult> InsertOrUpdateSupplierOfferAsync(
             SupplierOfferEntity analysisOffer,
             SupplierOfferEntity dbOffer,
             SupplierConfiguration supplierConfig,
@@ -91,11 +91,18 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="createdBy">User who created the products</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Processing results with statistics</returns>
-        Task<FileProcessingBatchResult> ProcessProductBatchAsync(
+        Task<FileProcessingResult> ProcessProductAsync(
             List<OfferProductEntity> products,
             SupplierOfferEntity offer,
             SupplierConfiguration supplierConfig,
             string? createdBy = null,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Clears the EF change tracker to prevent entity tracking conflicts during reprocessing
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Task representing the async operation</returns>
+        Task ClearChangeTrackerAsync(CancellationToken cancellationToken = default);
     }
 }

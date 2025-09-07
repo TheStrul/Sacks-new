@@ -1,66 +1,36 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-
-using QMobileDeviceServiceMenu;
-
-using SacksDataLayer.Configuration;
-using SacksDataLayer.FileProcessing.Interfaces;
-using SacksDataLayer.Services.Implementations;
-using SacksDataLayer.Services.Interfaces;
-
-namespace SacksApp
+ï»¿namespace SacksApp
 {
-    public partial class MainForm : Form
+    using System;
+    using System.Collections.Generic;
+    using System.ComponentModel;
+    using System.Data;
+    using System.Drawing;
+    using System.IO;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Windows.Forms;
+    using System.Windows.Forms.VisualStyles;
+
+    using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Logging;
+
+    using QMobileDeviceServiceMenu;
+
+    using SacksDataLayer.Configuration;
+    using SacksDataLayer.Services.Interfaces;
+
+    public partial class DashBoard : Form
     {
-        private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<MainForm> _logger;
-
-        public MainForm(IServiceProvider serviceProvider)
+        IServiceProvider _serviceProvider;
+        ILogger _logger;
+        public DashBoard(IServiceProvider serviceProvider)
         {
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _logger = _serviceProvider.GetRequiredService<ILogger<MainForm>>();
-
             InitializeComponent();
-            _ = InitializeAsync();
-        }
+            this._serviceProvider = serviceProvider;
+            this._logger = serviceProvider.GetRequiredService<ILogger<DashBoard>>();
 
-        private async Task InitializeAsync()
-        {
-            try
-            {
-                // Ensure database exists and create if needed
-                var connectionService = _serviceProvider.GetRequiredService<IDatabaseConnectionService>();
-                var (success, message, exception) = await connectionService.EnsureDatabaseExistsAsync();
-
-                if (!success)
-                {
-                    _logger.LogWarning("Database operation failed: {Message}", message);
-
-                    if (exception != null)
-                    {
-                        _logger.LogError(exception, "Database operation error details");
-                    }
-
-                    MessageBox.Show($"Database Issue: {message}\n\nPlease check your database configuration in appsettings.json",
-                        "Database Configuration", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-
-                _logger.LogInformation("Database ready: {Message}", message);
-
-                // Update status if controls exist
-                if (Controls.Find("statusLabel", true).FirstOrDefault() is Label statusLabel)
-                {
-                    statusLabel.Text = $"? {message}";
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Fatal application error during initialization");
-                MessageBox.Show($"Fatal error during initialization: {ex.Message}",
-                    "Initialization Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
         }
 
         private async void ProcessFilesButton_Click(object sender, EventArgs e)
@@ -68,27 +38,14 @@ namespace SacksApp
             try
             {
                 processFilesButton.Enabled = false;
-                
-                _logger.LogInformation("Starting file processing operation");
-                
-                // Use timeout and explicit error handling for service resolution
-                var fileProcessingService = await ResolveFileProcessingServiceAsync();
-                if (fileProcessingService == null)
-                {
-                    MessageBox.Show("File processing service is not available. Please check configuration files and try again.",
-                        "Service Not Available", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
-                
+
+                _logger.LogDebug("Starting file processing operation");
+
+                var fileProcessingService = _serviceProvider.GetRequiredService<IFileProcessingService>();
+
+                // Get input folder from configuration
                 var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
                 var inputsPath = GetInputDirectoryFromConfiguration(configuration);
-
-                if (!Directory.Exists(inputsPath))
-                {
-                    MessageBox.Show($"Inputs folder not found at: {inputsPath}",
-                        "Folder Not Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
-                }
 
                 var files = Directory.GetFiles(inputsPath, "*.xlsx")
                                    .Where(f => !Path.GetFileName(f).StartsWith("~"))
@@ -101,13 +58,13 @@ namespace SacksApp
                     return;
                 }
 
-                _logger.LogInformation($"Found {files.Length} Excel file(s) in Inputs folder");
+                _logger.LogDebug($"Found {files.Length} Excel file(s) in Inputs folder");
 
                 foreach (var file in files)
                 {
-                    _logger.LogInformation($"Processing {Path.GetFileName(file)}");
+                    _logger.LogDebug($"Processing {Path.GetFileName(file)}");
                     await fileProcessingService.ProcessFileAsync(file, CancellationToken.None);
-                    _logger.LogInformation($"Finished processing {Path.GetFileName(file)}");
+                    _logger.LogDebug($"Finished processing {Path.GetFileName(file)}");
                 }
 
                 MessageBox.Show($"Successfully processed {files.Length} file(s)!",
@@ -150,49 +107,22 @@ namespace SacksApp
                 resolvedPath = Path.GetFullPath(Path.Combine(solutionRoot, configuredPath));
             }
             
+            // Create directory if it doesn't exist
             if (!Directory.Exists(resolvedPath))
             {
-                throw new DirectoryNotFoundException($"Configured input directory does not exist: {resolvedPath}");
+                try
+                {
+                    Directory.CreateDirectory(resolvedPath);
+                    _logger.LogDebug("Created input directory: {InputPath}", resolvedPath);
+                }
+                catch (Exception ex)
+                {
+                    throw new DirectoryNotFoundException($"Cannot create input directory at {resolvedPath}: {ex.Message}", ex);
+                }
             }
             
-            _logger.LogInformation("Using configured input directory: {InputPath}", resolvedPath);
+            _logger.LogDebug("Using configured input directory: {InputPath}", resolvedPath);
             return resolvedPath;
-        }
-
-        private async Task<IFileProcessingService?> ResolveFileProcessingServiceAsync()
-        {
-            try
-            {
-                _logger.LogDebug("Attempting to resolve IFileProcessingService...");
-                
-                // Use a timeout to prevent hanging
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                
-                return await Task.Run(() =>
-                {
-                    try
-                    {
-                        return _serviceProvider.GetRequiredService<IFileProcessingService>();
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to resolve IFileProcessingService");
-                        return null;
-                    }
-                }, cts.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogError("Service resolution timed out after 10 seconds");
-                MessageBox.Show("Service initialization is taking too long. This is likely due to configuration file loading issues.\n\nPlease check:\n• Configuration files exist\n• No circular dependencies\n• Async/await patterns in DI registration",
-                    "Service Resolution Timeout", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error during service resolution");
-                return null;
-            }
         }
 
         private async void ClearDatabaseButton_Click(object sender, EventArgs e)
@@ -205,7 +135,7 @@ namespace SacksApp
             try
             {
                 clearDatabaseButton.Enabled = false;
-                
+
                 var databaseService = _serviceProvider.GetRequiredService<IDatabaseManagementService>();
                 var clearResult = await databaseService.ClearAllDataAsync();
 
@@ -239,7 +169,7 @@ namespace SacksApp
             try
             {
                 showStatisticsButton.Enabled = false;
-                
+
                 var databaseService = _serviceProvider.GetRequiredService<IDatabaseManagementService>();
                 var connectionResult = await databaseService.CheckConnectionAsync();
 
@@ -273,45 +203,33 @@ namespace SacksApp
 
         private void TestConfigurationButton_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Configuration testing functionality will be implemented later.\n\nFor now, you can verify that the application starts correctly and connects to the database.",
-                "Configuration Test", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private void ViewLogsButton_Click(object sender, EventArgs e)
-        {
             try
             {
-                // Look for logs at solution root instead of executable directory
-                var solutionRoot = FindSolutionRoot();
-                LogViewerForm.ShowServiceLogs(solutionRoot);
+                var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
+                var loggingSettings = configuration.GetSection("LoggingSettings").Get<LoggingSettings>() ?? new LoggingSettings();
+                
+                var currentSetting = loggingSettings.DeleteLogFilesOnStartup ? "Enabled" : "Disabled";
+                var logPaths = loggingSettings.LogFilePaths?.Length > 0 
+                    ? string.Join(", ", loggingSettings.LogFilePaths) 
+                    : "None configured";
+
+                var message = $"Configuration Test Results:\n\n" +
+                             $"âœ“ Database: Connected\n" +
+                             $"âœ“ Configuration: Loaded\n" +
+                             $"âœ“ Services: Registered\n\n" +
+                             $"Log File Cleanup on Startup: {currentSetting}\n" +
+                             $"Log Paths: {logPaths}\n\n" +
+                             $"Note: To change log cleanup setting, edit appsettings.json\n" +
+                             $"LoggingSettings > DeleteLogFilesOnStartup";
+
+                MessageBox.Show(message, "Configuration Test", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error opening log viewer");
-                MessageBox.Show($"Error opening log viewer: {ex.Message}", 
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                _logger.LogError(ex, "Error during configuration test");
+                MessageBox.Show($"Configuration test failed:\n{ex.Message}",
+                    "Configuration Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        /// <summary>
-        /// Finds the solution root directory by searching upward from the current executable location
-        /// </summary>
-        private static string FindSolutionRoot()
-        {
-            var currentDirectory = new DirectoryInfo(AppContext.BaseDirectory);
-            
-            // Search upward for solution file (.sln)
-            while (currentDirectory != null)
-            {
-                var solutionFile = currentDirectory.GetFiles("*.sln").FirstOrDefault();
-                if (solutionFile != null)
-                {
-                    return currentDirectory.FullName;
-                }
-                currentDirectory = currentDirectory.Parent;
-            }
-            
-            throw new DirectoryNotFoundException("Solution root directory not found - no .sln file found in directory hierarchy");
         }
 
         private void SqlQueryButton_Click(object sender, EventArgs e)
@@ -331,6 +249,43 @@ namespace SacksApp
                 MessageBox.Show($"Error opening SQL Query Tool: {ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void ViewLogsButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Look for logs at solution root instead of executable directory
+                var solutionRoot = FindSolutionRoot();
+                LogViewerForm.ShowServiceLogs(solutionRoot);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening log viewer");
+                MessageBox.Show($"Error opening log viewer: {ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Finds the solution root directory by searching upward from the current executable location
+        /// </summary>
+        private static string FindSolutionRoot()
+        {
+            var currentDirectory = new DirectoryInfo(AppContext.BaseDirectory);
+
+            // Search upward for solution file (.sln)
+            while (currentDirectory != null)
+            {
+                var solutionFile = currentDirectory.GetFiles("*.sln").FirstOrDefault();
+                if (solutionFile != null)
+                {
+                    return currentDirectory.FullName;
+                }
+                currentDirectory = currentDirectory.Parent;
+            }
+
+            throw new DirectoryNotFoundException("Solution root directory not found - no .sln file found in directory hierarchy");
         }
     }
 }

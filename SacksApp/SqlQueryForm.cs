@@ -99,7 +99,7 @@ namespace SacksApp
             try
             {
                 SetExecutionState(true);
-                _logger.LogInformation("Executing SQL query: {Sql}", sql.Substring(0, Math.Min(sql.Length, 100)));
+                _logger.LogDebug("Executing SQL query: {Sql}", sql.Substring(0, Math.Min(sql.Length, 100)));
                 
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 
@@ -135,7 +135,7 @@ namespace SacksApp
                 
                 UpdateStatus($"? Query executed successfully - {rowCount:N0} rows, {columnCount} columns ({executionTime}ms)");
                 
-                _logger.LogInformation("SQL query executed successfully: {RowCount} rows, {ColumnCount} columns, {ExecutionTime}ms", 
+                _logger.LogDebug("SQL query executed successfully: {RowCount} rows, {ColumnCount} columns, {ExecutionTime}ms", 
                     rowCount, columnCount, executionTime);
             }
             catch (SqlException sqlEx)

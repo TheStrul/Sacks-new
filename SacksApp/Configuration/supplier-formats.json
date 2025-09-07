@@ -18,11 +18,13 @@
           "format": null,
           "defaultValue": null,
           "allowNull": false,
-          "maxLength": 50,
+          "maxLength": 20,
           "transformations": [],
           "isRequired": true,
           "isUnique": true,
-          "validationPatterns": [],
+          "validationPatterns": [
+            "^\\d+$"
+          ],
           "allowedValues": [],
           "skipEntireRow": true
         },
@@ -162,7 +164,7 @@
           "format": null,
           "defaultValue": null,
           "allowNull": false,
-          "maxLength": 50,
+          "maxLength": 20,
           "transformations": [],
           "isRequired": true,
           "isUnique": true,
@@ -271,7 +273,7 @@
           "format": null,
           "defaultValue": null,
           "allowNull": false,
-          "maxLength": 50,
+          "maxLength": 20,
           "transformations": [],
           "isRequired": true,
           "isUnique": true,
@@ -494,11 +496,13 @@
           "format": null,
           "defaultValue": null,
           "allowNull": false,
-          "maxLength": 50,
+          "maxLength": 20,
           "transformations": [],
           "isRequired": true,
           "isUnique": true,
-          "validationPatterns": [],
+          "validationPatterns": [
+            "^\\d+$"
+          ],
           "allowedValues": [],
           "skipEntireRow": true
         },
@@ -575,12 +579,7 @@
       "name": "JIZAN",
       "detection": {
         "fileNamePatterns": [
-          "jiz 31.08.25.xlsx",
-          "jiz 31.08.25.xls",
-          "jizan*.xlsx",
-          "jiz*.xlsx",
-          "jizan *.*.*.xlsx"
-        ]
+          "jiz*.xls*"        ]
       },
       "columnProperties": {
         "B": {
@@ -589,11 +588,13 @@
           "format": null,
           "defaultValue": null,
           "allowNull": false,
-          "maxLength": 50,
+          "maxLength": 20,
           "transformations": [],
           "isRequired": true,
           "isUnique": true,
-          "validationPatterns": [],
+          "validationPatterns": [
+            "^\\d+$"
+          ],
           "allowedValues": [],
           "skipEntireRow": true
         },
@@ -709,8 +710,7 @@
         "isSortable": false,
         "isRequired": true,
         "displayOrder": 1
-      },
-      "Category": {
+      },"Category": {
         "key": "Category",
         "displayName": "Product Category",
         "description": "Type of product to filter specific categories during processing",

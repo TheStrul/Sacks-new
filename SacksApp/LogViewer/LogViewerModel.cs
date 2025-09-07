@@ -98,13 +98,14 @@ namespace QMobileDeviceServiceMenu
 
         /// <summary>
         /// Microsoft .NET logging level definitions with patterns and colors for log parsing.
+        /// Supports both Serilog formats: [timestamp LEVEL]: and [timestamp LEVEL] :
         /// </summary>
         internal static readonly Dictionary<LogLevel, LogLevelDefinition> LogLevelDefinitions = new()
         {
-            [LogLevel.Error] = new(LogLevel.Error, "Error", "ERR", Color.Red, [" ERR]:"]),
-            [LogLevel.Warning] = new(LogLevel.Warning, "Warning", "WRN", Color.Orange, [" WRN]:"]),
-            [LogLevel.Info] = new(LogLevel.Info, "Info", "INF", Color.Green, [" INF]:"]),
-            [LogLevel.Debug] = new(LogLevel.Debug, "Debug", "DBG", Color.Gray, [" DBG]:"]),
+            [LogLevel.Error] = new(LogLevel.Error, "Error", "ERR", Color.Red, [" ERR]:", " ERR] :"]),
+            [LogLevel.Warning] = new(LogLevel.Warning, "Warning", "WRN", Color.Orange, [" WRN]:", " WRN] :"]),
+            [LogLevel.Info] = new(LogLevel.Info, "Info", "INF", Color.Green, [" INF]:", " INF] :"]),
+            [LogLevel.Debug] = new(LogLevel.Debug, "Debug", "DBG", Color.Gray, [" DBG]:", " DBG] :"]),
             [LogLevel.Default] = new(LogLevel.Default, "Default", "DEF", Color.LightGray, [])
         };
 
@@ -134,7 +135,7 @@ namespace QMobileDeviceServiceMenu
 
         /// <summary>
         /// Detects the log level of a given line for Microsoft .NET logging
-        /// Format: [HH:mm:ss.fff LEVEL]: Message
+        /// Format: [HH:mm:ss.fff LEVEL]: Message or [yyyy-MM-dd HH:mm:ss.fff +offset LEVEL] : Message
         /// </summary>
         internal static LogLevel DetectLogLevel(string line)
         {
@@ -143,23 +144,24 @@ namespace QMobileDeviceServiceMenu
                 return LogLevel.Default;
             }
 
-            // Microsoft .NET Logging patterns: [HH:mm:ss.fff LEVEL]:
-            if (line.Contains(" INF]:"))
+            // Serilog patterns: [timestamp LEVEL] : or [timestamp LEVEL]:
+            // Handle both formats with and without space after ]
+            if (line.Contains(" INF]"))
             {
                 return LogLevel.Info;
             }
 
-            if (line.Contains(" ERR]:"))
+            if (line.Contains(" ERR]"))
             {
                 return LogLevel.Error;
             }
 
-            if (line.Contains(" WRN]:"))
+            if (line.Contains(" WRN]"))
             {
                 return LogLevel.Warning;
             }
 
-            if (line.Contains(" DBG]:"))
+            if (line.Contains(" DBG]"))
             {
                 return LogLevel.Debug;
             }

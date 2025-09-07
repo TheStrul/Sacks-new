@@ -5,8 +5,6 @@ VisualStudioVersion = 17.14.36401.2
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SacksDataLayer", "SacksDataLayer\SacksDataLayer.csproj", "{8E523307-79E2-44A7-9D0D-A20C55FCC04C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SacksConsoleApp", "SacksConsoleApp\SacksConsoleApp.csproj", "{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
 	ProjectSection(SolutionItems) = preProject
 		.github\instructions\general.instructions.md = .github\instructions\general.instructions.md
@@ -37,18 +35,6 @@ Global
 		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Release|x64.Build.0 = Release|Any CPU
 		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Release|x86.ActiveCfg = Release|Any CPU
 		{8E523307-79E2-44A7-9D0D-A20C55FCC04C}.Release|x86.Build.0 = Release|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|x64.Build.0 = Debug|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Debug|x86.Build.0 = Debug|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|x64.ActiveCfg = Release|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|x64.Build.0 = Release|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|x86.ActiveCfg = Release|Any CPU
-		{99E6063C-FABE-1DE9-9341-B8F9C7D3DAB1}.Release|x86.Build.0 = Release|Any CPU
 		{25E37A7A-0EE7-4821-A18E-EE4157886CB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{25E37A7A-0EE7-4821-A18E-EE4157886CB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{25E37A7A-0EE7-4821-A18E-EE4157886CB5}.Debug|x64.ActiveCfg = Debug|Any CPU

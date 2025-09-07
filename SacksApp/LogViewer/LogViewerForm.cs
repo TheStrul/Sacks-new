@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Text;
+using System.Reflection;
 
 namespace QMobileDeviceServiceMenu
 {
@@ -94,40 +95,44 @@ namespace QMobileDeviceServiceMenu
 
             InitializeComponent();
 
+            // Enable double buffering for the RichTextBox using reflection
+            // This should be done after InitializeComponent to ensure logTextBox exists
+            EnableRichTextBoxDoubleBuffering();
+
             if (!DesignMode)
             {
-                SetupEventHandlers();
+                SetupControllerEventHandlers();
                 InitializeControls();
                 _controller.Initialize();
             }
         }
 
-        private void SetupEventHandlers()
+        /// <summary>
+        /// Enable double buffering for RichTextBox to reduce flicker
+        /// </summary>
+        private void EnableRichTextBoxDoubleBuffering()
         {
-            // Controller events
+            try
+            {
+                typeof(RichTextBox).InvokeMember("DoubleBuffered",
+                    BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
+                    null, this.logTextBox, new object[] { true });
+            }
+            catch
+            {
+                // Ignore if double buffering cannot be enabled
+            }
+        }
+
+        /// <summary>
+        /// Setup event handlers for controller events (non-designer events)
+        /// </summary>
+        private void SetupControllerEventHandlers()
+        {
+            // Controller events - these are not designer-generated events
             _controller.NewLogLines += Controller_NewLogLines;
             _controller.StatusUpdated += Controller_StatusUpdated;
             _controller.SearchCompleted += Controller_SearchCompleted;
-
-            // UI events
-            autoScrollCheckBox.CheckedChanged += AutoScrollCheckBox_CheckedChanged;
-            clearButton.Click += ClearButton_Click;
-            colorLegendButton.Click += ColorLegendButton_Click;
-
-            // Log level filter checkboxes
-            allCheckBox.CheckedChanged += AllCheckBox_CheckedChanged;
-            errorCheckBox.CheckedChanged += LogLevelCheckBox_CheckedChanged;
-            warningCheckBox.CheckedChanged += LogLevelCheckBox_CheckedChanged;
-            infoCheckBox.CheckedChanged += LogLevelCheckBox_CheckedChanged;
-            debugCheckBox.CheckedChanged += LogLevelCheckBox_CheckedChanged;
-            defaultCheckBox.CheckedChanged += LogLevelCheckBox_CheckedChanged;
-
-            searchBox.KeyDown += SearchBox_KeyDown;
-            searchButton.Click += SearchButton_Click;
-            this.KeyDown += LogViewerForm_KeyDown;
-
-            // Add mouse event for auto-copy functionality
-            logTextBox.MouseDown += LogTextBox_MouseDown;
         }
 
         private void InitializeControls()
@@ -147,29 +152,13 @@ namespace QMobileDeviceServiceMenu
         /// </summary>
         private void UpdateCheckboxStates()
         {
-            // Temporarily disable events to prevent recursion
-            allCheckBox.CheckedChanged -= AllCheckBox_CheckedChanged;
-            errorCheckBox.CheckedChanged -= LogLevelCheckBox_CheckedChanged;
-            warningCheckBox.CheckedChanged -= LogLevelCheckBox_CheckedChanged;
-            infoCheckBox.CheckedChanged -= LogLevelCheckBox_CheckedChanged;
-            debugCheckBox.CheckedChanged -= LogLevelCheckBox_CheckedChanged;
-            defaultCheckBox.CheckedChanged -= LogLevelCheckBox_CheckedChanged;
-
-            // Update checkbox states
+            // Update checkbox states without event manipulation since they're now wired in Designer
             allCheckBox.Checked = _model.SelectedLogLevels.Count == 5;
             errorCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Error);
             warningCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Warning);
             infoCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Info);
             debugCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Debug);
             defaultCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Default);
-
-            // Re-enable events
-            allCheckBox.CheckedChanged += AllCheckBox_CheckedChanged;
-            errorCheckBox.CheckedChanged += LogLevelCheckBox_CheckedChanged;
-            warningCheckBox.CheckedChanged += LogLevelCheckBox_CheckedChanged;
-            infoCheckBox.CheckedChanged += LogLevelCheckBox_CheckedChanged;
-            debugCheckBox.CheckedChanged += LogLevelCheckBox_CheckedChanged;
-            defaultCheckBox.CheckedChanged += LogLevelCheckBox_CheckedChanged;
         }
 
         private void Controller_NewLogLines(object? sender, LogLinesEventArgs e)
@@ -282,11 +271,11 @@ namespace QMobileDeviceServiceMenu
                 return;
             }
 
+            // Disable repainting during the update
+            logTextBox.SuspendLayout();
+
             try
             {
-                // Disable repainting during the update
-                logTextBox.SuspendLayout();
-
                 // Store current selection and scroll position
                 int selectionStart = logTextBox.SelectionStart;
                 int selectionLength = logTextBox.SelectionLength;
@@ -339,15 +328,6 @@ namespace QMobileDeviceServiceMenu
                     logTextBox.SelectionLength = Math.Min(selectionLength, logTextBox.Text.Length - logTextBox.SelectionStart);
                 }
             }
-            catch (Exception)
-            {
-                // Fallback to simple method if RTF generation fails
-                logTextBox.Clear();
-                foreach (var line in lines)
-                {
-                    AppendColoredLogLine(line);
-                }
-            }
             finally
             {
                 logTextBox.ResumeLayout();
@@ -375,7 +355,139 @@ namespace QMobileDeviceServiceMenu
 
         private void ClearButton_Click(object? sender, EventArgs e)
         {
-            logTextBox.Clear();
+            var result = MessageBox.Show(
+                "This will clear the log display and attempt to clear the log file.\n\nNote: The actual file may not be clearable while the application is running.\n\nContinue?",
+                "Clear Logs",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question,
+                MessageBoxDefaultButton.Button1);
+
+            if (result != DialogResult.Yes) return;
+
+            try
+            {
+                // Stop monitoring to release LogViewer's file handle
+                _controller.StopMonitoring();
+                
+                // Always clear the display immediately for user feedback
+                logTextBox.Clear();
+                statusLabel.Text = $"Monitoring: {_model.LogFileName} | Display cleared";
+                
+                if (File.Exists(_model.LogFilePath))
+                {
+                    // Try the soft approach: attempt file operations but don't fail if they don't work
+                    var clearResult = AttemptLogFileClear();
+                    
+                    switch (clearResult.Result)
+                    {
+                        case ClearResult.Success:
+                            statusLabel.Text = $"Monitoring: {_model.LogFileName} | Log file cleared successfully";
+                            break;
+                            
+                        case ClearResult.PartialSuccess:
+                            statusLabel.Text = $"Monitoring: {_model.LogFileName} | Display cleared (file may still contain data)";
+                            break;
+                            
+                        case ClearResult.Failed:
+                            statusLabel.Text = $"Monitoring: {_model.LogFileName} | Display cleared (file locked by Serilog)";
+                            
+                            // Show informational message without making it seem like an error
+                            MessageBox.Show(
+                                "Log display has been cleared.\n\n" +
+                                "The log file itself cannot be cleared while the application is actively logging.\n\n" +
+                                "This is normal behavior - new log entries will continue to be appended to the file.",
+                                "Display Cleared", 
+                                MessageBoxButtons.OK, 
+                                MessageBoxIcon.Information);
+                            break;
+                    }
+                }
+                else
+                {
+                    statusLabel.Text = $"Monitoring: {_model.LogFileName} | Display cleared (no log file)";
+                }
+            }
+            catch (Exception ex)
+            {
+                statusLabel.Text = $"Monitoring: {_model.LogFileName} | Error: {ex.Message}";
+                MessageBox.Show($"Error during clear operation: {ex.Message}",
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                // Always restart monitoring regardless of file clear success
+                _controller.StartMonitoring();
+            }
+        }
+
+        /// <summary>
+        /// Attempts to clear the log file using multiple strategies, but gracefully handles failures
+        /// </summary>
+        private (ClearResult Result, string Method) AttemptLogFileClear()
+        {
+            // Strategy 1: Try gentle truncation (least likely to conflict)
+            try
+            {
+                using var fileStream = new FileStream(_model.LogFilePath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite);
+                fileStream.SetLength(0);
+                fileStream.Flush();
+                return (ClearResult.Success, "truncation");
+            }
+            catch (IOException)
+            {
+                // Expected when Serilog has exclusive access
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // File permissions issue
+            }
+
+            // Strategy 2: Try overwrite with empty content (sometimes works when truncation doesn't)
+            try
+            {
+                File.WriteAllText(_model.LogFilePath, "", System.Text.Encoding.UTF8);
+                return (ClearResult.Success, "overwrite");
+            }
+            catch (IOException)
+            {
+                // Expected when Serilog has exclusive access
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // File permissions issue
+            }
+
+            // Strategy 3: Try deletion (least likely to work but worth attempting)
+            try
+            {
+                File.Delete(_model.LogFilePath);
+                // Verify deletion
+                if (!File.Exists(_model.LogFilePath))
+                {
+                    return (ClearResult.Success, "deletion");
+                }
+            }
+            catch (IOException)
+            {
+                // Expected when Serilog has exclusive access
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // File permissions issue
+            }
+
+            // All strategies failed - this is normal when Serilog is actively writing
+            return (ClearResult.Failed, "none");
+        }
+
+        /// <summary>
+        /// Result codes for log file clearing attempts
+        /// </summary>
+        private enum ClearResult
+        {
+            Success,        // File was successfully cleared
+            PartialSuccess, // Display cleared but file may still have content
+            Failed          // Unable to clear file (normal when Serilog is active)
         }
 
         private void ColorLegendButton_Click(object? sender, EventArgs e)

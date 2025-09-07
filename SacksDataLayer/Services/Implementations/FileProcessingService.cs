@@ -132,13 +132,13 @@ namespace SacksDataLayer.Services.Implementations
                 _logger.LogInformation("🚀 Starting bulletproof file processing for {FileName}", fileName);
 
                 // 🛡️ STEP 1: Enhanced file validation with size and accessibility checks
-                await ValidateFileWithEnhancedChecksAsync(filePath, correlationId, cancellationToken);
+                ValidateFileWithEnhancedChecksAsync(filePath, correlationId, cancellationToken);
 
                 // 🔧 STEP 2: Ensure database is ready with connection validation
                 await EnsureDatabaseReadyWithValidationAsync(correlationId, cancellationToken);
 
                 // 🎯 STEP 3: Auto-detect supplier
-                var supplierConfig = await DetectSupplierAsync(filePath, correlationId, cancellationToken);
+                var supplierConfig = DetectSupplier(filePath, correlationId);
 
                 // 📖 STEP 4: Read file data with memory monitoring
                 var fileData = await ReadFileDataWithMonitoringAsync(filePath, correlationId, cancellationToken);
@@ -238,15 +238,10 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// 🔍 ENHANCED: File validation with size and accessibility checks
         /// </summary>
-        private async Task ValidateFileWithEnhancedChecksAsync(string filePath, string correlationId, CancellationToken cancellationToken)
+        private void ValidateFileWithEnhancedChecksAsync(string filePath, string correlationId, CancellationToken cancellationToken)
         {
             try
             {
-                // Check file existence
-                if (!await _fileValidationService.ValidateFileExistsAsync(filePath, cancellationToken))
-                {
-                    throw new FileNotFoundException($"File not found: {filePath}");
-                }
 
                 // Check file size
                 var fileSizeMB = GetFileSizeInMB(filePath);
@@ -299,13 +294,13 @@ namespace SacksDataLayer.Services.Implementations
         }
 
         /// <summary>
-        /// 🎯 ENHANCED: Supplier detection with fallback mechanisms
+        /// 🎯 ENHANCED: Supplier detection using synchronous service method
         /// </summary>
-        private async Task<SupplierConfiguration> DetectSupplierAsync(string filePath, string correlationId, CancellationToken cancellationToken)
+        private SupplierConfiguration DetectSupplier(string filePath, string correlationId)
         {
             try
             {
-                var supplierConfig = await _supplierConfigurationService.DetectSupplierFromFileAsync(filePath, cancellationToken);
+                var supplierConfig = _supplierConfigurationService.DetectSupplierFromFileAsync(filePath);
                 
                 if (supplierConfig == null)
                 {
@@ -319,8 +314,8 @@ namespace SacksDataLayer.Services.Implementations
                 }
 
                 _logger.LogSupplierDetection(Path.GetFileName(filePath), supplierConfig.Name, "FilePattern", correlationId);
-                _logger.LogInformation("Auto-detected supplier: {SupplierName} for file: {FileName}", supplierConfig.Name, Path.GetFileName(filePath));
-                _logger.LogInformation("Detected supplier: {SupplierName}", supplierConfig.Name);
+                _logger.LogDebug("Auto-detected supplier: {SupplierName} for file: {FileName}", supplierConfig.Name, Path.GetFileName(filePath));
+                _logger.LogDebug("Detected supplier: {SupplierName}", supplierConfig.Name);
                 
                 // Resolve column properties with market configuration
                 _logger.LogDebug("Resolving column properties with market configuration for supplier: {SupplierName}", supplierConfig.Name);
@@ -513,11 +508,15 @@ namespace SacksDataLayer.Services.Implementations
                     var productCount = analysisResult.SupplierOffer.OfferProducts.Count();
                     _logger.LogInformation("Analyzed {ProductCount:N0} product offers from file", productCount);
 
-                    // Step 4: Database operations - Insert/Update based on current database state
-                    _logger.LogDebug("Performing database insert/update operations in single transaction");
+                    // Step 4: 🔧 FIX - Use ProcessProductAsync which handles duplicate EANs properly
+                    _logger.LogDebug("Processing products using optimized batch method with duplicate EAN handling");
                     
-                    var batchResult = await _databaseService.InsertOrUpdateSupplierOfferAsync(
-                        analysisResult.SupplierOffer, offer, supplierConfig, "BulletproofProcessor", ct);
+                    var batchResult = await _databaseService.ProcessProductAsync(
+                        analysisResult.SupplierOffer.OfferProducts.ToList(), 
+                        offer, 
+                        supplierConfig, 
+                        "BulletproofProcessor", 
+                        ct);
 
                     // Step 5: Final save for all remaining changes
                     await _unitOfWork.SaveChangesAsync(ct);
@@ -536,7 +535,7 @@ namespace SacksDataLayer.Services.Implementations
                 _logger.LogWarning("DUPLICATE OFFER DETECTED");
                 _logger.LogWarning("Supplier: {SupplierName}", ex.SupplierName);
                 _logger.LogWarning("File: {FileName}", ex.FileName);
-                _logger.LogWarning("Existing Offer: {OfferName}", ex.OfferName);
+                _logger.LogWarning("Existing Offer: {OfferName}", ex. OfferName);
                 _logger.LogInformation("SOLUTION:");
                 _logger.LogInformation("Rename the file '{FileName}' to a different name", ex.FileName);
                 _logger.LogInformation("Or delete/deactivate the existing offer first");
@@ -568,7 +567,7 @@ namespace SacksDataLayer.Services.Implementations
         private void DisplayProcessingResults(
             SupplierEntity supplier, 
             SupplierOfferEntity offer, 
-            FileProcessingBatchResult batchResult, 
+            FileProcessingResult batchResult, 
             long processingTimeMs)
         {
             // Show only essential summary to user
@@ -620,7 +619,8 @@ namespace SacksDataLayer.Services.Implementations
                 SupplierOffer = null // No database entity during analysis
             };
             
-            var normalizer = new ConfigurationNormalizer(supplierConfig, _propertyNormalizer);
+            // Create a logger for ConfigurationNormalizer - we'll pass null for now since the logger is optional
+            var normalizer = new ConfigurationNormalizer(supplierConfig, _propertyNormalizer, null);
             var analysisResult = await normalizer.NormalizeAsync(fileData, analysisContext);
             
             return analysisResult;
@@ -650,7 +650,7 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// 🔍 VALIDATION: Validate dataStartRowIndex configuration
         /// </summary>
-        private async Task ValidateDataStartRowIndex(string filePath, SupplierConfiguration config)
+        private Task ValidateDataStartRowIndex(string filePath, SupplierConfiguration config)
         {
             try
             {
@@ -659,7 +659,7 @@ namespace SacksDataLayer.Services.Implementations
                 using var reader = new StreamReader(stream);
                 
                 int rowCount = 0;
-                while (await reader.ReadLineAsync() != null)
+                while (reader.ReadLine() != null)
                 {
                     rowCount++;
                 }
@@ -678,29 +678,45 @@ namespace SacksDataLayer.Services.Implementations
                         "✅ FileStructure DataStartRowIndex: {DataStartRow} (1-based) is valid for file with {RowCount} rows",
                         config.FileStructure.DataStartRowIndex, rowCount);
                 }
+                
+                return Task.CompletedTask;
             }
             catch (Exception ex) when (!(ex is InvalidOperationException))
             {
                 _logger.LogWarning(ex, 
                     "⚠️ Could not validate dataStartRowIndex for file {FileName}. Proceeding with caution...", 
                     Path.GetFileName(filePath));
+                return Task.CompletedTask;
             }
         }
 
         #endregion
 
-        #region Disposal Pattern
+        #region IDisposable Support
 
-        /// <summary>
-        /// 🧹 CLEANUP: Dispose resources properly
-        /// </summary>
-        public void Dispose()
+        private void Dispose(bool disposing)
         {
             if (!_disposed)
             {
-                _processingLock?.Dispose();
+                if (disposing)
+                {
+                    // Dispose managed resources
+                    _processingLock?.Dispose();
+                }
+
+                // Dispose unmanaged resources (if any)
+
                 _disposed = true;
             }
+        }
+
+        /// <summary>
+        /// Dispose the service and release resources
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         #endregion

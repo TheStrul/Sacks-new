@@ -182,6 +182,35 @@ namespace QMobileDeviceServiceMenu
             OnStatusUpdated("Real-time monitoring active");
         }
 
+        /// <summary>
+        /// Stops real-time monitoring and releases file handles
+        /// </summary>
+        internal void StopMonitoring()
+        {
+            _model.IsMonitoring = false;
+            _refreshTimer.Stop();
+            OnStatusUpdated("Monitoring stopped");
+        }
+
+        /// <summary>
+        /// Starts or restarts real-time monitoring
+        /// </summary>
+        internal void StartMonitoring()
+        {
+            if (!string.IsNullOrEmpty(_model.LogFilePath))
+            {
+                _model.IsMonitoring = true;
+                _refreshTimer.Start();
+                OnStatusUpdated("Real-time monitoring active");
+                
+                // Reset file position if file doesn't exist (new file will be created)
+                if (!File.Exists(_model.LogFilePath))
+                {
+                    _model.LastFilePosition = 0;
+                }
+            }
+        }
+
         private void RefreshTimer_Tick(object? sender, EventArgs e)
         {
             CheckForNewLogEntries();

@@ -24,12 +24,11 @@
     <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
   </ItemGroup>
 
   <!-- Copy configuration and input files to output directory -->
   <ItemGroup>
-    <None Include="appsettings.json">
+    <None Include="Configuration\appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <!-- Copy all configuration JSON files -->
@@ -41,12 +40,17 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <!-- Ensure logs directory exists -->
   <ItemGroup>
-    <None Include="logs\.gitkeep">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Compile Remove="MainForm.cs" />
+    <Compile Remove="MainForm.Designer.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Remove="MainForm.resx" />
+  </ItemGroup>
+
+  <!-- Ensure solution root logs directory exists at build time -->
+  <Target Name="CreateLogsDirectory" BeforeTargets="Build">
+    <MakeDir Directories="$(MSBuildProjectDirectory)\..\..\logs" />
+  </Target>
 
 </Project>

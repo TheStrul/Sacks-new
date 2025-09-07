@@ -5,9 +5,17 @@
     using System.Text;
     using ExcelDataReader;
     using System.Data;
+    using Microsoft.Extensions.Logging;
 
     public class FileDataReader : IFileDataReader
     {
+        private readonly ILogger<FileDataReader>? _logger;
+
+        public FileDataReader(ILogger<FileDataReader>? logger = null)
+        {
+            _logger = logger;
+        }
+
         public async Task<FileData> ReadFileAsync(string fullPath)
         {
             if (string.IsNullOrWhiteSpace(fullPath))
@@ -21,6 +29,8 @@
 
             try
             {
+                _logger?.LogDebug("Starting to read file: {FilePath} with extension: {FileExtension}", fullPath, fileExtension);
+
                 switch (fileExtension)
                 {
                     case ".csv":
@@ -32,21 +42,26 @@
                         break;
                     default:
                         // Assume CSV format for unknown extensions
+                        _logger?.LogWarning("Unknown file extension {FileExtension}, treating as CSV", fileExtension);
                         await ReadCsvFileAsync(fileData, fullPath);
                         break;
                 }
 
                 fileData.RowCount = fileData.DataRows.Count;
+                _logger?.LogInformation("Successfully read file: {FilePath} with {RowCount} total rows", fullPath, fileData.RowCount);
                 return fileData;
             }
             catch (Exception ex)
             {
+                _logger?.LogError(ex, "Failed to read file: {FilePath}", fullPath);
                 throw new InvalidOperationException($"Failed to read file '{fullPath}': {ex.Message}", ex);
             }
         }
 
         private async Task ReadCsvFileAsync(FileData fileData, string fullPath)
         {
+            _logger?.LogDebug("Reading CSV file: {FilePath}", fullPath);
+            
             using var reader = new StreamReader(fullPath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
             int rowIndex = 0;
 
@@ -65,10 +80,14 @@
                 fileData.DataRows.Add(rowData);
                 rowIndex++;
             }
+
+            _logger?.LogDebug("Completed reading CSV file: {FilePath} with {RowCount} rows", fullPath, rowIndex);
         }
 
         private async Task ReadExcelFileAsync(FileData fileData, string fullPath)
         {
+            _logger?.LogDebug("Reading Excel file: {FilePath}", fullPath);
+            
             // Register the encoding provider for Excel files
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
@@ -81,7 +100,7 @@
 
             do
             {
-                Console.WriteLine($"Processing worksheet {worksheetIndex + 1}...");
+                _logger?.LogDebug("Processing worksheet {WorksheetIndex} in file: {FilePath}", worksheetIndex + 1, fullPath);
                 int rowsInCurrentWorksheet = 0;
 
                 while (reader.Read())
@@ -111,12 +130,15 @@
                     rowsInCurrentWorksheet++;
                 }
 
-                Console.WriteLine($"Worksheet {worksheetIndex + 1}: {rowsInCurrentWorksheet} rows processed");
+                _logger?.LogDebug("Worksheet {WorksheetIndex} completed: {RowsProcessed} rows processed", 
+                    worksheetIndex + 1, rowsInCurrentWorksheet);
                 worksheetIndex++;
                 
             } while (reader.NextResult()); // Move to next worksheet if any
 
-            Console.WriteLine($"Total rows processed: {rowIndex}");
+            _logger?.LogInformation("Excel file processing completed: {FilePath} - Total rows: {TotalRows}, Worksheets: {WorksheetCount}", 
+                fullPath, rowIndex, worksheetIndex);
+            
             await Task.CompletedTask; // Make method async-compatible
         }
 

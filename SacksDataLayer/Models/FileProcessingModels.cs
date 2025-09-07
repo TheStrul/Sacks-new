@@ -7,7 +7,7 @@ namespace SacksDataLayer.Models
     /// <summary>
     /// Result model for file processing operations
     /// </summary>
-    public class FileProcessingBatchResult
+    public class FileProcessingResult
     {
         /// <summary>
         /// Number of products created
@@ -49,23 +49,5 @@ namespace SacksDataLayer.Models
         /// </summary>
         public int TotalProcessed => ProductsCreated + ProductsUpdated + OfferProductsCreated + OfferProductsUpdated + Errors;
 
-        /// <summary>
-        /// Combines results from multiple processing operations
-        /// </summary>
-        public FileProcessingBatchResult CombineWith(FileProcessingBatchResult other)
-        {
-            ArgumentNullException.ThrowIfNull(other);
-            
-            return new FileProcessingBatchResult
-            {
-                ProductsCreated = ProductsCreated + other.ProductsCreated,
-                ProductsUpdated = ProductsUpdated + other.ProductsUpdated,
-                OfferProductsCreated = OfferProductsCreated + other.OfferProductsCreated,
-                OfferProductsUpdated = OfferProductsUpdated + other.OfferProductsUpdated,
-                Errors = Errors + other.Errors,
-                ProcessingTimeMs = ProcessingTimeMs + other.ProcessingTimeMs,
-                ErrorMessages = ErrorMessages.Concat(other.ErrorMessages).ToList()
-            };
-        }
     }
 }

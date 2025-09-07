@@ -3,6 +3,7 @@ using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace SacksDataLayer.Services.Implementations
 {
@@ -14,15 +15,18 @@ namespace SacksDataLayer.Services.Implementations
         private readonly IOfferProductsRepository _repository;
         private readonly ISupplierOffersRepository _offersRepository;
         private readonly IProductsRepository _productsRepository;
+        private readonly ILogger<OfferProductsService> _logger;
 
         public OfferProductsService(
             IOfferProductsRepository repository,
             ISupplierOffersRepository offersRepository,
-            IProductsRepository productsRepository)
+            IProductsRepository productsRepository,
+            ILogger<OfferProductsService> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _offersRepository = offersRepository ?? throw new ArgumentNullException(nameof(offersRepository));
             _productsRepository = productsRepository ?? throw new ArgumentNullException(nameof(productsRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<OfferProductEntity?> GetOfferProductAsync(int id)
@@ -121,7 +125,8 @@ namespace SacksDataLayer.Services.Implementations
                 catch (Exception ex)
                 {
                     // Log error but continue with other offer-products
-                    Console.WriteLine($"Error processing offer-product {offerProduct.Id}: {ex.Message}");
+                    _logger.LogError(ex, "Error processing offer-product {OfferProductId}: {ErrorMessage}", 
+                        offerProduct.Id, ex.Message);
                     throw; // Re-throw for now, but could be changed to continue processing
                 }
             }

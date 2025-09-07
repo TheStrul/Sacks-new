@@ -115,16 +115,15 @@ namespace SacksDataLayer.Configuration
         /// <summary>
         /// Loads normalization configuration from JSON file
         /// </summary>
-        public async Task<ProductPropertyNormalizationConfiguration> LoadConfigurationAsync(string filePath, CancellationToken cancellationToken = default)
+        public async Task<ProductPropertyNormalizationConfiguration> LoadConfigurationAsync(string fullPath, CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+            ArgumentException.ThrowIfNullOrWhiteSpace(fullPath);
+            if (!File.Exists(fullPath))
+                throw new FileNotFoundException($"Configuration file not found: {fullPath}");
 
-            // Use the shared file locator to find the configuration file
-            var actualFilePath = ConfigurationFileLocator.FindConfigurationFileOrThrow(filePath);
-
-            var json = await File.ReadAllTextAsync(actualFilePath, cancellationToken);
+            var json = await File.ReadAllTextAsync(fullPath, cancellationToken);
             var config = JsonSerializer.Deserialize<ProductPropertyNormalizationConfiguration>(json, DefaultOptions)
-                ?? throw new InvalidOperationException($"Failed to deserialize normalization configuration from {actualFilePath}");
+                ?? throw new InvalidOperationException($"Failed to deserialize normalization configuration from {fullPath}");
 
             _configurations[config.ProductType] = config;
             return config;

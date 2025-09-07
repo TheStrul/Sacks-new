@@ -14,7 +14,7 @@ namespace SacksDataLayer.Extensions
         /// </summary>
         public static void LogFileProcessingStart(this ILogger logger, string fileName, string supplierName, string correlationId)
         {
-            logger.LogInformation("📁 File processing started: {FileName} for supplier {SupplierName} [CorrelationId: {CorrelationId}]",
+            logger.LogDebug("📁 File processing started: {FileName} for supplier {SupplierName} [CorrelationId: {CorrelationId}]",
                 fileName, supplierName, correlationId);
         }
 
@@ -24,7 +24,7 @@ namespace SacksDataLayer.Extensions
         public static void LogFileProcessingComplete(this ILogger logger, string fileName, int recordsProcessed, 
             long durationMs, string correlationId)
         {
-            logger.LogInformation("✅ File processing completed: {FileName} - {RecordsProcessed} records in {DurationMs}ms [CorrelationId: {CorrelationId}]",
+            logger.LogDebug("✅ File processing completed: {FileName} - {RecordsProcessed} records in {DurationMs}ms [CorrelationId: {CorrelationId}]",
                 fileName, recordsProcessed, durationMs, correlationId);
         }
 
@@ -34,17 +34,17 @@ namespace SacksDataLayer.Extensions
         public static void LogDatabaseOperation(this ILogger logger, string operation, string? ean, 
             long durationMs, string correlationId)
         {
-            logger.LogInformation("🗄️ Database {Operation}: EAN={EAN} in {DurationMs}ms [CorrelationId: {CorrelationId}]",
+            logger.LogDebug("🗄️ Database {Operation}: EAN={EAN} in {DurationMs}ms [CorrelationId: {CorrelationId}]",
                 operation, ean ?? "N/A", durationMs, correlationId);
         }
 
         /// <summary>
-        /// Logs bulk database operation with batch details
+        /// Logs bulk database operation with details
         /// </summary>
         public static void LogBulkDatabaseOperation(this ILogger logger, string operation, int itemCount, 
             long durationMs, string correlationId)
         {
-            logger.LogInformation("🗄️ Bulk {Operation}: {ItemCount} items in {DurationMs}ms [CorrelationId: {CorrelationId}]",
+            logger.LogDebug("🗄️ Bulk {Operation}: {ItemCount} items in {DurationMs}ms [CorrelationId: {CorrelationId}]",
                 operation, itemCount, durationMs, correlationId);
         }
 
@@ -54,7 +54,7 @@ namespace SacksDataLayer.Extensions
         public static void LogSupplierDetection(this ILogger logger, string fileName, string detectedSupplier, 
             string detectionMethod, string correlationId)
         {
-            logger.LogInformation("🔍 Supplier detected: {FileName} → {DetectedSupplier} via {DetectionMethod} [CorrelationId: {CorrelationId}]",
+            logger.LogDebug("🔍 Supplier detected: {FileName} → {DetectedSupplier} via {DetectionMethod} [CorrelationId: {CorrelationId}]",
                 fileName, detectedSupplier, detectionMethod, correlationId);
         }
 
@@ -71,7 +71,7 @@ namespace SacksDataLayer.Extensions
             }
             else
             {
-                logger.LogInformation("✅ Validation passed: {Context} - {ValidItems} items [CorrelationId: {CorrelationId}]",
+                logger.LogDebug("✅ Validation passed: {Context} - {ValidItems} items [CorrelationId: {CorrelationId}]",
                     context, validItems, correlationId);
             }
         }

@@ -2,6 +2,7 @@
 using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace SacksDataLayer.Services.Implementations
 {
@@ -11,10 +12,12 @@ namespace SacksDataLayer.Services.Implementations
     public class ProductsService : IProductsService
     {
         private readonly IProductsRepository _repository;
+        private readonly ILogger<ProductsService> _logger;
 
-        public ProductsService(IProductsRepository repository)
+        public ProductsService(IProductsRepository repository, ILogger<ProductsService> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<ProductEntity?> GetProductAsync(int id)
@@ -177,7 +180,8 @@ namespace SacksDataLayer.Services.Implementations
                 catch (Exception ex)
                 {
                     // Log error but continue with other products
-                    Console.WriteLine($"Error processing product {product.Name} (EAN: {product.EAN}): {ex.Message}");
+                    _logger.LogError(ex, "Error processing product {ProductName} (EAN: {ProductEAN}): {ErrorMessage}", 
+                        product.Name, product.EAN, ex.Message);
                     errors++;
                 }
             }
@@ -221,7 +225,8 @@ namespace SacksDataLayer.Services.Implementations
                     // Check if EAN already processed in this batch
                     if (processedEANs.Contains(product.EAN))
                     {
-                        Console.WriteLine($"⚠️ Skipping duplicate EAN '{product.EAN}' within the same batch (Product: {product.Name})");
+                        _logger.LogWarning("Skipping duplicate EAN '{ProductEAN}' within the same batch (Product: {ProductName})", 
+                            product.EAN, product.Name);
                         errors++;
                         continue;
                     }
@@ -247,7 +252,8 @@ namespace SacksDataLayer.Services.Implementations
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing product {product.Name} (EAN: {product.EAN}): {ex.Message}");
+                    _logger.LogError(ex, "Error processing product {ProductName} (EAN: {ProductEAN}): {ErrorMessage}", 
+                        product.Name, product.EAN, ex.Message);
                     errors++;
                 }
             }
