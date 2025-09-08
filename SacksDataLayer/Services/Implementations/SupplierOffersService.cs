@@ -73,15 +73,32 @@ namespace SacksDataLayer.Services.Implementations
             if (supplier == null)
                 throw new InvalidOperationException($"Supplier with ID {supplierId} not found");
 
+            return CreateOfferFromFileAsync(supplier, fileName, processingDate, currency, offerType, createdBy);
+        }
+
+        /// <summary>
+        /// Creates a new offer from file processing context using a supplier entity
+        /// This overload eliminates the need for database validation of supplier existence
+        /// </summary>
+        public SupplierOfferAnnex CreateOfferFromFileAsync(SupplierEntity supplier, string fileName, 
+            DateTime processingDate, string? currency = null, string? offerType = "File Import", 
+            string? createdBy = null)
+        {
+            ArgumentNullException.ThrowIfNull(supplier);
+            if (string.IsNullOrWhiteSpace(fileName)) 
+                throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
+
             var offer = new SupplierOfferAnnex
             {
-                SupplierId = supplierId,
+                // ✅ DON'T set SupplierId manually - let EF handle it via navigation
+                Supplier = supplier,  // Set navigation property instead
                 OfferName = $"{supplier.Name} - {fileName}",
                 Description = $"Automatic import from file: {fileName}",
                 Currency = currency ?? "USD",
             };
 
-            _offerRepository.Add(offer);
+            // ✅ Add to supplier's collection instead of repository directly
+            supplier.Offers.Add(offer);
 
             return offer;
         }
@@ -144,8 +161,9 @@ namespace SacksDataLayer.Services.Implementations
             if (offer == null)
                 throw new ArgumentNullException(nameof(offer));
 
-            if (offer.SupplierId <= 0)
-                throw new ArgumentException("Valid supplier ID is required", nameof(offer));
+            // Navigation property validation
+            if (offer.Supplier == null && offer.SupplierId <= 0)
+                throw new ArgumentException("Either Supplier navigation property or valid SupplierId is required", nameof(offer));
 
             if (!string.IsNullOrEmpty(offer.OfferName) && offer.OfferName.Length > 255)
                 throw new ArgumentException("Offer name cannot exceed 255 characters", nameof(offer));

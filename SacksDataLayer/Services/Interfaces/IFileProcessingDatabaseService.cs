@@ -24,26 +24,12 @@ namespace SacksDataLayer.Services.Interfaces
         /// Creates or retrieves a supplier based on the supplier configuration
         /// </summary>
         /// <param name="supplierConfig">Supplier configuration</param>
-        /// <param name="createdBy">User who created the supplier</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Supplier entity</returns>
         Task<SupplierEntity> CreateOrGetSupplierAsync(
             SupplierConfiguration supplierConfig, 
-            string? createdBy = null, 
             CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Ensures no duplicate offer exists - deletes existing offer if found (dev mode)
-        /// </summary>
-        /// <param name="supplierId">Supplier ID</param>
-        /// <param name="fileName">Name of the file being processed</param>
-        /// <param name="supplierName">Name of the supplier (for logging)</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        Task EnsureOfferCanBeProcessedAsync(
-            int supplierId, 
-            string fileName, 
-            string supplierName, 
-            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates a new offer for the file processing session
@@ -65,37 +51,15 @@ namespace SacksDataLayer.Services.Interfaces
             string? createdBy = null,
             CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Inserts or updates a supplier offer and all its products/offer-products in a single transaction
-        /// This method handles the database state-dependent operations
-        /// </summary>
-        /// <param name="analysisOffer">Analyzed offer from file data (without database IDs)</param>
-        /// <param name="dbOffer">Database offer entity with proper IDs</param>
-        /// <param name="supplierConfig">Supplier configuration</param>
-        /// <param name="createdBy">User who created the data</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Processing results with statistics</returns>
-        Task<FileProcessingResult> InsertOrUpdateSupplierOfferAsync(
-            SupplierOfferAnnex analysisOffer,
-            SupplierOfferAnnex dbOffer,
-            SupplierConfiguration supplierConfig,
-            string? createdBy = null,
-            CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Processes a batch of products with optimized bulk operations
+        /// Processes an Offer that includs a list of products with 
         /// </summary>
-        /// <param name="products">List of product entities to process</param>
         /// <param name="offer">Supplier offer entity</param>
-        /// <param name="supplierConfig">Supplier configuration</param>
-        /// <param name="createdBy">User who created the products</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Processing results with statistics</returns>
-        Task<FileProcessingResult> ProcessProductAsync(
-            List<OfferProductAnnex> products,
+        Task<FileProcessingResult> ProcessOfferAsync(
             SupplierOfferAnnex offer,
-            SupplierConfiguration supplierConfig,
-            string? createdBy = null,
             CancellationToken cancellationToken = default);
 
         /// <summary>

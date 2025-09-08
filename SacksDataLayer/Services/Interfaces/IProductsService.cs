@@ -60,16 +60,9 @@ namespace SacksDataLayer.Services.Interfaces
         Task<IEnumerable<ProductEntity>> GetProductsBySourceFileAsync(string sourceFile);
 
         /// <summary>
-        /// Creates or updates a product based on EAN
-        /// </summary>
-        Task<ProductEntity> CreateOrUpdateProductAsync(ProductEntity product, string? userContext = null);
-
-
-        /// <summary>
         /// 🚀 PERFORMANCE OPTIMIZED: Bulk create/update with minimal database calls
         /// </summary>
-        Task<ProductImportResult> BulkCreateOrUpdateProductsOptimizedAsync(
-            IEnumerable<ProductEntity> products, string? userContext = null);
+        Task<ProductImportResult> BulkCreateOrUpdateProductsOptimizedAsync(SupplierOfferAnnex offer);
 
         #endregion
 

@@ -14,10 +14,12 @@ public class OfferProductAnnex : Annex
     public int ProductId { get; set; }
     
     // Product-specific pricing and terms within this offer
+    [Required]
     [Column(TypeName = "decimal(18,2)")]
-    public decimal? Price { get; set; }
+    public decimal Price { get; set; }
     
-    public int? Quantity { get; set; }
+    [Required]
+    public int Quantity { get; set; }
     
     /// <summary>
     /// Supplier's description of the product (supplier-specific)

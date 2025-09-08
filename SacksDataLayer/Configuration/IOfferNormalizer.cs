@@ -25,10 +25,9 @@ namespace SacksDataLayer.FileProcessing.Interfaces
         /// <summary>
         /// Normalizes supplier data into ProductEntity objects for supplier offers
         /// </summary>
-        /// <param name="fileData">Raw file data</param>
         /// <param name="context">Processing context including additional parameters</param>
         /// <returns>Processing result with normalized ProductEntity objects and statistics</returns>
-        Task<ProcessingResult> NormalizeAsync(SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileData fileData, ProcessingContext context);
+        Task<ProcessingResult> NormalizeAsync(ProcessingContext context);
 
     }
 }

@@ -75,7 +75,7 @@ namespace SacksDataLayer.Services.Implementations
                         throw new InvalidOperationException($"Product with EAN '{product.EAN}' already exists");
                 }
 
-                _repository.Add(product, createdBy);
+                _repository.Add(product);
                 await _unitOfWork.SaveChangesAsync(ct);
                 return product;
             });
@@ -110,7 +110,7 @@ namespace SacksDataLayer.Services.Implementations
                 existingProduct.DynamicProperties = product.DynamicProperties;
                 existingProduct.ModifiedAt = DateTime.UtcNow;
 
-                _repository.Update(existingProduct, modifiedBy);
+                _repository.Update(existingProduct);
                 await _unitOfWork.SaveChangesAsync(ct);
                 return existingProduct;
             });
@@ -139,124 +139,159 @@ namespace SacksDataLayer.Services.Implementations
             return await _repository.GetBySourceFileAsync(sourceFile, CancellationToken.None);
         }
 
-        public async Task<ProductEntity> CreateOrUpdateProductAsync(ProductEntity product, string? userContext = null)
-        {
-            if (product == null)
-                throw new ArgumentNullException(nameof(product));
-
-            ProductEntity? existingProduct = null;
-            
-            // Try to find existing product by EAN
-            if (!string.IsNullOrWhiteSpace(product.EAN))
-            {
-                existingProduct = await _repository.GetByEANAsync(product.EAN, CancellationToken.None);
-            }
-
-            if (existingProduct != null)
-            {
-                // Update existing product
-                existingProduct.Name = product.Name;
-                existingProduct.DynamicProperties = product.DynamicProperties;
-
-                return await UpdateProductAsync(existingProduct, userContext);
-            }
-            else
-            {
-                // Create new product
-                return await CreateProductAsync(product, userContext);
-            }
-        }
-
 
         /// <summary>
         /// 🚀 PERFORMANCE OPTIMIZED: Bulk create/update with minimal database calls
         /// NOTE: Does not manage transactions - caller must handle transaction scope
         /// </summary>
-        public async Task<ProductImportResult> BulkCreateOrUpdateProductsOptimizedAsync(
-            IEnumerable<ProductEntity> products, string? userContext = null)
+        public async Task<ProductImportResult> BulkCreateOrUpdateProductsOptimizedAsync(SupplierOfferAnnex offer)
         {
-            ProductImportResult  result = new();
-            if (products == null || !products.Any())
+            ProductImportResult result = new();
+            if (offer == null)
                 return result;
 
-            var productList = products.ToList();
-            var eans = productList.Where(p => !string.IsNullOrWhiteSpace(p.EAN)).Select(p => p.EAN).ToList();
+            var eans = offer.OfferProducts.Where(p => !string.IsNullOrWhiteSpace(p.Product.EAN)).Select(p => p.Product.EAN).ToList();
             
             // 🚀 SINGLE BULK QUERY instead of N individual queries
             var existingProducts = await _repository.GetByEANsBulkAsync(eans, CancellationToken.None);
             
-            var productsToCreate = new List<ProductEntity>();
-            var productsToUpdate = new List<ProductEntity>();
-            var processedEANs = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // Track EANs within this batch
-
-            foreach (var product in productList)
+            // 🔧 FIX: Group products by EAN to handle duplicates in the same offer
+            var productsByEAN = offer.OfferProducts
+                .Where(p => !string.IsNullOrWhiteSpace(p.Product.EAN))
+                .GroupBy(p => p.Product.EAN)
+                .ToDictionary(g => g.Key, g => g.ToList());
+            
+            // Separate products into new and existing for proper EF tracking
+            var productsToAdd = new List<ProductEntity>();
+            var processedEANs = new HashSet<string>();
+            
+            foreach (var eanGroup in productsByEAN)
             {
+                var ean = eanGroup.Key;
+                var offerProductsWithSameEAN = eanGroup.Value;
+                
                 try
                 {
-                    // no need to check if EAN is empty - been done on caller
-
-                    // Check if EAN already processed in this batch
-                    if (processedEANs.Contains(product.EAN))
+                    if (existingProducts.TryGetValue(ean, out var existingProduct))
                     {
-                        _logger.LogDebug("Skipping duplicate EAN '{ProductEAN}' within the same batch (Product: {ProductName})", 
-                            product.EAN, product.Name);
-                        continue;
-                    }
-
-                    // Mark EAN as processed
-                    processedEANs.Add(product.EAN);
-
-                    if (existingProducts.TryGetValue(product.EAN, out var existingProduct))
-                    {
-                        // check if the new product has changes compared to existing one
-                        if (existingProduct.DynamicPropertiesJson == product.DynamicPropertiesJson)
+                        // 🔧 FIX: Get tracked entity or attach the untracked one
+                        var trackedProduct = await GetOrAttachExistingProductAsync(existingProduct);
+                        
+                        // Use the first product instance to check for changes
+                        var firstProduct = offerProductsWithSameEAN.First().Product;
+                        
+                        // Check if the new product has changes compared to existing one
+                        if (trackedProduct.DynamicPropertiesJson == firstProduct.DynamicPropertiesJson)
                         {
-                            // No changes, skip update
+                            // No changes, but still replace with tracked entity for all instances
                             result.NoChanges++;
                         }
                         else
                         {
-                            _logger.LogInformation($"Updating {product.Name} ({product.EAN}), from {existingProduct.DynamicPropertiesJson} to {product.DynamicPropertiesJson}");
+                            _logger.LogWarning($"Updating {firstProduct.Name} ({ean}), from:\r\n{trackedProduct.DynamicPropertiesJson}\r\nto:\r\n{firstProduct.DynamicPropertiesJson}");
 
-                            // Update existing product
-                            existingProduct.Name = product.Name;
-                            existingProduct.DynamicPropertiesJson = product.DynamicPropertiesJson;
-                            existingProduct.DynamicProperties = product.DynamicProperties;
-                            existingProduct.ModifiedAt = DateTime.UtcNow;
-
-                            productsToUpdate.Add(existingProduct);
+                            // Update existing product properties
+                            trackedProduct.Name = firstProduct.Name;
+                            trackedProduct.DynamicPropertiesJson = firstProduct.DynamicPropertiesJson;
+                            trackedProduct.DynamicProperties = firstProduct.DynamicProperties;
+                            trackedProduct.ModifiedAt = DateTime.UtcNow;
+                            
+                            result.Updated++;
+                        }
+                        
+                        // 🔧 FIX: Replace navigation property with tracked entity for ALL offer products with same EAN
+                        foreach (var offerProduct in offerProductsWithSameEAN)
+                        {
+                            offerProduct.Product = trackedProduct;
+                            offerProduct.ProductId = trackedProduct.Id;
                         }
                     }
                     else
                     {
-                        // Create new product
-                        product.CreatedAt = DateTime.UtcNow;
-                        productsToCreate.Add(product);
+                        // 🔧 FIX: Handle multiple offer products with same new EAN
+                        var masterProduct = offerProductsWithSameEAN.First().Product;
+                        
+                        // Ensure new products don't have Id set (let EF generate)
+                        masterProduct.Id = 0; // Reset ID for new products
+                        masterProduct.CreatedAt = DateTime.UtcNow;
+                        masterProduct.ModifiedAt = DateTime.UtcNow;
+                        
+                        // Only add the product once to EF, even if multiple offer products reference it
+                        productsToAdd.Add(masterProduct);
+                        result.Created++;
+                        
+                        // 🔧 FIX: Update all offer products with same EAN to reference the same master product instance
+                        foreach (var offerProduct in offerProductsWithSameEAN)
+                        {
+                            offerProduct.Product = masterProduct;
+                            // ProductId will be set after EF assigns the ID during SaveChanges
+                        }
                     }
+                    
+                    processedEANs.Add(ean);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error processing product {ProductName} (EAN: {ProductEAN}): {ErrorMessage}", 
-                        product.Name, product.EAN, ex.Message);
+                    _logger.LogError(ex, "Error processing products with EAN {EAN} (Count: {Count}): {ErrorMessage}",
+                        ean, offerProductsWithSameEAN.Count, ex.Message);
+                    result.Errors += offerProductsWithSameEAN.Count; // Count all failed instances
+                }
+            }
+            
+            // Handle products without EAN (if any)
+            var productsWithoutEAN = offer.OfferProducts
+                .Where(p => string.IsNullOrWhiteSpace(p.Product.EAN))
+                .ToList();
+                
+            foreach (var productOffer in productsWithoutEAN)
+            {
+                try
+                {
+                    productOffer.Product.Id = 0;
+                    productOffer.Product.CreatedAt = DateTime.UtcNow;
+                    productOffer.Product.ModifiedAt = DateTime.UtcNow;
+                    
+                    productsToAdd.Add(productOffer.Product);
+                    result.Created++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing product without EAN {ProductName}: {ErrorMessage}",
+                        productOffer.Product.Name, ex.Message);
                     result.Errors++;
                 }
             }
-
-            // 🚀 BULK OPERATIONS instead of individual saves
-            if (productsToCreate.Any())
+            
+            // 🚀 OPTIMIZED: Only add new products - existing ones are already tracked and updated
+            if (productsToAdd.Any())
             {
-                _repository.AddRange(productsToCreate, userContext);
+                _repository.AddRange(productsToAdd);
             }
             
-            if (productsToUpdate.Any())
-            {
-                _repository.UpdateRange(productsToUpdate, userContext);
-            }
-
-            result.Created = productsToCreate.Count;
-            result.Updated = productsToUpdate.Count;
-
             return result;
+        }
+
+        /// <summary>
+        /// 🔧 FIX: Gets already tracked entity or properly attaches untracked entity to avoid conflicts
+        /// </summary>
+        private async Task<ProductEntity> GetOrAttachExistingProductAsync(ProductEntity untrackedProduct)
+        {
+            // First check if this entity is already being tracked
+            var tracked = await _repository.GetByIdAsync(untrackedProduct.Id, CancellationToken.None);
+            
+            if (tracked != null)
+            {
+                // Entity is already tracked, return the tracked instance
+                return tracked;
+            }
+            
+            // Entity is not tracked, we need to attach it
+            // But first ensure it's not conflicting with any tracked entity
+            _unitOfWork.ClearTracker(); // Clear any potential conflicts
+            
+            // Safe to attach after clearing tracker
+            _repository.Update(untrackedProduct);
+            return untrackedProduct;
         }
 
         public async Task<int> GetProductCountAsync()

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage;
+using SacksDataLayer.Data;
 
 namespace SacksDataLayer.Services.Interfaces
 {
@@ -8,6 +9,11 @@ namespace SacksDataLayer.Services.Interfaces
     /// </summary>
     public interface IUnitOfWork : IDisposable
     {
+        /// <summary>
+        /// Clears the EF Core change tracker to resolve entity tracking conflicts
+        /// </summary>
+        void ClearTracker();
+
         /// <summary>
         /// Begins a new database transaction
         /// </summary>

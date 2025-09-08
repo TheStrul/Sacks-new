@@ -57,16 +57,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 IsPatternMatch(lowerFileName, pattern.ToLowerInvariant()));
         }
 
-        public async Task<ProcessingResult> NormalizeAsync(FileData fileData, ProcessingContext context)
+        public async Task<ProcessingResult> NormalizeAsync(ProcessingContext context)
         {
-            ArgumentNullException.ThrowIfNull(fileData);
             ArgumentNullException.ThrowIfNull(context);
 
             var startTime = DateTime.UtcNow;
-            var result = new ProcessingResult
+            var result = new ProcessingResult()
             {
-                SourceFile = context.SourceFileName,
-                SupplierName = SupplierName,
+                SupplierOffer = context.SupplierOffer,
+                SourceFile = context.FileData.FilePath,
                 ProcessedAt = startTime
             };
 
@@ -77,7 +76,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 var warnings = new List<string>();
                 var errors = new List<string>();
 
-                if (fileData.DataRows.Count == 0)
+                if (context.FileData.DataRows.Count == 0)
                 {
                     result.Statistics = statistics;
                     return result;
@@ -92,15 +91,16 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 }
 
                 // Use supplier offer from context if provided, otherwise create one
-                var supplierOffer = context.SupplierOffer ?? CreateSupplierOfferFromContext(context);
+                var supplierOffer = context.SupplierOffer;
                 result.SupplierOffer = supplierOffer;
                 statistics.SupplierOffersCreated = context.SupplierOffer != null ? 0 : 1; // Only count if we created it
 
-                statistics.TotalRowsProcessed = fileData.DataRows.Count;
 
                 // Process data rows using FileStructure configuration
-                var dataStartIndex = _configuration.FileStructure?.DataStartRowIndex ?? 1;
-                var allDataRows = fileData.DataRows.Skip(dataStartIndex).ToList();
+                var dataStartIndex = _configuration.FileStructure.DataStartRowIndex-1; // Convert to zero-based index
+                var allDataRows = context.FileData.DataRows.Skip(dataStartIndex).ToList();
+                statistics.TotalRowsProcessed = allDataRows.Count;
+
                 var emptyRowsSkipped = allDataRows.Count(r => !r.HasData);
                 var dataRows = allDataRows.Where(r => r.HasData);
 
@@ -113,7 +113,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 {
                     try
                     {
-                        var offerProduct = await NormalizeRowAsync(row, context, fileData.FilePath, supplierOffer);
+                        var offerProduct = await NormalizeRowAsync(row, context, context.FileData.FilePath, supplierOffer);
 
                         if (offerProduct != null)
                         {
@@ -124,8 +124,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                                 statistics.PricingRecordsProcessed++;
 
                                 // Check if this offer product has offer-specific data
-                                var hasOfferData = offerProduct.Price.HasValue ||
-                                                 offerProduct.Quantity.HasValue ||
+                                var hasOfferData = offerProduct.Price > 0 ||
+                                                 offerProduct.Quantity > 0 ||
                                                  offerProduct.OfferProperties.Count > 0; if (hasOfferData)
                                 {
                                     statistics.OfferProductsCreated++;
@@ -181,7 +181,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             RowData row,
             ProcessingContext context,
             string sourceFile,
-            SupplierOfferAnnex? supplierOffer)
+            SupplierOfferAnnex supplierOffer)
         {
             try
             {
@@ -193,13 +193,28 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 {
                     var columnKey = columnConfig.Key; // Excel column (A, B, C, etc.)
                     var columnProperty = columnConfig.Value;
-                    var targetProperty = columnProperty.TargetProperty ?? columnProperty.DisplayName;
 
-                    if (string.IsNullOrEmpty(targetProperty))
+                    // First ensure the column has a valid classification from market config
+                    if (columnProperty.Classification == default)
                     {
-                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: No target property defined", columnKey, row.Index);
+                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: No Classification resolved from market config", columnKey, row.Index);
                         continue;
                     }
+
+                    // For fixed classifications, we don't need ProductPropertyKey validation
+                    var needsProductPropertyKey = columnProperty.Classification == PropertyClassificationType.ProductDynamic ||
+                                                 columnProperty.Classification == PropertyClassificationType.OfferDynamic;
+
+                    var targetProperty = columnProperty.ProductPropertyKey;
+                    if (needsProductPropertyKey && string.IsNullOrEmpty(targetProperty))
+                    {
+                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: No ProductPropertyKey defined for dynamic classification {Classification}", 
+                            columnKey, row.Index, columnProperty.Classification);
+                        continue;
+                    }
+
+                    // Use classification-specific fallback for targetProperty when not needed
+                    targetProperty = needsProductPropertyKey ? targetProperty : columnProperty.Classification.ToString();
 
                     // Get column index
                     var columnIndex = GetColumnIndex(columnKey);
@@ -245,17 +260,12 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         continue;
                     }
 
-                    // Skip the second validation since we already validated the raw value
-                    // The processedValue is now ready to be classified and assigned
-
-                    // Classify and assign value based on property classification
+                    // Classify and assign value based on property classification (Classification is the primary routing key)
                     await AssignValueByClassificationAsync(
                         product, offerProperties, targetProperty, processedValue, columnProperty.Classification);
                 }
 
                 // Extract additional properties from description if available and extractor is configured
-                // Note: Description is now stored in OfferProductAnnex, so this extraction logic would need
-                // to be moved to after the OfferProduct creation or access the description from offerProperties
                 var description = offerProperties.TryGetValue("description", out var descValue) ? descValue?.ToString() : null;
                 if (_descriptionExtractor is not null && !string.IsNullOrEmpty(description))
                 {
@@ -278,13 +288,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 }
 
                 // Create unified OfferProduct entity containing everything
-                var offerProduct = CreateOfferProductEntity(offerProperties, supplierOffer!);
-                offerProduct.Product = product;
-                if (supplierOffer != null)
-                {
-                    offerProduct.Offer = supplierOffer;
-                    offerProduct.OfferId = supplierOffer.Id;
-                }
+                var offerProduct = CreateOfferProductEntity(offerProperties, supplierOffer);
+                offerProduct.Product = product;                    
+                offerProduct.Offer = supplierOffer;
 
                 return offerProduct;
             }
@@ -385,53 +391,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         }
 
         /// <summary>
-        /// Validates processed value against column validation rules (after transformation) - Legacy method
-        /// </summary>
-        private async Task<ValidationResult> ValidateValueAsync(object? value, ColumnProperty columnProperty, string targetProperty)
-        {
-            await Task.CompletedTask; // For async consistency
-
-            // Check required field validation
-            if (columnProperty.IsRequired == true && value == null)
-            {
-                return ValidationResult.Invalid(
-                    columnProperty.SkipEntireRow,
-                    $"Required field '{targetProperty}' is null");
-            }
-
-            // Check allowed values if configured
-            if (columnProperty.AllowedValues.Count > 0)
-            {
-                var stringValue = value?.ToString();
-                if (!columnProperty.AllowedValues.Contains(stringValue, StringComparer.OrdinalIgnoreCase))
-                {
-                    return ValidationResult.Invalid(
-                        columnProperty.SkipEntireRow,
-                        $"Value '{stringValue}' is not in allowed values for '{targetProperty}'");
-                }
-            }
-
-            // Check validation patterns if configured
-            if (columnProperty.ValidationPatterns.Count > 0)
-            {
-                var stringValue = value?.ToString();
-                if (!string.IsNullOrEmpty(stringValue))
-                {
-                    var matchesPattern = columnProperty.ValidationPatterns
-                        .Any(pattern => Regex.IsMatch(stringValue, pattern, RegexOptions.IgnoreCase));
-                    if (!matchesPattern)
-                    {
-                        return ValidationResult.Invalid(
-                            columnProperty.SkipEntireRow,
-                            $"Value '{stringValue}' does not match validation patterns for '{targetProperty}'");
-                    }
-                }
-            }
-
-            return ValidationResult.Valid();
-        }
-
-        /// <summary>
         /// Sets default value if configured for empty cells
         /// </summary>
         private async Task SetDefaultValueIfConfiguredAsync(
@@ -458,39 +417,42 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             Dictionary<string, object?> offerProperties,
             string targetProperty,
             object? value,
-            string classification)
+            PropertyClassificationType classification)
         {
             await Task.CompletedTask; // For async consistency
 
-            switch (targetProperty.ToLowerInvariant())
+            switch (classification)
             {
-                case "name":
+                case PropertyClassificationType.ProductName:
                     product.Name = value?.ToString() ?? "";
                     break;
-                case "description":
-                    // Description is now supplier-specific and goes to OfferProductAnnex
-                    offerProperties["description"] = value?.ToString();
-                    break;
-                case "ean":
+                case PropertyClassificationType.ProductEAN:
                     product.EAN = value?.ToString() ?? "";
                     break;
+                case PropertyClassificationType.ProductDynamic:
+                    product.SetDynamicProperty(targetProperty, value);
+                    break;
+                case PropertyClassificationType.OfferPrice:
+                    if (decimal.TryParse(value?.ToString(), out decimal price))
+                    {
+                        offerProperties["price"] = price;
+                    }
+                    break;
+                case PropertyClassificationType.OfferQuantity:
+                    if (int.TryParse(value?.ToString(), out int quantity))
+                    {
+                        offerProperties["quantity"] = quantity;
+                    }
+                    break;
+                case PropertyClassificationType.OfferDescription:
+                    offerProperties["description"] = value?.ToString();
+                    break;
+                case PropertyClassificationType.OfferDynamic:
+                    offerProperties[targetProperty] = value;
+                    break;
                 default:
-                    // Classify based on configuration
-                    if (classification == "coreproduct")
-                    {
-                        // Core product property - goes to ProductEntity.DynamicProperties
-                        product.SetDynamicProperty(targetProperty, value);
-                    }
-                    else if (classification == "offer")
-                    {
-                        // Offer property - goes to OfferProductAnnex
-                        offerProperties[targetProperty] = value;
-                    }
-                    else
-                    {
-                        // Default to core product for unknown classification
-                        product.SetDynamicProperty(targetProperty, value);
-                    }
+                    // Default to core product for unknown classification
+                    product.SetDynamicProperty(targetProperty, value);
                     break;
             }
         }
@@ -743,18 +705,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             };
         }
 
-        /// <summary>
-        /// Creates a SupplierOffer entity from processing context
-        /// </summary>
-        private SupplierOfferAnnex CreateSupplierOfferFromContext(ProcessingContext context)
-        {
-            return new SupplierOfferAnnex
-            {
-                OfferName = $"{SupplierName} - {context.SourceFileName}",
-                Description = $"Offer created from file: {context.SourceFileName}",
-                CreatedAt = context.ProcessingDate
-            };
-        }
+
 
         /// <summary>
         /// Creates an OfferProduct entity from offer properties
@@ -832,15 +783,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
             if (product.DynamicProperties.TryGetValue("Concentration", out var concentration) && concentration != null)
                 nameComponents.Add(concentration.ToString()!);
-
-            // Legacy properties for backward compatibility
-            if (!nameComponents.Any())
-            {
-                if (product.DynamicProperties.TryGetValue("Family", out var family) && family != null)
-                    nameComponents.Add(family.ToString()!);
-                if (product.DynamicProperties.TryGetValue("PricingItemName", out var itemName) && itemName != null)
-                    nameComponents.Add(itemName.ToString()!);
-            }
 
             // If no meaningful properties found, use EAN or fallback
             if (!nameComponents.Any())

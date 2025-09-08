@@ -14,14 +14,13 @@
       "columnProperties": {
         "A": {
           "productPropertyKey": "EAN",
+          "classification": "ProductEAN",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": false,
           "maxLength": 20,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": true,
           "validationPatterns": [
             "^\\d+$"
           ],
@@ -30,34 +29,33 @@
         },
         "B": {
           "productPropertyKey": "Ref",
+          "classification": "OfferDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "C": {
           "productPropertyKey": "Brand",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "D": {
           "productPropertyKey": "Description",
+          "classification": "OfferDescription",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
@@ -66,22 +64,19 @@
           "transformations": [
             "extractAfterPattern:*:"
           ],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "E": {
           "productPropertyKey": "Category",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [
             "Perfume",
@@ -96,20 +91,20 @@
         },
         "F": {
           "productPropertyKey": "COO",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "G": {
           "productPropertyKey": "Quantity",
+          "classification": "OfferQuantity",
           "dataType": "int",
           "format": "integer",
           "defaultValue": 0,
@@ -118,14 +113,13 @@
           "transformations": [
             "removeSymbols"
           ],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "H": {
           "productPropertyKey": "Price",
+          "classification": "OfferPrice",
           "dataType": "decimal",
           "format": "currency",
           "defaultValue": 0,
@@ -134,8 +128,6 @@
           "transformations": [
             "removeSymbols"
           ],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
@@ -160,14 +152,13 @@
       "columnProperties": {
         "A": {
           "productPropertyKey": "EAN",
+          "classification": "ProductEAN",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": false,
           "maxLength": 20,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": true,
           "validationPatterns": [
             "^\\d+$"
           ],
@@ -176,34 +167,33 @@
         },
         "B": {
           "productPropertyKey": "Brand",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "C": {
           "productPropertyKey": "Description",
+          "classification": "OfferDescription",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "D": {
          "productPropertyKey": "Quantity",
+          "classification": "OfferQuantity",
           "dataType": "int",
           "format": "integer",
           "defaultValue": 0,
@@ -212,14 +202,13 @@
           "transformations": [
             "removeSymbols"
           ],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "E": {
           "productPropertyKey": "Price",
+          "classification": "OfferPrice",
           "dataType": "decimal",
           "format": "currency",
           "defaultValue": 0,
@@ -229,22 +218,19 @@
             "removeSymbols",
             "parseDecimal"
           ],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "F": {
           "productPropertyKey": "COO",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
@@ -269,14 +255,13 @@
       "columnProperties": {
         "A": {
           "productPropertyKey": "EAN",
+          "classification": "ProductEAN",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": false,
           "maxLength": 20,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": true,
           "validationPatterns": [
             "^\\d+$"
           ],
@@ -285,90 +270,85 @@
         },
         "B": {
           "productPropertyKey": "Ref",
+          "classification": "OfferDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "C": {
           "productPropertyKey": "Description",
+          "classification": "OfferDescription",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 500,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "D": {
           "productPropertyKey": "Ref",
+          "classification": "OfferDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "E": {
           "productPropertyKey": "Gender",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 20,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "F": {
           "productPropertyKey": "Volume",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 20,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "G": {
           "productPropertyKey": "Units",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 20,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "I": {
           "productPropertyKey": "Price",
+          "classification": "OfferPrice",
           "dataType": "decimal",
           "format": "currency",
           "defaultValue": 0,
@@ -378,14 +358,13 @@
             "removeSymbols",
             "parseDecimal"
           ],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "J": {
           "productPropertyKey": "Quantity",
+          "classification": "OfferQuantity",
           "dataType": "int",
           "format": "integer",
           "defaultValue": 0,
@@ -394,50 +373,45 @@
           "transformations": [
             "removeSymbols"
           ],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "K": {
           "productPropertyKey": "Incoming",
+          "classification": "OfferDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "L": {
           "productPropertyKey": "COO",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "M": {
           "productPropertyKey": "T1",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 50,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
@@ -462,6 +436,7 @@
       "columnProperties": {
         "A": {
           "productPropertyKey": "Brand",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
@@ -470,36 +445,32 @@
           "transformations": [
             "extractAfterPattern:*:"
           ],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "B": {
           "productPropertyKey": "Ref",
+          "classification": "OfferDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "C": {
           "productPropertyKey": "EAN",
+          "classification": "ProductEAN",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": false,
           "maxLength": 20,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": true,
           "validationPatterns": [
             "^\\d+$"
           ],
@@ -508,20 +479,20 @@
         },
         "D": {
           "productPropertyKey": "Type",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": null,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": ["SET", "REG"],
           "skipEntireRow": true
         },
         "E": {
           "productPropertyKey": "Description",
+          "classification": "OfferDescription",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
@@ -530,14 +501,13 @@
           "transformations": [
             "extractAfterPattern:*:"
           ],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "F": {
           "productPropertyKey": "Quantity",
+          "classification": "OfferQuantity",
           "dataType": "int",
           "format": "integer",
           "defaultValue": 0,
@@ -546,14 +516,13 @@
           "transformations": [
             "removeSymbols"
           ],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "G": {
           "productPropertyKey": "Price",
+          "classification": "OfferPrice",
           "dataType": "decimal",
           "format": "currency",
           "defaultValue": 0,
@@ -562,8 +531,6 @@
           "transformations": [
             "removeSymbols"
           ],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
@@ -584,14 +551,13 @@
       "columnProperties": {
         "B": {
           "productPropertyKey": "EAN",
+          "classification": "ProductEAN",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": false,
           "maxLength": 20,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": true,
           "validationPatterns": [
             "^\\d+$"
           ],
@@ -600,62 +566,59 @@
         },
         "C": {
           "productPropertyKey": "Brand",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "D": {
           "productPropertyKey": "Description",
+          "classification": "OfferDescription",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 500,
           "transformations": [],
-          "isRequired": true,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
         },
         "E": {
           "productPropertyKey": "Type",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "F": {
           "productPropertyKey": "Niche",
+          "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
           "defaultValue": null,
           "allowNull": true,
           "maxLength": 100,
           "transformations": [],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": false
         },
         "G": {
           "productPropertyKey": "Quantity",
+          "classification": "OfferQuantity",
           "dataType": "int",
           "format": "integer",
           "defaultValue": 0,
@@ -664,14 +627,13 @@
           "transformations": [
             "removeSymbols"
           ],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [],
           "allowedValues": [],
           "skipEntireRow": true
           },
         "H": {
           "productPropertyKey": "Price",
+          "classification": "OfferPrice",
           "dataType": "decimal",
           "format": "currency",
           "defaultValue": 0,
@@ -681,8 +643,6 @@
             "removeSymbols",
             "parseDecimal"
           ],
-          "isRequired": false,
-          "isUnique": false,
           "validationPatterns": [
             "^(?:[2-9]\\d|[1-9]\\d{2,})(?:\\.\\d+)?$"
           ],
@@ -705,130 +665,188 @@
         "key": "EAN",
         "displayName": "EAN Code",
         "description": "European Article Number (barcode)",
-        "classification": "coreProduct",
+        "classification": "ProductEAN",
         "isFilterable": false,
         "isSortable": false,
         "isRequired": true,
+        "isUnique": true,
         "displayOrder": 1
-      },"Category": {
+      },
+      "Category": {
         "key": "Category",
         "displayName": "Product Category",
         "description": "Type of product to filter specific categories during processing",
-        "classification": "coreProduct",
+        "classification": "ProductDynamic",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 2
       },
       "Brand": {
         "key": "Brand",
         "displayName": "Brand",
         "description": "Product brand or manufacturer",
-        "classification": "coreProduct",
+        "classification": "ProductDynamic",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 3
       },
       "Description": {
         "key": "Description",
         "displayName": "Description",
         "description": "Product description",
-        "classification": "coreProduct",
+        "classification": "OfferDescription",
         "isFilterable": true,
         "isSortable": false,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 4
       },
       "Gender": {
         "key": "Gender",
         "displayName": "Gender",
         "description": "Target gender for the perfume",
-        "classification": "coreProduct",
+        "classification": "ProductDynamic",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 5
       },
       "Volume": {
         "key": "Volume",
         "displayName": "Volume",
         "description": "Volume or size of the perfume",
-        "classification": "coreProduct",
+        "classification": "ProductDynamic",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 6
       },
       "Type": {
         "key": "Type",
         "displayName": "Type",
         "description": "Regular, Mini, Set, Tube, Tester, etc.",
-        "classification": "coreProduct",
+        "classification": "ProductDynamic",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 7
       },
       "Decoded": {
         "key": "Decoded",
         "displayName": "Decoded",
         "description": "Whether the product can be tracked by RF",
-        "classification": "coreProduct",
+        "classification": "ProductDynamic",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 8
       },
       "COO": {
         "key": "COO",
         "displayName": "Country of Origin",
         "description": "Country of origin",
-        "classification": "coreProduct",
+        "classification": "ProductDynamic",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 9
       },
       "Ref": {
         "key": "Ref",
         "displayName": "Reference",
         "description": "Supplier reference code for the product",
-        "classification": "offer",
+        "classification": "OfferDynamic",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 13
       },
       "Price": {
         "key": "Price",
         "displayName": "Price",
         "description": "Product price from offers",
-        "classification": "offer",
+        "classification": "OfferPrice",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 10
       },
       "Currency": {
         "key": "Currency",
         "displayName": "Currency",
         "description": "Currency of the price",
-        "classification": "offer",
+        "classification": "OfferDynamic",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 11
       },
       "Quantity": {
         "key": "Quantity",
         "displayName": "Quantity",
         "description": "Available stock quantity",
-        "classification": "offer",
+        "classification": "OfferQuantity",
         "isFilterable": true,
         "isSortable": true,
         "isRequired": false,
+        "isUnique": false,
         "displayOrder": 12
+      },
+      "Units": {
+        "key": "Units",
+        "displayName": "Units",
+        "description": "Unit of measurement",
+        "classification": "ProductDynamic",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "isUnique": false,
+        "displayOrder": 14
+      },
+      "Incoming": {
+        "key": "Incoming",
+        "displayName": "Incoming Stock",
+        "description": "Expected incoming stock",
+        "classification": "OfferDynamic",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "isUnique": false,
+        "displayOrder": 15
+      },
+      "T1": {
+        "key": "T1",
+        "displayName": "T1",
+        "description": "Custom field T1",
+        "classification": "ProductDynamic",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "isUnique": false,
+        "displayOrder": 16
+      },
+      "Niche": {
+        "key": "Niche",
+        "displayName": "Niche",
+        "description": "Niche brand indicator",
+        "classification": "ProductDynamic",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false,
+        "isUnique": false,
+        "displayOrder": 17
       }
     }
   }

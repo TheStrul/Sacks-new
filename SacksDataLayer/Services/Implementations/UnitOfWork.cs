@@ -21,6 +21,14 @@ namespace SacksDataLayer.Services.Implementations
         }
 
         /// <summary>
+        /// Clears the EF Core change tracker to resolve entity tracking conflicts
+        /// </summary>
+        public void ClearTracker()
+        {
+            _context.ChangeTracker.Clear();
+        }
+
+        /// <summary>
         /// Gets the current transaction if one is active
         /// </summary>
         public IDbContextTransaction? CurrentTransaction => _currentTransaction;

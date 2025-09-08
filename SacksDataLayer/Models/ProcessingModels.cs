@@ -1,3 +1,5 @@
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
+
 using SacksDataLayer.Entities;
 
 namespace SacksDataLayer.FileProcessing.Models
@@ -11,14 +13,13 @@ namespace SacksDataLayer.FileProcessing.Models
         /// <summary>
         /// Supplier offer metadata (one per file processing session)
         /// </summary>
-        public SupplierOfferAnnex SupplierOffer { get; set; } = new();
+        required public SupplierOfferAnnex SupplierOffer { get; set; }
 
         public ProcessingStatistics Statistics { get; set; } = new();
         public List<string> Warnings { get; set; } = new();
         public List<string> Errors { get; set; } = new();
         public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
-        public string SourceFile { get; set; } = string.Empty;
-        public string SupplierName { get; set; } = string.Empty;
+        required public string SourceFile { get; set; }
     }
 
     /// <summary>
@@ -48,19 +49,8 @@ namespace SacksDataLayer.FileProcessing.Models
     /// </summary>
     public class ProcessingContext
     {
-        public string SourceFileName { get; set; } = string.Empty;
-        public string SupplierName { get; set; } = string.Empty;
-        public DateTime ProcessingDate { get; set; } = DateTime.UtcNow;
-        public Dictionary<string, object> AdditionalContext { get; set; } = new();
-        
-        /// <summary>
-        /// User-specified intent for this processing session
-        /// </summary>
-        public string ProcessingIntent { get; set; } = string.Empty;
-        
-        /// <summary>
-        /// Optional offer metadata for commercial processing
-        /// </summary>
-        public SupplierOfferAnnex? SupplierOffer { get; set; }
+        required public SupplierOfferAnnex SupplierOffer { get; init; }
+
+        required public FileData FileData { get; init; }
     }
 }

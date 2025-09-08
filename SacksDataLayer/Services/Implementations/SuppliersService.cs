@@ -126,7 +126,7 @@ namespace SacksDataLayer.Services.Implementations
         /// NOTE: Does not manage transactions - caller must handle transaction scope
         /// </summary>
         public async Task<SupplierEntity> CreateOrGetSupplierFromConfigAsync(string supplierName, 
-            string? description = null, string? createdBy = null)
+            string? description = null)
         {
             if (string.IsNullOrWhiteSpace(supplierName))
                 throw new ArgumentException("Supplier name cannot be null or empty", nameof(supplierName));

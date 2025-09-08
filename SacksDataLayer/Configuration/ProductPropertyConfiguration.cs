@@ -23,7 +23,9 @@ namespace SacksDataLayer.Configuration
         public List<ProductPropertyDefinition> GetCoreProductProperties()
         {
             return Properties.Values
-                .Where(p => p.Classification == PropertyClassificationType.CoreProduct)
+                .Where(p => p.Classification == PropertyClassificationType.ProductName ||
+                           p.Classification == PropertyClassificationType.ProductEAN ||
+                           p.Classification == PropertyClassificationType.ProductDynamic)
                 .OrderBy(p => p.DisplayOrder)
                 .ToList();
         }
@@ -34,33 +36,62 @@ namespace SacksDataLayer.Configuration
         public List<ProductPropertyDefinition> GetOfferProperties()
         {
             return Properties.Values
-                .Where(p => p.Classification == PropertyClassificationType.Offer)
+                .Where(p => p.Classification == PropertyClassificationType.OfferPrice ||
+                           p.Classification == PropertyClassificationType.OfferQuantity ||
+                           p.Classification == PropertyClassificationType.OfferDescription ||
+                           p.Classification == PropertyClassificationType.OfferDynamic)
                 .OrderBy(p => p.DisplayOrder)
                 .ToList();
         }
 
         /// <summary>
-        /// Gets all filterable properties
+        /// Gets properties stored in ProductEntity fixed fields
         /// </summary>
-        public List<ProductPropertyDefinition> GetFilterableProperties()
+        public List<ProductPropertyDefinition> GetProductEntityProperties()
         {
             return Properties.Values
-                .Where(p => p.IsFilterable)
+                .Where(p => p.Classification == PropertyClassificationType.ProductName ||
+                           p.Classification == PropertyClassificationType.ProductEAN)
                 .OrderBy(p => p.DisplayOrder)
                 .ToList();
         }
 
         /// <summary>
-        /// Gets all sortable properties
+        /// Gets properties stored in OfferProductAnnex fixed fields
         /// </summary>
-        public List<ProductPropertyDefinition> GetSortableProperties()
+        public List<ProductPropertyDefinition> GetOfferEntityProperties()
         {
             return Properties.Values
-                .Where(p => p.IsSortable)
+                .Where(p => p.Classification == PropertyClassificationType.OfferPrice ||
+                           p.Classification == PropertyClassificationType.OfferQuantity ||
+                           p.Classification == PropertyClassificationType.OfferDescription)
+                .OrderBy(p => p.DisplayOrder)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Gets properties stored in ProductEntity.DynamicProperties
+        /// </summary>
+        public List<ProductPropertyDefinition> GetDynamicCoreProductProperties()
+        {
+            return Properties.Values
+                .Where(p => p.Classification == PropertyClassificationType.ProductDynamic)
+                .OrderBy(p => p.DisplayOrder)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Gets properties stored in OfferProductAnnex.OfferProperties
+        /// </summary>
+        public List<ProductPropertyDefinition> GetDynamicOfferProperties()
+        {
+            return Properties.Values
+                .Where(p => p.Classification == PropertyClassificationType.OfferDynamic)
                 .OrderBy(p => p.DisplayOrder)
                 .ToList();
         }
     }
+
 
     /// <summary>
     /// Definition of a single product property
@@ -77,7 +108,7 @@ namespace SacksDataLayer.Configuration
         public string? Description { get; set; }
 
         [JsonPropertyName("classification")]
-        public PropertyClassificationType Classification { get; set; } = PropertyClassificationType.CoreProduct;
+        public PropertyClassificationType Classification { get; set; } = PropertyClassificationType.ProductDynamic;
 
         [JsonPropertyName("isFilterable")]
         public bool IsFilterable { get; set; } = true;
@@ -87,6 +118,9 @@ namespace SacksDataLayer.Configuration
 
         [JsonPropertyName("isRequired")]
         public bool IsRequired { get; set; } = false;
+
+        [JsonPropertyName("isUnique")]
+        public bool IsUnique { get; set; } = false;
 
         [JsonPropertyName("displayOrder")]
         public int DisplayOrder { get; set; } = 0;
@@ -108,22 +142,48 @@ namespace SacksDataLayer.Configuration
     }
 
     /// <summary>
-    /// Property classification types
+    /// Property classification types - one enum value per property for maximum precision
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum PropertyClassificationType
     {
+        // === FIXED PRODUCT ENTITY PROPERTIES ===
         /// <summary>
-        /// Core product properties that define the product itself
-        /// Stored in ProductEntity.DynamicProperties
+        /// Product name - stored in ProductEntity.Name
         /// </summary>
-        CoreProduct,
+        ProductName,
 
         /// <summary>
-        /// Offer-specific properties that vary by supplier/offer
-        /// Stored in OfferProductAnnex.ProductProperties
+        /// European Article Number - stored in ProductEntity.EAN
         /// </summary>
-        Offer
+        ProductEAN,
+
+        // === FIXED OFFER ENTITY PROPERTIES ===
+        /// <summary>
+        /// Product price - stored in OfferProductAnnex.Price (required)
+        /// </summary>
+        OfferPrice,
+
+        /// <summary>
+        /// Available quantity - stored in OfferProductAnnex.Quantity (required)
+        /// </summary>
+        OfferQuantity,
+
+        /// <summary>
+        /// Supplier's product description - stored in OfferProductAnnex.Description
+        /// </summary>
+        OfferDescription,
+
+        /// <summary>
+        /// Generic core product property - stored in ProductEntity.DynamicProperties[key]
+        /// </summary>
+        ProductDynamic,
+
+        /// <summary>
+        /// Generic offer property - stored in OfferProductAnnex.OfferProperties[key]
+        /// </summary>
+        OfferDynamic,
+
     }
 
     /// <summary>

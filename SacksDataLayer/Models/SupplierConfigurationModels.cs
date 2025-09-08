@@ -120,7 +120,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
                     column.ResolveFromMarketConfig(effectiveConfig);
                 }
                 
-                if (column.Classification == "coreproduct" || column.Classification == "CoreProduct")
+                if (column.Classification == PropertyClassificationType.ProductName ||
+                   column.Classification == PropertyClassificationType.ProductEAN ||
+                   column.Classification == PropertyClassificationType.ProductDynamic)
                 {
                     result.Add(column.ProductPropertyKey);
                 }
@@ -151,7 +153,10 @@ namespace SacksDataLayer.FileProcessing.Configuration
                     column.ResolveFromMarketConfig(effectiveConfig);
                 }
                 
-                if (column.Classification == "offer" || column.Classification == "Offer")
+                if (column.Classification == PropertyClassificationType.OfferPrice ||
+                   column.Classification == PropertyClassificationType.OfferQuantity ||
+                   column.Classification == PropertyClassificationType.OfferDescription ||
+                   column.Classification == PropertyClassificationType.OfferDynamic)
                 {
                     result.Add(column.ProductPropertyKey);
                 }
@@ -229,6 +234,13 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("productPropertyKey")]
         public string ProductPropertyKey { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Classification that determines how this property is processed and stored
+        /// Can be explicitly set in configuration or resolved from market configuration
+        /// </summary>
+        [JsonPropertyName("classification")]
+        public PropertyClassificationType Classification { get; set; } = PropertyClassificationType.ProductDynamic;
+
         // File Processing Specific Properties (Excel column mapping)
         [JsonPropertyName("dataType")]
         public string DataType { get; set; } = "string"; // Technical data type for processing (string, int, decimal, bool, etc.)
@@ -248,13 +260,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("transformations")]
         public List<string> Transformations { get; set; } = new(); // e.g., "trim", "lowercase", "removeSymbols"
 
-        // File-specific validation overrides (optional - can override market defaults)
-        [JsonPropertyName("isRequired")]
-        public bool? IsRequired { get; set; } // null = use market default
-
-        [JsonPropertyName("isUnique")]
-        public bool? IsUnique { get; set; } // null = use market default
-
         [JsonPropertyName("validationPatterns")]
         public List<string> ValidationPatterns { get; set; } = new();
 
@@ -266,16 +271,17 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         // Computed Properties (derived from market configuration)
         [JsonIgnore]
-        public string? TargetProperty => ProductPropertyKey;
-
-        [JsonIgnore] 
         public string DisplayName { get; set; } = string.Empty; // Will be populated from market config
 
         [JsonIgnore]
-        public string Classification { get; set; } = "coreproduct"; // Will be populated from market config
+        public bool IsRequired { get; set; } = false; // Will be populated from market config
+
+        [JsonIgnore]
+        public bool IsUnique { get; set; } = false; // Will be populated from market config
 
         /// <summary>
         /// Resolves this column property using the market configuration
+        /// If Classification is default/unset, it will be resolved from market config
         /// </summary>
         public void ResolveFromMarketConfig(ProductPropertyConfiguration marketConfig)
         {
@@ -284,11 +290,23 @@ namespace SacksDataLayer.FileProcessing.Configuration
             if (marketConfig.Properties.TryGetValue(ProductPropertyKey, out var marketProperty))
             {
                 DisplayName = marketProperty.DisplayName;
-                Classification = marketProperty.Classification.ToString().ToLowerInvariant();
-                // Note: DataType remains as defined in the column configuration (supplier-specific)
+                IsRequired = marketProperty.IsRequired;
+                IsUnique = marketProperty.IsUnique;
                 
-                // Use market defaults if file-specific overrides are not set
-                IsRequired ??= marketProperty.IsRequired;
+                // Only override classification if it's still the default value
+                if (Classification == PropertyClassificationType.ProductDynamic && 
+                    ProductPropertyKey != "ProductDynamic") // Avoid overriding explicit ProductDynamic
+                {
+                    Classification = marketProperty.Classification;
+                }
+            }
+            else
+            {
+                // Fallback: property not found in market config
+                DisplayName = ProductPropertyKey;
+                IsRequired = false;
+                IsUnique = false;
+                // Keep existing Classification (don't override)
             }
         }
 

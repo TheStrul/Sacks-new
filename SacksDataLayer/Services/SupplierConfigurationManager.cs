@@ -371,7 +371,7 @@ namespace SacksDataLayer.FileProcessing.Services
                 
                 // Show resolved properties from market config
                 var displayName = !string.IsNullOrEmpty(property.DisplayName) ? property.DisplayName : property.ProductPropertyKey;
-                var classification = !string.IsNullOrEmpty(property.Classification) ? property.Classification : "unknown";
+                var classification = property.Classification.ToString();
                 
                 _logger?.LogDebug("   {Column}: {DisplayName} → {ProductPropertyKey} ({Classification}, {Requirements}{Unique}{Skip})", 
                     column, displayName, property.ProductPropertyKey, classification, req, unique, skip);
@@ -498,48 +498,43 @@ namespace SacksDataLayer.FileProcessing.Services
 
                 // Auto-suggest mapping based on header name
                 var suggestedMapping = SuggestPropertyMapping(cellValue);
-                _logger?.LogDebug("   Auto-mapped: {TargetProperty} ({Classification})", suggestedMapping.targetProperty, suggestedMapping.classification);
+                _logger?.LogDebug("   Auto-mapped: {ProductPropertyKey} ({Classification})", suggestedMapping.targetProperty, suggestedMapping.classification);
                 
                 var targetProperty = suggestedMapping.targetProperty;
-
-                // Use market config defaults if available
-                bool isRequired = false;
-                bool isUnique = false;
-                
-                if (marketConfig?.Properties.TryGetValue(targetProperty, out var marketProp) == true)
-                {
-                    isRequired = marketProp.IsRequired;
-                    _logger?.LogDebug("   Market config applied: Required={IsRequired}", isRequired);
-                }
-                else
-                {
-                    // Fallback heuristics
-                    isRequired = targetProperty.Contains("name", StringComparison.OrdinalIgnoreCase) || 
-                                targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase);
-                }
-                
-                isUnique = targetProperty.Contains("ean", StringComparison.OrdinalIgnoreCase) || 
-                          targetProperty.Contains("id", StringComparison.OrdinalIgnoreCase);
 
                 // Determine data type automatically
                 var dataType = DetermineDataType(fileData, headerRowIndex, i);
                 
+                // Resolve classification from market config if available
+                var classification = PropertyClassificationType.ProductDynamic; // default
+                if (marketConfig?.Properties.TryGetValue(targetProperty, out var marketProp) == true)
+                {
+                    classification = marketProp.Classification;
+                    _logger?.LogDebug("   Market config applied: Classification={Classification}", classification);
+                }
+                
                 var columnProperty = new ColumnProperty
                 {
                     ProductPropertyKey = targetProperty,
+                    Classification = classification, // Set directly - simpler!
                     Format = dataType.format,
                     DefaultValue = dataType.defaultValue,
                     AllowNull = dataType.allowNull,
                     MaxLength = dataType.maxLength,
                     Transformations = dataType.transformations,
-                    IsRequired = isRequired,
-                    IsUnique = isUnique,
                     SkipEntireRow = false // Default to false for automatic mode
                 };
 
                 columnProperties[columnLetter] = columnProperty;
-                _logger?.LogDebug("   Mapped {ColumnLetter} → {TargetProperty} (Required: {IsRequired}, Unique: {IsUnique})", 
-                    columnLetter, targetProperty, isRequired, isUnique);
+                
+                // Resolve other properties from market config if available
+                if (marketConfig != null)
+                {
+                    columnProperty.ResolveFromMarketConfig(marketConfig);
+                }
+                
+                _logger?.LogDebug("   Mapped {ColumnLetter} → {ProductPropertyKey} (Classification: {Classification}, Required: {IsRequired}, Unique: {IsUnique})", 
+                    columnLetter, targetProperty, columnProperty.Classification, columnProperty.IsRequired, columnProperty.IsUnique);
             }
 
             return columnProperties;

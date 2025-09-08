@@ -38,7 +38,7 @@ namespace SacksDataLayer.Services.Interfaces
         /// Creates or gets an existing supplier based on configuration
         /// </summary>
         Task<SupplierEntity> CreateOrGetSupplierFromConfigAsync(string supplierName, 
-            string? description = null, string? createdBy = null);
+            string? description = null);
 
         /// <summary>
         /// Deletes a supplier

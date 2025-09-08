@@ -131,6 +131,9 @@ namespace SacksDataLayer.Services.Implementations
                 _logger.LogFileProcessingStart(fileName, "BulletproofMode", correlationId);
                 _logger.LogInformation("🚀 Starting bulletproof file processing for {FileName}", fileName);
 
+                // 🔧 FIX: Clear change tracker before processing to avoid entity conflicts
+                await _databaseService.ClearChangeTrackerAsync(cancellationToken);
+
                 // 🛡️ STEP 1: Enhanced file validation with size and accessibility checks
                 ValidateFileWithEnhancedChecksAsync(filePath, correlationId, cancellationToken);
 
@@ -448,55 +451,32 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                _logger.LogInformation("Processing file as Supplier Offer with transaction-based optimizations");
+                _logger.LogInformation("Processing file as Supplier Offer with unified navigation property pattern");
                 
                 // Execute all database operations within a single transaction
                 await _unitOfWork.ExecuteInTransactionAsync(async (ct) =>
                 {
-                    // Create processing context
-                    var context = new ProcessingContext
-                    {
-                        SourceFileName = Path.GetFileName(filePath),
-                        ProcessingDate = DateTime.UtcNow
-                    };
-
                     // Step 1: Create or get supplier
-                    _logger.LogDebug("Creating/finding supplier: {SupplierName}", supplierConfig.Name);
-                    var supplier = await _databaseService.CreateOrGetSupplierAsync(supplierConfig, "BulletproofProcessor", ct);
-                    
-                    // Step 1.5: Save changes to get the supplier ID
-                    await _unitOfWork.SaveChangesAsync(ct);
-                    _logger.LogDebug("Supplier ready: {SupplierName} (ID: {SupplierId})", supplier.Name, supplier.Id);
-                    
-                    // Step 2: Ensure no duplicate offer (dev mode: delete existing if found)
-                    _logger.LogDebug("Checking for existing offer with name: {FileName}", Path.GetFileName(filePath));
-                    await _databaseService.EnsureOfferCanBeProcessedAsync(
-                        supplier.Id, 
-                        Path.GetFileName(filePath), 
-                        supplier.Name, 
-                        ct);
-                    _logger.LogDebug("Offer validation passed - proceeding with processing");
+                    var supplier = await _databaseService.CreateOrGetSupplierAsync(supplierConfig, ct);
 
-                    // Step 3: Create new offer
-                    _logger.LogDebug("Creating offer for file: {FileName}", Path.GetFileName(filePath));
+                    // Step 2: Create offer using navigation properties (no intermediate save needed)
                     var offer = await _databaseService.CreateOfferAsync(
                         supplier,
                         Path.GetFileName(filePath),
-                        context.ProcessingDate,
-                        "USD", // TODO: Extract from config
+                        DateTime.UtcNow,
+                        "USD",
                         "Enhanced File Import",
                         "BulletproofProcessor",
                         ct);
-                    
-                    // Step 2.5: Save changes to get the offer ID
-                    await _unitOfWork.SaveChangesAsync(ct);
-                    _logger.LogDebug("Offer created: {OfferName} (ID: {OfferId})", offer.OfferName, offer.Id);
 
-                    // Step 3: Analyze file data (independent of database state)
-                    _logger.LogDebug("Analyzing file data without database dependencies");
-                    
-                    var analysisResult = await AnalyzeFileDataAsync(fileData, 
-                        supplier, supplierConfig, context.ProcessingDate, "BulletproofProcessor", ct);
+                    // Step 3: Analyze file data and populate offer.OfferProducts
+                    var context = new ProcessingContext
+                    {
+                        SupplierOffer = offer,
+                        FileData = fileData
+                    };
+
+                    var analysisResult = await AnalyzeFileDataAsync(fileData, context, supplierConfig, "BulletproofProcessor", ct);
                     
                     if (analysisResult.Errors.Any())
                     {
@@ -505,27 +485,25 @@ namespace SacksDataLayer.Services.Implementations
                         throw new InvalidDataException(errorMessage);
                     }
 
-                    var productCount = analysisResult.SupplierOffer.OfferProducts.Count();
-                    _logger.LogInformation("Analyzed {ProductCount:N0} product offers from file", productCount);
+                    //Stpe 4: Process products and offers in optimized bulk operation
+                    await _databaseService.ProcessOfferAsync(offer,  ct);
 
-                    // Step 4: 🔧 FIX - Use ProcessProductAsync which handles duplicate EANs properly
-                    _logger.LogDebug("Processing products using optimized batch method with duplicate EAN handling");
-                    
-                    var batchResult = await _databaseService.ProcessProductAsync(
-                        analysisResult.SupplierOffer.OfferProducts.ToList(), 
-                        offer, 
-                        supplierConfig, 
-                        "BulletproofProcessor", 
-                        ct);
 
-                    // Step 5: Final save for all remaining changes
+                    // Step 5: Save complete object graph in single transaction
+                    // EF Core will save Supplier → Offer → OfferProducts → Products in correct order
                     await _unitOfWork.SaveChangesAsync(ct);
-                    _logger.LogDebug("All changes committed successfully in single transaction");
 
                     stopwatch.Stop();
 
-                    // Step 6: Display comprehensive results
-                    DisplayProcessingResults(supplier, offer, batchResult, stopwatch.ElapsedMilliseconds);
+                    // Step 5: Display results
+                    _logger.LogInformation("Processing complete:");
+                    _logger.LogInformation("{OfferName}", offer.OfferName);
+                    _logger.LogInformation("Created offer with {ProductCount:N0} products", offer.OfferProducts.Count);
+                    
+                    if (stopwatch.ElapsedMilliseconds > 5000) // Only show if > 5 seconds
+                    {
+                        _logger.LogInformation("Time: {ProcessingTime:F1}s", stopwatch.ElapsedMilliseconds / 1000.0);
+                    }
                     
                 }, cancellationToken);
             }
@@ -603,25 +581,16 @@ namespace SacksDataLayer.Services.Implementations
         /// This creates a pure data analysis of what the file contains
         /// </summary>
         private async Task<ProcessingResult> AnalyzeFileDataAsync(
-            SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileData fileData,
-            SupplierEntity supplier,
+            FileData fileData,
+            ProcessingContext analysisContext,
             SupplierConfiguration supplierConfig,
-            DateTime processingDate,
             string? createdBy = null,
             CancellationToken cancellationToken = default)
         {
-            // Create a clean analysis context without database entities
-            var analysisContext = new ProcessingContext
-            {
-                SourceFileName = fileData.FileName,
-                ProcessingDate = processingDate,
-                SupplierName = supplier.Name,
-                SupplierOffer = null // No database entity during analysis
-            };
             
             // Create a logger for ConfigurationNormalizer - we'll pass null for now since the logger is optional
             var normalizer = new ConfigurationNormalizer(supplierConfig, _propertyNormalizer, null);
-            var analysisResult = await normalizer.NormalizeAsync(fileData, analysisContext);
+            var analysisResult = await normalizer.NormalizeAsync(analysisContext);
             
             return analysisResult;
         }
