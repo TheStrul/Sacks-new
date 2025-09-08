@@ -3,6 +3,7 @@ using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace SacksDataLayer.Services.Implementations
 {
@@ -107,7 +108,10 @@ namespace SacksDataLayer.Services.Implementations
 
                 // Update properties
                 existingProduct.Name = product.Name;
-                existingProduct.DynamicProperties = product.DynamicProperties;
+                
+                // 🔧 MERGE DYNAMIC PROPERTIES: Combine existing and new properties
+                existingProduct.MergeDynamicPropertiesFrom(product);
+                
                 existingProduct.ModifiedAt = DateTime.UtcNow;
 
                 _repository.Update(existingProduct);
@@ -180,21 +184,24 @@ namespace SacksDataLayer.Services.Implementations
                         // Use the first product instance to check for changes
                         var firstProduct = offerProductsWithSameEAN.First().Product;
                         
-                        // Check if the new product has changes compared to existing one
-                        if (trackedProduct.DynamicPropertiesJson == firstProduct.DynamicPropertiesJson)
+                        // 🔧 MERGE DYNAMIC PROPERTIES: Create merged properties for comparison
+                        var originalJson = trackedProduct.DynamicPropertiesJson;
+                        var mergedProperties = MergeDynamicProperties(trackedProduct.DynamicProperties, firstProduct.DynamicProperties);
+                        var mergedJson = mergedProperties.Count > 0 ? JsonSerializer.Serialize(mergedProperties) : null;
+                        
+                        // Check if the merged properties differ from existing ones
+                        if (originalJson == mergedJson)
                         {
                             // No changes, but still replace with tracked entity for all instances
                             result.NoChanges++;
                         }
                         else
                         {
-                            _logger.LogWarning($"Updating {firstProduct.Name} ({ean}), from:\r\n{trackedProduct.DynamicPropertiesJson}\r\nto:\r\n{firstProduct.DynamicPropertiesJson}");
+                            _logger.LogWarning($"Updating {firstProduct.Name} ({ean}), from:\r\n{originalJson}\r\nto:\r\n{mergedJson}");
 
                             // Update existing product properties
                             trackedProduct.Name = firstProduct.Name;
-                            trackedProduct.DynamicPropertiesJson = firstProduct.DynamicPropertiesJson;
-                            trackedProduct.DynamicProperties = firstProduct.DynamicProperties;
-                            trackedProduct.ModifiedAt = DateTime.UtcNow;
+                            trackedProduct.MergeDynamicPropertiesFrom(firstProduct);
                             
                             result.Updated++;
                         }
@@ -302,6 +309,35 @@ namespace SacksDataLayer.Services.Implementations
         public async Task<int> GetTotalCountAsync()
         {
             return await _repository.GetCountAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// 🔧 MERGE LOGIC: Merges existing and new dynamic properties
+        /// New properties overwrite existing ones, but existing properties not in new are preserved
+        /// </summary>
+        /// <param name="existingProperties">Current dynamic properties</param>
+        /// <param name="newProperties">New dynamic properties to merge</param>
+        /// <returns>Merged dynamic properties dictionary</returns>
+        private static Dictionary<string, object?> MergeDynamicProperties(
+            Dictionary<string, object?> existingProperties, 
+            Dictionary<string, object?> newProperties)
+        {
+            // Start with a copy of existing properties
+            var merged = existingProperties?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, object?>();
+            
+            // Add or overwrite with new properties
+            if (newProperties != null)
+            {
+                foreach (var kvp in newProperties)
+                {
+                    if (!string.IsNullOrWhiteSpace(kvp.Key))
+                    {
+                        merged[kvp.Key] = kvp.Value;
+                    }
+                }
+            }
+            
+            return merged;
         }
     }
 }
