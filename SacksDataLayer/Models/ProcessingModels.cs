@@ -13,13 +13,13 @@ namespace SacksDataLayer.FileProcessing.Models
         /// <summary>
         /// Supplier offer metadata (one per file processing session)
         /// </summary>
-        required public SupplierOfferAnnex SupplierOffer { get; set; }
+        required public SupplierOfferAnnex SupplierOffer { get; init; }
 
-        public ProcessingStatistics Statistics { get; set; } = new();
-        public List<string> Warnings { get; set; } = new();
-        public List<string> Errors { get; set; } = new();
-        public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
-        required public string SourceFile { get; set; }
+        public ProcessingStatistics Statistics { get; }  = new();
+        public List<string> Warnings { get; } = new();
+        public List<string> Errors { get; } = new();
+        public DateTime ProcessedAt { get; } = DateTime.UtcNow;
+        required public string SourceFile { get; init; }
     }
 
     /// <summary>

@@ -655,6 +655,65 @@
         "expectedColumnCount": 8,
         "headerRowIndex": 1
       }
+    },
+    {
+      "name": "Lux",
+      "detection": {
+        "fileNamePatterns": [
+          "Lux*.xls*"        ]
+      },
+      "columnProperties": {
+        "A": {
+          "productPropertyKey": "EAN",
+          "classification": "ProductEAN",
+          "dataType": "string",
+          "allowNull": false,
+          "maxLength": 20,
+          "validationPatterns": [
+            "^\\d+$"
+          ],
+          "skipEntireRow": true
+        },
+        "B": {
+          "productPropertyKey": "Description",
+          "classification": "OfferDescription",
+          "dataType": "string",
+          "allowNull": false,
+          "maxLength": 500,
+          "skipEntireRow": true
+        },
+        "C": {
+          "productPropertyKey": "Quantity",
+          "classification": "OfferQuantity",
+          "dataType": "int",
+          "format": "integer",
+          "defaultValue": 0,
+          "allowNull": false,
+          "transformations": [
+            "removeSymbols"
+          ],
+          "validationPatterns": [],
+          "allowedValues": [],
+          "skipEntireRow": true
+        },
+        "D": {
+          "productPropertyKey": "Price",
+          "classification": "OfferPrice",
+          "dataType": "decimal",
+          "format": "currency",
+          "allowNull": false,
+          "transformations": [
+            "removeSymbols",
+            "parseDecimal"
+          ],
+          "skipEntireRow": true
+        }
+      },
+      "fileStructure": {
+        "dataStartRowIndex": 5,
+        "expectedColumnCount": 8,
+        "headerRowIndex": 1
+      }
     }
   ],
   "productPropertyConfiguration": {

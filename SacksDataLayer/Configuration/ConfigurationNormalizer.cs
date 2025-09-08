@@ -61,45 +61,35 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             ArgumentNullException.ThrowIfNull(context);
 
-            var startTime = DateTime.UtcNow;
             var result = new ProcessingResult()
             {
                 SupplierOffer = context.SupplierOffer,
                 SourceFile = context.FileData.FilePath,
-                ProcessedAt = startTime
             };
 
             try
             {
-                var offerProducts = new List<OfferProductAnnex>();
-                var statistics = new ProcessingStatistics();
-                var warnings = new List<string>();
-                var errors = new List<string>();
 
                 if (context.FileData.DataRows.Count == 0)
                 {
-                    result.Statistics = statistics;
                     return result;
                 }
 
                 // Require ColumnProperties configuration
                 if (_configuration.ColumnProperties?.Count == 0)
                 {
-                    errors.Add("No column properties configured for supplier");
-                    result.Errors = errors;
+                    result.Errors.Add("No column properties configured for supplier");
                     return result;
                 }
 
                 // Use supplier offer from context if provided, otherwise create one
-                var supplierOffer = context.SupplierOffer;
-                result.SupplierOffer = supplierOffer;
-                statistics.SupplierOffersCreated = context.SupplierOffer != null ? 0 : 1; // Only count if we created it
+                result.Statistics.SupplierOffersCreated = context.SupplierOffer != null ? 0 : 1; // Only count if we created it
 
 
                 // Process data rows using FileStructure configuration
                 var dataStartIndex = _configuration.FileStructure.DataStartRowIndex-1; // Convert to zero-based index
                 var allDataRows = context.FileData.DataRows.Skip(dataStartIndex).ToList();
-                statistics.TotalRowsProcessed = allDataRows.Count;
+                result.Statistics.TotalRowsProcessed = allDataRows.Count;
 
                 var emptyRowsSkipped = allDataRows.Count(r => !r.HasData);
                 var dataRows = allDataRows.Where(r => r.HasData);
@@ -113,33 +103,30 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 {
                     try
                     {
-                        var offerProduct = await NormalizeRowAsync(row, context, context.FileData.FilePath, supplierOffer);
+                        var offerProduct = await NormalizeRowAsync(row, context, context.FileData.FilePath, result.SupplierOffer);
 
                         if (offerProduct != null)
                         {
                             if (IsValidOfferProduct(offerProduct))
                             {
-                                offerProducts.Add(offerProduct);
-                                statistics.ProductsCreated++;
-                                statistics.PricingRecordsProcessed++;
+                                result.SupplierOffer.OfferProducts.Add(offerProduct);
+                                result.Statistics.ProductsCreated++;
+                                result.Statistics.PricingRecordsProcessed++;
 
                                 // Check if this offer product has offer-specific data
                                 var hasOfferData = offerProduct.Price > 0 ||
                                                  offerProduct.Quantity > 0 ||
                                                  offerProduct.OfferProperties.Count > 0; if (hasOfferData)
                                 {
-                                    statistics.OfferProductsCreated++;
+                                    result.Statistics.OfferProductsCreated++;
                                 }
-                                if (offerProduct.OfferProperties.ContainsKey("StockQuantity"))
-                                {
-                                    statistics.StockRecordsProcessed++;
-                                }
+                                result.Statistics.StockRecordsProcessed++;
                             }
                             else
                             {
-                                statistics.ProductsSkipped++;
-                                statistics.OrphanedCommercialRecords++;
-                                _logger?.LogDebug("Skipped invalid product in row {RowIndex}: Product='{ProductName}', EAN='{ProductEAN}' (missing required data)", 
+                                result.Statistics.ProductsSkipped++;
+                                result.Statistics.OrphanedCommercialRecords++;
+                                _logger?.LogDebug("Skipped invalid product in row {RowIndex}: Product='{ProductName}', EAN='{ProductEAN}' (missing required data)",
                                     row.Index, offerProduct.Product?.Name ?? "null", offerProduct.Product?.EAN ?? "null");
                             }
                         }
@@ -150,26 +137,22 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     }
                     catch (Exception ex)
                     {
-                        statistics.ErrorCount++;
-                        errors.Add($"Row {row.Index}: {ex.Message}");
+                        result.Statistics.ErrorCount++;
+                        result.Errors.Add($"Row {row.Index}: {ex.Message}");
                     }
                 }
 
                 // Finalize statistics
-                statistics.ProcessingTime = DateTime.UtcNow - startTime;
-                statistics.WarningCount = warnings.Count;
+                result.Statistics.ProcessingTime = DateTime.UtcNow - result.ProcessedAt;
+                result.Statistics.WarningCount = result.Warnings.Count;
 
-                result.SupplierOffer.OfferProducts = offerProducts;
-                result.Statistics = statistics;
-                result.Warnings = warnings;
-                result.Errors = errors;
 
                 return result;
             }
             catch (Exception ex)
             {
                 result.Errors.Add($"Processing failed: {ex.Message}");
-                result.Statistics.ProcessingTime = DateTime.UtcNow - startTime;
+                result.Statistics.ProcessingTime = DateTime.UtcNow - result.ProcessedAt;
                 return result;
             }
         }
@@ -185,8 +168,11 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             try
             {
+                var offerProduct = new OfferProductAnnex();
                 var product = new ProductEntity();
-                var offerProperties = new Dictionary<string, object?>();
+                offerProduct.Product = product;
+                offerProduct.Offer = supplierOffer;
+
 
                 // Process each configured column property
                 foreach (var columnConfig in _configuration.ColumnProperties)
@@ -200,22 +186,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: No Classification resolved from market config", columnKey, row.Index);
                         continue;
                     }
-
-                    // For fixed classifications, we don't need ProductPropertyKey validation
-                    var needsProductPropertyKey = columnProperty.Classification == PropertyClassificationType.ProductDynamic ||
-                                                 columnProperty.Classification == PropertyClassificationType.OfferDynamic;
-
-                    var targetProperty = columnProperty.ProductPropertyKey;
-                    if (needsProductPropertyKey && string.IsNullOrEmpty(targetProperty))
-                    {
-                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: No ProductPropertyKey defined for dynamic classification {Classification}", 
-                            columnKey, row.Index, columnProperty.Classification);
-                        continue;
-                    }
-
-                    // Use classification-specific fallback for targetProperty when not needed
-                    targetProperty = needsProductPropertyKey ? targetProperty : columnProperty.Classification.ToString();
-
+                    
                     // Get column index
                     var columnIndex = GetColumnIndex(columnKey);
                     if (columnIndex < 0 || columnIndex >= row.Cells.Count)
@@ -226,50 +197,69 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     }
 
                     // Extract and process cell value
-                    var rawValue = row.Cells[columnIndex].Value?.Trim();
-                    if (string.IsNullOrEmpty(rawValue))
-                    {
-                        // Handle default values for empty cells
-                        await SetDefaultValueIfConfiguredAsync(product, offerProperties, columnProperty, targetProperty);
-                        continue;
-                    }
-
+                    string? stringValue = row.Cells[columnIndex].Value?.Trim();
+                    
                     // Validate raw value first (before transformation)
-                    var validationResult = await ValidateValueAsync(rawValue, columnProperty, targetProperty);
+                    var validationResult = await ValidateValueAsync(stringValue, columnProperty);
                     if (!validationResult.IsValid)
                     {
                         if (validationResult.SkipEntireRow)
                         {
                             // Skip the entire row - return null to indicate row should be skipped
                             _logger?.LogTrace("Skipping entire row {RowIndex}: Validation failed for column {ColumnKey} with value '{RawValue}' - {ErrorMessage}",
-                                row.Index, columnKey, rawValue, validationResult.ErrorMessage);
+                                row.Index, columnKey, stringValue, validationResult.ErrorMessage);
                             return null;
                         }
                         // Skip just this column
                         _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Validation failed for value '{RawValue}' - {ErrorMessage}",
-                            columnKey, row.Index, rawValue, validationResult.ErrorMessage);
+                            columnKey, row.Index, stringValue, validationResult.ErrorMessage);
                         continue;
                     }
 
                     // Apply transformations and type conversion after validation passes
-                    var processedValue = await ProcessCellValueAsync(rawValue, columnProperty);
+                    var processedValue = await ProcessCellValueAsync(stringValue!, columnProperty);
                     if (processedValue == null && !columnProperty.AllowNull)
                     {
-                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Processed value is null but AllowNull=false (raw='{RawValue}')",
-                            columnKey, row.Index, rawValue);
+                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Processed value is null but AllowNull=false (raw='{R}'), Proccessd = {P}",
+                            columnKey, row.Index, stringValue, processedValue);
                         continue;
                     }
 
-                    // Classify and assign value based on property classification (Classification is the primary routing key)
-                    await AssignValueByClassificationAsync(
-                        product, offerProperties, targetProperty, processedValue, columnProperty.Classification);
+                    switch (columnProperty.Classification)
+                    {
+                        case PropertyClassificationType.ProductName:
+                            product.Name = processedValue?.ToString() ?? product.Name;
+                            break;
+                        case PropertyClassificationType.ProductEAN:
+                            product.EAN = processedValue?.ToString() ?? product.EAN;
+                            break;
+                        case PropertyClassificationType.OfferPrice:
+                            offerProduct.Price = processedValue is decimal d ? d : offerProduct.Price;
+                            break;
+                        case PropertyClassificationType.OfferQuantity:
+                            offerProduct.Quantity = processedValue is int i ? i : offerProduct.Quantity;
+                            break;
+                        case PropertyClassificationType.OfferDescription:
+                            offerProduct.Description = processedValue?.ToString() ?? offerProduct.Description;
+                            break;
+                        case PropertyClassificationType.ProductDynamic:
+                            product.SetDynamicProperty(columnProperty.ProductPropertyKey, processedValue);
+                            break;
+                        case PropertyClassificationType.OfferDynamic:
+                            offerProduct.SetOfferProperty(columnProperty.ProductPropertyKey, processedValue);
+                            break;
+                        default:
+                            _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Unsupported Classification {Classification}",
+                                columnKey, row.Index, columnProperty.Classification);
+                            break;
+                    }
+
                 }
 
                 // Extract additional properties from description if available and extractor is configured
-                var description = offerProperties.TryGetValue("description", out var descValue) ? descValue?.ToString() : null;
-                if (_descriptionExtractor is not null && !string.IsNullOrEmpty(description))
+                if (_descriptionExtractor is not null && !string.IsNullOrEmpty(offerProduct.Description))
                 {
-                    var extractedProperties = _descriptionExtractor.ExtractPropertiesFromDescription(description);
+                    var extractedProperties = _descriptionExtractor.ExtractPropertiesFromDescription(offerProduct.Description);
 
                     // Add extracted properties to product's dynamic properties if they don't already exist
                     foreach (var extractedProp in extractedProperties)
@@ -287,10 +277,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     product.Name = ConstructProductNameFromProperties(product);
                 }
 
-                // Create unified OfferProduct entity containing everything
-                var offerProduct = CreateOfferProductEntity(offerProperties, supplierOffer);
-                offerProduct.Product = product;                    
-                offerProduct.Offer = supplierOffer;
 
                 return offerProduct;
             }
@@ -348,7 +334,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Validates raw string value against column validation rules (before transformation)
         /// </summary>
-        private async Task<ValidationResult> ValidateValueAsync(string rawValue, ColumnProperty columnProperty, string targetProperty)
+        private async Task<ValidationResult> ValidateValueAsync(string? rawValue, ColumnProperty columnProperty)
         {
             await Task.CompletedTask; // For async consistency
 
@@ -357,7 +343,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             {
                 return ValidationResult.Invalid(
                     columnProperty.SkipEntireRow,
-                    $"Required field '{targetProperty}' is empty");
+                    $"Required field '{columnProperty.ProductPropertyKey}' is empty");
             }
 
             // Check allowed values if configured (validate against raw values before transformation)
@@ -367,7 +353,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 {
                     return ValidationResult.Invalid(
                         columnProperty.SkipEntireRow,
-                        $"Value '{rawValue}' is not in allowed values for '{targetProperty}'");
+                        $"Value '{rawValue}' is not in allowed values for '{columnProperty.ProductPropertyKey}'");
                 }
             }
 
@@ -382,79 +368,12 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     {
                         return ValidationResult.Invalid(
                             columnProperty.SkipEntireRow,
-                            $"Value '{rawValue}' does not match validation patterns for '{targetProperty}'");
+                            $"Value '{rawValue}' does not match validation patterns for '{columnProperty.ProductPropertyKey}'");
                     }
                 }
             }
 
             return ValidationResult.Valid();
-        }
-
-        /// <summary>
-        /// Sets default value if configured for empty cells
-        /// </summary>
-        private async Task SetDefaultValueIfConfiguredAsync(
-            ProductEntity product,
-            Dictionary<string, object?> offerProperties,
-            ColumnProperty columnProperty,
-            string targetProperty)
-        {
-            await Task.CompletedTask; // For async consistency
-
-            if (columnProperty.DefaultValue != null)
-            {
-                await AssignValueByClassificationAsync(
-                    product, offerProperties, targetProperty,
-                    columnProperty.DefaultValue, columnProperty.Classification);
-            }
-        }
-
-        /// <summary>
-        /// Assigns value to appropriate entity based on classification
-        /// </summary>
-        private async Task AssignValueByClassificationAsync(
-            ProductEntity product,
-            Dictionary<string, object?> offerProperties,
-            string targetProperty,
-            object? value,
-            PropertyClassificationType classification)
-        {
-            await Task.CompletedTask; // For async consistency
-
-            switch (classification)
-            {
-                case PropertyClassificationType.ProductName:
-                    product.Name = value?.ToString() ?? "";
-                    break;
-                case PropertyClassificationType.ProductEAN:
-                    product.EAN = value?.ToString() ?? "";
-                    break;
-                case PropertyClassificationType.ProductDynamic:
-                    product.SetDynamicProperty(targetProperty, value);
-                    break;
-                case PropertyClassificationType.OfferPrice:
-                    if (decimal.TryParse(value?.ToString(), out decimal price))
-                    {
-                        offerProperties["price"] = price;
-                    }
-                    break;
-                case PropertyClassificationType.OfferQuantity:
-                    if (int.TryParse(value?.ToString(), out int quantity))
-                    {
-                        offerProperties["quantity"] = quantity;
-                    }
-                    break;
-                case PropertyClassificationType.OfferDescription:
-                    offerProperties["description"] = value?.ToString();
-                    break;
-                case PropertyClassificationType.OfferDynamic:
-                    offerProperties[targetProperty] = value;
-                    break;
-                default:
-                    // Default to core product for unknown classification
-                    product.SetDynamicProperty(targetProperty, value);
-                    break;
-            }
         }
 
         #endregion
@@ -708,57 +627,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
 
         /// <summary>
-        /// Creates an OfferProduct entity from offer properties
-        /// </summary>
-        private OfferProductAnnex CreateOfferProductEntity(Dictionary<string, object?> offerProperties, SupplierOfferAnnex? supplierOffer)
-        {
-            var offerProduct = new OfferProductAnnex
-            {
-                CreatedAt = DateTime.UtcNow
-            };
-
-            // Track which properties have been mapped to avoid duplication
-            var mappedProperties = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            // Map standard offer properties to OfferProduct entity properties
-            foreach (var prop in offerProperties)
-            {
-                switch (prop.Key.ToLowerInvariant())
-                {
-                    case "price":
-                        if (decimal.TryParse(prop.Value?.ToString(), out decimal price))
-                            offerProduct.Price = price;
-                        mappedProperties.Add(prop.Key);
-                        break;
-                    case "quantity":
-                        if (int.TryParse(prop.Value?.ToString(), out int quantity))
-                            offerProduct.Quantity = quantity;
-                        mappedProperties.Add(prop.Key);
-                        break;
-                    case "description":
-                        offerProduct.Description = prop.Value?.ToString();
-                        mappedProperties.Add(prop.Key);
-                        break;
-                }
-            }
-
-            // Only store unmapped properties as dynamic properties to avoid duplication
-            var unmappedProperties = offerProperties
-                .Where(kvp => !mappedProperties.Contains(kvp.Key))
-                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-            if (unmappedProperties.Count > 0)
-            {
-                foreach (var prop in unmappedProperties)
-                {
-                    offerProduct.SetOfferProperty(prop.Key, prop.Value);
-                }
-            }
-
-            return offerProduct;
-        }
-
-        /// <summary>
         /// Constructs a product name from available properties when name is missing
         /// </summary>
         private string ConstructProductNameFromProperties(ProductEntity product)
@@ -802,10 +670,10 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         private bool IsValidOfferProduct(OfferProductAnnex offerProduct)
         {
             // For supplier offers, require valid product with EAN
-            return offerProduct?.Product != null &&
-                   !string.IsNullOrEmpty(offerProduct.Product.Name) &&
-                   offerProduct.Product.Name != "Unknown Product" &&
-                   !string.IsNullOrEmpty(offerProduct.Product.EAN);
+            return offerProduct.Product != null &&
+                   !string.IsNullOrEmpty(offerProduct.Product.EAN) &&
+                   offerProduct.Price > 0 &&
+                   offerProduct.Quantity > 0;
         }
 
         #endregion
