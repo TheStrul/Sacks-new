@@ -38,7 +38,7 @@ namespace SacksDataLayer.Services.Implementations
     {
         #region Fields & Constants
 
-        private readonly IFileValidationService _fileValidationService;
+        private readonly IFileDataReader _fileDataReader;
         private readonly ISupplierConfigurationService _supplierConfigurationService;
         private readonly IFileProcessingDatabaseService _databaseService;
         private readonly IUnitOfWork _unitOfWork;
@@ -60,7 +60,7 @@ namespace SacksDataLayer.Services.Implementations
         #region Constructor & Validation
 
         public FileProcessingService(
-            IFileValidationService fileValidationService,
+            IFileDataReader _fileDataReader,
             ISupplierConfigurationService supplierConfigurationService,
             IFileProcessingDatabaseService databaseService,
             IUnitOfWork unitOfWork,
@@ -68,8 +68,8 @@ namespace SacksDataLayer.Services.Implementations
             ConfigurationPropertyNormalizer propertyNormalizer)
         {
             // Comprehensive null validation with detailed messages
-            _fileValidationService = fileValidationService ?? 
-                throw new ArgumentNullException(nameof(fileValidationService), "File validation service is required for processing operations");
+            this._fileDataReader = _fileDataReader ?? 
+                throw new ArgumentNullException(nameof(_fileDataReader), "File data reader is required for file operations");
             _supplierConfigurationService = supplierConfigurationService ?? 
                 throw new ArgumentNullException(nameof(supplierConfigurationService), "Supplier configuration service is required for auto-detection");
             _databaseService = databaseService ?? 
@@ -128,11 +128,7 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                _logger.LogFileProcessingStart(fileName, "BulletproofMode", correlationId);
                 _logger.LogInformation("🚀 Starting bulletproof file processing for {FileName}", fileName);
-
-                // 🔧 FIX: Clear change tracker before processing to avoid entity conflicts
-                await _databaseService.ClearChangeTrackerAsync(cancellationToken);
 
                 // 🛡️ STEP 1: Enhanced file validation with size and accessibility checks
                 ValidateFileWithEnhancedChecksAsync(filePath, correlationId, cancellationToken);
@@ -143,14 +139,44 @@ namespace SacksDataLayer.Services.Implementations
                 // 🎯 STEP 3: Auto-detect supplier
                 var supplierConfig = DetectSupplier(filePath, correlationId);
 
-                // 📖 STEP 4: Read file data with memory monitoring
-                var fileData = await ReadFileDataWithMonitoringAsync(filePath, correlationId, cancellationToken);
+                // Use the injected file validation service which should handle subtitle processing
+                var fileData = await _fileDataReader.ReadFileAsync(filePath);
 
-                // 🔍 STEP 5: Validate file structure with detailed reporting
-                await ValidateFileStructureWithDetailedReportingAsync(fileData, supplierConfig, correlationId, cancellationToken);
+                ProcessingContext context = new()
+                {
+                    FileData = fileData,
+                    CorrelationId = correlationId,
+                    SupplierConfiguration = supplierConfig,
+                    ProcessingResult = new ProcessingResult
+                    {
+                        SupplierOffer = null!, // Will be set later
+                        SourceFile = fileName
+                    }
+                };
+                context.ProcessingResult.Statistics.TotalRowsInFile = fileData.RowCount;
+                context.ProcessingResult.Statistics.TotalTitlesRows = supplierConfig.FileStructure.DataStartRowIndex-1;
+
+                //get all rows that have data starting from supplierConfig.FileStructure.DataStartRowIndex
+                var validRows =
+                    fileData
+                    .DataRows
+                    .Skip((supplierConfig.FileStructure?.DataStartRowIndex ?? 1) - 1) // Convert to 0-based index
+                    .Where(r => r.HasData) // Fixed: was !r.HasData
+                    .ToList(); // Materialize the query
+                context.ProcessingResult.Statistics.TotalEmptyRows = context.ProcessingResult.Statistics.TotalRowsInFile - validRows.Count - context.ProcessingResult.Statistics.TotalTitlesRows;
+
+                fileData.DataRows.Clear();
+                fileData.DataRows.AddRange(validRows);
+
+                
+
+                // 🔍 STEP 5: Read file data with subtitle processing and memory monitoring
+                ReadFileDataWithSubtitleProcessingAsync(context, cancellationToken);
+
+                context.ProcessingResult.Statistics.TotalDataRows = fileData.DataRows.Count;
 
                 // 🔄 STEP 6: Process data with direct database operations
-                await ProcessSupplierOfferWithOptimizationsAsync(fileData, filePath, supplierConfig, correlationId, cancellationToken);
+                await ProcessSupplierOfferWithOptimizationsAsync(context, cancellationToken);
 
                 // ✅ COMPLETION: Log success metrics
                 _logger.LogFileProcessingComplete(fileName, fileData.DataRows.Count, 
@@ -342,93 +368,33 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
+        
+
         /// <summary>
-        /// 📖 ENHANCED: File reading with memory monitoring
+        /// 📖 ENHANCED: File reading with subtitle processing support
         /// </summary>
-        private async Task<FileData> ReadFileDataWithMonitoringAsync(string filePath, string correlationId, CancellationToken cancellationToken)
+        private void ReadFileDataWithSubtitleProcessingAsync(
+            ProcessingContext context,
+            CancellationToken cancellationToken)
         {
             try
             {
-                _logger.LogDebug("Reading file data with memory monitoring...");
-                
-                var fileData = await _fileValidationService.ReadFileDataAsync(filePath, cancellationToken);
-                
-                // Validate row count
-                var rowCount = fileData.DataRows?.Count ?? 0;
-                if (rowCount > MAX_ROWS_PER_FILE)
+                // Apply subtitle processing if configuration is provided
+                if (context.SupplierConfiguration.SubtitleHandling?.Enabled == true)
                 {
-                    throw new InvalidOperationException($"File has too many rows: {rowCount:N0}. Maximum allowed: {MAX_ROWS_PER_FILE:N0}");
+                    var subtitleProcessor = new SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services.SubtitleRowProcessor();
+                    subtitleProcessor.ProcessSubtitleRows(context.FileData, context.SupplierConfiguration, cancellationToken);
                 }
-                
-                _logger.LogInformation("Successfully read {RowCount:N0} rows from file: {FileName}", rowCount, Path.GetFileName(filePath));
-                _logger.LogDebug("Read {RowCount:N0} rows", rowCount);
-                
-                return fileData;
+                int befor = context.FileData.DataRows.Count;
+                // remove all rows that are subtitle rows 
+                context.FileData.DataRows.RemoveAll(r => r.IsSubtitleRow);
+                int after = context.FileData.DataRows.Count;
+                int subtitleRows = befor - after;
+                context.ProcessingResult.Statistics.TotalTitlesRows += subtitleRows;
             }
             catch (Exception ex)
             {
-                _logger.LogError("File reading failed: {ErrorMessage}", ex.Message);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// 🔍 ENHANCED: File structure validation with detailed reporting
-        /// </summary>
-        private async Task ValidateFileStructureWithDetailedReportingAsync(FileData fileData, SupplierConfiguration supplierConfig, string correlationId, CancellationToken cancellationToken)
-        {
-            try
-            {
-                _logger.LogDebug("Validating file structure with enhanced checks");
-                var validationResult = _fileValidationService.ValidateFileStructureAsync(fileData, supplierConfig, cancellationToken);
-                
-                // Log detailed validation results
-                if (validationResult.FileHeaders.Any())
-                {
-                    _logger.LogDebug("Found {ColumnCount} columns: {Headers}", validationResult.ColumnCount, 
-                        string.Join(", ", validationResult.FileHeaders.Take(5)) + (validationResult.FileHeaders.Count > 5 ? "..." : ""));
-                }
-
-                if (validationResult.ExpectedColumnCount > 0)
-                {
-                    _logger.LogDebug("Expected {ExpectedColumns} columns, found {ActualColumns}", 
-                        validationResult.ExpectedColumnCount, validationResult.ColumnCount);
-                }
-
-                // Display warnings to user
-                foreach (var warning in validationResult.ValidationWarnings)
-                {
-                    _logger.LogWarning("{Warning}", warning);
-                }
-
-                // 🆕 ENHANCEMENT: Validate dataStartRowIndex configuration
-                await ValidateDataStartRowIndex(fileData.FilePath, supplierConfig);
-
-                _logger.LogValidationResult("EnhancedFileStructure", 
-                    validationResult.IsValid ? 1 : 0, 
-                    validationResult.IsValid ? 0 : 1, 
-                    correlationId);
-
-                // Handle validation errors
-                if (!validationResult.IsValid)
-                {
-                    _logger.LogError("File structure validation failed: {Errors}", string.Join("; ", validationResult.ValidationErrors));
-                    _logger.LogError("File structure validation failed:");
-                    foreach (var error in validationResult.ValidationErrors)
-                    {
-                        _logger.LogError("   • {Error}", error);
-                    }
-                    
-                    var errorMessage = $"File structure validation failed: {string.Join("; ", validationResult.ValidationErrors)}";
-                    throw new InvalidDataException(errorMessage);
-                }
-
-                _logger.LogDebug("File structure validation passed");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Structure validation failed for file: {FilePath}", fileData.FilePath);
-                _logger.LogError("Structure validation failed: {ErrorMessage}", ex.Message);
+                _logger.LogError("File reading with subtitle processing failed: {ErrorMessage}", ex.Message);
                 throw;
             }
         }
@@ -441,52 +407,39 @@ namespace SacksDataLayer.Services.Implementations
         /// 🚀 OPTIMIZED: Supplier offer processing with enhanced performance and transaction management
         /// </summary>
         private async Task ProcessSupplierOfferWithOptimizationsAsync(
-            FileData fileData,
-            string filePath,
-            SupplierConfiguration supplierConfig,
-            string correlationId,
+            ProcessingContext context,
             CancellationToken cancellationToken)
         {
             var stopwatch = Stopwatch.StartNew();
             
             try
             {
-                _logger.LogInformation("Processing file as Supplier Offer with unified navigation property pattern");
-                
                 // Execute all database operations within a single transaction
                 await _unitOfWork.ExecuteInTransactionAsync(async (ct) =>
                 {
                     // Step 1: Create or get supplier
-                    var supplier = await _databaseService.CreateOrGetSupplierAsync(supplierConfig, ct);
+                    var supplier = await _databaseService.CreateOrGetSupplierAsync(context.SupplierConfiguration, ct);
 
                     // Step 2: Create offer using navigation properties (no intermediate save needed)
-                    var offer = await _databaseService.CreateOfferAsync(
+                    context.ProcessingResult.SupplierOffer = await _databaseService.CreateOfferAsync(
                         supplier,
-                        Path.GetFileName(filePath),
+                        context.FileData.FileName,
                         DateTime.UtcNow,
-                        "USD",
-                        "Enhanced File Import",
-                        "BulletproofProcessor",
+                        context.SupplierConfiguration.Currency,
+                        "",
                         ct);
 
-                    // Step 3: Analyze file data and populate offer.OfferProducts
-                    var context = new ProcessingContext
-                    {
-                        SupplierOffer = offer,
-                        FileData = fileData
-                    };
-
-                    var analysisResult = await AnalyzeFileDataAsync(fileData, context, supplierConfig, "BulletproofProcessor", ct);
+                    await AnalyzeFileDataAsync(context, ct);
                     
-                    if (analysisResult.Errors.Any())
+                    if (context.ProcessingResult.Errors.Any())
                     {
-                        var errorMessage = $"Analysis errors: {string.Join(", ", analysisResult.Errors)}";
+                        var errorMessage = $"Analysis errors: {string.Join(", ", context.ProcessingResult.Errors)}";
                         _logger.LogError(errorMessage);
                         throw new InvalidDataException(errorMessage);
                     }
 
                     //Stpe 4: Process products and offers in optimized bulk operation
-                    await _databaseService.ProcessOfferAsync(offer,  ct);
+                    await _databaseService.ProcessOfferAsync(context.ProcessingResult.SupplierOffer,  ct);
 
 
                     // Step 5: Save complete object graph in single transaction
@@ -497,8 +450,8 @@ namespace SacksDataLayer.Services.Implementations
 
                     // Step 5: Display results
                     _logger.LogInformation("Processing complete:");
-                    _logger.LogInformation("{OfferName}", offer.OfferName);
-                    _logger.LogInformation("Created offer with {ProductCount:N0} products", offer.OfferProducts.Count);
+                    _logger.LogInformation("{OfferName}", context.ProcessingResult.SupplierOffer.OfferName);
+                    _logger.LogInformation("Created offer with {ProductCount:N0} products", context.ProcessingResult.SupplierOffer.OfferProducts.Count);
                     
                     if (stopwatch.ElapsedMilliseconds > 5000) // Only show if > 5 seconds
                     {
@@ -580,19 +533,12 @@ namespace SacksDataLayer.Services.Implementations
         /// Analyzes file data without any database dependencies
         /// This creates a pure data analysis of what the file contains
         /// </summary>
-        private async Task<ProcessingResult> AnalyzeFileDataAsync(
-            FileData fileData,
-            ProcessingContext analysisContext,
-            SupplierConfiguration supplierConfig,
-            string? createdBy = null,
-            CancellationToken cancellationToken = default)
+        private async Task AnalyzeFileDataAsync(ProcessingContext context, CancellationToken cancellationToken = default)
         {
             
-            // Create a logger for ConfigurationNormalizer - we'll pass null for now since the logger is optional
-            var normalizer = new ConfigurationNormalizer(supplierConfig, _propertyNormalizer, null);
-            var analysisResult = await normalizer.NormalizeAsync(analysisContext);
+            var normalizer = new ConfigurationNormalizer(context.SupplierConfiguration, new ConfigurationDescriptionPropertyExtractor(_propertyNormalizer.Configuration), _logger);
             
-            return analysisResult;
+            await normalizer.NormalizeAsync(context);            
         }
 
         #endregion

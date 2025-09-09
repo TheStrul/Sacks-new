@@ -47,7 +47,7 @@
                 var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
                 var inputsPath = GetInputDirectoryFromConfiguration(configuration);
 
-                var files = Directory.GetFiles(inputsPath, "*.xlsx")
+                var files = Directory.GetFiles(inputsPath, "*.xls*")
                                    .Where(f => !Path.GetFileName(f).StartsWith("~"))
                                    .ToArray();
 

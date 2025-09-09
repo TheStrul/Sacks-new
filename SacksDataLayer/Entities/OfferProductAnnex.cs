@@ -18,6 +18,13 @@ public class OfferProductAnnex : Annex
     [Column(TypeName = "decimal(18,2)")]
     public decimal Price { get; set; }
     
+    /// <summary>
+    /// Currency for the price (ISO code like USD, EUR, GBP)
+    /// </summary>
+    [Required]
+    [StringLength(3)]
+    public string Currency { get; set; } = "USD";
+    
     [Required]
     public int Quantity { get; set; }
     

@@ -125,7 +125,7 @@ namespace SacksDataLayer.Services.Implementations
         /// Creates or gets an existing supplier based on configuration
         /// NOTE: Does not manage transactions - caller must handle transaction scope
         /// </summary>
-        public async Task<SupplierEntity> CreateOrGetSupplierFromConfigAsync(string supplierName, 
+        public async Task<SupplierEntity> CreateOrGetSupplierByName(string supplierName, 
             string? description = null)
         {
             if (string.IsNullOrWhiteSpace(supplierName))

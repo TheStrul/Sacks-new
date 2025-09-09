@@ -1,6 +1,7 @@
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 
 using SacksDataLayer.Entities;
+using SacksDataLayer.FileProcessing.Configuration;
 
 namespace SacksDataLayer.FileProcessing.Models
 {
@@ -13,7 +14,7 @@ namespace SacksDataLayer.FileProcessing.Models
         /// <summary>
         /// Supplier offer metadata (one per file processing session)
         /// </summary>
-        required public SupplierOfferAnnex SupplierOffer { get; init; }
+        public SupplierOfferAnnex? SupplierOffer { get; set; }
 
         public ProcessingStatistics Statistics { get; }  = new();
         public List<string> Warnings { get; } = new();
@@ -27,21 +28,21 @@ namespace SacksDataLayer.FileProcessing.Models
     /// </summary>
     public class ProcessingStatistics
     {
-        public int TotalRowsProcessed { get; set; }
+        public int TotalRowsInFile { get; set; }
+
+        public int TotalTitlesRows { get; set; }
+
+        public int TotalDataRows { get; set; }
+
+        public int TotalEmptyRows { get; set; }
+       
         public int ProductsCreated { get; set; }
+        public int ProductsUpdated { get; set; }
         public int ProductsSkipped { get; set; }
         public int ErrorCount { get; set; }
         public int WarningCount { get; set; }
-        
-        
-        // Stage 2 specific metrics - Enhanced for relational architecture
-        public int PricingRecordsProcessed { get; set; }
-        public int StockRecordsProcessed { get; set; }
-        public int OrphanedCommercialRecords { get; set; }
-        public int OfferProductsCreated { get; set; }
-        public int SupplierOffersCreated { get; set; }
-        
-        public TimeSpan ProcessingTime { get; set; }
+                
+        public int OfferProductsCreated { get; set; }        
     }
 
     /// <summary>
@@ -49,8 +50,12 @@ namespace SacksDataLayer.FileProcessing.Models
     /// </summary>
     public class ProcessingContext
     {
-        required public SupplierOfferAnnex SupplierOffer { get; init; }
-
         required public FileData FileData { get; init; }
+        
+        required public SupplierConfiguration SupplierConfiguration { get; init; }
+
+        public string CorrelationId { get; init; } = Guid.NewGuid().ToString();
+
+        required public ProcessingResult ProcessingResult { get; init; }
     }
 }

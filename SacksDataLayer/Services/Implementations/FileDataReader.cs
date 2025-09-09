@@ -6,14 +6,18 @@
     using ExcelDataReader;
     using System.Data;
     using Microsoft.Extensions.Logging;
+    using SacksDataLayer.FileProcessing.Configuration;
+    using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
 
     public class FileDataReader : IFileDataReader
     {
         private readonly ILogger<FileDataReader>? _logger;
+        private readonly SubtitleRowProcessor _subtitleProcessor;
 
-        public FileDataReader(ILogger<FileDataReader>? logger = null)
+        public FileDataReader(ILogger<FileDataReader>? logger = null, SubtitleRowProcessor? subtitleProcessor = null)
         {
             _logger = logger;
+            _subtitleProcessor = subtitleProcessor ?? new SubtitleRowProcessor();
         }
 
         public async Task<FileData> ReadFileAsync(string fullPath)
@@ -56,6 +60,26 @@
                 _logger?.LogError(ex, "Failed to read file: {FilePath}", fullPath);
                 throw new InvalidOperationException($"Failed to read file '{fullPath}': {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        /// Reads file with subtitle processing support
+        /// </summary>
+        public async Task<FileData> ReadFileWithSubtitleProcessingAsync(
+            string fullPath, 
+            SupplierConfiguration? supplierConfig = null, 
+            CancellationToken cancellationToken = default)
+        {
+            var fileData = await ReadFileAsync(fullPath);
+
+            // Apply subtitle processing if configuration is provided
+            if (supplierConfig?.SubtitleHandling?.Enabled == true)
+            {
+                _logger?.LogDebug("Processing subtitles for file: {FilePath}", fullPath);
+                fileData = _subtitleProcessor.ProcessSubtitleRows(fileData, supplierConfig, cancellationToken);
+            }
+
+            return fileData;
         }
 
         private async Task ReadCsvFileAsync(FileData fileData, string fullPath)

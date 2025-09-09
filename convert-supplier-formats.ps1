@@ -12,8 +12,6 @@ function Convert-ColumnProperty($columnProp) {
         classification = $columnProp.classification
         dataType = $columnProp.dataType.type
         format = $columnProp.dataType.format
-        defaultValue = $columnProp.dataType.defaultValue
-        allowNull = $columnProp.dataType.allowNull
         maxLength = $columnProp.dataType.maxLength
         transformations = $columnProp.dataType.transformations
         isRequired = $columnProp.validation.isRequired

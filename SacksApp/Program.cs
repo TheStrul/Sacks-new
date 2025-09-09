@@ -292,6 +292,7 @@ namespace SacksApp
 
             // Add supplier configuration manager
             services.AddScoped<SacksAIPlatform.InfrastructuresLayer.FileProcessing.IFileDataReader, SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileDataReader>();
+            services.AddScoped<SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services.SubtitleRowProcessor>();
             services.AddScoped<SupplierConfigurationManager>();
 
             return services;

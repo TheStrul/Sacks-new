@@ -31,26 +31,14 @@ namespace SacksDataLayer.Services.Interfaces
             CancellationToken cancellationToken = default);
 
 
-        /// <summary>
-        /// Creates a new offer for the file processing session
-        /// </summary>
-        /// <param name="supplier">Supplier entity</param>
-        /// <param name="fileName">Name of the file being processed</param>
-        /// <param name="processingDate">Date of processing</param>
-        /// <param name="currency">Currency for the offer</param>
-        /// <param name="description">Offer description</param>
-        /// <param name="createdBy">User who created the offer</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Supplier offer entity</returns>
-        Task<SupplierOfferAnnex> CreateOfferAsync(
-            SupplierEntity supplier,
-            string fileName,
-            DateTime processingDate,
-            string currency = "USD",
-            string description = "File Import",
-            string? createdBy = null,
-            CancellationToken cancellationToken = default);
 
+        Task<SupplierOfferAnnex> CreateOfferAsync(
+           SupplierEntity supplier,
+           string offerName,
+           DateTime processingDate,
+           string currency,
+           string description,
+           CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Processes an Offer that includs a list of products with 

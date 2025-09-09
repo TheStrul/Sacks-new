@@ -27,7 +27,7 @@ namespace SacksDataLayer.FileProcessing.Interfaces
         /// </summary>
         /// <param name="context">Processing context including additional parameters</param>
         /// <returns>Processing result with normalized ProductEntity objects and statistics</returns>
-        Task<ProcessingResult> NormalizeAsync(ProcessingContext context);
+        Task NormalizeAsync(ProcessingContext context);
 
     }
 }

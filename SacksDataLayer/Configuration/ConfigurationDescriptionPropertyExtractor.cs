@@ -31,10 +31,70 @@ namespace SacksDataLayer.Configuration
             // Extract each property type using configured patterns
             foreach (var patternGroup in _configuration.ExtractionPatterns)
             {
-                var extractedValue = ExtractPropertyValue(description, patternGroup.Value);
-                if (!string.IsNullOrEmpty(extractedValue))
+                var propertyKey = patternGroup.Key;
+                var patterns = patternGroup.Value;
+
+                foreach (var pattern in patterns.OrderBy(p => p.Priority))
                 {
-                    extractedProperties[patternGroup.Key] = extractedValue;
+                    try
+                    {
+                        var regex = new Regex(pattern.Pattern, RegexOptions.IgnoreCase);
+                        var match = regex.Match(description);
+
+                        if (match.Success)
+                        {
+                            // Check if pattern has multiple output mappings (for size/unit separation)
+                            if (pattern.OutputMappings != null && pattern.OutputMappings.Any())
+                            {
+                                foreach (var mapping in pattern.OutputMappings)
+                                {
+                                    var outputPropertyKey = mapping.Key;
+                                    var groupIndex = mapping.Value;
+
+                                    if (groupIndex < match.Groups.Count)
+                                    {
+                                        var value = match.Groups[groupIndex].Value?.Trim();
+                                        if (!string.IsNullOrEmpty(value))
+                                        {
+                                            // Apply transformation if specified
+                                            if (!string.IsNullOrEmpty(pattern.Transformation))
+                                            {
+                                                value = ApplyTransformation(value, pattern.Transformation);
+                                            }
+
+                                            extractedProperties[outputPropertyKey] = value;
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Standard single property extraction
+                                var value = pattern.GroupIndex < match.Groups.Count 
+                                    ? match.Groups[pattern.GroupIndex].Value?.Trim()
+                                    : match.Value?.Trim();
+
+                                if (!string.IsNullOrEmpty(value))
+                                {
+                                    // Apply transformation if specified
+                                    if (!string.IsNullOrEmpty(pattern.Transformation))
+                                    {
+                                        value = ApplyTransformation(value, pattern.Transformation);
+                                    }
+
+                                    extractedProperties[propertyKey] = value;
+                                }
+                            }
+
+                            // Break after first successful match for this property group
+                            break;
+                        }
+                    }
+                    catch (ArgumentException)
+                    {
+                        // Invalid regex pattern, skip
+                        continue;
+                    }
                 }
             }
 

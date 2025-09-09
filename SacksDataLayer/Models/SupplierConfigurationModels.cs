@@ -75,6 +75,8 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
 
+        public string Currency { get; set; } = "$";
+
         [JsonPropertyName("detection")]
         public DetectionConfiguration Detection { get; set; } = new();
 
@@ -83,6 +85,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("fileStructure")]
         public FileStructureConfiguration FileStructure { get; set; } = new();
+
+        [JsonPropertyName("subtitleHandling")]
+        public SubtitleRowHandlingConfiguration? SubtitleHandling { get; set; }
 
         /// <summary>
         /// Reference to parent configuration (not serialized)
@@ -248,12 +253,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("format")]
         public string? Format { get; set; } // For dates, numbers, etc.
 
-        [JsonPropertyName("defaultValue")]
-        public object? DefaultValue { get; set; }
-
-        [JsonPropertyName("allowNull")]
-        public bool AllowNull { get; set; } = true;
-
         [JsonPropertyName("maxLength")]
         public int? MaxLength { get; set; }
 
@@ -276,9 +275,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonIgnore]
         public bool IsRequired { get; set; } = false; // Will be populated from market config
 
-        [JsonIgnore]
-        public bool IsUnique { get; set; } = false; // Will be populated from market config
-
         /// <summary>
         /// Resolves this column property using the market configuration
         /// If Classification is default/unset, it will be resolved from market config
@@ -291,7 +287,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
             {
                 DisplayName = marketProperty.DisplayName;
                 IsRequired = marketProperty.IsRequired;
-                IsUnique = marketProperty.IsUnique;
                 
                 // Only override classification if it's still the default value
                 if (Classification == PropertyClassificationType.ProductDynamic && 
@@ -305,7 +300,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
                 // Fallback: property not found in market config
                 DisplayName = ProductPropertyKey;
                 IsRequired = false;
-                IsUnique = false;
                 // Keep existing Classification (don't override)
             }
         }

@@ -31,19 +31,18 @@ namespace SacksDataLayer.FileProcessing.Normalizers
     {
         private readonly SupplierConfiguration _configuration;
         private readonly Dictionary<string, Func<string, object?>> _dataTypeConverters;
-        private readonly ConfigurationDescriptionPropertyExtractor? _descriptionExtractor;
-        private readonly ILogger<ConfigurationNormalizer>? _logger;
+        private readonly ConfigurationDescriptionPropertyExtractor _descriptionExtractor;
+        private readonly ILogger _logger;
 
         public string SupplierName => _configuration.Name;
 
-        public ConfigurationNormalizer(SupplierConfiguration configuration, ConfigurationPropertyNormalizer? propertyNormalizer = null, ILogger<ConfigurationNormalizer>? logger = null)
+        public ConfigurationNormalizer(SupplierConfiguration configuration, ConfigurationDescriptionPropertyExtractor descriptionExtractor, ILogger logger)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _configuration = configuration;
             _dataTypeConverters = InitializeDataTypeConverters();
             _logger = logger;
-
             // Initialize description extractor if ConfigurationPropertyNormalizer is available
-            _descriptionExtractor = propertyNormalizer != null ? new ConfigurationDescriptionPropertyExtractor(propertyNormalizer.Configuration) : null;
+            _descriptionExtractor = descriptionExtractor;
         }
 
         public bool CanHandle(string fileName, IEnumerable<RowData> firstFewRows)
@@ -57,82 +56,50 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 IsPatternMatch(lowerFileName, pattern.ToLowerInvariant()));
         }
 
-        public async Task<ProcessingResult> NormalizeAsync(ProcessingContext context)
+        public async Task NormalizeAsync(ProcessingContext context)
         {
             ArgumentNullException.ThrowIfNull(context);
 
-            var result = new ProcessingResult()
-            {
-                SupplierOffer = context.SupplierOffer,
-                SourceFile = context.FileData.FilePath,
-            };
+            var result = context.ProcessingResult;
 
             try
             {
 
                 if (context.FileData.DataRows.Count == 0)
                 {
-                    return result;
+                    return;
                 }
 
                 // Require ColumnProperties configuration
                 if (_configuration.ColumnProperties?.Count == 0)
                 {
                     result.Errors.Add("No column properties configured for supplier");
-                    return result;
+                    return;
                 }
 
-                // Use supplier offer from context if provided, otherwise create one
-                result.Statistics.SupplierOffersCreated = context.SupplierOffer != null ? 0 : 1; // Only count if we created it
 
 
-                // Process data rows using FileStructure configuration
-                var dataStartIndex = _configuration.FileStructure.DataStartRowIndex-1; // Convert to zero-based index
-                var allDataRows = context.FileData.DataRows.Skip(dataStartIndex).ToList();
-                result.Statistics.TotalRowsProcessed = allDataRows.Count;
-
-                var emptyRowsSkipped = allDataRows.Count(r => !r.HasData);
-                var dataRows = allDataRows.Where(r => r.HasData);
-
-                if (emptyRowsSkipped > 0)
-                {
-                    _logger?.LogDebug("Skipped {EmptyRowsSkipped} empty rows after row {DataStartIndex}", emptyRowsSkipped, dataStartIndex);
-                }
-
-                foreach (var row in dataRows)
+                foreach (var row in context.FileData.DataRows)
                 {
                     try
                     {
-                        var offerProduct = await NormalizeRowAsync(row, context, context.FileData.FilePath, result.SupplierOffer);
+                        var offerProduct = await NormalizeRowAsync(row, context);
 
                         if (offerProduct != null)
                         {
                             if (IsValidOfferProduct(offerProduct))
                             {
-                                result.SupplierOffer.OfferProducts.Add(offerProduct);
-                                result.Statistics.ProductsCreated++;
-                                result.Statistics.PricingRecordsProcessed++;
-
-                                // Check if this offer product has offer-specific data
-                                var hasOfferData = offerProduct.Price > 0 ||
-                                                 offerProduct.Quantity > 0 ||
-                                                 offerProduct.OfferProperties.Count > 0; if (hasOfferData)
-                                {
-                                    result.Statistics.OfferProductsCreated++;
-                                }
-                                result.Statistics.StockRecordsProcessed++;
+                                result.SupplierOffer!.OfferProducts.Add(offerProduct);
+                                result.Statistics.OfferProductsCreated++;
                             }
                             else
                             {
-                                result.Statistics.ProductsSkipped++;
-                                result.Statistics.OrphanedCommercialRecords++;
-                                _logger?.LogDebug("Skipped invalid product in row {RowIndex}: Product='{ProductName}', EAN='{ProductEAN}' (missing required data)",
-                                    row.Index, offerProduct.Product?.Name ?? "null", offerProduct.Product?.EAN ?? "null");
+                                _logger.LogTrace("Skipped entire row {RowIndex}: Row validation failed or marked for skipping", row.Index);
                             }
                         }
                         else
                         {
-                            _logger?.LogTrace("Skipped entire row {RowIndex}: Row validation failed or marked for skipping", row.Index);
+                            _logger.LogTrace("Skipped entire row {RowIndex}: Row validation failed or marked for skipping", row.Index);
                         }
                     }
                     catch (Exception ex)
@@ -143,17 +110,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 }
 
                 // Finalize statistics
-                result.Statistics.ProcessingTime = DateTime.UtcNow - result.ProcessedAt;
                 result.Statistics.WarningCount = result.Warnings.Count;
 
 
-                return result;
+                return;
             }
             catch (Exception ex)
             {
                 result.Errors.Add($"Processing failed: {ex.Message}");
-                result.Statistics.ProcessingTime = DateTime.UtcNow - result.ProcessedAt;
-                return result;
+                return;
             }
         }
 
@@ -162,17 +127,20 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// </summary>
         private async Task<OfferProductAnnex?> NormalizeRowAsync(
             RowData row,
-            ProcessingContext context,
-            string sourceFile,
-            SupplierOfferAnnex supplierOffer)
+            ProcessingContext context)
         {
             try
             {
                 var offerProduct = new OfferProductAnnex();
                 var product = new ProductEntity();
                 offerProduct.Product = product;
-                offerProduct.Offer = supplierOffer;
+                offerProduct.Offer = context.ProcessingResult.SupplierOffer!;
 
+                // Apply subtitle data first if available
+                if (row.SubtitleData.Any())
+                {
+                    await ApplySubtitleDataAsync(row.SubtitleData, product, offerProduct);
+                }
 
                 // Process each configured column property
                 foreach (var columnConfig in _configuration.ColumnProperties)
@@ -217,10 +185,10 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     }
 
                     // Apply transformations and type conversion after validation passes
-                    var processedValue = await ProcessCellValueAsync(stringValue!, columnProperty);
-                    if (processedValue == null && !columnProperty.AllowNull)
+                    var processedValue = ProcessCellValueAsync(stringValue!, columnProperty);
+                    if (processedValue == null && columnProperty.IsRequired)
                     {
-                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Processed value is null but AllowNull=false (raw='{R}'), Proccessd = {P}",
+                        _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Processed value is null but IsRequired=true (raw='{R}'), Proccessd = {P}",
                             columnKey, row.Index, stringValue, processedValue);
                         continue;
                     }
@@ -235,6 +203,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                             break;
                         case PropertyClassificationType.OfferPrice:
                             offerProduct.Price = processedValue is decimal d ? d : offerProduct.Price;
+                            break;
+                        case PropertyClassificationType.OfferCurrency:
+                            offerProduct.Currency = processedValue?.ToString() ?? offerProduct.Currency;
                             break;
                         case PropertyClassificationType.OfferQuantity:
                             offerProduct.Quantity = processedValue is int i ? i : offerProduct.Quantity;
@@ -277,7 +248,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     product.Name = ConstructProductNameFromProperties(product);
                 }
 
-
                 return offerProduct;
             }
             catch (Exception ex)
@@ -286,12 +256,67 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
         }
 
+        /// <summary>
+        /// Applies subtitle data to product and offer product entities
+        /// </summary>
+        private async Task ApplySubtitleDataAsync(
+            Dictionary<string, object?> subtitleData, 
+            ProductEntity product, 
+            OfferProductAnnex offerProduct)
+        {
+            await Task.CompletedTask; // Make method async for consistency
+
+            foreach (var kvp in subtitleData)
+            {
+                var key = kvp.Key;
+                var value = kvp.Value;
+
+                if (value == null) continue;
+
+                // Determine where to apply the subtitle data based on key name
+                switch (key.ToLowerInvariant())
+                {
+                    case "brand":
+                        if (!product.DynamicProperties.ContainsKey("Brand"))
+                        {
+                            product.SetDynamicProperty("Brand", value);
+                            _logger?.LogTrace("Applied subtitle brand '{Brand}' to product", value);
+                        }
+                        break;
+
+                    case "category":
+                        if (!product.DynamicProperties.ContainsKey("Category"))
+                        {
+                            product.SetDynamicProperty("Category", value);
+                            _logger?.LogTrace("Applied subtitle category '{Category}' to product", value);
+                        }
+                        break;
+
+                    case "type":
+                        if (!product.DynamicProperties.ContainsKey("Type"))
+                        {
+                            product.SetDynamicProperty("Type", value);
+                            _logger?.LogTrace("Applied subtitle type '{Type}' to product", value);
+                        }
+                        break;
+
+                    default:
+                        // Apply as dynamic property if not already set
+                        if (!product.DynamicProperties.ContainsKey(key))
+                        {
+                            product.SetDynamicProperty(key, value);
+                            _logger?.LogTrace("Applied subtitle property '{Key}': '{Value}' to product", key, value);
+                        }
+                        break;
+                }
+            }
+        }
         #region Core Processing Methods
 
         /// <summary>
         /// Gets column index from Excel column reference (A=0, B=1, etc.)
         /// </summary>
-        private int GetColumnIndex(string columnKey)
+        private int GetColumnIndex(String columnKey)
         {
             if (IsExcelColumnLetter(columnKey))
             {
@@ -307,10 +332,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Processes cell value through transformations and type conversion
         /// </summary>
-        private async Task<object?> ProcessCellValueAsync(string rawValue, ColumnProperty columnProperty)
+        private object? ProcessCellValueAsync(string rawValue, ColumnProperty columnProperty)
         {
-            await Task.CompletedTask; // For async consistency
-
             try
             {
                 // Apply configured transformations
@@ -327,7 +350,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             catch (Exception)
             {
                 // Return default value on conversion failure
-                return columnProperty.DefaultValue;
+                return null;
             }
         }
 
@@ -399,6 +422,8 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     "removesymbols" => Regex.Replace(value, @"[^\d.,]", ""),
                     "removecommas" => value.Replace(",", ""),
                     "removespaces" => value.Replace(" ", ""),
+                    "cleanprice" => CleanPriceValue(value),
+                    "cleancurrency" => CleanCurrencyValue(value),
                     "extractafterpattern" => ExtractAfterPattern(value, parameters ?? "*:"),
                     "maptobool" => MapToBool(value, parameters ?? "SET:true,REG:false"),
                     _ => value
@@ -406,6 +431,54 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
 
             return value;
+        }
+
+        /// <summary>
+        /// Cleans price values by removing currency symbols and normalizing decimal separators
+        /// </summary>
+        private string CleanPriceValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
+
+            // Remove currency symbols and codes
+            var cleaned = Regex.Replace(value, @"[€$£¥₽₿₹₩₪₦₡₴₸₵₺₽zł kč ft lei лв kn kr EUR USD GBP CHF PLN CZK HUF RON BGN HRK DKK SEK NOK]", "", RegexOptions.IgnoreCase);
+            
+            // Normalize decimal separators (European format with comma to US format with dot)
+            // Handle cases like "29,99" -> "29.99" but keep "1,299.99" as is
+            if (cleaned.Contains(',') && !cleaned.Contains('.'))
+            {
+                // If only comma, likely European decimal separator
+                var lastCommaIndex = cleaned.LastIndexOf(',');
+                var afterComma = cleaned.Substring(lastCommaIndex + 1);
+                
+                // If 2 digits after comma, it's likely a decimal separator
+                if (afterComma.Length == 2 && afterComma.All(char.IsDigit))
+                {
+                    cleaned = cleaned.Substring(0, lastCommaIndex) + "." + afterComma;
+                }
+            }
+            
+            return cleaned.Trim();
+        }
+
+        /// <summary>
+        /// Cleans currency values by extracting only currency symbols/codes
+        /// </summary>
+        private string CleanCurrencyValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return value;
+
+            // Extract currency symbols and codes, but exclude volume units
+            var currencyMatches = Regex.Matches(value, @"(€|\$|£|¥|₽|₿|₹|₩|₪|₦|₡|₴|₸|₵|₺|zł|kč|ft|lei|лв|kn|kr|EUR|USD|GBP|CHF|PLN|CZK|HUF|RON|BGN|HRK|DKK|SEK|NOK)(?!\s*(ml|oz|fl\s*oz))", RegexOptions.IgnoreCase);
+            
+            if (currencyMatches.Count > 0)
+            {
+                return currencyMatches[0].Value;
+            }
+            
+            return value.Trim();
         }
 
         private string ExtractAfterPattern(string value, string pattern)
@@ -624,8 +697,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             };
         }
 
-
-
         /// <summary>
         /// Constructs a product name from available properties when name is missing
         /// </summary>
@@ -645,6 +716,25 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
             if (product.DynamicProperties.TryGetValue("Size", out var size) && size != null)
                 nameComponents.Add(size.ToString()!);
+
+            if (product.DynamicProperties.TryGetValue("Units", out var units) && units != null)
+            {
+                // Combine size and units if both exist
+                var sizeStr = size?.ToString() ?? "";
+                var unitsStr = units.ToString();
+                if (!string.IsNullOrEmpty(sizeStr) && !string.IsNullOrEmpty(unitsStr))
+                {
+                    // Replace the previous size component with size+units
+                    if (nameComponents.Count > 0 && nameComponents.Last() == sizeStr)
+                    {
+                        nameComponents[nameComponents.Count - 1] = $"{sizeStr}{unitsStr}";
+                    }
+                }
+                else if (!string.IsNullOrEmpty(unitsStr))
+                {
+                    nameComponents.Add(unitsStr);
+                }
+            }
 
             if (product.DynamicProperties.TryGetValue("Gender", out var gender) && gender != null)
                 nameComponents.Add($"for {gender}");

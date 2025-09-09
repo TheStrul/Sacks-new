@@ -38,7 +38,6 @@ namespace SacksDataLayer.Extensions
         /// <returns>Service collection for chaining</returns>
         public static IServiceCollection AddFileProcessingServices(this IServiceCollection services)
         {
-            services.AddScoped<IFileValidationService, FileValidationService>();
             services.AddScoped<ISupplierConfigurationService, SupplierConfigurationService>();
             services.AddScoped<IFileProcessingDatabaseService, FileProcessingDatabaseService>();
             services.AddScoped<IFileProcessingService, FileProcessingService>();

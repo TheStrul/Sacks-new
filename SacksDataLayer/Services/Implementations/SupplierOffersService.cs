@@ -64,44 +64,7 @@ namespace SacksDataLayer.Services.Implementations
             return offer;
         }
 
-        public async Task<SupplierOfferAnnex> CreateOfferFromFileAsync(int supplierId, string fileName, 
-            DateTime processingDate, string? currency = null, string? offerType = "File Import", 
-            string? createdBy = null)
-        {
-            // Verify supplier exists
-            var supplier = await _suppliersRepository.GetByIdAsync(supplierId, CancellationToken.None);
-            if (supplier == null)
-                throw new InvalidOperationException($"Supplier with ID {supplierId} not found");
 
-            return CreateOfferFromFileAsync(supplier, fileName, processingDate, currency, offerType, createdBy);
-        }
-
-        /// <summary>
-        /// Creates a new offer from file processing context using a supplier entity
-        /// This overload eliminates the need for database validation of supplier existence
-        /// </summary>
-        public SupplierOfferAnnex CreateOfferFromFileAsync(SupplierEntity supplier, string fileName, 
-            DateTime processingDate, string? currency = null, string? offerType = "File Import", 
-            string? createdBy = null)
-        {
-            ArgumentNullException.ThrowIfNull(supplier);
-            if (string.IsNullOrWhiteSpace(fileName)) 
-                throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
-
-            var offer = new SupplierOfferAnnex
-            {
-                // ✅ DON'T set SupplierId manually - let EF handle it via navigation
-                Supplier = supplier,  // Set navigation property instead
-                OfferName = $"{supplier.Name} - {fileName}",
-                Description = $"Automatic import from file: {fileName}",
-                Currency = currency ?? "USD",
-            };
-
-            // ✅ Add to supplier's collection instead of repository directly
-            supplier.Offers.Add(offer);
-
-            return offer;
-        }
 
         public async Task<bool> OfferExistsAsync(int supplierId, string offerName, CancellationToken cancellationToken = default)
         {

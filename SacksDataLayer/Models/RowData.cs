@@ -10,6 +10,21 @@
         public Collection<CellData> Cells { get; init; } = new Collection<CellData>();
 
         /// <summary>
+        /// Indicates if this row was detected as a subtitle row
+        /// </summary>
+        public bool IsSubtitleRow { get; set; }
+
+        /// <summary>
+        /// The subtitle detection rule that matched this row (if any)
+        /// </summary>
+        public string? SubtitleRuleName { get; set; }
+
+        /// <summary>
+        /// Extracted subtitle data that should be applied to subsequent rows
+        /// </summary>
+        public Dictionary<string, object?> SubtitleData { get; set; } = new();
+
+        /// <summary>
         /// Gets a value indicating whether this row contains meaningful data
         /// Returns false if the row is empty, contains only whitespace, or has no cells
         /// </summary>

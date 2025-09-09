@@ -34,20 +34,7 @@ namespace SacksDataLayer.Services.Interfaces
         /// </summary>
         Task<SupplierOfferAnnex> UpdateOfferAsync(SupplierOfferAnnex offer, string? modifiedBy = null);
 
-        /// <summary>
-        /// Creates a new offer from file processing context
-        /// </summary>
-        Task<SupplierOfferAnnex> CreateOfferFromFileAsync(int supplierId, string fileName, 
-            DateTime processingDate, string? currency = null, string? offerType = "File Import", 
-            string? createdBy = null);
 
-        /// <summary>
-        /// Creates a new offer from file processing context using a supplier entity
-        /// This overload eliminates the need for database validation of supplier existence
-        /// </summary>
-        SupplierOfferAnnex CreateOfferFromFileAsync(SupplierEntity supplier, string fileName, 
-            DateTime processingDate, string? currency = null, string? offerType = "File Import", 
-            string? createdBy = null);
 
         /// <summary>
         /// Checks if an offer with the specified name already exists for the supplier

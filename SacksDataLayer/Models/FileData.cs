@@ -1,28 +1,20 @@
 ﻿namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing
 {
     using System;
-    using System.Collections.ObjectModel;
+    using System.Collections.Generic;
 
     public class FileData
     {
         public string FileName { get; init; } = string.Empty;
         public string FilePath { get; init; } = string.Empty;
-        public Collection<RowData> DataRows { get; init; } = new Collection<RowData>();
+        public List<RowData> DataRows { get; init; } = new List<RowData>();
         public int RowCount { get; set; }
-
-        public FileData() { }
-
-        public FileData(string fileName, IEnumerable<RowData> dataRows)
-        {
-            FileName = fileName;
-            DataRows = new Collection<RowData>(dataRows.ToList());
-            RowCount = DataRows.Count;
-        }
 
         public FileData(string fullPath) 
         {
             FilePath = fullPath;
-            DataRows = new Collection<RowData>();
+            FileName = Path.GetFileName(fullPath);
+            DataRows = new List<RowData>();
         }
 
         public RowData? GetRow(int i)

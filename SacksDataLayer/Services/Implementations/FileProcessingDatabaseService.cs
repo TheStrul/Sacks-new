@@ -76,14 +76,9 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                _logger.LogInformation("Creating or retrieving supplier: {SupplierName}", supplierConfig.Name);
-                
-                var supplier = await _suppliersService.CreateOrGetSupplierFromConfigAsync(
+                var supplier = await _suppliersService.CreateOrGetSupplierByName(
                     supplierConfig.Name);
 
-                _logger.LogInformation("Supplier ready: {SupplierName} (ID: {SupplierId})", 
-                    supplier.Name, supplier.Id);
-                
                 return supplier;
             }
             catch (Exception ex)
@@ -98,33 +93,35 @@ namespace SacksDataLayer.Services.Implementations
         /// </summary>
         public async Task<SupplierOfferAnnex> CreateOfferAsync(
             SupplierEntity supplier,
-            string fileName,
+            string offerName,
             DateTime processingDate,
-            string currency = "USD",
-            string description = "File Import",
-            string? createdBy = null,
+            string currency,
+            string description,
             CancellationToken cancellationToken = default)
         {
             if (supplier == null) throw new ArgumentNullException(nameof(supplier));
-            if (string.IsNullOrWhiteSpace(fileName)) throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
+            if (string.IsNullOrWhiteSpace(offerName)) throw new ArgumentException("File name cannot be null or empty", nameof(offerName));
             
             cancellationToken.ThrowIfCancellationRequested();
             
             try
             {
-                await EnsureOfferCanBeProcessedAsync(supplier.Id, fileName, supplier.Name, cancellationToken);
+                await EnsureOfferCanBeProcessedAsync(supplier, offerName, cancellationToken);
 
-                _logger.LogInformation("Creating offer for file: {FileName} and supplier: {SupplierName}", 
-                    fileName, supplier.Name);
-                
+                var offer = new SupplierOfferAnnex
+                {
+                    // ✅ DON'T set SupplierId manually - let EF handle it via navigation
+                    Supplier = supplier,  // Set navigation property instead
+                    OfferName = offerName,
+                    Description = description,
+                    Currency = currency,
+                    CreatedAt = DateTime.UtcNow,
+
+                };
+
+                // ✅ Add to supplier's collection instead of repository directly
+                supplier.Offers.Add(offer);
                 // Use new overload that accepts SupplierEntity directly - no database validation needed
-                var offer = _supplierOffersService.CreateOfferFromFileAsync(
-                    supplier,
-                    fileName,
-                    processingDate,
-                    currency,
-                    description,
-                    createdBy ?? "FileProcessor");
 
                 _logger.LogInformation("Offer created: {OfferName} (ID: {OfferId})", 
                     offer.OfferName, offer.Id);
@@ -133,7 +130,7 @@ namespace SacksDataLayer.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create offer for file: {FileName}", fileName);
+                _logger.LogError(ex, "Failed to create offer for file: {FileName}", offerName);
                 throw;
             }
         }
@@ -309,58 +306,43 @@ namespace SacksDataLayer.Services.Implementations
         /// In development mode, deletes existing offer if found to allow re-processing.
         /// </summary>
         private async Task EnsureOfferCanBeProcessedAsync(
-            int supplierId,
-            string fileName,
-            string supplierName,
+            SupplierEntity supplier,
+            string offerName,
             CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(fileName))
-                throw new ArgumentException("File name cannot be null or empty", nameof(fileName));
 
             cancellationToken.ThrowIfCancellationRequested();
 
             try
             {
-                // Create the expected offer name using the same logic as CreateOfferFromFileAsync
-                var expectedOfferName = $"{supplierName} - {fileName}";
-
-
-                var existingOffers = await _supplierOffersService.GetOffersBySupplierAsync(supplierId);
-                var existingOffer = existingOffers.FirstOrDefault(o => o.OfferName!.Equals(expectedOfferName, StringComparison.OrdinalIgnoreCase));
+                var existingOffers = await _supplierOffersService.GetOffersBySupplierAsync(supplier.Id);
+                var existingOffer = existingOffers.FirstOrDefault(o => o.OfferName!.Equals(offerName, StringComparison.OrdinalIgnoreCase));
 
                 if (existingOffer != null)
                 {
-                    _logger.LogWarning("🔄 REPROCESSING: Existing offer found - deleting and replacing: {SupplierName} - {OfferName}", supplierName, expectedOfferName);
-                    _logger.LogInformation("Deleting existing offer ID: {OfferId} with {ProductCount} products",
-                        existingOffer.Id, existingOffer.OfferProducts?.Count ?? 0);
+                    _logger.LogWarning("🔄 REPROCESSING: Existing offer found - deleting and replacing: {SupplierName} - {OfferName}", supplier.Name, offerName);
 
-                    // 🔧 FIX: Clear change tracker before deletion to prevent tracking conflicts
-                    _context.ChangeTracker.Clear();
 
                     // Delete the existing offer (cascade will automatically delete all OfferProducts)
                     var deleteSuccess = await _supplierOffersService.DeleteOfferAsync(existingOffer.Id);
 
                     if (deleteSuccess)
                     {
-                        _logger.LogInformation("✅ Successfully deleted existing offer: {OfferName}", expectedOfferName);
+                        _logger.LogInformation("✅ Successfully deleted existing offer: {OfferName}", offerName);
 
                         // Clear change tracker again after deletion to ensure clean state
-                        _context.ChangeTracker.Clear();
                         _logger.LogDebug("Cleared change tracker after offer deletion to ensure clean state");
                     }
                     else
                     {
-                        _logger.LogError("❌ Failed to delete existing offer: {OfferName}", expectedOfferName);
-                        throw new InvalidOperationException($"Failed to delete existing offer '{expectedOfferName}' for supplier '{supplierName}'");
+                        throw new InvalidOperationException($"Failed to delete existing offer '{offerName}' for supplier '{supplier.Name}'");
                     }
                 }
-
-                _logger.LogDebug("Offer validation passed for: {SupplierName} - {FileName}", supplierName, fileName);
             }
             catch (Exception ex) when (!(ex is InvalidOperationException))
             {
                 _logger.LogError(ex, "Failed to validate/replace offer for supplier: {SupplierName}, file: {FileName}",
-                    supplierName, fileName);
+                    supplier.Name, offerName);
                 throw;
             }
         }

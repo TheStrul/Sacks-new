@@ -8,8 +8,6 @@ namespace SacksDataLayer.Configuration
     /// </summary>
     public class ProductPropertyConfiguration
     {
-        [JsonPropertyName("version")]
-        public string Version { get; set; } = "1.0";
 
         [JsonPropertyName("productType")]
         public string ProductType { get; set; } = string.Empty;
@@ -17,79 +15,6 @@ namespace SacksDataLayer.Configuration
         [JsonPropertyName("properties")]
         public Dictionary<string, ProductPropertyDefinition> Properties { get; set; } = new();
 
-        /// <summary>
-        /// Gets all properties classified as core product properties
-        /// </summary>
-        public List<ProductPropertyDefinition> GetCoreProductProperties()
-        {
-            return Properties.Values
-                .Where(p => p.Classification == PropertyClassificationType.ProductName ||
-                           p.Classification == PropertyClassificationType.ProductEAN ||
-                           p.Classification == PropertyClassificationType.ProductDynamic)
-                .OrderBy(p => p.DisplayOrder)
-                .ToList();
-        }
-
-        /// <summary>
-        /// Gets all properties classified as offer properties
-        /// </summary>
-        public List<ProductPropertyDefinition> GetOfferProperties()
-        {
-            return Properties.Values
-                .Where(p => p.Classification == PropertyClassificationType.OfferPrice ||
-                           p.Classification == PropertyClassificationType.OfferQuantity ||
-                           p.Classification == PropertyClassificationType.OfferDescription ||
-                           p.Classification == PropertyClassificationType.OfferDynamic)
-                .OrderBy(p => p.DisplayOrder)
-                .ToList();
-        }
-
-        /// <summary>
-        /// Gets properties stored in ProductEntity fixed fields
-        /// </summary>
-        public List<ProductPropertyDefinition> GetProductEntityProperties()
-        {
-            return Properties.Values
-                .Where(p => p.Classification == PropertyClassificationType.ProductName ||
-                           p.Classification == PropertyClassificationType.ProductEAN)
-                .OrderBy(p => p.DisplayOrder)
-                .ToList();
-        }
-
-        /// <summary>
-        /// Gets properties stored in OfferProductAnnex fixed fields
-        /// </summary>
-        public List<ProductPropertyDefinition> GetOfferEntityProperties()
-        {
-            return Properties.Values
-                .Where(p => p.Classification == PropertyClassificationType.OfferPrice ||
-                           p.Classification == PropertyClassificationType.OfferQuantity ||
-                           p.Classification == PropertyClassificationType.OfferDescription)
-                .OrderBy(p => p.DisplayOrder)
-                .ToList();
-        }
-
-        /// <summary>
-        /// Gets properties stored in ProductEntity.DynamicProperties
-        /// </summary>
-        public List<ProductPropertyDefinition> GetDynamicCoreProductProperties()
-        {
-            return Properties.Values
-                .Where(p => p.Classification == PropertyClassificationType.ProductDynamic)
-                .OrderBy(p => p.DisplayOrder)
-                .ToList();
-        }
-
-        /// <summary>
-        /// Gets properties stored in OfferProductAnnex.OfferProperties
-        /// </summary>
-        public List<ProductPropertyDefinition> GetDynamicOfferProperties()
-        {
-            return Properties.Values
-                .Where(p => p.Classification == PropertyClassificationType.OfferDynamic)
-                .OrderBy(p => p.DisplayOrder)
-                .ToList();
-        }
     }
 
 
@@ -118,13 +43,6 @@ namespace SacksDataLayer.Configuration
 
         [JsonPropertyName("isRequired")]
         public bool IsRequired { get; set; } = false;
-
-        [JsonPropertyName("isUnique")]
-        public bool IsUnique { get; set; } = false;
-
-        [JsonPropertyName("displayOrder")]
-        public int DisplayOrder { get; set; } = 0;
-
     }
 
     /// <summary>
@@ -163,6 +81,11 @@ namespace SacksDataLayer.Configuration
         /// Product price - stored in OfferProductAnnex.Price (required)
         /// </summary>
         OfferPrice,
+
+        /// <summary>
+        /// Currency for the price - stored in OfferProductAnnex.OfferProperties["Currency"]
+        /// </summary>
+        OfferCurrency,
 
         /// <summary>
         /// Available quantity - stored in OfferProductAnnex.Quantity (required)

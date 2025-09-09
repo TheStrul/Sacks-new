@@ -51,6 +51,14 @@ namespace SacksDataLayer.Configuration
 
         [JsonPropertyName("description")]
         public string? Description { get; set; }
+
+        /// <summary>
+        /// Maps regex groups to multiple output properties
+        /// Key: property name, Value: group index to extract
+        /// If null, uses the main property key with GroupIndex
+        /// </summary>
+        [JsonPropertyName("outputMappings")]
+        public Dictionary<string, int>? OutputMappings { get; set; }
     }
 
     /// <summary>
@@ -72,9 +80,6 @@ namespace SacksDataLayer.Configuration
 
         [JsonPropertyName("isRangeFilter")]
         public bool IsRangeFilter { get; set; } = false;
-
-        [JsonPropertyName("displayOrder")]
-        public int DisplayOrder { get; set; } = 0;
     }
 
     /// <summary>
@@ -94,8 +99,6 @@ namespace SacksDataLayer.Configuration
         [JsonPropertyName("defaultDirection")]
         public SortDirection DefaultDirection { get; set; } = SortDirection.Ascending;
 
-        [JsonPropertyName("displayOrder")]
-        public int DisplayOrder { get; set; } = 0;
     }
 
     /// <summary>

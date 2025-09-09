@@ -193,6 +193,12 @@ namespace SacksDataLayer.Services.Implementations
             if (offerProduct.Quantity <= 0)
                 throw new ArgumentException("Quantity must be greater than zero", nameof(offerProduct));
 
+            if (string.IsNullOrWhiteSpace(offerProduct.Currency))
+                throw new ArgumentException("Currency is required", nameof(offerProduct));
+
+            if (offerProduct.Currency.Length != 3)
+                throw new ArgumentException("Currency must be a 3-character ISO code (e.g., USD, EUR)", nameof(offerProduct));
+
             // Additional business validation can be added here
             await Task.CompletedTask; // Placeholder for async validation
         }

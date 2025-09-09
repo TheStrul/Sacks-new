@@ -141,9 +141,18 @@ namespace SacksDataLayer.Data
                 entity.HasIndex(e => new { e.OfferId, e.ProductId })
                       .HasDatabaseName("IX_OfferProducts_Offer_Product");
 
+                // Add index for Currency for filtering/grouping queries
+                entity.HasIndex(e => e.Currency)
+                      .HasDatabaseName("IX_OfferProducts_Currency");
+
                 // Property configurations
                 entity.Property(e => e.Price)
                       .HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.Currency)
+                      .IsRequired()
+                      .HasMaxLength(3)
+                      .HasDefaultValue("USD");
 
                 entity.Property(e => e.Description)
                       .HasMaxLength(2000);

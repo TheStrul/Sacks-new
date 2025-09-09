@@ -12,11 +12,26 @@
     "size": "Size",
     "volume": "Size",
     "vol": "Size",
-    "ml": "Size",
     "capacity": "Size",
     "contenu": "Size",
     "contenuto": "Size",
     "contenido": "Size",
+    "units": "Units",
+    "unit": "Units",
+    "ml": "Units",
+    "oz": "Units",
+    "price": "Price",
+    "cost": "Price",
+    "prix": "Price",
+    "prezzo": "Price",
+    "precio": "Price",
+    "cena": "Price",
+    "currency": "Currency",
+    "curr": "Currency",
+    "devise": "Currency",
+    "valuta": "Currency",
+    "moneda": "Currency",
+    "měna": "Currency",
     "concentration": "Concentration",
     "con": "Concentration",
     "type": "Concentration",
@@ -69,14 +84,60 @@
       "mixte": "Unisex"
     },
     "Size": {
-      "50": "50ml",
-      "100": "100ml",
-      "125": "125ml",
-      "200": "200ml",
-      "250": "250ml",
-      "mini": "5ml",
-      "travel": "15ml",
-      "sample": "2ml"
+      "50": "50",
+      "100": "100",
+      "125": "125",
+      "200": "200",
+      "250": "250",
+      "mini": "5",
+      "travel": "15",
+      "sample": "2"
+    },
+    "Units": {
+      "ml": "ml",
+      "millilitre": "ml",
+      "oz": "oz",
+      "fl oz": "oz",
+      "fluid ounce": "oz"
+    },
+    "Currency": {
+      "€": "EUR",
+      "eur": "EUR",
+      "euro": "EUR",
+      "euros": "EUR",
+      "$": "USD",
+      "usd": "USD",
+      "dollar": "USD",
+      "dollars": "USD",
+      "£": "GBP",
+      "gbp": "GBP",
+      "pound": "GBP",
+      "pounds": "GBP",
+      "chf": "CHF",
+      "franc": "CHF",
+      "francs": "CHF",
+      "zł": "PLN",
+      "pln": "PLN",
+      "zloty": "PLN",
+      "kč": "CZK",
+      "czk": "CZK",
+      "koruna": "CZK",
+      "ft": "HUF",
+      "huf": "HUF",
+      "forint": "HUF",
+      "lei": "RON",
+      "ron": "RON",
+      "лв": "BGN",
+      "bgn": "BGN",
+      "lev": "BGN",
+      "kn": "HRK",
+      "hrk": "HRK",
+      "kuna": "HRK",
+      "dkk": "DKK",
+      "krona": "DKK",
+      "sek": "SEK",
+      "nok": "NOK",
+      "kr": "NOK"
     },
     "Concentration": {
       "edt": "Eau de Toilette",
@@ -108,39 +169,129 @@
     }
   },
   "extractionPatterns": {
+    "PriceWithCurrency": [
+      {
+        "pattern": "([\\d.,]+)\\s*(EUR|USD|GBP|CHF|PLN|CZK|HUF|RON|BGN|HRK|DKK|SEK|NOK|€|\\$|£|zł|Kč|Ft|lei|лв|kn|kr)(?!\\s*/\\s*[\\d.,]+\\s*(ml|oz))",
+        "groupIndex": 0,
+        "priority": 1,
+        "transformation": "lowercase",
+        "description": "Extract price and currency, but not when followed by volume units like '/ 76.8 ml'",
+        "outputMappings": {
+          "Price": 1,
+          "Currency": 2
+        }
+      },
+      {
+        "pattern": "(EUR|USD|GBP|CHF|PLN|CZK|HUF|RON|BGN|HRK|DKK|SEK|NOK|€|\\$|£|zł|Kč|Ft|lei|лв|kn|kr)\\s*([\\d.,]+)(?!\\s*(ml|oz|fl\\s*oz))",
+        "groupIndex": 0,
+        "priority": 2,
+        "transformation": "lowercase",
+        "description": "Extract currency and price, but not when followed by volume units",
+        "outputMappings": {
+          "Currency": 1,
+          "Price": 2
+        }
+      }
+    ],
+    "Price": [
+      {
+        "pattern": "(?<!\\d)([\\d.,]+)(?=\\s*(EUR|USD|GBP|CHF|PLN|CZK|HUF|RON|BGN|HRK|DKK|SEK|NOK|€|\\$|£|zł|Kč|Ft|lei|лв|kn|kr))",
+        "groupIndex": 1,
+        "priority": 3,
+        "transformation": "cleanprice",
+        "description": "Extract numeric price values when followed by currency symbols"
+      }
+    ],
+    "SizeWithUnits": [
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(oz)\\s*/\\s*([\\d.,]+)\\s*(ml)",
+        "groupIndex": 0,
+        "priority": 1,
+        "transformation": "lowercase",
+        "description": "Extract size and units from dual format like '2.6 oz / 76.8 ml' - uses the ml value",
+        "outputMappings": {
+          "Size": 3,
+          "Units": 4
+        }
+      },
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(ml)\\s*/\\s*([\\d.,]+)\\s*(oz)",
+        "groupIndex": 0,
+        "priority": 2,
+        "transformation": "lowercase",
+        "description": "Extract size and units from dual format like '76.8 ml / 2.6 oz' - uses the ml value",
+        "outputMappings": {
+          "Size": 1,
+          "Units": 2
+        }
+      },
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(ml|ML|mL)(?!\\s*/)",
+        "groupIndex": 0,
+        "priority": 3,
+        "transformation": "lowercase",
+        "description": "Extract size and units from single ml format like '100ml'",
+        "outputMappings": {
+          "Size": 1,
+          "Units": 2
+        }
+      },
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(oz|fl\\s*oz)(?!\\s*/)",
+        "groupIndex": 0,
+        "priority": 4,
+        "transformation": "lowercase",
+        "description": "Extract size and units from single oz format like '3.4 oz'",
+        "outputMappings": {
+          "Size": 1,
+          "Units": 2
+        }
+      },
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(milliliter|millilitre|fluid\\s*ounce)",
+        "groupIndex": 0,
+        "priority": 5,
+        "transformation": "lowercase",
+        "description": "Extract size and units from full unit names",
+        "outputMappings": {
+          "Size": 1,
+          "Units": 2
+        }
+      }
+    ],
     "Size": [
       {
         "pattern": "(\\d+)\\s*ml",
         "groupIndex": 1,
-        "priority": 1,
+        "priority": 3,
         "transformation": "lowercase",
-        "description": "Extract ml volume from text"
+        "description": "Extract ml volume from text (legacy fallback)"
       },
       {
         "pattern": "(\\d+)\\s*(ml|ML)",
         "groupIndex": 1,
-        "priority": 2,
+        "priority": 4,
         "transformation": "lowercase",
-        "description": "Extract volume with case variations"
+        "description": "Extract volume with case variations (legacy fallback)"
       }
     ],
     "Gender": [
       {
-        "pattern": "\\b(men|man|male|homme|hombre|uomo)\\b",
+        "pattern": "\\b(men|man|male|homme|hombre|(m)|uomo)\\b",
         "groupIndex": 1,
         "priority": 1,
         "transformation": "lowercase",
         "description": "Extract male gender indicators"
       },
       {
-        "pattern": "\\b(women|woman|female|femme|mujer|donna|wom|her)\\b",
+        "pattern": "\\b(women|woman|female|femme|mujer|(w)|donna|wom|her)\\b",
         "groupIndex": 1,
         "priority": 1,
         "transformation": "lowercase",
         "description": "Extract female gender indicators"
       },
       {
-        "pattern": "\\b(unisex|unisexe|mixte)\\b",
+        "pattern": "\\b(unisex|unisexe|(u)|mixte)\\b",
         "groupIndex": 1,
         "priority": 1,
         "transformation": "lowercase",
@@ -186,48 +337,49 @@
       "displayName": "Gender",
       "dataType": "String",
       "possibleValues": ["Men", "Women", "Unisex"],
-      "isRangeFilter": false,
-      "displayOrder": 1
+      "isRangeFilter": false
     },
     {
       "key": "Size",
       "displayName": "Size",
       "dataType": "String",
-      "possibleValues": ["5ml", "15ml", "50ml", "100ml", "125ml", "200ml", "250ml"],
-      "isRangeFilter": false,
-      "displayOrder": 2
+      "possibleValues": ["5", "15", "50", "100", "125", "200", "250"],
+      "isRangeFilter": false
+    },
+    {
+      "key": "Units",
+      "displayName": "Units",
+      "dataType": "String",
+      "possibleValues": ["ml", "oz"],
+      "isRangeFilter": false
+    },
+    {
+      "key": "Currency",
+      "displayName": "Currency",
+      "dataType": "String",
+      "possibleValues": ["EUR", "USD", "GBP", "CHF", "PLN", "CZK", "HUF", "RON", "BGN", "HRK", "DKK", "SEK", "NOK"],
+      "isRangeFilter": false
     },
     {
       "key": "Concentration",
       "displayName": "Concentration",
       "dataType": "String",
       "possibleValues": ["Eau de Toilette", "Eau de Parfum", "Parfum", "Eau de Cologne", "Body Mist", "Aftershave"],
-      "isRangeFilter": false,
-      "displayOrder": 3
+      "isRangeFilter": false
     },
     {
       "key": "Brand",
       "displayName": "Brand",
       "dataType": "String",
       "possibleValues": [],
-      "isRangeFilter": false,
-      "displayOrder": 4
+      "isRangeFilter": false
     },
     {
       "key": "ProductLine",
       "displayName": "Product Line",
       "dataType": "String",
       "possibleValues": [],
-      "isRangeFilter": false,
-      "displayOrder": 5
-    },
-    {
-      "key": "FragranceFamily",
-      "displayName": "Fragrance Family",
-      "dataType": "String",
-      "possibleValues": ["Fresh", "Citrus", "Floral", "Oriental", "Woody", "Chypre", "Fougère", "Gourmand", "Aquatic", "Green", "Spicy", "Fruity", "Aromatic"],
-      "isRangeFilter": false,
-      "displayOrder": 6
+      "isRangeFilter": false
     }
   ],
   "sortableProperties": [
@@ -235,57 +387,55 @@
       "key": "Name",
       "displayName": "Name",
       "dataType": "String",
-      "defaultDirection": "Ascending",
-      "displayOrder": 1
+      "defaultDirection": "Ascending"
     },
     {
       "key": "Brand",
       "displayName": "Brand",
       "dataType": "String",
-      "defaultDirection": "Ascending",
-      "displayOrder": 2
+      "defaultDirection": "Ascending"
     },
     {
       "key": "Size",
       "displayName": "Size",
       "dataType": "String",
-      "defaultDirection": "Ascending",
-      "displayOrder": 3
+      "defaultDirection": "Ascending"
+    },
+    {
+      "key": "Units",
+      "displayName": "Units",
+      "dataType": "String",
+      "defaultDirection": "Ascending"
+    },
+    {
+      "key": "Currency",
+      "displayName": "Currency",
+      "dataType": "String",
+      "defaultDirection": "Ascending"
     },
     {
       "key": "Concentration",
       "displayName": "Concentration",
       "dataType": "String",
-      "defaultDirection": "Ascending",
-      "displayOrder": 4
+      "defaultDirection": "Ascending"
     },
     {
       "key": "Gender",
       "displayName": "Gender",
       "dataType": "String",
-      "defaultDirection": "Ascending",
-      "displayOrder": 5
+      "defaultDirection": "Ascending"
     },
     {
       "key": "CreatedAt",
       "displayName": "Created Date",
       "dataType": "DateTime",
-      "defaultDirection": "Descending",
-      "displayOrder": 6
+      "defaultDirection": "Descending"
     },
     {
       "key": "UpdatedAt",
       "displayName": "Updated Date",
       "dataType": "DateTime",
-      "defaultDirection": "Descending",
-      "displayOrder": 7
-    },
-    {
-      "key": "FragranceFamily",
-      "displayName": "Fragrance Family",
-      "dataType": "String",
-      "defaultDirection": "Ascending",
-      "displayOrder": 8
+      "defaultDirection": "Descending"
     }
   ]
 }

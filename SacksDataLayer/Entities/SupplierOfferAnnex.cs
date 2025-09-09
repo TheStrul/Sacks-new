@@ -14,15 +14,15 @@ public class SupplierOfferAnnex : Annex
     
     // Offer metadata
     [MaxLength(255)]
-    public string? OfferName { get; set; }
+    required public string OfferName { get; init; }
     
     [MaxLength(500)]
     public string? Description { get; set; }
-    
+
     [MaxLength(20)]
-    public string? Currency { get; set; }
-        
+    required public string Currency { get; init; } = "USD";
+
     // Navigation properties - EF Core manages relationships through these
-    public virtual SupplierEntity Supplier { get; set; } = null!;
-    public virtual ICollection<OfferProductAnnex> OfferProducts { get; set; } = new List<OfferProductAnnex>();
+    required public virtual SupplierEntity Supplier { get; init; }
+    public virtual ICollection<OfferProductAnnex> OfferProducts { get; init; } = new List<OfferProductAnnex>();
 }
