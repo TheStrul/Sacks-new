@@ -1,4 +1,5 @@
 using SacksDataLayer.FileProcessing.Configuration;
+using SacksDataLayer.FileProcessing.Models; // ProcessingContext
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Entities;
@@ -153,43 +154,47 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// Processes a batch of products with optimized bulk operations
         /// </summary>
-        public async Task<FileProcessingResult> ProcessOfferAsync(
-            SupplierOfferAnnex offer,
-            SupplierConfiguration supplierConfig,
+        public async Task ProcessOfferAsync(
+            ProcessingContext context,
             CancellationToken cancellationToken = default)
         {
-            if (offer == null) throw new ArgumentNullException(nameof(offer));
+            if (context == null) throw new ArgumentNullException(nameof(context));
+            var offer = context.ProcessingResult.SupplierOffer ?? throw new ArgumentNullException("context.ProcessingResult.SupplierOffer");
             
             cancellationToken.ThrowIfCancellationRequested();
-            
-            var result = new FileProcessingResult();
+            // use ProcessingStatistics on the provided context
+            var stats = context.ProcessingResult.Statistics;
             
             try
             {
                 // Step 1: Bulk create/update products with proper entity state management
                 var res = await _productsService.BulkCreateOrUpdateProductsOptimizedAsync(offer);
 
-                result.ProductsCreated += res.Created;
-                result.ProductsUpdated += res.Updated;
-                result.Wornings += res.Warnings;
-                result.ProductsNoChanged += res.NoChanges;
-                result.Errors += res.Errors;
+                // Map product service results directly into ProcessingStatistics
+                stats.ProductsCreated += res.Created;
+                stats.ProductsUpdated += res.Updated;
+                stats.ProductsSkipped += res.NoChanges;
+                stats.ErrorCount += res.Errors;
+                // For warnings, increment by returned warnings
+                stats.WarningCount += res.Warnings;
 
                 // Important: persist changes now so new Product IDs are generated and available
                 await _context.SaveChangesAsync(cancellationToken);
 
                 // Step 2: Now create OfferProducts referencing persisted ProductIds
-                await ProcessOfferProductsAsync(offer, supplierConfig, result, cancellationToken);
+                await ProcessOfferProductsAsync(context, cancellationToken);
 
-                // Return accumulated result (caller will SaveChanges as part of transaction)
-                return result;
+                // Caller will SaveChanges as part of transaction
+                return;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to process product batch for offer: {OfferName}", offer.OfferName);
-                result.Errors += offer.OfferProducts.Count; // Count all items as errors
-                result.ErrorMessages.Add($"Batch processing failed: {ex.Message}");
-                return result;
+
+                // Count all items as errors in the statistics
+                stats.ErrorCount += offer.OfferProducts.Count;
+
+                return;
             }
         }
 
@@ -224,15 +229,14 @@ namespace SacksDataLayer.Services.Implementations
         /// Processes offer-products for the given products and offer
         /// </summary>
         private async Task ProcessOfferProductsAsync(
-            SupplierOfferAnnex offer,
-            SupplierConfiguration supplierConfig,
-            FileProcessingResult result,
+            ProcessingContext context,
             CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(offer);
-            ArgumentNullException.ThrowIfNull(supplierConfig);
-            ArgumentNullException.ThrowIfNull(result);
-            
+            ArgumentNullException.ThrowIfNull(context);
+            var offer = context.ProcessingResult.SupplierOffer ?? throw new ArgumentNullException("context.ProcessingResult.SupplierOffer");
+            var supplierConfig = context.SupplierConfiguration;
+            var stats = context.ProcessingResult.Statistics;
+
             _logger.LogInformation("ProcessOfferProductsAsync called with {ProductCount} products for offer {OfferId}",
                  offer.OfferProducts.Count, offer.Id);
             
@@ -291,19 +295,19 @@ namespace SacksDataLayer.Services.Implementations
                     {
                         trackedOffer.OfferProducts.Add(offerProduct);
                     }
-                    
-                    result.OfferProductsCreated += offerProductsToCreate.Count;
-                    
-                    _logger.LogDebug("Added {Count} OfferProducts to tracked offer navigation collection", 
-                        offerProductsToCreate.Count);
+                    // Map offer-products created into the processing context statistics
+                    stats.OfferProductsCreated += offerProductsToCreate.Count;
+
+                    _logger.LogDebug("Added {Count} OfferProducts to tracked offer navigation collection", offerProductsToCreate.Count);
                 }
 
-                _logger.LogDebug("OfferProducts processing completed. Created {CreatedCount}", 
-                    offerProductsToCreate.Count);
+                _logger.LogDebug("OfferProducts processing completed. Created {CreatedCount}", offerProductsToCreate.Count);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to process offer products for offer: {OfferId}", offer.Id);
+                // Map error into context statistics
+                context.ProcessingResult.Statistics.ErrorCount += 1;
                 throw;
             }
         }

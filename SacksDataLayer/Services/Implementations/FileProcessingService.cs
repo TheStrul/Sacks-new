@@ -438,8 +438,8 @@ namespace SacksDataLayer.Services.Implementations
                         throw new InvalidDataException(errorMessage);
                     }
 
-                    //Stpe 4: Process products and offers in optimized bulk operation
-                    await _databaseService.ProcessOfferAsync(context.ProcessingResult.SupplierOffer, context.SupplierConfiguration, ct);
+                    // Step 4: Process products and offers in optimized bulk operation
+                    await _databaseService.ProcessOfferAsync(context, ct);
 
 
                     // Step 5: Save complete object graph in single transaction
@@ -449,9 +449,24 @@ namespace SacksDataLayer.Services.Implementations
                     stopwatch.Stop();
 
                     // Step 5: Display results
-                    _logger.LogInformation("Processing complete:");
-                    _logger.LogInformation("{OfferName}", context.ProcessingResult.SupplierOffer.OfferName);
-                    _logger.LogInformation("Created offer with {ProductCount:N0} products", context.ProcessingResult.SupplierOffer.OfferProducts.Count);
+                    // Emit a full ProcessingStatistics summary to the logs
+                    var stats = context.ProcessingResult.Statistics;
+                    _logger.LogInformation("Processing complete: {FileName}", context.ProcessingResult.SourceFile);
+                    _logger.LogInformation("Offer: {OfferName} (Id: {OfferId})", context.ProcessingResult.SupplierOffer.OfferName, context.ProcessingResult.SupplierOffer.Id);
+                    _logger.LogInformation("Rows - Total: {TotalRows}, Titles: {TitleRows}, Data: {DataRows}, Empty: {EmptyRows}",
+                        stats.TotalRowsInFile, stats.TotalTitlesRows, stats.TotalDataRows, stats.TotalEmptyRows);
+                    _logger.LogInformation("Products - Created: {PCreated}, Updated: {PUpdated}, Skipped: {PSkipped}",
+                        stats.ProductsCreated, stats.ProductsUpdated, stats.ProductsSkipped);
+                    _logger.LogInformation("OfferProductsCreated: {OfferProductsCreated}", stats.OfferProductsCreated);
+                    _logger.LogInformation("Issues - Errors: {ErrorCount}, Warnings: {WarningCount}", stats.ErrorCount, stats.WarningCount);
+                    if (context.ProcessingResult.Errors.Any())
+                    {
+                        _logger.LogWarning("Errors: {Errors}", string.Join("; ", context.ProcessingResult.Errors));
+                    }
+                    if (context.ProcessingResult.Warnings.Any())
+                    {
+                        _logger.LogWarning("Warnings: {Warnings}", string.Join("; ", context.ProcessingResult.Warnings));
+                    }
                     
                     if (stopwatch.ElapsedMilliseconds > 5000) // Only show if > 5 seconds
                     {
@@ -491,38 +506,6 @@ namespace SacksDataLayer.Services.Implementations
                 throw;
             }
         }
-
-        /// <summary>
-        /// 📊 ENHANCED: Display comprehensive processing results
-        /// </summary>
-        private void DisplayProcessingResults(
-            SupplierEntity supplier, 
-            SupplierOfferAnnex offer, 
-            FileProcessingResult batchResult, 
-            long processingTimeMs)
-        {
-            // Show only essential summary to user
-            _logger.LogInformation("Processing complete:");
-            _logger.LogInformation("{OfferName}", offer.OfferName);
-            _logger.LogInformation("Created: {ProductsCreated:N0} products, {OfferProductsCreated:N0} offers", batchResult.ProductsCreated, batchResult.OfferProductsCreated);
-            
-            if (batchResult.ProductsUpdated > 0)
-            {
-                _logger.LogInformation("Updated: {ProductsUpdated:N0} products", batchResult.ProductsUpdated);
-            }
-            
-            if (batchResult.Errors > 0)
-            {
-                _logger.LogWarning("Errors: {Errors:N0}", batchResult.Errors);
-            }
-            
-            // Performance indicators for significant processing times only
-            if (processingTimeMs > 5000) // Only show if > 5 seconds
-            {
-                _logger.LogInformation("Time: {ProcessingTime:F1}s", processingTimeMs / 1000.0);
-            }
-        }
-
 
 
         #endregion

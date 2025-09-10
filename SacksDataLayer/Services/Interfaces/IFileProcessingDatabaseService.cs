@@ -40,15 +40,12 @@ namespace SacksDataLayer.Services.Interfaces
            string description,
            CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Processes an Offer that includs a list of products with 
-        /// </summary>
-        /// <param name="offer">Supplier offer entity</param>
-        /// <param name="cancellationToken">Cancellation token</param>
-        /// <returns>Processing results with statistics</returns>
-        Task<FileProcessingResult> ProcessOfferAsync(
-            SupplierOfferAnnex offer,
-            SacksDataLayer.FileProcessing.Configuration.SupplierConfiguration supplierConfig,
+    /// <summary>
+    /// Processes an Offer using the provided ProcessingContext. The implementation should
+    /// update context.ProcessingResult.Statistics in-place.
+    /// </summary>
+        Task ProcessOfferAsync(
+            ProcessingContext context,
             CancellationToken cancellationToken = default);
 
         /// <summary>
