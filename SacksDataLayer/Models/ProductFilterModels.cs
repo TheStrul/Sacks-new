@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using SacksDataLayer.Configuration;
 
 namespace SacksDataLayer.Models

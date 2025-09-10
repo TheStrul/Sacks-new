@@ -1,5 +1,4 @@
 using SacksDataLayer.FileProcessing.Models;
-using SacksDataLayer.Entities;
 
 namespace SacksDataLayer.FileProcessing.Interfaces
 {

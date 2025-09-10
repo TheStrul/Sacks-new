@@ -427,13 +427,6 @@ namespace QMobileDeviceServiceMenu
                             statusLabel.Text = $"Monitoring: {_model.LogFileName} | Display cleared (file locked by Serilog)";
                             
                             // Show informational message without making it seem like an error
-                            MessageBox.Show(
-                                "Log display has been cleared.\n\n" +
-                                "The log file itself cannot be cleared while the application is actively logging.\n\n" +
-                                "This is normal behavior - new log entries will continue to be appended to the file.",
-                                "Display Cleared", 
-                                MessageBoxButtons.OK, 
-                                MessageBoxIcon.Information);
                             break;
                     }
                 }

@@ -47,7 +47,6 @@ namespace SacksApp
                     return;
                 }
 
-                _logger.LogInformation("Database ready: {Message}", message);
 
                 // Update status if controls exist
                 if (Controls.Find("statusLabel", true).FirstOrDefault() is Label statusLabel)
@@ -69,7 +68,6 @@ namespace SacksApp
             {
                 processFilesButton.Enabled = false;
                 
-                _logger.LogInformation("Starting file processing operation");
                 
                 // Use timeout and explicit error handling for service resolution
                 var fileProcessingService = await ResolveFileProcessingServiceAsync();
@@ -101,13 +99,10 @@ namespace SacksApp
                     return;
                 }
 
-                _logger.LogInformation($"Found {files.Length} Excel file(s) in Inputs folder");
 
                 foreach (var file in files)
                 {
-                    _logger.LogInformation($"Processing {Path.GetFileName(file)}");
                     await fileProcessingService.ProcessFileAsync(file, CancellationToken.None);
-                    _logger.LogInformation($"Finished processing {Path.GetFileName(file)}");
                 }
 
                 MessageBox.Show($"Successfully processed {files.Length} file(s)!",
@@ -155,7 +150,6 @@ namespace SacksApp
                 throw new DirectoryNotFoundException($"Configured input directory does not exist: {resolvedPath}");
             }
             
-            _logger.LogInformation("Using configured input directory: {InputPath}", resolvedPath);
             return resolvedPath;
         }
 
@@ -184,7 +178,7 @@ namespace SacksApp
             catch (OperationCanceledException)
             {
                 _logger.LogError("Service resolution timed out after 10 seconds");
-                MessageBox.Show("Service initialization is taking too long. This is likely due to configuration file loading issues.\n\nPlease check:\n• Configuration files exist\n• No circular dependencies\n• Async/await patterns in DI registration",
+                MessageBox.Show("Service initialization is taking too long. This is likely due to configuration file loading issues.\n\nPlease check:\nï¿½ Configuration files exist\nï¿½ No circular dependencies\nï¿½ Async/await patterns in DI registration",
                     "Service Resolution Timeout", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return null;
             }

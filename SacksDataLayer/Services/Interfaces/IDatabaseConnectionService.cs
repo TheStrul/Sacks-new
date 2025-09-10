@@ -1,8 +1,3 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using SacksDataLayer.Configuration;
 
 namespace SacksDataLayer.Services.Interfaces

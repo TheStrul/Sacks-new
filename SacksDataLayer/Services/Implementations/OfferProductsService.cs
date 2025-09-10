@@ -1,5 +1,4 @@
-﻿using SacksDataLayer.FileProcessing.Models;
-using SacksDataLayer.Repositories.Interfaces;
+﻿using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
 using System.Text.Json;
@@ -162,18 +161,6 @@ namespace SacksDataLayer.Services.Implementations
             // Since we don't have GetAllAsync, we can't implement proper pagination
             // In a real scenario, you'd add GetAllAsync to the offerProductsRepository interface
             return Task.FromResult<(IEnumerable<OfferProductAnnex>, int)>((Enumerable.Empty<OfferProductAnnex>(), 0));
-        }
-
-        public async Task<IEnumerable<OfferProductAnnex>> SearchOfferProductsAsync(string searchTerm)
-        {
-            if (string.IsNullOrWhiteSpace(searchTerm))
-                return Enumerable.Empty<OfferProductAnnex>();
-
-            // Note: This is a simplified implementation
-            // Since we don't have a comprehensive search method, this is a placeholder
-            // In a real scenario, you'd implement search in the offerProductsRepository
-            await Task.CompletedTask;
-            return Enumerable.Empty<OfferProductAnnex>();
         }
 
         private async Task ValidateOfferProductAsync(OfferProductAnnex offerProduct)

@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore.Storage;
-using SacksDataLayer.Data;
 
 namespace SacksDataLayer.Services.Interfaces
 {

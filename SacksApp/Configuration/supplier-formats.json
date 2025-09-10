@@ -242,7 +242,7 @@
           "skipEntireRow": false
         },
         "F": {
-          "productPropertyKey": "Volume",
+          "productPropertyKey": "Size",
           "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
@@ -294,18 +294,6 @@
           "allowedValues": [],
           "skipEntireRow": false
         },
-        "K": {
-          "productPropertyKey": "Incoming",
-          "classification": "OfferDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 100,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
         "L": {
           "productPropertyKey": "COO",
           "classification": "ProductDynamic",
@@ -313,18 +301,6 @@
           "format": null,
           
           "maxLength": 100,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "M": {
-          "productPropertyKey": "T1",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 50,
           "transformations": [],
           "validationPatterns": [],
           "allowedValues": [],
@@ -496,18 +472,6 @@
         },
         "E": {
           "productPropertyKey": "Type",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 100,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "F": {
-          "productPropertyKey": "Niche",
           "classification": "ProductDynamic",
           "dataType": "string",
           "format": null,
@@ -738,15 +702,7 @@
         "isSortable": true,
         "isRequired": false
       },
-      "Category": {
-        "key": "Category",
-        "displayName": "Product Category",
-        "description": "Type of product to filter specific categories during processing",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },
+      
       "Brand": {
         "key": "Brand",
         "displayName": "Brand",
@@ -774,9 +730,9 @@
         "isSortable": true,
         "isRequired": false
       },
-      "Volume": {
-        "key": "Volume",
-        "displayName": "Volume",
+      "Size": {
+        "key": "Size",
+        "displayName": "Size",
         "description": "Volume or size of the perfume",
         "classification": "ProductDynamic",
         "isFilterable": true,
@@ -787,6 +743,24 @@
         "key": "Type",
         "displayName": "Type",
         "description": "Regular, Mini, Set, Tube, Tester, Niche, etc.",
+        "classification": "ProductDynamic",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false
+      },
+      "Concentration": {
+        "key": "Concentration",
+        "displayName": "Concentration",
+        "description": "Concentration (EDT, EDP, Parfum, etc.)",
+        "classification": "ProductDynamic",
+        "isFilterable": true,
+        "isSortable": true,
+        "isRequired": false
+      },
+      "Category": {
+        "key": "Category",
+        "displayName": "Category",
+        "description": "Product Category",
         "classification": "ProductDynamic",
         "isFilterable": true,
         "isSortable": true,

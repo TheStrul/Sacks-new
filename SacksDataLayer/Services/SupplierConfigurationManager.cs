@@ -1,10 +1,6 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using SacksDataLayer.FileProcessing.Configuration;
-using SacksDataLayer.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
-using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 
 namespace SacksDataLayer.FileProcessing.Services
 {

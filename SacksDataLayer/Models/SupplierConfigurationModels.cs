@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
+
 using SacksDataLayer.Configuration;
-using SacksDataLayer.FileProcessing.Models;
 
 namespace SacksDataLayer.FileProcessing.Configuration
 {

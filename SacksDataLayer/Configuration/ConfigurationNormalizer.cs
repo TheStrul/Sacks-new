@@ -273,43 +273,30 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
                 if (value == null) continue;
 
-                // Determine where to apply the subtitle data based on key name
-                switch (key.ToLowerInvariant())
+                // Treat all subtitle keys as dynamic properties. Normalize the key to a consistent format and store.
+                var normalizedKey = NormalizeSubtitleKey(key);
+                if (!product.DynamicProperties.ContainsKey(normalizedKey))
                 {
-                    case "brand":
-                        if (!product.DynamicProperties.ContainsKey("Brand"))
-                        {
-                            product.SetDynamicProperty("Brand", value);
-                            _logger?.LogTrace("Applied subtitle brand '{Brand}' to product", value);
-                        }
-                        break;
-
-                    case "category":
-                        if (!product.DynamicProperties.ContainsKey("Category"))
-                        {
-                            product.SetDynamicProperty("Category", value);
-                            _logger?.LogTrace("Applied subtitle category '{Category}' to product", value);
-                        }
-                        break;
-
-                    case "type":
-                        if (!product.DynamicProperties.ContainsKey("Type"))
-                        {
-                            product.SetDynamicProperty("Type", value);
-                            _logger?.LogTrace("Applied subtitle type '{Type}' to product", value);
-                        }
-                        break;
-
-                    default:
-                        // Apply as dynamic property if not already set
-                        if (!product.DynamicProperties.ContainsKey(key))
-                        {
-                            product.SetDynamicProperty(key, value);
-                            _logger?.LogTrace("Applied subtitle property '{Key}': '{Value}' to product", key, value);
-                        }
-                        break;
+                    product.SetDynamicProperty(normalizedKey, value);
+                    _logger?.LogTrace("Applied subtitle property '{Key}': '{Value}' to product", normalizedKey, value);
                 }
             }
+        }
+
+        /// <summary>
+        /// Normalizes subtitle keys to a consistent Pascal/Title case format and removes whitespace/underscores/hyphens.
+        /// Examples: "brand name" -> "BrandName", "product_line" -> "ProductLine"
+        /// </summary>
+        private string NormalizeSubtitleKey(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                return key ?? string.Empty;
+
+            // Convert to title case then remove non-word separators
+            var title = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(key.Trim().ToLowerInvariant());
+            // Remove spaces, underscores, hyphens
+                var cleaned = Regex.Replace(title, @"[\s_\-]+", string.Empty);
+            return cleaned;
         }
         #region Core Processing Methods
 
@@ -704,51 +691,35 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         {
             var nameComponents = new List<string>();
 
-            // Try to build a meaningful name from extracted/mapped properties
-            if (product.DynamicProperties.TryGetValue("Brand", out var brand) && brand != null)
-                nameComponents.Add(brand.ToString()!);
-
-            if (product.DynamicProperties.TryGetValue("ProductLine", out var line) && line != null)
-                nameComponents.Add(line.ToString()!);
-
-            if (product.DynamicProperties.TryGetValue("Category", out var category) && category != null)
-                nameComponents.Add(category.ToString()!);
-
-            if (product.DynamicProperties.TryGetValue("Size", out var size) && size != null)
-                nameComponents.Add(size.ToString()!);
-
-            if (product.DynamicProperties.TryGetValue("Units", out var units) && units != null)
+            // Determine preferred keys from supplier configuration if available; otherwise use existing dynamic property keys
+            List<string> preferredKeys = new();
+            try
             {
-                // Combine size and units if both exist
-                var sizeStr = size?.ToString() ?? "";
-                var unitsStr = units.ToString();
-                if (!string.IsNullOrEmpty(sizeStr) && !string.IsNullOrEmpty(unitsStr))
+                preferredKeys = _configuration?.GetCoreProductProperties(_configuration.EffectiveMarketConfiguration) ?? new List<string>();
+            }
+            catch
+            {
+                preferredKeys = new List<string>();
+            }
+
+            if (!preferredKeys.Any())
+            {
+                preferredKeys = product.DynamicProperties.Keys.ToList();
+            }
+
+            foreach (var key in preferredKeys)
+            {
+                if (product.DynamicProperties.TryGetValue(key, out var value) && value != null)
                 {
-                    // Replace the previous size component with size+units
-                    if (nameComponents.Count > 0 && nameComponents.Last() == sizeStr)
-                    {
-                        nameComponents[nameComponents.Count - 1] = $"{sizeStr}{unitsStr}";
-                    }
-                }
-                else if (!string.IsNullOrEmpty(unitsStr))
-                {
-                    nameComponents.Add(unitsStr);
+                    nameComponents.Add(value.ToString()!);
                 }
             }
 
-            if (product.DynamicProperties.TryGetValue("Gender", out var gender) && gender != null)
-                nameComponents.Add($"for {gender}");
-
-            if (product.DynamicProperties.TryGetValue("Concentration", out var concentration) && concentration != null)
-                nameComponents.Add(concentration.ToString()!);
-
-            // If no meaningful properties found, use EAN or fallback
+            // If still empty, fallback to EAN or generic fallback
             if (!nameComponents.Any())
             {
                 if (!string.IsNullOrWhiteSpace(product.EAN))
-                {
                     nameComponents.Add($"Product {product.EAN}");
-                }
             }
 
             return nameComponents.Any() ? string.Join(" ", nameComponents) : "Unknown Product";

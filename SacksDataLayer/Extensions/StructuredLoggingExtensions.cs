@@ -1,6 +1,4 @@
 using Microsoft.Extensions.Logging;
-using SacksDataLayer.Services.Interfaces;
-using System;
 
 namespace SacksDataLayer.Extensions
 {

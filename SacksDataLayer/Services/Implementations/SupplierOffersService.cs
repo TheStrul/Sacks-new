@@ -1,5 +1,4 @@
-﻿using SacksDataLayer.FileProcessing.Models;
-using SacksDataLayer.Repositories.Interfaces;
+﻿using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
 
@@ -40,9 +39,13 @@ namespace SacksDataLayer.Services.Implementations
             await ValidateOfferAsync(offer);
 
             // Verify supplier exists
-            var supplier = await _suppliersRepository.GetByIdAsync(offer.SupplierId, CancellationToken.None);
-            if (supplier == null)
-                throw new InvalidOperationException($"Supplier with ID {offer.SupplierId} not found");
+            // If SupplierId is provided (>0) verify it exists; if not, a navigation Supplier may be attached for EF to persist
+            if (offer.SupplierId > 0)
+            {
+                var supplier = await _suppliersRepository.GetByIdAsync(offer.SupplierId, CancellationToken.None);
+                if (supplier == null)
+                    throw new InvalidOperationException($"Supplier with ID {offer.SupplierId} not found");
+            }
 
             offer.CreatedAt = DateTime.UtcNow;
             _offerRepository.Add(offer);

@@ -6,8 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using SacksDataLayer.Configuration;
 using SacksDataLayer.Data;
 using SacksDataLayer.Services.Interfaces;
-using System;
-using System.Threading.Tasks;
 
 namespace SacksDataLayer.Services.Implementations
 {
@@ -121,21 +119,18 @@ namespace SacksDataLayer.Services.Implementations
         {
             try
             {
-                _logger.LogInformation("Checking if database exists...");
                 
                 // First, try to connect to see if database exists
                 var (isAvailable, message, exception) = await TestConnectionAsync();
                 
                 if (isAvailable)
                 {
-                    _logger.LogInformation("Database already exists and is accessible");
                     return (true, "Database exists and is accessible", null);
                 }
                 
                 // If we get a "database does not exist" error, try to create it
                 if (exception is SqlException sqlEx && sqlEx.Number == 4060)
                 {
-                    _logger.LogInformation("Database does not exist. Attempting to create it...");
                     
                     try
                     {
@@ -144,12 +139,10 @@ namespace SacksDataLayer.Services.Implementations
                         
                         if (created)
                         {
-                            _logger.LogInformation("Database created successfully");
                             return (true, "Database created successfully", null);
                         }
                         else
                         {
-                            _logger.LogInformation("Database already existed (race condition)");
                             return (true, "Database already existed", null);
                         }
                     }

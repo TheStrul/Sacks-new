@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "productType": "Perfume",
+  "productType": "perfume",
   "keyMappings": {
     "gender": "Gender",
     "sex": "Gender",
@@ -34,7 +34,6 @@
     "měna": "Currency",
     "concentration": "Concentration",
     "con": "Concentration",
-    "type": "Concentration",
     "%": "Concentration",
     "conc": "Concentration",
     "strength": "Concentration",
@@ -45,11 +44,12 @@
     "marchio": "Brand",
     "manufacturer": "Brand",
     "make": "Brand",
-    "line": "ProductLine",
-    "collection": "ProductLine",
-    "serie": "ProductLine",
-    "série": "ProductLine",
-    "range": "ProductLine",
+    "line": "Line",
+    "collection": "Line",
+    "serie": "Line",
+    "série": "Line",
+    "range": "Line",
+    "category": "Category",
     "fragrancefamily": "FragranceFamily",
     "fragrance_family": "FragranceFamily",
     "fragrance family": "FragranceFamily",
@@ -130,14 +130,9 @@
       "лв": "BGN",
       "bgn": "BGN",
       "lev": "BGN",
-      "kn": "HRK",
-      "hrk": "HRK",
-      "kuna": "HRK",
-      "dkk": "DKK",
-      "krona": "DKK",
-      "sek": "SEK",
-      "nok": "NOK",
-      "kr": "NOK"
+  "kn": "HRK",
+  "hrk": "HRK",
+  "kr": "NOK"
     },
     "Concentration": {
       "edt": "Eau de Toilette",
@@ -375,8 +370,22 @@
       "isRangeFilter": false
     },
     {
-      "key": "ProductLine",
-      "displayName": "Product Line",
+      "key": "Line",
+      "displayName": "Line",
+      "dataType": "String",
+      "possibleValues": [],
+      "isRangeFilter": false
+    },
+    {
+      "key": "Category",
+      "displayName": "Category",
+      "dataType": "String",
+      "possibleValues": [],
+      "isRangeFilter": false
+    },
+    {
+      "key": "Type",
+      "displayName": "Type",
       "dataType": "String",
       "possibleValues": [],
       "isRangeFilter": false

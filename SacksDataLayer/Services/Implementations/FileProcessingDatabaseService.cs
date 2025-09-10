@@ -1,18 +1,10 @@
 using SacksDataLayer.FileProcessing.Configuration;
 using SacksDataLayer.FileProcessing.Models; // ProcessingContext
 using SacksDataLayer.Services.Interfaces;
-using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Entities;
 using SacksDataLayer.Data;
-using SacksDataLayer.Exceptions;
-using SacksDataLayer.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SacksDataLayer.Services.Implementations
 {
@@ -53,9 +45,7 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                _logger.LogInformation("Ensuring database is ready for file processing operations");
                 await _context.Database.EnsureCreatedAsync(cancellationToken);
-                _logger.LogInformation("Database is ready for file processing");
             }
             catch (Exception ex)
             {
@@ -140,7 +130,6 @@ namespace SacksDataLayer.Services.Implementations
                 // (transaction scope / SaveChanges will be handled by the caller)
                 var createdOffer = await _supplierOffersService.CreateOfferAsync(offer);
 
-                _logger.LogInformation("Offer created: {OfferName} (ID: {OfferId})", createdOffer.OfferName, createdOffer.Id);
 
                 return createdOffer;
             }
@@ -198,33 +187,6 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        private List<ProductEntity> PrepareProductsForBulkOperation(List<OfferProductAnnex> validProducts, List<string> coreProperties)
-        {
-            var productsForBulkOperation = new List<ProductEntity>();
-
-            foreach (var productData in validProducts)
-            {
-                var productEntity = new ProductEntity
-                {
-                    Name = productData.Product.Name,
-                    EAN = productData.Product.EAN
-                };
-
-                // Add core product properties only
-                foreach (var dynProp in productData.Product.DynamicProperties)
-                {
-                    if (coreProperties.Contains(dynProp.Key, StringComparer.OrdinalIgnoreCase))
-                    {
-                        productEntity.SetDynamicProperty(dynProp.Key, dynProp.Value);
-                    }
-                }
-
-                productsForBulkOperation.Add(productEntity);
-            }
-
-            return productsForBulkOperation;
-        }
-
         /// <summary>
         /// Processes offer-products for the given products and offer
         /// </summary>
@@ -237,8 +199,6 @@ namespace SacksDataLayer.Services.Implementations
             var supplierConfig = context.SupplierConfiguration;
             var stats = context.ProcessingResult.Statistics;
 
-            _logger.LogInformation("ProcessOfferProductsAsync called with {ProductCount} products for offer {OfferId}",
-                 offer.OfferProducts.Count, offer.Id);
             
             try
             {
@@ -350,7 +310,6 @@ namespace SacksDataLayer.Services.Implementations
 
                     if (deleteSuccess)
                     {
-                        _logger.LogInformation("✅ Successfully deleted existing offer: {OfferName}", offerName);
 
                         // Clear change tracker again after deletion to ensure clean state
                         _logger.LogDebug("Cleared change tracker after offer deletion to ensure clean state");

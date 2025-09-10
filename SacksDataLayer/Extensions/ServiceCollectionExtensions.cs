@@ -5,7 +5,6 @@ using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Repositories.Implementations;
 using SacksDataLayer.Configuration;
 using SacksDataLayer.FileProcessing.Services;
-using Microsoft.Extensions.Logging;
 
 namespace SacksDataLayer.Extensions
 {
@@ -42,7 +41,6 @@ namespace SacksDataLayer.Extensions
             services.AddScoped<IFileProcessingDatabaseService, FileProcessingDatabaseService>();
             services.AddScoped<IFileProcessingService, FileProcessingService>();
             services.AddScoped<SupplierConfigurationManager>();
-            services.AddScoped<DataNormalizationService>();
             return services;
         }
 

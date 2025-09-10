@@ -102,8 +102,6 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
                     }
                 }
             }
-
-            _logger?.LogInformation("Subtitle processing completed for {TotalRows} rows", fileData.DataRows.Count);
             return fileData;
         }
 
@@ -182,37 +180,15 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
 
             // For now, implement basic extraction based on rule name
             // This can be extended based on specific business requirements
-            switch (rule.Name.ToLowerInvariant())
-            {
-                case "brandsubtitle":
-                    // Extract brand information from the first non-empty cell
-                    var brandValue = row.Cells.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c?.Value))?.Value?.Trim();
-                    if (!string.IsNullOrEmpty(brandValue))
-                    {
-                        extractedData["Brand"] = brandValue;
-                        _logger?.LogDebug("Extracted brand from subtitle: {Brand}", brandValue);
-                    }
-                    break;
-
-                case "categorysubtitle":
-                    var categoryValue = row.Cells.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c?.Value))?.Value?.Trim();
-                    if (!string.IsNullOrEmpty(categoryValue))
-                    {
-                        extractedData["Category"] = categoryValue;
-                        _logger?.LogDebug("Extracted category from subtitle: {Category}", categoryValue);
-                    }
-                    break;
-
-                default:
-                    // Generic extraction - use rule name as key and first cell as value
-                    var genericValue = row.Cells.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c?.Value))?.Value?.Trim();
-                    if (!string.IsNullOrEmpty(genericValue))
-                    {
-                        extractedData[rule.Name] = genericValue;
-                        _logger?.LogDebug("Extracted {RuleName} from subtitle: {Value}", rule.Name, genericValue);
-                    }
-                    break;
-            }
+                // Generic extraction - use rule name as key but normalize it to a consistent dynamic property key
+                var extractedValue = row.Cells.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c?.Value))?.Value?.Trim();
+                if (!string.IsNullOrEmpty(extractedValue))
+                {
+                    // Normalize the rule name into TitleCase without separators
+                    var normalizedKey = Regex.Replace(System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(rule.Name.Trim().ToLowerInvariant()), @"[\s_\-]+", string.Empty);
+                    extractedData[normalizedKey] = extractedValue;
+                    _logger?.LogDebug("Extracted subtitle property '{Key}': {Value}", normalizedKey, extractedValue);
+                }
 
             return extractedData;
         }

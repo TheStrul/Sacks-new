@@ -1,22 +1,11 @@
 ﻿using SacksDataLayer.FileProcessing.Configuration;
-using SacksDataLayer.FileProcessing.Services;
 using SacksDataLayer.FileProcessing.Normalizers;
 using SacksDataLayer.FileProcessing.Models;
 using SacksDataLayer.Services.Interfaces;
-using SacksDataLayer.Entities;
 using SacksDataLayer.Extensions;
-using SacksDataLayer.Exceptions;
 using SacksDataLayer.Configuration;
-using SacksDataLayer.Models;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Threading;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.ComponentModel.DataAnnotations;
@@ -128,7 +117,6 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                _logger.LogInformation("🚀 Starting bulletproof file processing for {FileName}", fileName);
 
                 // 🛡️ STEP 1: Enhanced file validation with size and accessibility checks
                 ValidateFileWithEnhancedChecksAsync(filePath, correlationId, cancellationToken);
@@ -182,7 +170,6 @@ namespace SacksDataLayer.Services.Implementations
                 _logger.LogFileProcessingComplete(fileName, fileData.DataRows.Count, 
                     0, correlationId); // No elapsed time tracking without performance monitor
 
-                _logger.LogInformation("File processed successfully: {FileName}", fileName);
             }
             catch (OperationCanceledException)
             {
@@ -240,9 +227,6 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        #endregion
-
-        #region Enhanced Validation Methods
         #endregion
 
         #region Enhanced Validation Methods
@@ -337,7 +321,6 @@ namespace SacksDataLayer.Services.Implementations
                     var errorMessage = $"No supplier configuration found for file: {fileName}";
                     _logger.LogError("No supplier configuration found for file: {FileName}", fileName);
                     _logger.LogError(errorMessage);
-                    _logger.LogInformation("Add a supplier configuration with matching fileNamePatterns in supplier-formats.json");
                     
                     throw new InvalidOperationException(errorMessage);
                 }
@@ -474,29 +457,11 @@ namespace SacksDataLayer.Services.Implementations
                     }
                     
                 }, cancellationToken);
-            }
-            catch (DuplicateOfferException ex)
-            {
-                stopwatch.Stop();
-                _logger.LogWarning("DUPLICATE OFFER DETECTED");
-                _logger.LogWarning("Supplier: {SupplierName}", ex.SupplierName);
-                _logger.LogWarning("File: {FileName}", ex.FileName);
-                _logger.LogWarning("Existing Offer: {OfferName}", ex. OfferName);
-                _logger.LogInformation("SOLUTION:");
-                _logger.LogInformation("Rename the file '{FileName}' to a different name", ex.FileName);
-                _logger.LogInformation("Or delete/deactivate the existing offer first");
-                _logger.LogInformation("Processing has been stopped to prevent duplicates");
-                
-                _logger.LogWarning("Duplicate offer validation failed: {Message}", ex.Message);
-                
-                // Don't rethrow - this is an expected business rule validation
-                return;
-            }
+            }            
             catch (Exception ex)
             {
                 stopwatch.Stop();
                 _logger.LogError("Failed to process Supplier Offer: {ErrorMessage}", ex.Message);
-                _logger.LogInformation("All changes have been automatically rolled back");
                 
                 if (_logger.IsEnabled(LogLevel.Debug))
                 {
@@ -548,45 +513,6 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// 🔍 VALIDATION: Validate dataStartRowIndex configuration
         /// </summary>
-        private Task ValidateDataStartRowIndex(string filePath, SupplierConfiguration config)
-        {
-            try
-            {
-                // Read file to check actual row count
-                using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                using var reader = new StreamReader(stream);
-                
-                int rowCount = 0;
-                while (reader.ReadLine() != null)
-                {
-                    rowCount++;
-                }
-
-                // Check FileStructure configuration (1-based indexing)
-                if (config.FileStructure?.DataStartRowIndex > 0)
-                {
-                    if (config.FileStructure.DataStartRowIndex > rowCount)
-                    {
-                        throw new InvalidOperationException(
-                            $"❌ VALIDATION ERROR: FileStructure.DataStartRowIndex ({config.FileStructure.DataStartRowIndex}) " +
-                            $"exceeds file row count ({rowCount}). File: {Path.GetFileName(filePath)}");
-                    }
-
-                    _logger.LogInformation(
-                        "✅ FileStructure DataStartRowIndex: {DataStartRow} (1-based) is valid for file with {RowCount} rows",
-                        config.FileStructure.DataStartRowIndex, rowCount);
-                }
-                
-                return Task.CompletedTask;
-            }
-            catch (Exception ex) when (!(ex is InvalidOperationException))
-            {
-                _logger.LogWarning(ex, 
-                    "⚠️ Could not validate dataStartRowIndex for file {FileName}. Proceeding with caution...", 
-                    Path.GetFileName(filePath));
-                return Task.CompletedTask;
-            }
-        }
 
         #endregion
 

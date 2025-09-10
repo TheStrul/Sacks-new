@@ -1,4 +1,3 @@
-using SacksDataLayer.DTOs;
 using SacksDataLayer.Entities;
 
 namespace SacksDataLayer.Services.Interfaces

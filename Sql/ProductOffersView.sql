@@ -3,14 +3,14 @@ CREATE VIEW ProductOffersView AS
 SELECT 
     -- Core product fields from ProductPropertiesSimpleView
     p.EAN,
+    p.Name,
+    op.Description,
     JSON_VALUE(p.DynamicProperties, '$.Category') AS Category,
     JSON_VALUE(p.DynamicProperties, '$.Brand') AS Brand,
-    JSON_VALUE(p.DynamicProperties, '$.ProductLine') AS Line,
-    op.Description,
-    p.Name,
+    JSON_VALUE(p.DynamicProperties, '$.Line') AS Line,
     JSON_VALUE(p.DynamicProperties, '$.Gender') AS Gender,
     JSON_VALUE(p.DynamicProperties, '$.Concentration') AS Concentration,
-    JSON_VALUE(p.DynamicProperties, '$.Size') AS Volume,
+    JSON_VALUE(p.DynamicProperties, '$.Volume') AS Volume,
     JSON_VALUE(p.DynamicProperties, '$.Type') AS Set,
     JSON_VALUE(p.DynamicProperties, '$.Decoded') AS Decoded,
     JSON_VALUE(p.DynamicProperties, '$.COO') AS COO,

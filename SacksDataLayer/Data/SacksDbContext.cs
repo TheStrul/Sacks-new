@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
+
 using SacksDataLayer.Entities;
 
 namespace SacksDataLayer.Data
@@ -102,6 +102,13 @@ namespace SacksDataLayer.Data
 
                 entity.Property(e => e.Description)
                       .HasMaxLength(500);
+
+                // Configure DynamicPropertiesJson as JSON column and ignore runtime dictionary
+                entity.Property(e => e.DynamicPropertiesJson)
+                      .HasColumnType("nvarchar(max)")
+                      .HasColumnName("DynamicProperties");
+
+                entity.Ignore(e => e.DynamicProperties);
             });
 
             // Configure SupplierOfferAnnex

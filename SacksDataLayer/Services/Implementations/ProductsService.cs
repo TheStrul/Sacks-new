@@ -1,5 +1,4 @@
-﻿using SacksDataLayer.FileProcessing.Models;
-using SacksDataLayer.Repositories.Interfaces;
+﻿using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Entities;
 using Microsoft.Extensions.Logging;
@@ -188,21 +187,25 @@ namespace SacksDataLayer.Services.Implementations
                         var originalJson = trackedProduct.DynamicPropertiesJson;
                         var mergedProperties = MergeDynamicProperties(trackedProduct.DynamicProperties, firstProduct.DynamicProperties);
                         var mergedJson = mergedProperties.Count > 0 ? JsonSerializer.Serialize(mergedProperties) : null;
-                        
-                        // Check if the merged properties differ from existing ones
-                        if (originalJson == mergedJson)
+
+                        // Compute only the properties that were added or changed so we log a compact diff
+                        var changed = GetChangedDynamicProperties(trackedProduct.DynamicProperties, firstProduct.DynamicProperties);
+
+                        if (changed.Count == 0)
                         {
                             // No changes, but still replace with tracked entity for all instances
                             result.NoChanges++;
                         }
                         else
                         {
-                            _logger.LogWarning($"Updating {firstProduct.Name} ({ean}), from:\r\n{originalJson}\r\nto:\r\n{mergedJson}");
+                            var changesJson = JsonSerializer.Serialize(changed);
+                            // Use structured logging and emit only the changes (old/new per property)
+                            _logger.LogWarning("Updating {ProductName} ({EAN}), changes:\r\n{Changes}", firstProduct.Name, ean, changesJson);
 
                             // Update existing product properties
                             trackedProduct.Name = firstProduct.Name;
                             trackedProduct.MergeDynamicPropertiesFrom(firstProduct);
-                            
+
                             result.Updated++;
                         }
                         
@@ -338,6 +341,50 @@ namespace SacksDataLayer.Services.Implementations
             }
             
             return merged;
+        }
+
+        /// <summary>
+        /// Returns a map of property -> { old = ..., new = ... } for properties that were added or changed
+        /// according to the actual merge semantics (i.e. omitted keys in <c>newProperties</c> are preserved).
+        /// Properties that are unchanged are not returned.
+        /// </summary>
+        private static Dictionary<string, object?> GetChangedDynamicProperties(
+            Dictionary<string, object?> existingProperties,
+            Dictionary<string, object?> newProperties)
+        {
+            existingProperties = existingProperties ?? new Dictionary<string, object?>();
+            newProperties = newProperties ?? new Dictionary<string, object?>();
+
+            // Compute the actual merged result according to MergeDynamicProperties
+            var merged = MergeDynamicProperties(existingProperties, newProperties);
+
+            var changes = new Dictionary<string, object?>();
+
+            // Compare merged vs existing and report only keys where the merged value differs
+            foreach (var kvp in merged)
+            {
+                var key = kvp.Key;
+                var mergedVal = kvp.Value;
+
+                existingProperties.TryGetValue(key, out var existingVal);
+
+                var equal = false;
+                if (existingVal == null && mergedVal == null)
+                    equal = true;
+                else if (existingVal != null && mergedVal != null)
+                    equal = string.Equals(existingVal.ToString(), mergedVal.ToString(), StringComparison.Ordinal);
+
+                if (!equal)
+                {
+                    changes[key] = new Dictionary<string, object?>
+                    {
+                        ["old"] = existingVal,
+                        ["new"] = mergedVal
+                    };
+                }
+            }
+
+            return changes;
         }
     }
 }

@@ -4,7 +4,6 @@
     using System.IO;
     using System.Text;
     using ExcelDataReader;
-    using System.Data;
     using Microsoft.Extensions.Logging;
     using SacksDataLayer.FileProcessing.Configuration;
     using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
@@ -52,7 +51,6 @@
                 }
 
                 fileData.RowCount = fileData.DataRows.Count;
-                _logger?.LogInformation("Successfully read file: {FilePath} with {RowCount} total rows", fullPath, fileData.RowCount);
                 return fileData;
             }
             catch (Exception ex)
@@ -160,8 +158,6 @@
                 
             } while (reader.NextResult()); // Move to next worksheet if any
 
-            _logger?.LogInformation("Excel file processing completed: {FilePath} - Total rows: {TotalRows}, Worksheets: {WorksheetCount}", 
-                fullPath, rowIndex, worksheetIndex);
             
             await Task.CompletedTask; // Make method async-compatible
         }

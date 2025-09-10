@@ -1,6 +1,5 @@
 ﻿namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing
 {
-    using System;
     using System.Collections.Generic;
 
     public class FileData
