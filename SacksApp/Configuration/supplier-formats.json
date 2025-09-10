@@ -3,814 +3,149 @@
   "suppliers": [
     {
       "name": "ACE",
-      "detection": {
-        "fileNamePatterns": ["ace*.xls*"]
-      },
+      "detection": { "fileNamePatterns": ["ace*.xls*"] },
       "columnProperties": {
-        "A": {
-          "productPropertyKey": "EAN",
-          "classification": "ProductEAN",
-          "dataType": "string",
-          
-          "maxLength": 20,
-          "validationPatterns": [
-            "^\\d+$"
-          ],
-          "skipEntireRow": true
-        },
-        "B": {
-          "productPropertyKey": "Ref",
-          "classification": "OfferDynamic",
-          "dataType": "string",
-          
-          "maxLength": 40,
-          "skipEntireRow": false
-        },
-        "C": {
-          "productPropertyKey": "Brand",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          
-          "maxLength": 100,
-          "skipEntireRow": true
-        },
-        "D": {
-          "productPropertyKey": "Description",
-          "classification": "OfferDescription",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 500,
-          "skipEntireRow": true
-        },
-        "E": {
-          "productPropertyKey": "Category",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          
-          "maxLength": 20,
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "F": {
-          "productPropertyKey": "COO",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          
-          "maxLength": 20,
-          "skipEntireRow": false
-        },
-        "G": {
-          "productPropertyKey": "Quantity",
-          "classification": "OfferQuantity",
-          "dataType": "int",
-          "format": "integer",
-          
-          "skipEntireRow": true
-        },
-        "H": {
-          "productPropertyKey": "Price",
-          "classification": "OfferPrice",
-          "dataType": "decimal",
-          "format": "currency",
-          
-          "transformations": [
-            "removeSymbols"
-          ],
-          "skipEntireRow": true
-        }
+        "A": { "productPropertyKey": "EAN", "classification": "ProductEAN", "dataType": "string", "maxLength": 20, "validationPatterns": ["^\\d+$"], "skipEntireRow": true },
+        "B": { "productPropertyKey": "Ref", "classification": "OfferDynamic", "dataType": "string", "maxLength": 40, "skipEntireRow": false },
+        "C": { "productPropertyKey": "Brand", "classification": "ProductDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": true },
+        "D": { "productPropertyKey": "Description", "classification": "OfferDescription", "dataType": "string", "maxLength": 500, "skipEntireRow": true },
+        "E": { "productPropertyKey": "Category", "classification": "ProductDynamic", "dataType": "string", "maxLength": 20, "skipEntireRow": false },
+        "F": { "productPropertyKey": "COO", "classification": "ProductDynamic", "dataType": "string", "maxLength": 20, "skipEntireRow": false },
+        "G": { "productPropertyKey": "Quantity", "classification": "OfferQuantity", "dataType": "int", "format": "integer", "skipEntireRow": true },
+        "H": { "productPropertyKey": "Price", "classification": "OfferPrice", "dataType": "decimal", "format": "currency", "transformations": ["removeSymbols"], "skipEntireRow": true }
       },
-      "fileStructure": {
-        "dataStartRowIndex": 2,
-        "expectedColumnCount": 8,
-        "headerRowIndex": 1
-      }
+      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 8, "headerRowIndex": 1 }
     },
     {
       "name": "API",
-      "detection": {
-        "fileNamePatterns": ["api*.xls*"]
-      },
+      "detection": { "fileNamePatterns": ["api*.xls*"] },
       "columnProperties": {
-        "A": {
-          "productPropertyKey": "EAN",
-          "classification": "ProductEAN",
-          "dataType": "string",
-          
-          "maxLength": 20,
-          "transformations": [],
-          "validationPatterns": [
-            "^\\d+$"
-          ],
-          "skipEntireRow": true
-        },
-        "B": {
-          "productPropertyKey": "Brand",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          
-          "maxLength": 100,
-          "skipEntireRow": true
-        },
-        "C": {
-          "productPropertyKey": "Description",
-          "classification": "OfferDescription",
-          "dataType": "string",
-          
-          "maxLength": 100,
-          "skipEntireRow": true
-        },
-        "D": {
-         "productPropertyKey": "Quantity",
-          "classification": "OfferQuantity",
-          "dataType": "int",
-          "format": "integer",
-          
-          "maxLength": null,
-          "transformations": [
-            "removeSymbols"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "E": {
-          "productPropertyKey": "Price",
-          "classification": "OfferPrice",
-          "dataType": "decimal",
-          "format": "currency",
-          
-          "maxLength": null,
-          "transformations": [
-            "removeSymbols",
-            "parseDecimal"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "F": {
-          "productPropertyKey": "COO",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 100,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        }
+        "A": { "productPropertyKey": "EAN", "classification": "ProductEAN", "dataType": "string", "maxLength": 20, "validationPatterns": ["^\\d+$"], "skipEntireRow": true },
+        "B": { "productPropertyKey": "Brand", "classification": "ProductDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": true },
+        "C": { "productPropertyKey": "Description", "classification": "OfferDescription", "dataType": "string", "maxLength": 100, "skipEntireRow": true },
+        "D": { "productPropertyKey": "Quantity", "classification": "OfferQuantity", "dataType": "int", "format": "integer", "transformations": ["removeSymbols"], "skipEntireRow": true },
+        "E": { "productPropertyKey": "Price", "classification": "OfferPrice", "dataType": "decimal", "format": "currency", "transformations": ["removeSymbols", "parseDecimal"], "skipEntireRow": true },
+        "F": { "productPropertyKey": "COO", "classification": "ProductDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": false }
       },
-      "fileStructure": {
-        "dataStartRowIndex": 2,
-        "expectedColumnCount": 6,
-        "headerRowIndex": 1
-      }
+      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 6, "headerRowIndex": 1 }
     },
     {
       "name": "CHK",
-      "detection": {
-        "fileNamePatterns": [
-          "chk 31.8.25.xlsx",
-          "chk 31.8.25.xls",
-          "chk*.xlsx",
-          "chk *.*.*.xlsx"
-        ]
-      },
+      "detection": { "fileNamePatterns": ["chk*.xls*"] },
       "columnProperties": {
-        "A": {
-          "productPropertyKey": "EAN",
-          "classification": "ProductEAN",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 20,
-          "transformations": [],
-          "validationPatterns": [
-            "^\\d+$"
-          ],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "B": {
-          "productPropertyKey": "Ref",
-          "classification": "OfferDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 100,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "C": {
-          "productPropertyKey": "Description",
-          "classification": "OfferDescription",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 500,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "D": {
-          "productPropertyKey": "Ref",
-          "classification": "OfferDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 100,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "E": {
-          "productPropertyKey": "Gender",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 20,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "F": {
-          "productPropertyKey": "Size",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 20,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "G": {
-          "productPropertyKey": "Units",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 20,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "I": {
-          "productPropertyKey": "Price",
-          "classification": "OfferPrice",
-          "dataType": "decimal",
-          "format": "currency",
-          
-          "maxLength": null,
-          "transformations": [
-            "removeSymbols",
-            "parseDecimal"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "J": {
-          "productPropertyKey": "Quantity",
-          "classification": "OfferQuantity",
-          "dataType": "int",
-          "format": "integer",
-          
-          "maxLength": null,
-          "transformations": [
-            "removeSymbols"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "L": {
-          "productPropertyKey": "COO",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 100,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        }
+        "A": { "productPropertyKey": "EAN", "classification": "ProductEAN", "dataType": "string", "maxLength": 20, "validationPatterns": ["^\\d+$"], "skipEntireRow": true },
+        "B": { "productPropertyKey": "Ref", "classification": "OfferDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": false },
+        "C": { "productPropertyKey": "Description", "classification": "OfferDescription", "dataType": "string", "maxLength": 500, "skipEntireRow": true },
+        "D": { "productPropertyKey": "Ref", "classification": "OfferDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": false },
+        "E": { "productPropertyKey": "Gender", "classification": "ProductDynamic", "dataType": "string", "maxLength": 20, "skipEntireRow": false },
+        "F": { "productPropertyKey": "Size", "classification": "ProductDynamic", "dataType": "string", "maxLength": 20, "skipEntireRow": false },
+        "G": { "productPropertyKey": "Units", "classification": "ProductDynamic", "dataType": "string", "maxLength": 20, "skipEntireRow": false },
+        "I": { "productPropertyKey": "Price", "classification": "OfferPrice", "dataType": "decimal", "format": "currency", "transformations": ["removeSymbols", "parseDecimal"], "skipEntireRow": true },
+        "J": { "productPropertyKey": "Quantity", "classification": "OfferQuantity", "dataType": "int", "format": "integer", "transformations": ["removeSymbols"], "skipEntireRow": false },
+        "L": { "productPropertyKey": "COO", "classification": "ProductDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": false }
       },
-      "fileStructure": {
-        "dataStartRowIndex": 2,
-        "expectedColumnCount": 13,
-        "headerRowIndex": 1
-      }
+      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 13, "headerRowIndex": 1 }
     },
     {
       "name": "HAND",
-      "detection": {
-        "fileNamePatterns": [
-          "hand 31.8.25.xlsx",
-          "hand 31.8.25.xls",
-          "hand*.xlsx",
-          "hand *.*.*.xlsx"
-        ]
-      },
+      "detection": { "fileNamePatterns": ["hand*.xls*"] },
       "columnProperties": {
-        "A": {
-          "productPropertyKey": "Brand",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 500,
-          "transformations": [
-            "extractAfterPattern:*:"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "B": {
-          "productPropertyKey": "Ref",
-          "classification": "OfferDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 100,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "C": {
-          "productPropertyKey": "EAN",
-          "classification": "ProductEAN",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 20,
-          "transformations": [],
-          "validationPatterns": [
-            "^\\d+$"
-          ],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "D": {
-          "productPropertyKey": "Type",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": null,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": ["SET", "REG"],
-          "skipEntireRow": true
-        },
-        "E": {
-          "productPropertyKey": "Description",
-          "classification": "OfferDescription",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 500,
-          "transformations": [
-            "extractAfterPattern:*:"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "F": {
-          "productPropertyKey": "Quantity",
-          "classification": "OfferQuantity",
-          "dataType": "int",
-          "format": "integer",
-          
-          "maxLength": null,
-          "transformations": [
-            "removeSymbols"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "G": {
-          "productPropertyKey": "Price",
-          "classification": "OfferPrice",
-          "dataType": "decimal",
-          "format": "currency",
-          
-          "maxLength": null,
-          "transformations": [
-            "removeSymbols"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        }
+        "A": { "productPropertyKey": "Brand", "classification": "ProductDynamic", "dataType": "string", "maxLength": 500, "transformations": ["extractAfterPattern:*:"], "skipEntireRow": true },
+        "B": { "productPropertyKey": "Ref", "classification": "OfferDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": false },
+        "C": { "productPropertyKey": "EAN", "classification": "ProductEAN", "dataType": "string", "maxLength": 20, "validationPatterns": ["^\\d+$"], "skipEntireRow": true },
+        "D": { "productPropertyKey": "Type", "classification": "ProductDynamic", "dataType": "string", "allowedValues": ["SET","REG"], "skipEntireRow": true },
+        "E": { "productPropertyKey": "Description", "classification": "OfferDescription", "dataType": "string", "maxLength": 500, "transformations": ["extractAfterPattern:*:"], "skipEntireRow": false },
+        "F": { "productPropertyKey": "Quantity", "classification": "OfferQuantity", "dataType": "int", "format": "integer", "transformations": ["removeSymbols"], "skipEntireRow": false },
+        "G": { "productPropertyKey": "Price", "classification": "OfferPrice", "dataType": "decimal", "format": "currency", "transformations": ["removeSymbols"], "skipEntireRow": false }
       },
-      "fileStructure": {
-        "dataStartRowIndex": 2,
-        "expectedColumnCount": 7,
-        "headerRowIndex": 1
-      }
+      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 7, "headerRowIndex": 1 }
     },
     {
       "name": "JIZAN",
-      "detection": {
-        "fileNamePatterns": [
-          "jiz*.xls*"        ]
-      },
+      "detection": { "fileNamePatterns": ["jiz*.xls*"] },
       "columnProperties": {
-        "B": {
-          "productPropertyKey": "EAN",
-          "classification": "ProductEAN",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 20,
-          "transformations": [],
-          "validationPatterns": [
-            "^\\d+$"
-          ],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "C": {
-          "productPropertyKey": "Brand",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 100,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "D": {
-          "productPropertyKey": "Description",
-          "classification": "OfferDescription",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 500,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "E": {
-          "productPropertyKey": "Type",
-          "classification": "ProductDynamic",
-          "dataType": "string",
-          "format": null,
-          
-          "maxLength": 100,
-          "transformations": [],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": false
-        },
-        "G": {
-          "productPropertyKey": "Quantity",
-          "classification": "OfferQuantity",
-          "dataType": "int",
-          "format": "integer",
-          
-          "maxLength": null,
-          "transformations": [
-            "removeSymbols"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": true
-          },
-        "H": {
-          "productPropertyKey": "Price",
-          "classification": "OfferPrice",
-          "dataType": "decimal",
-          "format": "currency",
-          
-          "maxLength": null,
-          "transformations": [
-            "removeSymbols",
-            "parseDecimal"
-          ],
-          "validationPatterns": [
-            "^(?:[2-9]\\d|[1-9]\\d{2,})(?:\\.\\d+)?$"
-          ],
-          "allowedValues": [],
-          "skipEntireRow": true
-        }       
+        "B": { "productPropertyKey": "EAN", "classification": "ProductEAN", "dataType": "string", "maxLength": 20, "validationPatterns": ["^\\d+$"], "skipEntireRow": true },
+        "C": { "productPropertyKey": "Brand", "classification": "ProductDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": true },
+        "D": { "productPropertyKey": "Description", "classification": "OfferDescription", "dataType": "string", "maxLength": 500, "skipEntireRow": true },
+        "E": { "productPropertyKey": "Type", "classification": "ProductDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": false },
+        "G": { "productPropertyKey": "Quantity", "classification": "OfferQuantity", "dataType": "int", "format": "integer", "transformations": ["removeSymbols"], "skipEntireRow": true },
+        "H": { "productPropertyKey": "Price", "classification": "OfferPrice", "dataType": "decimal", "format": "currency", "transformations": ["removeSymbols","parseDecimal"], "validationPatterns": ["^(?:[2-9]\\d|[1-9]\\d{2,})(?:\\.\\d+)?$"], "skipEntireRow": true }
       },
-      "fileStructure": {
-        "dataStartRowIndex": 2,
-        "expectedColumnCount": 8,
-        "headerRowIndex": 1
-      }
+      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 8, "headerRowIndex": 1 }
     },
     {
       "name": "Lux",
-      "detection": {
-        "fileNamePatterns": [
-          "Lux*.xls*"
-        ]
-      },
+      "detection": { "fileNamePatterns": ["Lux*.xls*"] },
       "columnProperties": {
-        "A": {
-          "productPropertyKey": "EAN",
-          "classification": "ProductEAN",
-          "dataType": "string",
-          
-          "maxLength": 20,
-          "validationPatterns": [
-            "^\\d+$"
-          ],
-          "skipEntireRow": true
-        },
-        "B": {
-          "productPropertyKey": "Description",
-          "classification": "OfferDescription",
-          "dataType": "string",
-          
-          "maxLength": 500,
-          "skipEntireRow": true
-        },
-        "C": {
-          "productPropertyKey": "Quantity",
-          "classification": "OfferQuantity",
-          "dataType": "int",
-          "format": "integer",
-          
-          "transformations": [
-            "removeSymbols"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "D": {
-          "productPropertyKey": "Price",
-          "classification": "OfferPrice",
-          "dataType": "decimal",
-          "format": "currency",
-          
-          "transformations": [
-            "removeSymbols",
-            "parseDecimal"
-          ],
-          "skipEntireRow": true
-        }
+        "A": { "productPropertyKey": "EAN", "classification": "ProductEAN", "dataType": "string", "maxLength": 20, "validationPatterns": ["^\\d+$"], "skipEntireRow": true },
+        "B": { "productPropertyKey": "Description", "classification": "OfferDescription", "dataType": "string", "maxLength": 500, "skipEntireRow": true },
+        "C": { "productPropertyKey": "Quantity", "classification": "OfferQuantity", "dataType": "int", "format": "integer", "transformations": ["removeSymbols"], "skipEntireRow": true },
+        "D": { "productPropertyKey": "Price", "classification": "OfferPrice", "dataType": "decimal", "format": "currency", "transformations": ["removeSymbols","parseDecimal"], "skipEntireRow": true }
       },
-      "fileStructure": {
-        "dataStartRowIndex": 5,
-        "expectedColumnCount": 8,
-        "headerRowIndex": 1
-      }
+      "fileStructure": { "dataStartRowIndex": 5, "expectedColumnCount": 8, "headerRowIndex": 1 }
     },
     {
       "name": "MB",
-      "detection": {
-        "fileNamePatterns": [
-          "MB*.xls"
-        ]
-      },
+      "detection": { "fileNamePatterns": ["MB*.xls"] },
       "columnProperties": {
-        "A": {
-          "productPropertyKey": "Description",
-          "classification": "OfferDescription",
-          "dataType": "string",          
-          "maxLength": 100,
-          "skipEntireRow": true
-        },
-        "B": {
-          "productPropertyKey": "Price",
-          "classification": "OfferPrice",
-          "dataType": "decimal",
-          "format": "currency",          
-          "transformations": [
-            "removeSymbols",
-            "parseDecimal"
-          ],
-          "skipEntireRow": true
-        },
-        "C": {
-          "productPropertyKey": "Quantity",
-          "classification": "OfferQuantity",
-          "dataType": "int",
-          "format": "integer",
-
-          "transformations": [
-            "removeSymbols",
-            "removecommas"
-          ],
-          "validationPatterns": [],
-          "allowedValues": [],
-          "skipEntireRow": true
-        },
-        "D": {
-          "productPropertyKey": "EAN",
-          "classification": "ProductEAN",
-          "dataType": "string",
-          
-          "maxLength": 20,
-          "validationPatterns": [
-            "^\\d+$"
-          ],
-          "skipEntireRow": true
-        }
+        "A": { "productPropertyKey": "Description", "classification": "OfferDescription", "dataType": "string", "maxLength": 100, "skipEntireRow": true },
+        "B": { "productPropertyKey": "Price", "classification": "OfferPrice", "dataType": "decimal", "format": "currency", "transformations": ["removeSymbols","parseDecimal"], "skipEntireRow": true },
+        "C": { "productPropertyKey": "Quantity", "classification": "OfferQuantity", "dataType": "int", "format": "integer", "transformations": ["removeSymbols","removecommas"], "skipEntireRow": true },
+        "D": { "productPropertyKey": "EAN", "classification": "ProductEAN", "dataType": "string", "maxLength": 20, "validationPatterns": ["^\\d+$"], "skipEntireRow": true }
       },
-      "fileStructure": {
-        "dataStartRowIndex": 2,
-        "expectedColumnCount": 4,
-        "headerRowIndex": 1
+      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 4, "headerRowIndex": 1 },
+      "subtitleHandling": { "enabled": true, "action": "parse", "detectionRules": [ { "name": "BrandSubtitle", "description": "Detects brand information from subtitle rows in column A", "detectionMethod": "columnCount", "expectedColumnCount": 1, "applyToSubsequentRows": true } ], "fallbackAction": "skip" }
+    },
+    {
+      "name": "PcA",
+      "detection": { "fileNamePatterns": ["PcA*.xls*"] },
+      "columnProperties": {
+        "A": { "productPropertyKey": "Gender", "classification": "ProductDynamic", "dataType": "string", "skipEntireRow": false },
+        "B": { "productPropertyKey": "Decoded", "classification": "OfferDynamic", "dataType": "string", "skipEntireRow": false },
+        "C": { "productPropertyKey": "Brand", "classification": "ProductDynamic", "dataType": "string", "maxLength": 200, "skipEntireRow": true },
+        "D": { "productPropertyKey": "EAN", "classification": "ProductEAN", "dataType": "string", "maxLength": 20, "validationPatterns": ["^\\d+$"], "skipEntireRow": true },
+        "E": { "productPropertyKey": "COO", "classification": "ProductDynamic", "dataType": "string", "maxLength": 20, "skipEntireRow": false },
+        "F": { "productPropertyKey": "Ref", "classification": "OfferDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": false },
+        "G": { "productPropertyKey": "Description", "classification": "OfferDescription", "dataType": "string", "maxLength": 500, "skipEntireRow": false },
+        "I": { "productPropertyKey": "Price", "classification": "OfferPrice", "dataType": "decimal", "format": "currency", "transformations": ["removeSymbols","parseDecimal"], "skipEntireRow": true },
+        "J": { "productPropertyKey": "Quantity", "classification": "OfferQuantity", "dataType": "int", "format": "integer", "transformations": ["removeSymbols"], "skipEntireRow": false }
       },
-      "subtitleHandling": {
-        "enabled": true,
-        "action": "parse",
-        "detectionRules": [
-          {
-            "name": "BrandSubtitle",
-            "description": "Detects brand information from subtitle rows in column A",
-            "detectionMethod": "columnCount",
-            "expectedColumnCount": 1,
-            "applyToSubsequentRows": true,
-            "validationPatterns": []
-          }
-        ],
-        "fallbackAction": "skip"
-      }
+      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 10, "headerRowIndex": 1 }
+    },
+    {
+      "name": "POL",
+      "detection": { "fileNamePatterns": ["POL*.xls*","pol*.xls*","POL*.xlsx"] },
+      "columnProperties": {
+  "A": { "productPropertyKey": "Brand", "classification": "ProductDynamic", "dataType": "string", "maxLength": 250, "transformations": ["extractPattern:^\\s*(?<Brand>[^:]+)\\s*:\\s*[^:]+\\s*:\\s*(?<Ref>.+)\\s*$"], "skipEntireRow": true },
+        "B": { "productPropertyKey": "Description", "classification": "OfferDescription", "dataType": "string", "maxLength": 1000, "skipEntireRow": true },
+        "C": { "productPropertyKey": "EAN", "classification": "ProductEAN", "dataType": "string", "maxLength": 20, "validationPatterns": ["^\\d+$"], "skipEntireRow": true },
+        "D": { "productPropertyKey": "Quantity", "classification": "OfferQuantity", "dataType": "int", "format": "integer", "transformations": ["removeSymbols","removecommas"], "skipEntireRow": false },
+        "E": { "productPropertyKey": "Price", "classification": "OfferPrice", "dataType": "decimal", "format": "currency", "transformations": ["removeSymbols","parseDecimal"], "skipEntireRow": true }
+      },
+      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 5, "headerRowIndex": 1 }
     }
   ],
   "productPropertyConfiguration": {
     "version": "1.0",
     "productType": "perfume",
     "properties": {
-      "EAN": {
-        "key": "EAN",
-        "displayName": "EAN Code",
-        "description": "European Article Number (barcode)",
-        "classification": "ProductEAN",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": true
-      },
-      "Name": {
-        "key": "Name",
-        "displayName": "Name",
-        "description": "Product name",
-        "classification": "ProductName",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },
-      "Price": {
-        "key": "Price",
-        "displayName": "Price",
-        "description": "Product price from offers",
-        "classification": "OfferPrice",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },  
-      "Description": {
-        "key": "Description",
-        "displayName": "Description",
-        "description": "Product description",
-        "classification": "OfferDescription",
-        "isFilterable": true,
-        "isSortable": false,
-        "isRequired": false
-      },    
-      "Quantity": {
-        "key": "Quantity",
-        "displayName": "Quantity",
-        "description": "Available stock quantity",
-        "classification": "OfferQuantity",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },
-      
-      "Brand": {
-        "key": "Brand",
-        "displayName": "Brand",
-        "description": "Product brand or manufacturer",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },      
-      "Line": {
-        "key": "Line",
-        "displayName": "Line",
-        "description": "Product line or collection",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },      
-       "Gender": {
-        "key": "Gender",
-        "displayName": "Gender",
-        "description": "Target gender for the perfume",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },
-      "Size": {
-        "key": "Size",
-        "displayName": "Size",
-        "description": "Volume or size of the perfume",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },
-      "Type": {
-        "key": "Type",
-        "displayName": "Type",
-        "description": "Regular, Mini, Set, Tube, Tester, Niche, etc.",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },
-      "Concentration": {
-        "key": "Concentration",
-        "displayName": "Concentration",
-        "description": "Concentration (EDT, EDP, Parfum, etc.)",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },
-      "Category": {
-        "key": "Category",
-        "displayName": "Category",
-        "description": "Product Category",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },
-      "Decoded": {
-        "key": "Decoded",
-        "displayName": "Decoded",
-        "description": "Whether the product can be tracked by RF",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },
-      "COO": {
-        "key": "COO",
-        "displayName": "Country of Origin",
-        "description": "Country of origin",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },
-      "Ref": {
-        "key": "Ref",
-        "displayName": "Reference",
-        "description": "Supplier reference code for the product",
-        "classification": "OfferDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },      
-      "Currency": {
-        "key": "Currency",
-        "displayName": "Currency",
-        "description": "Currency of the price",
-        "classification": "OfferDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      },      
-      "Units": {
-        "key": "Units",
-        "displayName": "Units",
-        "description": "Unit of measurement",
-        "classification": "ProductDynamic",
-        "isFilterable": true,
-        "isSortable": true,
-        "isRequired": false
-      }
+      "EAN": { "key": "EAN", "displayName": "EAN Code", "description": "European Article Number (barcode)", "classification": "ProductEAN", "isRequired": true },
+      "Name": { "key": "Name", "displayName": "Name", "description": "Product name", "classification": "ProductName", "isRequired": false },
+      "Price": { "key": "Price", "displayName": "Price", "description": "Product price from offers", "classification": "OfferPrice", "isRequired": true },
+      "Description": { "key": "Description", "displayName": "Description", "description": "Product description", "classification": "OfferDescription", "isRequired": false },
+      "Quantity": { "key": "Quantity", "displayName": "Quantity", "description": "Available stock quantity", "classification": "OfferQuantity", "isRequired": true },
+      "Brand": { "key": "Brand", "displayName": "Brand", "description": "Product brand or manufacturer", "classification": "ProductDynamic", "isRequired": false },
+      "Line": { "key": "Line", "displayName": "Line", "description": "Product line or collection", "classification": "ProductDynamic", "isRequired": false },
+      "Gender": { "key": "Gender", "displayName": "Gender", "description": "Target gender for the perfume", "classification": "ProductDynamic", "isRequired": false },
+      "Size": { "key": "Size", "displayName": "Size", "description": "Volume or size of the perfume", "classification": "ProductDynamic", "isRequired": false },
+      "Type": { "key": "Type", "displayName": "Type", "description": "Regular, Mini, Set, Tube, Tester, Niche, etc.", "classification": "ProductDynamic", "isRequired": false },
+      "Concentration": { "key": "Concentration", "displayName": "Concentration", "description": "Concentration (EDT, EDP, Parfum, etc.)", "classification": "ProductDynamic", "isRequired": false },
+      "Category": { "key": "Category", "displayName": "Category", "description": "Product Category", "classification": "ProductDynamic", "isRequired": false },
+      "Decoded": { "key": "Decoded", "displayName": "Decoded", "description": "Whether the product can be tracked by RF", "classification": "ProductDynamic", "isRequired": false },
+      "COO": { "key": "COO", "displayName": "Country of Origin", "description": "Country of origin", "classification": "ProductDynamic", "isRequired": false },
+      "Ref": { "key": "Ref", "displayName": "Reference", "description": "Supplier reference code for the product", "classification": "OfferDynamic", "isRequired": false },
+      "Currency": { "key": "Currency", "displayName": "Currency", "description": "Currency of the price", "classification": "OfferDynamic", "isRequired": false },
+      "Units": { "key": "Units", "displayName": "Units", "description": "Unit of measurement", "classification": "ProductDynamic", "isRequired": false }
     }
   }
 }

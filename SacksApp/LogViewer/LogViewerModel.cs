@@ -99,8 +99,6 @@ namespace QMobileDeviceServiceMenu
             LogLevel.Error,
             LogLevel.Warning,
             LogLevel.Info,
-            LogLevel.Debug,
-            LogLevel.Default
         };
 
         /// <summary>
@@ -111,9 +109,9 @@ namespace QMobileDeviceServiceMenu
         {
             [LogLevel.Error] = new(LogLevel.Error, "Error", "ERR", Color.Red, new[] { " ERR]:", " ERR] :" }),
             [LogLevel.Warning] = new(LogLevel.Warning, "Warning", "WRN", Color.Orange, new[] { " WRN]:", " WRN] :" }),
-            [LogLevel.Info] = new(LogLevel.Info, "Info", "INF", Color.Green, new[] { " INF]:", " INF] :" }),
-            [LogLevel.Debug] = new(LogLevel.Debug, "Debug", "DBG", Color.Gray, new[] { " DBG]:", " DBG] :" }),
-            [LogLevel.Default] = new(LogLevel.Default, "Default", "DEF", Color.LightGray, Array.Empty<string>())
+            [LogLevel.Info] = new(LogLevel.Info, "Info", "INF", Color.DarkBlue, new[] { " INF]:", " INF] :" }),
+            [LogLevel.Debug] = new(LogLevel.Debug, "Debug", "DBG", Color.DimGray, new[] { " DBG]:", " DBG] :" }),
+            [LogLevel.Default] = new(LogLevel.Default, "Default", "DEF", Color.Black, Array.Empty<string>())
         };
 
         /// <summary>

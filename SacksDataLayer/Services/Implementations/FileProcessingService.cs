@@ -119,7 +119,7 @@ namespace SacksDataLayer.Services.Implementations
             {
 
                 // 🛡️ STEP 1: Enhanced file validation with size and accessibility checks
-                ValidateFileWithEnhancedChecksAsync(filePath, correlationId, cancellationToken);
+                await ValidateFileWithEnhancedChecksAsync(filePath, correlationId, cancellationToken).ConfigureAwait(false);
 
                 // 🔧 STEP 2: Ensure database is ready with connection validation
                 await EnsureDatabaseReadyWithValidationAsync(correlationId, cancellationToken);
@@ -251,11 +251,10 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// 🔍 ENHANCED: File validation with size and accessibility checks
         /// </summary>
-        private void ValidateFileWithEnhancedChecksAsync(string filePath, string correlationId, CancellationToken cancellationToken)
+        private async Task ValidateFileWithEnhancedChecksAsync(string filePath, string correlationId, CancellationToken cancellationToken)
         {
             try
             {
-
                 // Check file size
                 var fileSizeMB = GetFileSizeInMB(filePath);
                 if (fileSizeMB > MAX_FILE_SIZE_MB)
@@ -263,24 +262,55 @@ namespace SacksDataLayer.Services.Implementations
                     throw new InvalidOperationException($"File too large: {fileSizeMB:F1}MB. Maximum allowed: {MAX_FILE_SIZE_MB}MB");
                 }
 
-                // Check file accessibility
-                try
+                // Check file accessibility with a lock-aware retry loop. This gives a clearer
+                // message when another process temporarily holds the file and reduces race conditions.
+                const int maxAttempts = 3;
+                var delayMs = 250;
+                var lastException = (Exception?)null;
+
+                for (int attempt = 1; attempt <= maxAttempts; attempt++)
                 {
-                    using var stream = File.OpenRead(filePath);
-                    // File is accessible
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    throw new UnauthorizedAccessException($"Access denied to file: {filePath}");
-                }
-                catch (IOException ex)
-                {
-                    throw new IOException($"File is locked or in use: {filePath}", ex);
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    try
+                    {
+                        // Try to open exclusively for a short moment to detect locks
+                        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.None, 1, FileOptions.SequentialScan);
+                        // If we successfully opened the file with FileShare.None, it's not locked
+                        _logger.LogDebug("File validation passed on attempt {Attempt}: {FileName} ({FileSizeMB:F1}MB)", attempt, Path.GetFileName(filePath), fileSizeMB);
+                        lastException = null;
+                        break;
+                    }
+                    catch (UnauthorizedAccessException uaEx)
+                    {
+                        _logger.LogErrorWithContext(uaEx, "FileValidation", new { FilePath = filePath }, correlationId);
+                        throw new UnauthorizedAccessException($"Access denied to file: {filePath}", uaEx);
+                    }
+                    catch (IOException ioEx)
+                    {
+                        // Keep the last exception and retry if attempts remain
+                        lastException = ioEx;
+                        _logger.LogWarning(ioEx, "File appears locked (attempt {Attempt}/{MaxAttempts}): {FilePath}", attempt, maxAttempts, filePath);
+
+                        if (attempt == maxAttempts)
+                        {
+                            // Final attempt failed — surface a clear IOException with inner exception
+                            throw new IOException($"File is locked or in use: {filePath}", ioEx);
+                        }
+
+                        // Backoff before retrying
+                        await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
+                        delayMs *= 2;
+                    }
                 }
 
-                _logger.LogDebug("File validation passed: {FileName} ({FileSizeMB:F1}MB)", Path.GetFileName(filePath), fileSizeMB);
+                if (lastException != null)
+                {
+                    // If we still have an exception here, surface it
+                    throw lastException;
+                }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 _logger.LogError(ex, "File validation failed: {FilePath}", filePath);
                 _logger.LogError("File validation failed: {ErrorMessage}", ex.Message);

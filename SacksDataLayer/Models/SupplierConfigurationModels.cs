@@ -33,6 +33,17 @@ namespace SacksDataLayer.FileProcessing.Configuration
                 supplier.ParentConfiguration = this;
                 supplier.ResolveColumnProperties(ProductPropertyConfiguration);
             }
+            // Run a non-failing validation/reporting pass to surface mapping issues
+            var report = GetValidationReport();
+            if (report.MissingReferencedKeys.Any())
+            {
+                // Prefer logging - keep non-breaking for now
+                System.Diagnostics.Debug.WriteLine("SuppliersConfiguration validation: missing market keys referenced by suppliers: " + string.Join(", ", report.MissingReferencedKeys));
+            }
+            if (report.UnusedMarketKeys.Any())
+            {
+                System.Diagnostics.Debug.WriteLine("SuppliersConfiguration validation: unused market keys: " + string.Join(", ", report.UnusedMarketKeys));
+            }
         }
 
         /// <summary>
@@ -56,6 +67,40 @@ namespace SacksDataLayer.FileProcessing.Configuration
         }
 
         /// <summary>
+        /// Validation report describing mapping gaps between suppliers and market configuration
+        /// </summary>
+        public ValidationReport GetValidationReport()
+        {
+            var report = new ValidationReport();
+
+            var marketKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (ProductPropertyConfiguration?.Properties != null)
+            {
+                foreach (var k in ProductPropertyConfiguration.Properties.Keys)
+                    marketKeys.Add(k);
+            }
+
+            var referenced = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var supplier in Suppliers)
+            {
+                if (supplier.ColumnProperties == null) continue;
+                foreach (var kvp in supplier.ColumnProperties)
+                {
+                    var productKey = kvp.Value?.ProductPropertyKey;
+                    if (!string.IsNullOrWhiteSpace(productKey)) referenced.Add(productKey);
+                }
+            }
+
+            // Missing: referenced by suppliers but not present in market config
+            report.MissingReferencedKeys = referenced.Where(k => !marketKeys.Contains(k)).OrderBy(k => k).ToList();
+
+            // Unused: present in market config but not referenced by any supplier
+            report.UnusedMarketKeys = marketKeys.Where(k => !referenced.Contains(k)).OrderBy(k => k).ToList();
+
+            return report;
+        }
+
+        /// <summary>
         /// Ensures all suppliers have their parent reference set
         /// </summary>
         public void EnsureParentReferences()
@@ -68,17 +113,25 @@ namespace SacksDataLayer.FileProcessing.Configuration
     }
 
     /// <summary>
+    /// Simple DTO returned by GetValidationReport describing missing/unused keys
+    /// </summary>
+    public class ValidationReport
+    {
+        public List<string> MissingReferencedKeys { get; set; } = new();
+        public List<string> UnusedMarketKeys { get; set; } = new();
+    }
+
+    /// <summary>
     /// Configuration for a specific supplier
     /// </summary>
     public class SupplierConfiguration
     {
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
+    [JsonPropertyName("detection")]
+    public DetectionConfiguration? Detection { get; set; }
 
         public string Currency { get; set; } = "$";
-
-        [JsonPropertyName("detection")]
-        public DetectionConfiguration Detection { get; set; } = new();
 
         [JsonPropertyName("columnProperties")]
         public Dictionary<string, ColumnProperty> ColumnProperties { get; set; } = new();
@@ -332,66 +385,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
     }
 
     /// <summary>
-    /// Configuration for detecting if a file belongs to this supplier
-    /// </summary>
-    public class DetectionConfiguration
-    {
-        [JsonPropertyName("fileNamePatterns")]
-        public List<string> FileNamePatterns { get; set; } = new();
-    }
-
-    /// <summary>
-    /// Metadata about the supplier
-    /// </summary>
-    public class SupplierMetadata
-    {
-        [JsonPropertyName("industry")]
-        public string? Industry { get; set; }
-
-        [JsonPropertyName("region")]
-        public string? Region { get; set; }
-
-        [JsonPropertyName("contact")]
-        public ContactInfo? Contact { get; set; }
-
-        [JsonPropertyName("fileFrequency")]
-        public string? FileFrequency { get; set; } // daily, weekly, monthly
-
-        [JsonPropertyName("expectedFileSize")]
-        public string? ExpectedFileSize { get; set; }
-
-        [JsonPropertyName("currency")]
-        public string? Currency { get; set; }
-
-        [JsonPropertyName("timezone")]
-        public string? Timezone { get; set; }
-
-        [JsonPropertyName("lastUpdated")]
-        public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
-
-        [JsonPropertyName("version")]
-        public string Version { get; set; } = "2.1";
-    }
-
-    /// <summary>
-    /// Contact information for the supplier
-    /// </summary>
-    public class ContactInfo
-    {
-        [JsonPropertyName("name")]
-        public string? Name { get; set; }
-
-        [JsonPropertyName("email")]
-        public string? Email { get; set; }
-
-        [JsonPropertyName("phone")]
-        public string? Phone { get; set; }
-
-        [JsonPropertyName("company")]
-        public string? Company { get; set; }
-    }
-
-    /// <summary>
     /// Configuration for handling subtitle rows in Excel files
     /// </summary>
     public class SubtitleRowHandlingConfiguration
@@ -431,5 +424,16 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("validationPatterns")]
         public List<string> ValidationPatterns { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Supplier file detection configuration
+    /// </summary>
+    public class DetectionConfiguration
+    {
+        [JsonPropertyName("fileNamePatterns")]
+        public List<string> FileNamePatterns { get; set; } = new();
+
+        // Future fields like priority, content-based rules etc. can be added here
     }
 }

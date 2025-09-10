@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace SacksDataLayer.Configuration
 {
     /// <summary>
@@ -15,21 +17,8 @@ namespace SacksDataLayer.Configuration
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
-        /// <summary>
-        /// Normalizes a property key to standard form using configuration
-        /// </summary>
-        /// <param name="key">Original property key</param>
-        /// <returns>Normalized key</returns>
-        public string NormalizeKey(string key)
-        {
-            if (string.IsNullOrWhiteSpace(key)) return key;
-
-            var normalizedKey = key.Trim().ToLowerInvariant();
-            
-            return _configuration.KeyMappings.TryGetValue(normalizedKey, out var standardKey) 
-                ? standardKey 
-                : key; // Return original if no mapping found
-        }
+    // NOTE: NormalizeKey was removed. Keys are expected to be canonical by the extractor
+    // or pre-normalized upstream; NormalizeProperties will operate on the incoming key.
 
         /// <summary>
         /// Normalizes a property value to standard form using configuration
@@ -42,6 +31,10 @@ namespace SacksDataLayer.Configuration
             if (string.IsNullOrWhiteSpace(value)) return value;
 
             var normalizedValue = value.Trim().ToLowerInvariant();
+
+            // Strip punctuation/symbols and collapse whitespace for robust matching
+            normalizedValue = Regex.Replace(normalizedValue, "[\\p{P}\\p{S}]+", " ");
+            normalizedValue = Regex.Replace(normalizedValue, "\\s+", " ").Trim();
 
             if (_configuration.ValueMappings.TryGetValue(key, out var valueMap) &&
                 valueMap.TryGetValue(normalizedValue, out var standardValue))
@@ -65,7 +58,7 @@ namespace SacksDataLayer.Configuration
 
             foreach (var kvp in properties)
             {
-                var normalizedKey = NormalizeKey(kvp.Key);
+                var normalizedKey = kvp.Key;
                 var normalizedValue = kvp.Value?.ToString();
 
                 if (!string.IsNullOrWhiteSpace(normalizedValue))
@@ -99,15 +92,6 @@ namespace SacksDataLayer.Configuration
         }
 
         /// <summary>
-        /// Gets all normalized property keys from configuration
-        /// </summary>
-        /// <returns>List of normalized property keys</returns>
-        public List<string> GetNormalizedKeys()
-        {
-            return _configuration.KeyMappings.Values.Distinct().ToList();
-        }
-
-        /// <summary>
         /// Gets all original values that normalize to the specified normalized value
         /// </summary>
         /// <param name="normalizedKey">The normalized property key</param>
@@ -129,26 +113,6 @@ namespace SacksDataLayer.Configuration
             }
 
             return originalValues;
-        }
-
-        /// <summary>
-        /// Gets all original keys that normalize to the specified normalized key
-        /// </summary>
-        /// <param name="normalizedKey">The normalized property key</param>
-        /// <returns>List of all original keys that would normalize to this key</returns>
-        public List<string> GetOriginalKeysForNormalized(string normalizedKey)
-        {
-            var originalKeys = new List<string>();
-
-            foreach (var kvp in _configuration.KeyMappings)
-            {
-                if (kvp.Value.Equals(normalizedKey, StringComparison.OrdinalIgnoreCase))
-                {
-                    originalKeys.Add(kvp.Key);
-                }
-            }
-
-            return originalKeys;
         }
 
         /// <summary>

@@ -9,12 +9,21 @@ using SacksDataLayer.FileProcessing.Interfaces;
 using SacksDataLayer.Services.Implementations;
 using SacksDataLayer.Services.Interfaces;
 
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text;
+using System.IO;
+using System.Linq;
+using System.Drawing;
+using System.Windows.Forms;
+
 namespace SacksApp
 {
     public partial class MainForm : Form
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<MainForm> _logger;
+    private const string MainWindowStateFileName = "MainForm.WindowState.json";
 
         public MainForm(IServiceProvider serviceProvider)
         {
@@ -22,8 +31,24 @@ namespace SacksApp
             _logger = _serviceProvider.GetRequiredService<ILogger<MainForm>>();
 
             InitializeComponent();
+            // Restore persisted window state if available (controlled by configuration setting)
+            try
+            {
+                var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
+                var restore = configuration.GetValue<bool>("UISettings:RestoreWindowPositions", true);
+                SacksApp.Utils.WindowStateHelper.RestoreWindowState(this, MainWindowStateFileName, restore);
+            }
+            catch { }
             _ = InitializeAsync();
         }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            try { SacksApp.Utils.WindowStateHelper.SaveWindowState(this, MainWindowStateFileName); } catch { }
+            base.OnFormClosing(e);
+        }
+
+    // Window state persistence delegated to SacksApp.Utils.WindowStateHelper
 
         private async Task InitializeAsync()
         {

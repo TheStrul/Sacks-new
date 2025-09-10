@@ -35,12 +35,6 @@ namespace SacksDataLayer.Configuration
         [JsonPropertyName("classification")]
         public PropertyClassificationType Classification { get; set; } = PropertyClassificationType.ProductDynamic;
 
-        [JsonPropertyName("isFilterable")]
-        public bool IsFilterable { get; set; } = true;
-
-        [JsonPropertyName("isSortable")]
-        public bool IsSortable { get; set; } = true;
-
         [JsonPropertyName("isRequired")]
         public bool IsRequired { get; set; } = false;
     }

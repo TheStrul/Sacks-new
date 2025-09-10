@@ -4,6 +4,11 @@
 
 using System.Text;
 using System.Reflection;
+using Microsoft.Extensions.Configuration;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.IO;
+using System.Linq;
 
 namespace QMobileDeviceServiceMenu
 {
@@ -383,11 +388,34 @@ namespace QMobileDeviceServiceMenu
         /// </summary>
         private static string EscapeRtfText(string text)
         {
-            return text.Replace(@"\", @"\\")
-                      .Replace("{", @"\{")
-                      .Replace("}", @"\}")
-                      .Replace("\n", @"\par")
-                      .Replace("\r", "");
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+
+            var sb = new StringBuilder(text.Length * 2);
+            foreach (var ch in text)
+            {
+                switch (ch)
+                {
+                    case '\\': sb.Append(@"\\\\"); break;
+                    case '{': sb.Append(@"\{"); break;
+                    case '}': sb.Append(@"\}"); break;
+                    case '\n': sb.Append(@"\par"); break;
+                    case '\r': /* skip carriage return - handled with \n */ break;
+                    default:
+                        if (ch <= 0x7f)
+                        {
+                            // ASCII - safe to append directly
+                            sb.Append(ch);
+                        }
+                        else
+                        {
+                            // Use RTF unicode escape \uN? where N is signed 16-bit value
+                            sb.AppendFormat("\\u{0}?", (short)ch);
+                        }
+                        break;
+                }
+            }
+
+            return sb.ToString();
         }
 
         #region Event Handlers
@@ -690,6 +718,18 @@ namespace QMobileDeviceServiceMenu
 
             if (!DesignMode)
             {
+                // Restore persisted window location if available (controlled by configuration setting)
+                try
+                {
+                    var configuration = SacksApp.Utils.ConfigurationLoader.BuildConfiguration();
+                    var restore = configuration.GetValue<bool>("UISettings:RestoreWindowPositions", true);
+                    SacksApp.Utils.WindowStateHelper.RestoreWindowState(this, WindowStateFileName, restore);
+                }
+                catch
+                {
+                    // Ignore restore errors
+                }
+
                 // Ensure the form is visible and activated
                 this.Visible = true;
                 this.WindowState = FormWindowState.Normal;
@@ -697,6 +737,88 @@ namespace QMobileDeviceServiceMenu
                 this.Activate();
             }
         }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            try
+            {
+                SacksApp.Utils.WindowStateHelper.SaveWindowState(this, WindowStateFileName);
+            }
+            catch
+            {
+                // Ignore save errors
+            }
+
+            base.OnFormClosing(e);
+        }
+
+        /// <summary>
+        /// Position the form on the same screen as the owner or the application's main window.
+        /// Falls back to primary screen if no suitable owner is found.
+        /// </summary>
+        private void PositionOnOwnerOrPrimaryScreen()
+        {
+            // Only perform manual positioning when the form has a reasonable size
+            if (this.Width <= 0 || this.Height <= 0) return;
+
+            // Determine a candidate owner form from the application's open forms
+            Form? owner = this.Owner;
+
+            if (owner == null)
+            {
+                // Prefer the active form if available
+                owner = Application.OpenForms.Cast<Form>().FirstOrDefault(f => f != this && f.Visible && f.WindowState != FormWindowState.Minimized);
+            }
+
+            System.Windows.Forms.Screen? screen = null;
+
+            if (owner != null && owner.IsHandleCreated)
+            {
+                try
+                {
+                    screen = System.Windows.Forms.Screen.FromControl(owner);
+                }
+                catch
+                {
+                    screen = System.Windows.Forms.Screen.PrimaryScreen;
+                }
+            }
+            else
+            {
+                // If no owner can be determined, use the screen containing the cursor as a best-effort
+                try
+                {
+                    screen = System.Windows.Forms.Screen.FromPoint(Cursor.Position);
+                }
+                catch
+                {
+                    screen = System.Windows.Forms.Screen.PrimaryScreen;
+                }
+            }
+
+            // Ensure we have a non-null screen (PrimaryScreen is the last resort)
+            if (screen == null)
+            {
+                screen = System.Windows.Forms.Screen.PrimaryScreen;
+            }
+
+            var wa = (screen ?? System.Windows.Forms.Screen.AllScreens.First()).WorkingArea;
+
+            // Ensure StartPosition is Manual so Location is respected
+            this.StartPosition = FormStartPosition.Manual;
+
+            // Center the form in the chosen screen's working area
+            var x = wa.Left + Math.Max(0, (wa.Width - this.Width) / 2);
+            var y = wa.Top + Math.Max(0, (wa.Height - this.Height) / 2);
+
+            // Clamp to working area
+            x = Math.Min(Math.Max(wa.Left, x), wa.Right - this.Width);
+            y = Math.Min(Math.Max(wa.Top, y), wa.Bottom - this.Height);
+
+            this.Location = new Point(x, y);
+        }
+
+    private const string WindowStateFileName = "LogViewerForm.WindowState.json";
 
         protected override void Dispose(bool disposing)
         {

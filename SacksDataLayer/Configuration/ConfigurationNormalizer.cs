@@ -50,8 +50,12 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             ArgumentNullException.ThrowIfNull(fileName);
 
             var detection = _configuration.Detection;
-            var lowerFileName = fileName.ToLowerInvariant();
+            if (detection == null || detection.FileNamePatterns == null || !detection.FileNamePatterns.Any())
+            {
+                return false;
+            }
 
+            var lowerFileName = fileName.ToLowerInvariant();
             return detection.FileNamePatterns.Any(pattern =>
                 IsPatternMatch(lowerFileName, pattern.ToLowerInvariant()));
         }
@@ -185,7 +189,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     }
 
                     // Apply transformations and type conversion after validation passes
-                    var processedValue = ProcessCellValueAsync(stringValue!, columnProperty);
+                    var processedValue = ProcessCellValueAsync(stringValue!, columnProperty, product, offerProduct);
                     if (processedValue == null && columnProperty.IsRequired)
                     {
                         _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Processed value is null but IsRequired=true (raw='{R}'), Proccessd = {P}",
@@ -319,12 +323,46 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Processes cell value through transformations and type conversion
         /// </summary>
-        private object? ProcessCellValueAsync(string rawValue, ColumnProperty columnProperty)
+        private object? ProcessCellValueAsync(string rawValue, ColumnProperty columnProperty, ProductEntity product, OfferProductAnnex offerProduct)
         {
             try
             {
-                // Apply configured transformations
-                var transformedValue = ApplyTransformations(rawValue, columnProperty.Transformations);
+                // Apply configured transformations; also collect any extra properties produced by transformations (e.g., named regex groups)
+                var (transformedValue, extraProperties) = ApplyTransformations(rawValue, columnProperty.Transformations, columnProperty.ProductPropertyKey);
+
+                // If transformation produced extra properties, apply them to product or offer depending on market config
+                if (extraProperties != null && extraProperties.Count > 0)
+                {
+                    var marketConfig = _configuration.EffectiveMarketConfiguration;
+                    foreach (var kvp in extraProperties)
+                    {
+                        var key = kvp.Key;
+                        var val = kvp.Value;
+
+                        // Resolve classification from market config if available
+                        if (marketConfig != null && marketConfig.Properties != null && marketConfig.Properties.TryGetValue(key, out var marketProp))
+                        {
+                            if (marketProp.Classification == PropertyClassificationType.OfferPrice ||
+                                marketProp.Classification == PropertyClassificationType.OfferQuantity ||
+                                marketProp.Classification == PropertyClassificationType.OfferDescription ||
+                                marketProp.Classification == PropertyClassificationType.OfferDynamic)
+                            {
+                                // Offer-level property
+                                offerProduct.SetOfferProperty(key, val);
+                            }
+                            else
+                            {
+                                // Product-level property
+                                product.SetDynamicProperty(key, val);
+                            }
+                        }
+                        else
+                        {
+                            // Default to product dynamic property when market mapping is unknown
+                            product.SetDynamicProperty(key, val);
+                        }
+                    }
+                }
 
                 // Convert to target type
                 if (_dataTypeConverters.TryGetValue(columnProperty.DataType.ToLowerInvariant(), out var converter))
@@ -390,10 +428,12 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
         #region Utility Methods
 
-        private string ApplyTransformations(string value, List<string> transformations)
+        private (string TransformedValue, Dictionary<string,string>? ExtraProperties) ApplyTransformations(string value, List<string> transformations, string? currentPropertyKey = null)
         {
+            var extraProps = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
             if (transformations == null || !transformations.Any())
-                return value;
+                return (value, extraProps.Count > 0 ? extraProps : null);
 
             foreach (var transformation in transformations)
             {
@@ -402,22 +442,79 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 var transformType = parts[0].ToLowerInvariant();
                 var parameters = parts.Length > 1 ? parts[1] : null;
 
-                value = transformType switch
+                switch (transformType)
                 {
-                    "lowercase" => value.ToLowerInvariant(),
-                    "uppercase" => value.ToUpperInvariant(),
-                    "removesymbols" => Regex.Replace(value, @"[^\d.,]", ""),
-                    "removecommas" => value.Replace(",", ""),
-                    "removespaces" => value.Replace(" ", ""),
-                    "cleanprice" => CleanPriceValue(value),
-                    "cleancurrency" => CleanCurrencyValue(value),
-                    "extractafterpattern" => ExtractAfterPattern(value, parameters ?? "*:"),
-                    "maptobool" => MapToBool(value, parameters ?? "SET:true,REG:false"),
-                    _ => value
-                };
+                    case "lowercase":
+                        value = value.ToLowerInvariant();
+                        break;
+                    case "uppercase":
+                        value = value.ToUpperInvariant();
+                        break;
+                    case "removesymbols":
+                        value = Regex.Replace(value, @"[^\d.,]", "");
+                        break;
+                    case "removecommas":
+                        value = value.Replace(",", "");
+                        break;
+                    case "removespaces":
+                        value = value.Replace(" ", "");
+                        break;
+                    case "cleanprice":
+                        value = CleanPriceValue(value);
+                        break;
+                    case "cleancurrency":
+                        value = CleanCurrencyValue(value);
+                        break;
+                    case "extractafterpattern":
+                        value = ExtractAfterPattern(value, parameters ?? "*:"
+                        );
+                        break;
+                    case "extractpattern":
+                        // parameters expected to be a regex. Use named groups to populate extra properties.
+                        if (!string.IsNullOrWhiteSpace(parameters))
+                        {
+                            try
+                            {
+                                var match = Regex.Match(value, parameters, RegexOptions.IgnoreCase);
+                                if (match.Success)
+                                {
+                                    // If a named group matches, use it; otherwise fallback to group 1
+                                    foreach (var groupName in match.Groups.Keys)
+                                    {
+                                        // Skip numeric group names
+                                        if (int.TryParse(groupName, out _)) continue;
+                                        var g = match.Groups[groupName];
+                                        if (g.Success)
+                                        {
+                                            extraProps[groupName] = g.Value.Trim();
+                                        }
+                                    }
+
+                                    // If no named groups were present, but capture groups exist use first capture
+                                    if (extraProps.Count == 0 && match.Groups.Count > 1)
+                                    {
+                                        extraProps[currentPropertyKey ?? "Extracted"] = match.Groups[1].Value.Trim();
+                                    }
+                                    // Also set value to the full or first capture for compatibility
+                                    value = match.Groups.Count > 1 ? match.Groups[1].Value.Trim() : match.Value.Trim();
+                                }
+                            }
+                            catch (ArgumentException ex)
+                            {
+                                _logger?.LogWarning("Invalid regex in extractpattern: {Regex} -> {Error}", parameters, ex.Message);
+                            }
+                        }
+                        break;
+                    case "maptobool":
+                        value = MapToBool(value, parameters ?? "SET:true,REG:false");
+                        break;
+                    default:
+                        // Unknown transform - ignore
+                        break;
+                }
             }
 
-            return value;
+            return (value, extraProps.Count > 0 ? extraProps : null);
         }
 
         /// <summary>
