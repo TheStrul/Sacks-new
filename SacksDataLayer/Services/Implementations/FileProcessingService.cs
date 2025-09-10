@@ -439,7 +439,7 @@ namespace SacksDataLayer.Services.Implementations
                     }
 
                     //Stpe 4: Process products and offers in optimized bulk operation
-                    await _databaseService.ProcessOfferAsync(context.ProcessingResult.SupplierOffer,  ct);
+                    await _databaseService.ProcessOfferAsync(context.ProcessingResult.SupplierOffer, context.SupplierConfiguration, ct);
 
 
                     // Step 5: Save complete object graph in single transaction

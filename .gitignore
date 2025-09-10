@@ -363,3 +363,5 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+/BiziOfferImport/BiziOfferImportDemo.csproj
+/BiziOfferImport

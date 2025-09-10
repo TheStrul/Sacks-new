@@ -140,6 +140,7 @@ namespace SacksDataLayer.Services.Implementations
         /// </summary>
         public async Task<FileProcessingResult> ProcessOfferAsync(
             SupplierOfferAnnex offer,
+            SupplierConfiguration supplierConfig,
             CancellationToken cancellationToken = default)
         {
             if (offer == null) throw new ArgumentNullException(nameof(offer));
@@ -150,11 +151,7 @@ namespace SacksDataLayer.Services.Implementations
             
             try
             {
-                // Step 1: Prepare products for bulk create/update
-                var distinctProducts = offer.OfferProducts.Select(op => op.Product).Distinct().ToList();
-
-
-                // Step 2: Bulk create/update products with proper entity state management
+                // Step 1: Bulk create/update products with proper entity state management
                 var res = await _productsService.BulkCreateOrUpdateProductsOptimizedAsync(offer);
 
                 result.ProductsCreated += res.Created;
@@ -162,8 +159,14 @@ namespace SacksDataLayer.Services.Implementations
                 result.Wornings += res.Warnings;
                 result.ProductsNoChanged += res.NoChanges;
                 result.Errors += res.Errors;
-                //result.OfferProductsCreated+= res.Created;
 
+                // Important: persist changes now so new Product IDs are generated and available
+                await _context.SaveChangesAsync(cancellationToken);
+
+                // Step 2: Now create OfferProducts referencing persisted ProductIds
+                await ProcessOfferProductsAsync(offer, supplierConfig, result, cancellationToken);
+
+                // Return accumulated result (caller will SaveChanges as part of transaction)
                 return result;
             }
             catch (Exception ex)

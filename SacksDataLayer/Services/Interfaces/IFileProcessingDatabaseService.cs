@@ -48,6 +48,7 @@ namespace SacksDataLayer.Services.Interfaces
         /// <returns>Processing results with statistics</returns>
         Task<FileProcessingResult> ProcessOfferAsync(
             SupplierOfferAnnex offer,
+            SacksDataLayer.FileProcessing.Configuration.SupplierConfiguration supplierConfig,
             CancellationToken cancellationToken = default);
 
         /// <summary>
