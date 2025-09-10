@@ -32,6 +32,11 @@ namespace SacksDataLayer.Data
         /// Offer products junction table
         /// </summary>
         public DbSet<OfferProductAnnex> OfferProducts { get; set; }
+        
+      /// <summary>
+      /// Read-only mapping for the ProductOffersView database view
+      /// </summary>
+      public DbSet<Entities.ProductOffersView> ProductOffersView { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -183,6 +188,13 @@ namespace SacksDataLayer.Data
                       .HasForeignKey(e => e.ProductId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
+
+                  // Map ProductOffersView (database view) as a keyless entity so it can be queried via EF
+                  modelBuilder.Entity<Entities.ProductOffersView>(entity =>
+                  {
+                        entity.HasNoKey();
+                        entity.ToView("ProductOffersView");
+                  });
         }
 
         /// <summary>
