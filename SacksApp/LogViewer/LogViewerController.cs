@@ -84,7 +84,8 @@ namespace QMobileDeviceServiceMenu
         {
             if (isSelected)
             {
-                _model.SelectedLogLevels = [LogLevel.Error, LogLevel.Warning, LogLevel.Info, LogLevel.Debug, LogLevel.Default];
+                _model.SelectedLogLevels.Clear();
+                _model.SelectedLogLevels.UnionWith(new[] { LogLevel.Error, LogLevel.Warning, LogLevel.Info, LogLevel.Debug, LogLevel.Default });
             }
             else
             {

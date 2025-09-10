@@ -32,6 +32,7 @@ namespace QMobileDeviceServiceMenu
             this.defaultCheckBox = new CheckBox();
             this.searchBox = new TextBox();
             this.searchButton = new Button();
+            this.exportButton = new Button();
             this.logTextBox = new RichTextBox();
             this.statusPanel = new Panel();
             this.statusLabel = new Label();
@@ -208,6 +209,17 @@ namespace QMobileDeviceServiceMenu
             this.searchButton.Text = "Search";
             this.searchButton.UseVisualStyleBackColor = true;
             this.searchButton.Click += SearchButton_Click;
+
+            // 
+            // exportButton
+            // 
+            this.exportButton.Location = new Point(960, 8);
+            this.exportButton.Name = "exportButton";
+            this.exportButton.Size = new Size(70, 25);
+            this.exportButton.TabIndex = 7;
+            this.exportButton.Text = "Export";
+            this.exportButton.UseVisualStyleBackColor = true;
+            this.exportButton.Click += ExportButton_Click;
             
             // 
             // logTextBox
@@ -225,6 +237,9 @@ namespace QMobileDeviceServiceMenu
             this.logTextBox.Text = "";
             this.logTextBox.WordWrap = false;
             this.logTextBox.MouseDown += LogTextBox_MouseDown;
+
+            // Add export button to toolbar
+            this.toolbarPanel.Controls.Add(this.exportButton);
             
             // 
             // statusPanel
@@ -273,7 +288,7 @@ namespace QMobileDeviceServiceMenu
 
         #endregion
 
-        private Panel toolbarPanel;
+    private Panel toolbarPanel;
         private CheckBox autoScrollCheckBox;
         private Button clearButton;
         private Button colorLegendButton;
@@ -286,8 +301,11 @@ namespace QMobileDeviceServiceMenu
         private CheckBox defaultCheckBox;
         private TextBox searchBox;
         private Button searchButton;
+    private Button exportButton;
+    private ContextMenuStrip logContextMenu;
         private RichTextBox logTextBox;
         private Panel statusPanel;
         private Label statusLabel;
+    private bool suspendCheckboxEvents;
     }
 }

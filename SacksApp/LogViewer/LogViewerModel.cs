@@ -94,7 +94,14 @@ namespace QMobileDeviceServiceMenu
         /// <summary>
         /// Selected log levels for filtering (multiple selection support).
         /// </summary>
-        internal HashSet<LogLevel> SelectedLogLevels { get; set; } = [LogLevel.Error, LogLevel.Warning, LogLevel.Info, LogLevel.Debug, LogLevel.Default];
+        internal HashSet<LogLevel> SelectedLogLevels { get; set; } = new HashSet<LogLevel>
+        {
+            LogLevel.Error,
+            LogLevel.Warning,
+            LogLevel.Info,
+            LogLevel.Debug,
+            LogLevel.Default
+        };
 
         /// <summary>
         /// Microsoft .NET logging level definitions with patterns and colors for log parsing.
@@ -102,11 +109,11 @@ namespace QMobileDeviceServiceMenu
         /// </summary>
         internal static readonly Dictionary<LogLevel, LogLevelDefinition> LogLevelDefinitions = new()
         {
-            [LogLevel.Error] = new(LogLevel.Error, "Error", "ERR", Color.Red, [" ERR]:", " ERR] :"]),
-            [LogLevel.Warning] = new(LogLevel.Warning, "Warning", "WRN", Color.Orange, [" WRN]:", " WRN] :"]),
-            [LogLevel.Info] = new(LogLevel.Info, "Info", "INF", Color.Green, [" INF]:", " INF] :"]),
-            [LogLevel.Debug] = new(LogLevel.Debug, "Debug", "DBG", Color.Gray, [" DBG]:", " DBG] :"]),
-            [LogLevel.Default] = new(LogLevel.Default, "Default", "DEF", Color.LightGray, [])
+            [LogLevel.Error] = new(LogLevel.Error, "Error", "ERR", Color.Red, new[] { " ERR]:", " ERR] :" }),
+            [LogLevel.Warning] = new(LogLevel.Warning, "Warning", "WRN", Color.Orange, new[] { " WRN]:", " WRN] :" }),
+            [LogLevel.Info] = new(LogLevel.Info, "Info", "INF", Color.Green, new[] { " INF]:", " INF] :" }),
+            [LogLevel.Debug] = new(LogLevel.Debug, "Debug", "DBG", Color.Gray, new[] { " DBG]:", " DBG] :" }),
+            [LogLevel.Default] = new(LogLevel.Default, "Default", "DEF", Color.LightGray, Array.Empty<string>())
         };
 
         /// <summary>

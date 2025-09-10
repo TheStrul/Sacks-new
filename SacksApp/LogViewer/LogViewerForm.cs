@@ -152,13 +152,22 @@ namespace QMobileDeviceServiceMenu
         /// </summary>
         private void UpdateCheckboxStates()
         {
-            // Update checkbox states without event manipulation since they're now wired in Designer
-            allCheckBox.Checked = _model.SelectedLogLevels.Count == 5;
-            errorCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Error);
-            warningCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Warning);
-            infoCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Info);
-            debugCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Debug);
-            defaultCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Default);
+            // Prevent CheckedChanged handlers from reacting to programmatic updates
+            try
+            {
+                suspendCheckboxEvents = true;
+
+                allCheckBox.Checked = _model.SelectedLogLevels.Count == 5;
+                errorCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Error);
+                warningCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Warning);
+                infoCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Info);
+                debugCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Debug);
+                defaultCheckBox.Checked = _model.SelectedLogLevels.Contains(LogLevel.Default);
+            }
+            finally
+            {
+                suspendCheckboxEvents = false;
+            }
         }
 
         private void Controller_NewLogLines(object? sender, LogLinesEventArgs e)
@@ -250,6 +259,41 @@ namespace QMobileDeviceServiceMenu
                 SearchInText(e.SearchTerm, logTextBox.SelectionStart + logTextBox.SelectionLength);
             }
         }
+
+        private void ExportButton_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                using var sfd = new SaveFileDialog
+                {
+                    Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+                    Title = "Export log content",
+                    FileName = _model.LogFileName + ".txt",
+                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                };
+
+                if (sfd.ShowDialog(this) != DialogResult.OK) return;
+
+                File.WriteAllText(sfd.FileName, logTextBox.Text, Encoding.UTF8);
+                statusLabel.Text = $"Monitoring: {_model.LogFileName} | Exported to {Path.GetFileName(sfd.FileName)}";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Export failed: {ex.Message}", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void EnsureContextMenuInitialized()
+        {
+            if (logContextMenu != null) return;
+            logContextMenu = new ContextMenuStrip();
+            var copyItem = new ToolStripMenuItem("Copy", null, (s, e) => { if (!string.IsNullOrEmpty(logTextBox.SelectedText)) Clipboard.SetText(logTextBox.SelectedText); });
+            var selectAllItem = new ToolStripMenuItem("Select All", null, (s, e) => { logTextBox.SelectAll(); });
+            var exportItem = new ToolStripMenuItem("Export...", null, (s, e) => ExportButton_Click(s, e));
+            logContextMenu.Items.AddRange(new ToolStripItem[] { copyItem, selectAllItem, exportItem });
+            logTextBox.ContextMenuStrip = logContextMenu;
+        }
+
 
         private void AppendColoredLogLine(string line)
         {
@@ -355,15 +399,6 @@ namespace QMobileDeviceServiceMenu
 
         private void ClearButton_Click(object? sender, EventArgs e)
         {
-            var result = MessageBox.Show(
-                "This will clear the log display and attempt to clear the log file.\n\nNote: The actual file may not be clearable while the application is running.\n\nContinue?",
-                "Clear Logs",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question,
-                MessageBoxDefaultButton.Button1);
-
-            if (result != DialogResult.Yes) return;
-
             try
             {
                 // Stop monitoring to release LogViewer's file handle
@@ -497,12 +532,16 @@ namespace QMobileDeviceServiceMenu
 
         private void AllCheckBox_CheckedChanged(object? sender, EventArgs e)
         {
+            if (suspendCheckboxEvents) return;
+
             _controller.SetAllLogLevels(allCheckBox.Checked);
             UpdateCheckboxStates();
         }
 
         private void LogLevelCheckBox_CheckedChanged(object? sender, EventArgs e)
         {
+            if (suspendCheckboxEvents) return;
+
             if (sender is CheckBox checkBox)
             {
                 var level = checkBox.Name switch
@@ -557,6 +596,7 @@ namespace QMobileDeviceServiceMenu
         /// </summary>
         private void LogTextBox_MouseDown(object? sender, MouseEventArgs e)
         {
+            EnsureContextMenuInitialized();
             if (e.Button == MouseButtons.Right && logTextBox.SelectionLength > 0)
             {
                 try
@@ -587,6 +627,18 @@ namespace QMobileDeviceServiceMenu
                     statusLabel.Text = $"Failed to copy to clipboard: {ex.Message}";
                 }
             }
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // Ctrl+E to export
+            if (keyData == (Keys.Control | Keys.E))
+            {
+                ExportButton_Click(this, EventArgs.Empty);
+                return true;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
         }
 
         #endregion
