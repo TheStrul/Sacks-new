@@ -108,25 +108,40 @@ namespace SacksDataLayer.Services.Implementations
             {
                 await EnsureOfferCanBeProcessedAsync(supplier, offerName, cancellationToken);
 
-                var offer = new SupplierOfferAnnex
+                SupplierOfferAnnex offer;
+
+                if (supplier.Id > 0)
                 {
-                    // ✅ DON'T set SupplierId manually - let EF handle it via navigation
-                    Supplier = supplier,  // Set navigation property instead
-                    OfferName = offerName,
-                    Description = description,
-                    Currency = currency,
-                    CreatedAt = DateTime.UtcNow,
+                    // Supplier exists in DB - create offer using SupplierId to avoid attaching a detached Supplier
+                    offer = new SupplierOfferAnnex
+                    {
+                        SupplierId = supplier.Id,
+                        OfferName = offerName,
+                        Description = description,
+                        Currency = currency,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                }
+                else
+                {
+                    // Supplier is new / unpersisted - set navigation so EF will insert both
+                    offer = new SupplierOfferAnnex
+                    {
+                        Supplier = supplier,
+                        OfferName = offerName,
+                        Description = description,
+                        Currency = currency,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                }
 
-                };
+                // Add the offer using the SupplierOffersService which will add it to the repository
+                // (transaction scope / SaveChanges will be handled by the caller)
+                var createdOffer = await _supplierOffersService.CreateOfferAsync(offer);
 
-                // ✅ Add to supplier's collection instead of repository directly
-                supplier.Offers.Add(offer);
-                // Use new overload that accepts SupplierEntity directly - no database validation needed
+                _logger.LogInformation("Offer created: {OfferName} (ID: {OfferId})", createdOffer.OfferName, createdOffer.Id);
 
-                _logger.LogInformation("Offer created: {OfferName} (ID: {OfferId})", 
-                    offer.OfferName, offer.Id);
-                
-                return offer;
+                return createdOffer;
             }
             catch (Exception ex)
             {

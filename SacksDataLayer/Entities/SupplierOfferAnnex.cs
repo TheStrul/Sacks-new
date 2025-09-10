@@ -23,6 +23,7 @@ public class SupplierOfferAnnex : Annex
     required public string Currency { get; init; } = "USD";
 
     // Navigation properties - EF Core manages relationships through these
-    required public virtual SupplierEntity Supplier { get; init; }
-    public virtual ICollection<OfferProductAnnex> OfferProducts { get; init; } = new List<OfferProductAnnex>();
+    // Make Supplier optional so the offer can be created using SupplierId only
+    public virtual SupplierEntity? Supplier { get; set; }
+    public virtual ICollection<OfferProductAnnex> OfferProducts { get; set; } = new List<OfferProductAnnex>();
 }
