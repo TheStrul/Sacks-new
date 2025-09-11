@@ -149,6 +149,21 @@
       },
       "fileStructure": { "dataStartRowIndex": 4, "expectedColumnCount": 10, "headerRowIndex": 3 }
     }
+    ,
+    {
+      "name": "ww",
+      "detection": { "fileNamePatterns": ["ww*.xls*"] },
+      "columnProperties": {
+        "A": { "productPropertyKey": "Ref", "classification": "OfferDynamic", "dataType": "string", "maxLength": 100, "skipEntireRow": false },
+        "B": { "productPropertyKey": "Description", "classification": "OfferDescription", "dataType": "string", "maxLength": 1000, "skipEntireRow": true },
+        "C": { "productPropertyKey": "EAN", "classification": "ProductEAN", "dataType": "string", "maxLength": 20, "validationPatterns": ["^\\d+$"], "skipEntireRow": true, "isRequired": true },
+        "D": { "productPropertyKey": "Price", "classification": "OfferPrice", "dataType": "decimal", "format": "currency", "transformations": ["removeSymbols","parseDecimal"], "skipEntireRow": true },
+        "E": { "productPropertyKey": "Quantity", "classification": "OfferQuantity", "dataType": "int", "format": "integer", "transformations": ["removeSymbols"], "skipEntireRow": true },
+        "H": { "productPropertyKey": "Type", "classification": "ProductDynamic", "dataType": "string", "maxLength": 50, "skipEntireRow": false, "transformations": ["extractPattern:^(?:[^\\.]*\\.)?(.+)$"] },
+        "I": { "productPropertyKey": "Brand", "classification": "ProductDynamic", "dataType": "string", "maxLength": 250, "transformations": ["mapvalue"], "skipEntireRow": false }
+      },
+      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 8, "headerRowIndex": 1 }
+    }
   ],
   "productPropertyConfiguration": {
     "version": "1.0",
