@@ -209,6 +209,29 @@ namespace SacksDataLayer.Configuration
         }
 
         /// <summary>
+        /// Normalizes a single property value using the configured value mappings.
+        /// This is a small bridge so other normalizers can apply valueMappings when explicitly requested.
+        /// </summary>
+        /// <param name="propertyKey">Normalized property key (e.g. "COO", "Gender")</param>
+        /// <param name="value">Original value</param>
+        /// <returns>Normalized value if mapping exists; original value otherwise</returns>
+        public string NormalizeValue(string propertyKey, string value)
+        {
+            if (string.IsNullOrWhiteSpace(propertyKey) || string.IsNullOrWhiteSpace(value))
+                return value;
+
+            try
+            {
+                return _normalizer.NormalizeValue(propertyKey, value);
+            }
+            catch
+            {
+                // On any error, return original value to avoid breaking processing
+                return value;
+            }
+        }
+
+        /// <summary>
         /// Creates a ConfigurationDescriptionPropertyExtractor from configuration file
         /// </summary>
         public static async Task<ConfigurationDescriptionPropertyExtractor> CreateFromConfigurationAsync(

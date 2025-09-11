@@ -9,6 +9,24 @@ namespace SacksApp
 
         private System.Windows.Forms.SplitContainer mainSplitContainer;
         private System.Windows.Forms.TextBox sqlTextBox;
+    private System.Windows.Forms.Panel queryBuilderPanel;
+    private System.Windows.Forms.Label tableLabel;
+    private System.Windows.Forms.ComboBox tableComboBox;
+    private System.Windows.Forms.Label columnsLabel;
+    private System.Windows.Forms.CheckedListBox columnsCheckedListBox;
+    private System.Windows.Forms.Label filtersLabel;
+    private System.Windows.Forms.ComboBox filterColumnComboBox;
+    private System.Windows.Forms.ComboBox filterOperatorComboBox;
+    private System.Windows.Forms.TextBox filterValueTextBox;
+    private System.Windows.Forms.Button addFilterButton;
+    private System.Windows.Forms.ListBox filtersListBox;
+    private System.Windows.Forms.Button removeFilterButton;
+    private System.Windows.Forms.Label orderByLabel;
+    private System.Windows.Forms.ComboBox orderByComboBox;
+    private System.Windows.Forms.ComboBox orderByDirectionComboBox;
+    private System.Windows.Forms.Label topLabel;
+    private System.Windows.Forms.NumericUpDown topNumericUpDown;
+    private System.Windows.Forms.Button buildButton;
         private System.Windows.Forms.DataGridView resultsGrid;
         private System.Windows.Forms.Panel buttonPanel;
         private System.Windows.Forms.Button executeButton;
@@ -30,6 +48,24 @@ namespace SacksApp
         {
             this.mainSplitContainer = new System.Windows.Forms.SplitContainer();
             this.sqlLabel = new System.Windows.Forms.Label();
+            this.queryBuilderPanel = new System.Windows.Forms.Panel();
+            this.tableLabel = new System.Windows.Forms.Label();
+            this.tableComboBox = new System.Windows.Forms.ComboBox();
+            this.columnsLabel = new System.Windows.Forms.Label();
+            this.columnsCheckedListBox = new System.Windows.Forms.CheckedListBox();
+            this.filtersLabel = new System.Windows.Forms.Label();
+            this.filterColumnComboBox = new System.Windows.Forms.ComboBox();
+            this.filterOperatorComboBox = new System.Windows.Forms.ComboBox();
+            this.filterValueTextBox = new System.Windows.Forms.TextBox();
+            this.addFilterButton = new System.Windows.Forms.Button();
+            this.filtersListBox = new System.Windows.Forms.ListBox();
+            this.removeFilterButton = new System.Windows.Forms.Button();
+            this.orderByLabel = new System.Windows.Forms.Label();
+            this.orderByComboBox = new System.Windows.Forms.ComboBox();
+            this.orderByDirectionComboBox = new System.Windows.Forms.ComboBox();
+            this.topLabel = new System.Windows.Forms.Label();
+            this.topNumericUpDown = new System.Windows.Forms.NumericUpDown();
+            this.buildButton = new System.Windows.Forms.Button();
             this.sqlTextBox = new System.Windows.Forms.TextBox();
             this.buttonPanel = new System.Windows.Forms.Panel();
             this.executeButton = new System.Windows.Forms.Button();
@@ -66,6 +102,7 @@ namespace SacksApp
             // 
             this.mainSplitContainer.Panel1.Controls.Add(this.sqlTextBox);
             this.mainSplitContainer.Panel1.Controls.Add(this.buttonPanel);
+            this.mainSplitContainer.Panel1.Controls.Add(this.queryBuilderPanel);
             this.mainSplitContainer.Panel1.Controls.Add(this.sqlLabel);
             
             // 
@@ -85,6 +122,112 @@ namespace SacksApp
             this.sqlLabel.TabIndex = 0;
             this.sqlLabel.Text = "SQL Query:";
             
+            // 
+            // queryBuilderPanel
+            // 
+            this.queryBuilderPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.queryBuilderPanel.Location = new System.Drawing.Point(12, 40);
+            this.queryBuilderPanel.Name = "queryBuilderPanel";
+            this.queryBuilderPanel.Size = new System.Drawing.Size(1176, 80);
+            this.queryBuilderPanel.TabIndex = 1;
+
+            // table label and combo
+            this.tableLabel.AutoSize = true;
+            this.tableLabel.Location = new System.Drawing.Point(3, 6);
+            this.tableLabel.Name = "tableLabel";
+            this.tableLabel.Size = new System.Drawing.Size(40, 15);
+            this.tableLabel.Text = "Table:";
+            this.tableComboBox.Location = new System.Drawing.Point(50, 3);
+            this.tableComboBox.Name = "tableComboBox";
+            this.tableComboBox.Size = new System.Drawing.Size(220, 23);
+            this.tableComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+
+            // columns label and checklist
+            this.columnsLabel.AutoSize = true;
+            this.columnsLabel.Location = new System.Drawing.Point(3, 36);
+            this.columnsLabel.Name = "columnsLabel";
+            this.columnsLabel.Size = new System.Drawing.Size(52, 15);
+            this.columnsLabel.Text = "Columns:";
+            this.columnsCheckedListBox.Location = new System.Drawing.Point(60, 33);
+            this.columnsCheckedListBox.Name = "columnsCheckedListBox";
+            this.columnsCheckedListBox.Size = new System.Drawing.Size(300, 40);
+
+            // filters area
+            this.filtersLabel.AutoSize = true;
+            this.filtersLabel.Location = new System.Drawing.Point(380, 6);
+            this.filtersLabel.Name = "filtersLabel";
+            this.filtersLabel.Size = new System.Drawing.Size(42, 15);
+            this.filtersLabel.Text = "Filters:";
+            this.filterColumnComboBox.Location = new System.Drawing.Point(430, 3);
+            this.filterColumnComboBox.Name = "filterColumnComboBox";
+            this.filterColumnComboBox.Size = new System.Drawing.Size(180, 23);
+            this.filterOperatorComboBox.Location = new System.Drawing.Point(620, 3);
+            this.filterOperatorComboBox.Name = "filterOperatorComboBox";
+            this.filterOperatorComboBox.Size = new System.Drawing.Size(80, 23);
+            this.filterOperatorComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.filterValueTextBox.Location = new System.Drawing.Point(705, 3);
+            this.filterValueTextBox.Name = "filterValueTextBox";
+            this.filterValueTextBox.Size = new System.Drawing.Size(180, 23);
+            this.addFilterButton.Location = new System.Drawing.Point(895, 3);
+            this.addFilterButton.Name = "addFilterButton";
+            this.addFilterButton.Size = new System.Drawing.Size(75, 24);
+            this.addFilterButton.Text = "Add";
+            this.removeFilterButton.Location = new System.Drawing.Point(980, 3);
+            this.removeFilterButton.Name = "removeFilterButton";
+            this.removeFilterButton.Size = new System.Drawing.Size(75, 24);
+            this.removeFilterButton.Text = "Remove";
+            this.filtersListBox.Location = new System.Drawing.Point(430, 33);
+            this.filtersListBox.Name = "filtersListBox";
+            this.filtersListBox.Size = new System.Drawing.Size(360, 40);
+
+            // order by and top
+            this.orderByLabel.AutoSize = true;
+            this.orderByLabel.Location = new System.Drawing.Point(3, 76);
+            this.orderByLabel.Name = "orderByLabel";
+            this.orderByLabel.Size = new System.Drawing.Size(58, 15);
+            this.orderByLabel.Text = "Order By:";
+            this.orderByComboBox.Location = new System.Drawing.Point(70, 72);
+            this.orderByComboBox.Name = "orderByComboBox";
+            this.orderByComboBox.Size = new System.Drawing.Size(200, 23);
+            this.orderByDirectionComboBox.Location = new System.Drawing.Point(280, 72);
+            this.orderByDirectionComboBox.Name = "orderByDirectionComboBox";
+            this.orderByDirectionComboBox.Size = new System.Drawing.Size(80, 23);
+            this.orderByDirectionComboBox.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.orderByDirectionComboBox.Items.AddRange(new object[] {"ASC","DESC"});
+            this.topLabel.AutoSize = true;
+            this.topLabel.Location = new System.Drawing.Point(380, 76);
+            this.topLabel.Name = "topLabel";
+            this.topLabel.Size = new System.Drawing.Size(30, 15);
+            this.topLabel.Text = "Top:";
+            this.topNumericUpDown.Location = new System.Drawing.Point(420, 72);
+            this.topNumericUpDown.Minimum = 0;
+            this.topNumericUpDown.Maximum = 1000000;
+            this.topNumericUpDown.Name = "topNumericUpDown";
+            this.topNumericUpDown.Size = new System.Drawing.Size(80, 23);
+            this.buildButton.Location = new System.Drawing.Point(520, 72);
+            this.buildButton.Name = "buildButton";
+            this.buildButton.Size = new System.Drawing.Size(120, 24);
+            this.buildButton.Text = "Build & Execute";
+
+            // add controls to queryBuilderPanel
+            this.queryBuilderPanel.Controls.Add(this.tableLabel);
+            this.queryBuilderPanel.Controls.Add(this.tableComboBox);
+            this.queryBuilderPanel.Controls.Add(this.columnsLabel);
+            this.queryBuilderPanel.Controls.Add(this.columnsCheckedListBox);
+            this.queryBuilderPanel.Controls.Add(this.filtersLabel);
+            this.queryBuilderPanel.Controls.Add(this.filterColumnComboBox);
+            this.queryBuilderPanel.Controls.Add(this.filterOperatorComboBox);
+            this.queryBuilderPanel.Controls.Add(this.filterValueTextBox);
+            this.queryBuilderPanel.Controls.Add(this.addFilterButton);
+            this.queryBuilderPanel.Controls.Add(this.removeFilterButton);
+            this.queryBuilderPanel.Controls.Add(this.filtersListBox);
+            this.queryBuilderPanel.Controls.Add(this.orderByLabel);
+            this.queryBuilderPanel.Controls.Add(this.orderByComboBox);
+            this.queryBuilderPanel.Controls.Add(this.orderByDirectionComboBox);
+            this.queryBuilderPanel.Controls.Add(this.topLabel);
+            this.queryBuilderPanel.Controls.Add(this.topNumericUpDown);
+            this.queryBuilderPanel.Controls.Add(this.buildButton);
             // 
             // buttonPanel
             // 

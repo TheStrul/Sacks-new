@@ -200,7 +200,7 @@ namespace SacksDataLayer.Services.Implementations
                         {
                             var changesJson = JsonSerializer.Serialize(changed);
                             // Use structured logging and emit only the changes (old/new per property)
-                            _logger.LogWarning("Updating {ProductName} ({EAN}), changes:\r\n{Changes}", firstProduct.Name, ean, changesJson);
+                            _logger.LogWarning("Updating ({EAN}), changes: {Changes}", ean, changesJson);
 
                             // Update existing product properties
                             trackedProduct.Name = firstProduct.Name;

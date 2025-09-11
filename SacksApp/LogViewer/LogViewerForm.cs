@@ -20,6 +20,9 @@ namespace QMobileDeviceServiceMenu
     {
         private readonly LogViewerModel _model;
         private readonly LogViewerController _controller;
+    // When true the form will use BeginInvoke (async) for cross-thread marshaling
+    // Set to false to use synchronous Invoke if deterministic ordering is required
+    private readonly bool _useBeginInvoke = true;
 
         /// <summary>
         /// Shows the log viewer for the most recent service log file - Windows Forms compatible version
@@ -179,6 +182,13 @@ namespace QMobileDeviceServiceMenu
         {
             if (InvokeRequired)
             {
+                if (_useBeginInvoke)
+                {
+                    BeginInvoke(new Action(() => Controller_NewLogLines(sender, e)));
+                    return;
+                }
+
+                // Fallback to synchronous Invoke when BeginInvoke is disabled
                 Invoke(new Action(() => Controller_NewLogLines(sender, e)));
                 return;
             }
@@ -193,12 +203,14 @@ namespace QMobileDeviceServiceMenu
                 // Use incremental append for new log entries (real-time updates)
                 // Store current scroll position and selection
                 int currentScrollPos = logTextBox.SelectionStart;
-                bool wasAtEnd = logTextBox.SelectionStart >= logTextBox.Text.Length - 1;
+                int currentSelectionLength = logTextBox.SelectionLength;
+                // Consider selection length when determining if the view is at the end
+                bool wasAtEnd = (logTextBox.SelectionStart + currentSelectionLength) >= Math.Max(0, logTextBox.Text.Length - 1);
 
                 try
                 {
-                    // Suspend layout to prevent flicker
-                    logTextBox.SuspendLayout();
+                    // Use a more aggressive update suspension for bulk appends to reduce flicker
+                    BeginUpdate(logTextBox);
 
                     // Add new lines incrementally
                     foreach (var line in e.Lines)
@@ -214,14 +226,14 @@ namespace QMobileDeviceServiceMenu
                     }
                     else
                     {
-                        // Restore previous scroll position
+                        // Restore previous scroll position (clamped)
                         logTextBox.SelectionStart = Math.Min(currentScrollPos, logTextBox.Text.Length);
                     }
                 }
                 finally
                 {
-                    // Always restore layout
-                    logTextBox.ResumeLayout();
+                    // Always ensure updates are re-enabled
+                    EndUpdate(logTextBox);
                 }
             }
         }
@@ -307,6 +319,35 @@ namespace QMobileDeviceServiceMenu
             logTextBox.SelectionStart = logTextBox.Text.Length;
             logTextBox.SelectionColor = color;
             logTextBox.AppendText(line + Environment.NewLine);
+        }
+
+        /// <summary>
+        /// BeginUpdate/EndUpdate helpers to suspend painting for RichTextBox more effectively
+        /// Uses WM_SETREDRAW to avoid flicker during bulk updates.
+        /// </summary>
+        private const int WM_SETREDRAW = 0x000B;
+
+        private void BeginUpdate(Control c)
+        {
+            if (c == null) return;
+            var handle = c.Handle; // ensure handle created
+            NativeMethods.SendMessage(handle, WM_SETREDRAW, IntPtr.Zero, IntPtr.Zero);
+        }
+
+        private void EndUpdate(Control c)
+        {
+            if (c == null) return;
+            var handle = c.Handle;
+            NativeMethods.SendMessage(handle, WM_SETREDRAW, new IntPtr(1), IntPtr.Zero);
+            c.Invalidate();
+            c.Refresh();
+        }
+
+        // Minimal native helper for SendMessage
+        private static class NativeMethods
+        {
+            [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+            internal static extern IntPtr SendMessage(IntPtr hWnd, int Msg, IntPtr wParam, IntPtr lParam);
         }
 
         /// <summary>

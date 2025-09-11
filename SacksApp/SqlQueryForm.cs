@@ -14,8 +14,9 @@ namespace SacksApp
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<SqlQueryForm> _logger;
         private readonly SacksDbContext _dbContext;
-        private DataTable? _currentDataTable;
-        private readonly List<DataGridViewColumn> _hiddenColumns = new();
+    private DataTable? _currentDataTable;
+    // Store hidden columns by a stable key (Name if set, otherwise HeaderText)
+    private readonly List<string> _hiddenColumns = new();
 
         public SqlQueryForm(IServiceProvider serviceProvider)
         {
@@ -25,6 +26,197 @@ namespace SacksApp
             
             InitializeComponent();
             SetupControls();
+            WireQueryBuilder();
+        }
+
+        private void WireQueryBuilder()
+        {
+            try
+            {
+                // Populate tables list from DbContext model
+                var tables = _dbContext.Model.GetEntityTypes()
+                    .Select(et => et.GetTableName())
+                    .Where(n => !string.IsNullOrEmpty(n))
+                    .Distinct()
+                    .OrderBy(n => n)
+                    .Select(n => n!) // tell compiler non-null
+                    .ToArray();
+
+                tableComboBox.Items.AddRange((object[])tables);
+                if (tableComboBox.Items.Count > 0) tableComboBox.SelectedIndex = 0;
+
+                // Populate simple operators and defaults
+                filterOperatorComboBox.Items.AddRange(new object[] { "=", "<>", ">", "<", ">=", "<=", "LIKE" });
+                filterOperatorComboBox.SelectedIndex = 0;
+                orderByDirectionComboBox.SelectedIndex = 0; // default ASC
+
+                // Wire events
+                tableComboBox.SelectedIndexChanged += (s, e) => LoadColumnsForSelectedTable();
+                if (tableComboBox.Items.Count > 0) LoadColumnsForSelectedTable();
+                addFilterButton.Click += (s, e) => AddFilter();
+                removeFilterButton.Click += (s, e) => RemoveSelectedFilter();
+                buildButton.Click += async (s, e) =>
+                {
+                    var built = BuildSelectQuery();
+                    if (!string.IsNullOrEmpty(built))
+                    {
+                        sqlTextBox.Text = built;
+                        await ExecuteQueryAsync(built, CancellationToken.None);
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not initialize query builder UI");
+            }
+        }
+
+        private void LoadColumnsForSelectedTable()
+        {
+            columnsCheckedListBox.Items.Clear();
+            filterColumnComboBox.Items.Clear();
+            orderByComboBox.Items.Clear();
+
+            var table = tableComboBox.SelectedItem as string;
+            if (string.IsNullOrEmpty(table)) return;
+
+            // Get column names for the entity/table from EF model when possible
+            var columns = _dbContext.Model.GetEntityTypes()
+                .Where(et => et.GetTableName() == table)
+                .SelectMany(et => et.GetProperties().Select(p => p.GetColumnName()))
+                .Where(c => !string.IsNullOrEmpty(c))
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+
+            if (columns.Count == 0)
+            {
+                // fallback: run a lightweight query to fetch zero rows and use reader schema
+                try
+                {
+                    var conn = _dbContext.Database.GetDbConnection();
+                    using var cmd = conn.CreateCommand();
+                    // Use safe identifier escape and minimal query to get schema
+                    if (!IsSafeIdentifier(table)) throw new InvalidOperationException("Invalid table name");
+                    // CommandText is built from validated identifier only (safe). Suppress CA2100 analyzer here.
+#pragma warning disable CA2100 // Review SQL queries for security vulnerabilities
+                    cmd.CommandText = $"SELECT TOP (0) * FROM {EscapeIdentifier(table)}";
+#pragma warning restore CA2100
+                    if (conn.State != ConnectionState.Open) conn.Open();
+                    using var reader = cmd.ExecuteReader(CommandBehavior.SchemaOnly);
+                    var schema = reader.GetSchemaTable();
+                    if (schema != null)
+                    {
+                        foreach (DataRow row in schema.Rows)
+                        {
+                            var colName = row["ColumnName"]?.ToString();
+                            if (!string.IsNullOrEmpty(colName)) columns.Add(colName);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to fetch columns by schema query for table {Table}", table);
+                }
+            }
+
+            columnsCheckedListBox.Items.AddRange(columns.ToArray());
+            filterColumnComboBox.Items.AddRange(columns.ToArray());
+            orderByComboBox.Items.AddRange(columns.ToArray());
+        }
+
+        private void AddFilter()
+        {
+            var col = filterColumnComboBox.SelectedItem as string;
+            var op = filterOperatorComboBox.SelectedItem as string ?? "=";
+            var val = filterValueTextBox.Text ?? string.Empty;
+            if (string.IsNullOrEmpty(col) || string.IsNullOrEmpty(val)) return;
+
+            // show simple representation
+            filtersListBox.Items.Add($"{col} {op} {val}");
+            filterValueTextBox.Clear();
+        }
+
+        private void RemoveSelectedFilter()
+        {
+            var idx = filtersListBox.SelectedIndex;
+            if (idx >= 0) filtersListBox.Items.RemoveAt(idx);
+        }
+
+        private string BuildSelectQuery()
+        {
+            var table = tableComboBox.SelectedItem as string;
+            if (string.IsNullOrEmpty(table)) return string.Empty;
+
+            // Validate identifier characters (simple allowlist)
+            if (!IsSafeIdentifier(table)) return string.Empty;
+
+            var selectedColumns = columnsCheckedListBox.CheckedItems.Cast<string>().ToList();
+            var columnList = selectedColumns.Count > 0 ? string.Join(", ", selectedColumns.Select(EscapeIdentifier)) : "*";
+
+            var sb = new StringBuilder();
+            var top = (int)topNumericUpDown.Value;
+            if (top > 0) sb.Append($"SELECT TOP ({top}) ");
+            else sb.Append("SELECT ");
+
+            sb.Append(columnList);
+            sb.Append(" FROM ");
+            sb.Append(EscapeIdentifier(table));
+
+            // WHERE
+            if (filtersListBox.Items.Count > 0)
+            {
+                var where = new List<string>();
+                foreach (var item in filtersListBox.Items.Cast<string>())
+                {
+                    // item format: "col op value"
+                    var parts = item.Split(new[] { ' ' }, 3);
+                    if (parts.Length < 3) continue;
+                    var col = parts[0];
+                    var op = parts[1];
+                    var val = parts[2];
+
+                    if (!IsSafeIdentifier(col)) continue;
+                    // For simplicity, quote the value as literal (not parameterized) but escape single quotes
+                    var safeVal = val.Replace("'", "''");
+                    if (op.Equals("LIKE", StringComparison.OrdinalIgnoreCase))
+                        where.Add($"{EscapeIdentifier(col)} LIKE '{safeVal}'");
+                    else
+                        where.Add($"{EscapeIdentifier(col)} {op} '{safeVal}'");
+                }
+
+                if (where.Count > 0)
+                {
+                    sb.Append(" WHERE ");
+                    sb.Append(string.Join(" AND ", where));
+                }
+            }
+
+            // ORDER BY
+            if (orderByComboBox.SelectedItem is string ob && !string.IsNullOrEmpty(ob) && IsSafeIdentifier(ob))
+            {
+                var dir = orderByDirectionComboBox.SelectedItem as string ?? "ASC";
+                sb.Append($" ORDER BY {EscapeIdentifier(ob)} {dir}");
+            }
+
+            return sb.ToString();
+        }
+
+        private static string EscapeIdentifier(string ident)
+        {
+            // Enclose in brackets and escape closing bracket
+            return $"[{ident.Replace("]", "]]")}]";
+        }
+
+        private static bool IsSafeIdentifier(string ident)
+        {
+            // Simple check: allow letters, numbers, underscore and dot (schema.table)
+            if (string.IsNullOrEmpty(ident)) return false;
+            foreach (var ch in ident)
+            {
+                if (!(char.IsLetterOrDigit(ch) || ch == '_' || ch == '.' || ch == ']')) return false;
+            }
+            return true;
         }
 
         private void SetupControls()
@@ -96,6 +288,7 @@ namespace SacksApp
 
         private async Task ExecuteQueryAsync(string sql, CancellationToken cancellationToken)
         {
+            System.Data.Common.DbConnection? connection = null;
             try
             {
                 SetExecutionState(true);
@@ -103,8 +296,10 @@ namespace SacksApp
                 
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 
-                var connection = _dbContext.Database.GetDbConnection();
+#pragma warning disable CA2000 // Review SQL queries for security vulnerabilities
+                connection = _dbContext.Database.GetDbConnection();
                 using var command = connection.CreateCommand();
+#pragma warning restore CA2000
 #pragma warning disable CA2100 // Review SQL queries for security vulnerabilities
                 command.CommandText = sql; // This is intentional user input for SQL query tool
 #pragma warning restore CA2100
@@ -115,8 +310,8 @@ namespace SacksApp
                     await connection.OpenAsync(cancellationToken);
                 }
 
-                using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                
+                // Use IAsyncDisposable reader when available and load into DataTable
+                await using var reader = await command.ExecuteReaderAsync(cancellationToken);
                 var dataTable = new DataTable();
                 dataTable.Load(reader);
                 _currentDataTable = dataTable;
@@ -133,7 +328,7 @@ namespace SacksApp
                 var columnCount = dataTable.Columns.Count;
                 var executionTime = stopwatch.ElapsedMilliseconds;
                 
-                UpdateStatus($"? Query executed successfully - {rowCount:N0} rows, {columnCount} columns ({executionTime}ms)");
+                UpdateStatus($"Query executed successfully - {rowCount:N0} rows, {columnCount} columns ({executionTime}ms)");
                 
                 _logger.LogDebug("SQL query executed successfully: {RowCount} rows, {ColumnCount} columns, {ExecutionTime}ms", 
                     rowCount, columnCount, executionTime);
@@ -142,7 +337,7 @@ namespace SacksApp
             {
                 _logger.LogError(sqlEx, "SQL error executing query");
                 var errorMsg = $"SQL Error (Line {sqlEx.LineNumber}): {sqlEx.Message}";
-                UpdateStatus($"? SQL Error: {sqlEx.Message}");
+                UpdateStatus($"SQL Error: {sqlEx.Message}");
                 MessageBox.Show(errorMsg, "SQL Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (Exception ex)
@@ -154,6 +349,19 @@ namespace SacksApp
             }
             finally
             {
+                // Ensure connection is closed if we opened it
+                try
+                {
+                    if (connection?.State == ConnectionState.Open)
+                    {
+                        await connection.CloseAsync();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Error closing DB connection after query");
+                }
+
                 SetExecutionState(false);
             }
         }
@@ -201,8 +409,14 @@ namespace SacksApp
 
         private void HideColumn(DataGridViewColumn column)
         {
-            _hiddenColumns.Add(column);
+            var key = GetColumnKey(column);
+            if (!_hiddenColumns.Contains(key)) _hiddenColumns.Add(key);
             column.Visible = false;
+        }
+
+        private static string GetColumnKey(DataGridViewColumn column)
+        {
+            return !string.IsNullOrEmpty(column.Name) ? column.Name : column.HeaderText ?? string.Empty;
         }
 
         private void SortColumn(DataGridViewColumn column, ListSortDirection direction)
@@ -221,12 +435,14 @@ namespace SacksApp
                 
                 foreach (DataGridViewColumn column in resultsGrid.Columns)
                 {
-                    var item = new ToolStripMenuItem(column.HeaderText)
+                    var col = column; // local copy for closure
+                    var colKey = GetColumnKey(col);
+                    var item = new ToolStripMenuItem(col.HeaderText)
                     {
-                        Checked = column.Visible,
+                        Checked = col.Visible,
                         CheckOnClick = true
                     };
-                    item.Click += (s, e) => ToggleColumnVisibility(column);
+                    item.Click += (s, e) => ToggleColumnVisibility(colKey);
                     menu.Items.Add(item);
                 }
                 
@@ -248,13 +464,13 @@ namespace SacksApp
         {
             executeButton.Enabled = !executing;
             clearButton.Enabled = !executing;
-            exportButton.Enabled = !executing && _currentDataTable != null;
+            exportButton.Enabled = !executing && _currentDataTable != null && _currentDataTable.Rows.Count > 0;
             
             if (executing)
             {
                 progressBar.Visible = true;
                 progressBar.Style = ProgressBarStyle.Marquee;
-                UpdateStatus("?? Executing query...");
+                UpdateStatus("Executing query...");
             }
             else
             {
@@ -270,9 +486,10 @@ namespace SacksApp
 
         private void ShowAllColumns()
         {
-            foreach (var column in _hiddenColumns.ToList())
+            foreach (var key in _hiddenColumns.ToList())
             {
-                column.Visible = true;
+                var col = resultsGrid.Columns.Cast<DataGridViewColumn>().FirstOrDefault(c => GetColumnKey(c) == key);
+                if (col != null) col.Visible = true;
             }
             _hiddenColumns.Clear();
         }
@@ -287,16 +504,19 @@ namespace SacksApp
             base.Dispose(disposing);
         }
         
-        private void ToggleColumnVisibility(DataGridViewColumn column)
+        private void ToggleColumnVisibility(string columnKey)
         {
+            var column = resultsGrid.Columns.Cast<DataGridViewColumn>().FirstOrDefault(c => GetColumnKey(c) == columnKey);
+            if (column == null) return;
+
             column.Visible = !column.Visible;
             if (column.Visible)
             {
-                _hiddenColumns.Remove(column);
+                _hiddenColumns.Remove(columnKey);
             }
-            else if (!_hiddenColumns.Contains(column))
+            else if (!_hiddenColumns.Contains(columnKey))
             {
-                _hiddenColumns.Add(column);
+                _hiddenColumns.Add(columnKey);
             }
         }
 

@@ -308,13 +308,7 @@ namespace SacksDataLayer.Services.Implementations
                     // Delete the existing offer (cascade will automatically delete all OfferProducts)
                     var deleteSuccess = await _supplierOffersService.DeleteOfferAsync(existingOffer.Id);
 
-                    if (deleteSuccess)
-                    {
-
-                        // Clear change tracker again after deletion to ensure clean state
-                        _logger.LogDebug("Cleared change tracker after offer deletion to ensure clean state");
-                    }
-                    else
+                    if (!deleteSuccess)
                     {
                         throw new InvalidOperationException($"Failed to delete existing offer '{offerName}' for supplier '{supplier.Name}'");
                     }

@@ -94,7 +94,6 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                             if (IsValidOfferProduct(offerProduct))
                             {
                                 result.SupplierOffer!.OfferProducts.Add(offerProduct);
-                                result.Statistics.OfferProductsCreated++;
                             }
                             else
                             {
@@ -428,7 +427,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
         #region Utility Methods
 
-        private (string TransformedValue, Dictionary<string,string>? ExtraProperties) ApplyTransformations(string value, List<string> transformations, string? currentPropertyKey = null)
+    private (string TransformedValue, Dictionary<string,string>? ExtraProperties) ApplyTransformations(string value, List<string> transformations, string? currentPropertyKey = null)
         {
             var extraProps = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -507,6 +506,24 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         break;
                     case "maptobool":
                         value = MapToBool(value, parameters ?? "SET:true,REG:false");
+                        break;
+                    case "mapvalue":
+                        // Explicit mapping using configured valueMappings. Requires a property key.
+                        if (!string.IsNullOrWhiteSpace(currentPropertyKey))
+                        {
+                            try
+                            {
+                                // Use the description extractor's normalizer bridge to apply mapping
+                                if (_descriptionExtractor != null)
+                                {
+                                    value = _descriptionExtractor.NormalizeValue(currentPropertyKey, value);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger?.LogDebug(ex, "mapvalue transformation failed for {PropertyKey}='{Value}'", currentPropertyKey, value);
+                            }
+                        }
                         break;
                     default:
                         // Unknown transform - ignore

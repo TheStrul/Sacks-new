@@ -365,3 +365,4 @@ FodyWeavers.xsd
 *.sln.iml
 /BiziOfferImport/BiziOfferImportDemo.csproj
 /BiziOfferImport
+/Inputs
