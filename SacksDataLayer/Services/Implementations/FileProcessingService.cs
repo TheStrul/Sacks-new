@@ -119,12 +119,8 @@ namespace SacksDataLayer.Services.Implementations
             {
 
                 // 🛡️ STEP 1: Enhanced file validation with size and accessibility checks
-                await ValidateFileWithEnhancedChecksAsync(filePath, correlationId, cancellationToken).ConfigureAwait(false);
-
-                // 🔧 STEP 2: Ensure database is ready with connection validation
-                await EnsureDatabaseReadyWithValidationAsync(correlationId, cancellationToken);
-
-                // 🎯 STEP 3: Auto-detect supplier
+                
+                // 🎯 STEP 2: Auto-detect supplier
                 var supplierConfig = DetectSupplier(filePath, correlationId);
 
                 // Use the injected file validation service which should handle subtitle processing
@@ -158,12 +154,12 @@ namespace SacksDataLayer.Services.Implementations
 
                 
 
-                // 🔍 STEP 5: Read file data with subtitle processing and memory monitoring
+                // 🔍 STEP 3: Read file data with subtitle processing and memory monitoring
                 ReadFileDataWithSubtitleProcessingAsync(context, cancellationToken);
 
                 context.ProcessingResult.Statistics.TotalDataRows = fileData.DataRows.Count;
 
-                // 🔄 STEP 6: Process data with direct database operations
+                // 🔄 STEP 4: Process data with direct database operations
                 await ProcessSupplierOfferWithOptimizationsAsync(context, cancellationToken);
 
                 // ✅ COMPLETION: Log success metrics
@@ -318,23 +314,6 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        /// <summary>
-        /// 🔧 ENHANCED: Database readiness with connection validation
-        /// </summary>
-        private async Task EnsureDatabaseReadyWithValidationAsync(string correlationId, CancellationToken cancellationToken)
-        {
-            try
-            {
-                _logger.LogDebug("Ensuring database is ready and accessible...");
-                await _databaseService.EnsureDatabaseReadyAsync(cancellationToken);
-                _logger.LogDebug("Database ready and validated");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("Database setup failed: {ErrorMessage}", ex.Message);
-                throw new InvalidOperationException("Database is not accessible or ready", ex);
-            }
-        }
 
         /// <summary>
         /// 🎯 ENHANCED: Supplier detection using synchronous service method

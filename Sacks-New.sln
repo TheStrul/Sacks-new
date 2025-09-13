@@ -15,8 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SacksApp", "SacksApp\SacksA
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sql", "Sql", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
-		Sql\Morethen1Oferrs.sql = Sql\Morethen1Oferrs.sql
 		Sql\ProductOffersView.sql = Sql\ProductOffersView.sql
+		Sql\ProductOffersViewCollapse.sql = Sql\ProductOffersViewCollapse.sql
 	EndProjectSection
 EndProject
 Global

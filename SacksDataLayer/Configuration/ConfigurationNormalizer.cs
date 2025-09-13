@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using SacksDataLayer.Configuration;
 using Microsoft.Extensions.Logging;
+using SacksDataLayer.Models;
 
 namespace SacksDataLayer.FileProcessing.Normalizers
 {
@@ -234,9 +235,9 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 // Extract additional properties from description if available and extractor is configured
                 if (_descriptionExtractor is not null && !string.IsNullOrEmpty(offerProduct.Description))
                 {
+                    // Key-values only (existing logic)
                     var extractedProperties = _descriptionExtractor.ExtractPropertiesFromDescription(offerProduct.Description);
 
-                    // Add extracted properties to product's dynamic properties if they don't already exist
                     foreach (var extractedProp in extractedProperties)
                     {
                         if (!product.DynamicProperties.ContainsKey(extractedProp.Key) && extractedProp.Value != null)
@@ -244,6 +245,11 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                             product.SetDynamicProperty(extractedProp.Key, extractedProp.Value);
                         }
                     }
+
+                    // New: build extraction outcome with leftover
+                    var outcome = _descriptionExtractor.ExtractWithLeftOver(offerProduct.Description);
+                    offerProduct.DescriptionExtraction = outcome;
+                    offerProduct.SerializeDescriptionExtraction();
                 }
 
                 // Ensure product has valid name

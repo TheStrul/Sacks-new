@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
+using SacksDataLayer.Models;
 
 namespace SacksDataLayer.Entities;
 
@@ -41,6 +42,18 @@ public class OfferProductAnnex : Annex
     // In-memory dictionary for additional properties (not mapped to database)
     [NotMapped]
     public Dictionary<string, object?> OfferProperties { get; set; } = new();
+
+    /// <summary>
+    /// Detailed description parsing outcome (key/values + leftover text)
+    /// </summary>
+    [Column(TypeName = "nvarchar(max)")]
+    public string? DescriptionExtractionJson { get; set; }
+
+    /// <summary>
+    /// In-memory parsed description outcome (not mapped)
+    /// </summary>
+    [NotMapped]
+    public DescriptionExtractionOutcome? DescriptionExtraction { get; set; }
     
     // Navigation properties
     public virtual SupplierOfferAnnex Offer { get; set; } = null!;
@@ -79,6 +92,31 @@ public class OfferProductAnnex : Annex
         {
             OfferProperties = JsonSerializer.Deserialize<Dictionary<string, object?>>(OfferPropertiesJson) 
                              ?? new Dictionary<string, object?>();
+        }
+    }
+
+    /// <summary>
+    /// Serialize in-memory description extraction outcome to JSON column
+    /// </summary>
+    public void SerializeDescriptionExtraction()
+    {
+        DescriptionExtractionJson = DescriptionExtraction != null
+            ? JsonSerializer.Serialize(DescriptionExtraction)
+            : null;
+    }
+
+    /// <summary>
+    /// Populate in-memory description extraction from JSON column
+    /// </summary>
+    public void DeserializeDescriptionExtraction()
+    {
+        if (!string.IsNullOrWhiteSpace(DescriptionExtractionJson))
+        {
+            DescriptionExtraction = JsonSerializer.Deserialize<DescriptionExtractionOutcome>(DescriptionExtractionJson);
+        }
+        else
+        {
+            DescriptionExtraction = null;
         }
     }
 }

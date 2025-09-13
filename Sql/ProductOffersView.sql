@@ -1,14 +1,4 @@
-﻿USE [SacksProductsDb]
-GO
-
-/****** Object: View [dbo].[ProductOffersView] Script Date: 13/09/2025 00:44:47 ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
--- ProductOffersView - Shows all offers for each product with pricing and supplier information
+﻿-- ProductOffersView - Shows all offers for each product with pricing and supplier information
 CREATE VIEW ProductOffersView AS
 SELECT 
     -- Core product fields

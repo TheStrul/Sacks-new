@@ -45,6 +45,18 @@ namespace SacksApp
 
                 _logger = _serviceProvider.GetRequiredService<ILogger<Form>>();
 
+                // Ensure database and views exist before showing UI
+                try
+                {
+                    var dbInit = _serviceProvider.GetRequiredService<IFileProcessingDatabaseService>();
+                    dbInit.EnsureDatabaseReadyAsync(CancellationToken.None).GetAwaiter().GetResult();
+                    Log.Information("✅ Database ready (schema + views)");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Failed to initialize database (EnsureCreated + Views)");
+                }
+
                 ApplicationConfiguration.Initialize();
 
                 // Pass service provider to Form1
@@ -239,6 +251,7 @@ namespace SacksApp
             // Add application services
             services.AddScoped<IDatabaseManagementService, DatabaseManagementService>();
             services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
+            services.AddScoped<IFileProcessingDatabaseService, FileProcessingDatabaseService>();
 
             // Add file processing services
             services.AddFileProcessingServices();

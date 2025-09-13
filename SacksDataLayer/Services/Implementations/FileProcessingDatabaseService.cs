@@ -46,10 +46,77 @@ namespace SacksDataLayer.Services.Implementations
             try
             {
                 await _context.Database.EnsureCreatedAsync(cancellationToken);
+                await EnsureViewsAsync(cancellationToken);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to ensure database is ready");
+                throw;
+            }
+        }
+
+        private async Task EnsureViewsAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                // Load SQL scripts from the Sql folder and execute them in batches
+                string? FindSqlDir()
+                {
+                    var current = AppContext.BaseDirectory;
+                    for (int i = 0; i < 10 && !string.IsNullOrEmpty(current); i++)
+                    {
+                        var candidate = System.IO.Path.Combine(current, "Sql");
+                        if (System.IO.Directory.Exists(candidate)) return candidate;
+                        current = System.IO.Path.GetDirectoryName(current);
+                    }
+                    return null;
+                }
+
+                IEnumerable<string> SplitBatches(string script)
+                {
+                    if (string.IsNullOrWhiteSpace(script)) yield break;
+                    // Strip directives that don't apply on an open connection
+                    var cleaned = System.Text.RegularExpressions.Regex.Replace(
+                        script,
+                        @"^\s*USE\s+.*$|^\s*SET\s+ANSI_NULLS.*$|^\s*SET\s+QUOTED_IDENTIFIER.*$",
+                        string.Empty,
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Multiline);
+
+                    var parts = System.Text.RegularExpressions.Regex.Split(
+                        cleaned,
+                        @"^\s*GO\s*;?\s*$",
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Multiline);
+                    foreach (var part in parts)
+                    {
+                        var batch = part.Trim();
+                        if (!string.IsNullOrWhiteSpace(batch)) yield return batch;
+                    }
+                }
+
+                var sqlDir = FindSqlDir() ?? throw new DirectoryNotFoundException("Could not locate 'Sql' directory with view scripts.");
+                var baseViewPath = System.IO.Path.Combine(sqlDir, "ProductOffersView.sql");
+                var collapseViewPath = System.IO.Path.Combine(sqlDir, "ProductOffersViewCollapse.sql");
+
+                if (!System.IO.File.Exists(baseViewPath)) throw new FileNotFoundException("Missing SQL script", baseViewPath);
+                if (!System.IO.File.Exists(collapseViewPath)) throw new FileNotFoundException("Missing SQL script", collapseViewPath);
+
+                var baseViewSql = await System.IO.File.ReadAllTextAsync(baseViewPath, cancellationToken);
+                foreach (var batch in SplitBatches(baseViewSql))
+                {
+                    await _context.Database.ExecuteSqlRawAsync(batch, cancellationToken);
+                }
+
+                var collapseViewSql = await System.IO.File.ReadAllTextAsync(collapseViewPath, cancellationToken);
+                foreach (var batch in SplitBatches(collapseViewSql))
+                {
+                    await _context.Database.ExecuteSqlRawAsync(batch, cancellationToken);
+                }
+
+                _logger.LogInformation("Database views (re)created from SQL scripts in: {SqlDir}", sqlDir);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to (re)create database views");
                 throw;
             }
         }

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SacksDataLayer.Models;
 
 namespace SacksDataLayer.Configuration
 {
@@ -99,6 +100,53 @@ namespace SacksDataLayer.Configuration
 
             // Normalize the extracted properties using configuration-based normalizer
             return _normalizer.NormalizeProperties(extractedProperties);
+        }
+
+        /// <summary>
+        /// Extracts and returns the normalized key/value pairs and the leftover (unparsed) part.
+        /// </summary>
+        public DescriptionExtractionOutcome ExtractWithLeftOver(string description)
+        {
+            var outcome = new DescriptionExtractionOutcome { Source = description };
+            if (string.IsNullOrWhiteSpace(description))
+                return outcome;
+
+            // First, get normalized key/values as strings
+            var props = ExtractPropertiesFromDescription(description)
+                .ToDictionary(k => k.Key, v => v.Value?.ToString() ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+
+            outcome.KeyValues = props;
+
+            // Compute leftover by removing matched substrings for each key from the original description.
+            // We iterate through patterns again to remove concrete matches (first per property group).
+            var working = description;
+
+            foreach (var patternGroup in _configuration.ExtractionPatterns)
+            {
+                foreach (var pattern in patternGroup.Value.OrderBy(p => p.Priority))
+                {
+                    try
+                    {
+                        var regex = new Regex(pattern.Pattern, RegexOptions.IgnoreCase);
+                        var match = regex.Match(working);
+                        if (match.Success)
+                        {
+                            // Remove the matched segment from the working string
+                            working = working.Remove(match.Index, match.Length);
+                            break; // move to next group after first match
+                        }
+                    }
+                    catch
+                    {
+                        // ignore invalid regex here
+                    }
+                }
+            }
+
+            // Normalize spaces and punctuation leftovers
+            var cleaned = Regex.Replace(working, @"\s+", " ").Trim();
+            outcome.LeftOver = cleaned;
+            return outcome;
         }
 
         /// <summary>
