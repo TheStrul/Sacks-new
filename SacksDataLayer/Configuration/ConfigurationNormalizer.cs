@@ -94,6 +94,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                             if (IsValidOfferProduct(offerProduct))
                             {
                                 result.SupplierOffer!.OfferProducts.Add(offerProduct);
+                                result.Statistics.OfferProductsCreated++;
                             }
                             else
                             {

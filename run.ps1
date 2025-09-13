@@ -6,7 +6,7 @@ param(
     [string[]]$Arguments
 )
 
-$projectPath = "SacksConsoleApp\SacksConsoleApp.csproj"
+$projectPath = "SacksApp\SacksApp.csproj"
 
 if ($Arguments) {
     dotnet run --project $projectPath -- $Arguments

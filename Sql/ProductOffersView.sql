@@ -1,4 +1,14 @@
-﻿-- ProductOffersView - Shows all offers for each product with pricing and supplier information
+﻿USE [SacksProductsDb]
+GO
+
+/****** Object: View [dbo].[ProductOffersView] Script Date: 13/09/2025 00:44:47 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- ProductOffersView - Shows all offers for each product with pricing and supplier information
 CREATE VIEW ProductOffersView AS
 SELECT 
     -- Core product fields
@@ -6,7 +16,7 @@ SELECT
     p.Name,
 
     -- Offer-level fields (primary source)
-    op.Description    AS Description,
+    op.Description    AS Details,
     op.Price          AS Price,
     so.Currency       AS Currency,
     op.Quantity       AS Quantity,
@@ -18,17 +28,18 @@ SELECT
     JSON_VALUE(p.DynamicProperties, '$.Gender')        AS Gender,
     JSON_VALUE(p.DynamicProperties, '$.Concentration') AS Concentration,
     JSON_VALUE(p.DynamicProperties, '$.Size')          AS Size,
-    JSON_VALUE(p.DynamicProperties, '$.Type')          AS Type,
+    JSON_VALUE(p.DynamicProperties, '$.Units')         AS Units,
+    JSON_VALUE(p.DynamicProperties, '$.Type')          AS [Type],
     JSON_VALUE(p.DynamicProperties, '$.Decoded')       AS Decoded,
     JSON_VALUE(p.DynamicProperties, '$.COO')           AS COO,
-    JSON_VALUE(p.DynamicProperties, '$.Units')         AS Units,
 
-    -- Offer-level or product-level fallbacks
-    COALESCE(JSON_VALUE(op.OfferProperties, '$.Ref'), JSON_VALUE(p.DynamicProperties, '$.Ref')) AS Ref,
+    -- Offer-level dynamic properties (from Offer.DynamicProperties JSON)
+    JSON_VALUE(op.OfferProperties, '$.Ref') AS REF,
 
     -- Supplier information
-    s.Name AS SupplierName,
-    so.CreatedAt AS [Date Offer],
+    s.Name AS S_Name,
+    so.OfferName As O_Name,
+    so.CreatedAt AS [Date],
 
     -- Add row number for each product to identify multiple offers
     ROW_NUMBER() OVER (PARTITION BY p.EAN ORDER BY op.Price ASC) AS OfferRank,

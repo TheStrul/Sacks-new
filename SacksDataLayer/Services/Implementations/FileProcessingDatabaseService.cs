@@ -199,7 +199,6 @@ namespace SacksDataLayer.Services.Implementations
             var supplierConfig = context.SupplierConfiguration;
             var stats = context.ProcessingResult.Statistics;
 
-            
             try
             {
                 // Ensure offer is tracked by EF with its navigation properties loaded
@@ -212,56 +211,75 @@ namespace SacksDataLayer.Services.Implementations
                     throw new InvalidOperationException($"Offer with ID {offer.Id} not found in database");
                 }
 
-                // Get product lookup by EAN to map offer products to saved products
+                // Map by EAN for product IDs
                 var productEANs = offer.OfferProducts.Select(vp => vp.Product.EAN).ToList();
                 var savedProducts = await _context.Products
                     .AsNoTracking()
                     .Where(p => productEANs.Contains(p.EAN))
                     .ToDictionaryAsync(p => p.EAN, p => p, cancellationToken);
 
-                var offerProductsToCreate = new List<OfferProductAnnex>();
+                // Build existing key set to prevent duplicates (OfferId, ProductId)
+                var existingKeys = new HashSet<(int OfferId, int ProductId)>(
+                    trackedOffer.OfferProducts.Select(op => (op.OfferId, op.ProductId))
+                );
 
-                foreach (var productData in offer.OfferProducts)
+                int added = 0;
+
+                // Reuse the OfferProducts produced during analysis (offer.OfferProducts)
+                foreach (var src in offer.OfferProducts)
                 {
-                    if (savedProducts.TryGetValue(productData.Product.EAN, out var savedProduct))
+                    // Ensure ProductId is set based on Product EAN
+                    int productId = src.ProductId;
+                    if (productId <= 0)
                     {
-                        // Create new offer product with proper navigation setup
-                        var newOfferProduct = new OfferProductAnnex
+                        if (src.Product != null && !string.IsNullOrWhiteSpace(src.Product.EAN) &&
+                            savedProducts.TryGetValue(src.Product.EAN, out var savedProduct))
                         {
-                            OfferId = trackedOffer.Id,
-                            ProductId = savedProduct.Id,
-                            Description = productData.Description,
-                            Price = productData.Price,
-                            Quantity = productData.Quantity,
-                            CreatedAt = DateTime.UtcNow,
-                            Offer = trackedOffer // Set navigation property
-                        };
-
-                        // Copy dynamic properties and serialize them
-                        foreach (var prop in productData.OfferProperties)
-                        {
-                            newOfferProduct.SetOfferProperty(prop.Key, prop.Value);
+                            productId = savedProduct.Id;
+                            // Update navigation to tracked product id
+                            src.ProductId = productId;
                         }
-                        newOfferProduct.SerializeOfferProperties();
-
-                        offerProductsToCreate.Add(newOfferProduct);
+                        else if (src.Product != null && src.Product.Id > 0)
+                        {
+                            productId = src.Product.Id;
+                            src.ProductId = productId;
+                        }
+                        else
+                        {
+                            _logger.LogWarning("OfferProduct missing Product mapping (EAN: {EAN}) - skipping", src.Product?.EAN);
+                            continue; // cannot save without product
+                        }
                     }
-                }
 
-                // Add to navigation collection AND context for proper tracking
-                if (offerProductsToCreate.Any())
-                {
-                    foreach (var offerProduct in offerProductsToCreate)
+                    // Set offer relationship
+                    src.OfferId = trackedOffer.Id;
+                    src.Offer = trackedOffer;
+
+                    // Ensure dynamic properties JSON is up-to-date
+                    src.SerializeOfferProperties();
+
+                    var key = (trackedOffer.Id, productId);
+                    if (!existingKeys.Contains(key))
                     {
-                        trackedOffer.OfferProducts.Add(offerProduct);
+                        trackedOffer.OfferProducts.Add(src);
+                        existingKeys.Add(key);
+                        added++;
                     }
-                    // Map offer-products created into the processing context statistics
-                    stats.OfferProductsCreated += offerProductsToCreate.Count;
-
-                    _logger.LogDebug("Added {Count} OfferProducts to tracked offer navigation collection", offerProductsToCreate.Count);
+                    else
+                    {
+                        // Already present (likely from previous run or already attached), skip adding
+                    }
                 }
 
-                _logger.LogDebug("OfferProducts processing completed. Created {CreatedCount}", offerProductsToCreate.Count);
+                if (added > 0)
+                {
+                    stats.OfferProductsCreated += added;
+                    _logger.LogDebug("Attached {Count} OfferProducts to Offer {OfferId}", added, trackedOffer.Id);
+                }
+                else
+                {
+                    _logger.LogDebug("No new OfferProducts attached for Offer {OfferId}", trackedOffer.Id);
+                }
             }
             catch (Exception ex)
             {
