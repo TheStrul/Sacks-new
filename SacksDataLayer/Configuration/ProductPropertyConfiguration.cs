@@ -72,22 +72,22 @@ namespace SacksDataLayer.Configuration
 
         // === FIXED OFFER ENTITY PROPERTIES ===
         /// <summary>
-        /// Product price - stored in OfferProductAnnex.Price (required)
+        /// Product price - stored in ProductOfferAnnex.Price (required)
         /// </summary>
         OfferPrice,
 
         /// <summary>
-        /// Currency for the price - stored in OfferProductAnnex.OfferProperties["Currency"]
+        /// Currency for the price - stored in ProductOfferAnnex.OfferProperties["Currency"]
         /// </summary>
         OfferCurrency,
 
         /// <summary>
-        /// Available quantity - stored in OfferProductAnnex.Quantity (required)
+        /// Available quantity - stored in ProductOfferAnnex.Quantity (required)
         /// </summary>
         OfferQuantity,
 
         /// <summary>
-        /// Supplier's product description - stored in OfferProductAnnex.Description
+        /// Supplier's product description - stored in ProductOfferAnnex.Description
         /// </summary>
         OfferDescription,
 
@@ -97,7 +97,7 @@ namespace SacksDataLayer.Configuration
         ProductDynamic,
 
         /// <summary>
-        /// Generic offer property - stored in OfferProductAnnex.OfferProperties[key]
+        /// Generic offer property - stored in ProductOfferAnnex.OfferProperties[key]
         /// </summary>
         OfferDynamic,
 

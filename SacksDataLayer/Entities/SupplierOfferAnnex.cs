@@ -26,7 +26,7 @@ public class SupplierOfferAnnex : Annex
     // Navigation properties - EF Core manages relationships through these
     // Make Supplier optional so the offer can be created using SupplierId only
     public virtual SupplierEntity? Supplier { get; set; }
-    public virtual ICollection<OfferProductAnnex> OfferProducts { get; set; } = new List<OfferProductAnnex>();
+    public virtual ICollection<ProductOfferAnnex> OfferProducts { get; set; } = new List<ProductOfferAnnex>();
 
     // Offer-level dynamic properties
     [Column(TypeName = "nvarchar(max)")]

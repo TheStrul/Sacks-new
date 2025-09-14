@@ -31,7 +31,7 @@ namespace SacksDataLayer.Data
         /// <summary>
         /// Offer products junction table
         /// </summary>
-        public DbSet<OfferProductAnnex> OfferProducts { get; set; }
+        public DbSet<ProductOfferAnnex> OfferProducts { get; set; }
         
       /// <summary>
       /// Read-only mapping for the ProductOffersView database view
@@ -143,8 +143,8 @@ namespace SacksDataLayer.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Configure OfferProductAnnex (Junction Table)
-            modelBuilder.Entity<OfferProductAnnex>(entity =>
+            // Configure ProductOfferAnnex (Junction Table)
+            modelBuilder.Entity<ProductOfferAnnex>(entity =>
             {
                 // Primary key
                 entity.HasKey(e => e.Id);
@@ -236,8 +236,8 @@ namespace SacksDataLayer.Data
                 }
             }
 
-            // Handle OfferProductAnnex serialization before saving
-            var offerProductEntries = ChangeTracker.Entries<OfferProductAnnex>()
+            // Handle ProductOfferAnnex serialization before saving
+            var offerProductEntries = ChangeTracker.Entries<ProductOfferAnnex>()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
 
             foreach (var entry in offerProductEntries)

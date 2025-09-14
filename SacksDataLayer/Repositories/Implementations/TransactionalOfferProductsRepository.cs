@@ -20,7 +20,7 @@ namespace SacksDataLayer.Repositories.Implementations
 
         #region Query Operations
 
-        public async Task<OfferProductAnnex?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<ProductOfferAnnex?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             return await _context.OfferProducts
                 .Include(op => op.Offer)
@@ -29,7 +29,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 .FirstOrDefaultAsync(op => op.Id == id, cancellationToken);
         }
 
-        public async Task<IEnumerable<OfferProductAnnex>> GetByOfferIdAsync(int offerId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<ProductOfferAnnex>> GetByOfferIdAsync(int offerId, CancellationToken cancellationToken = default)
         {
             return await _context.OfferProducts
                 .Include(op => op.Product)
@@ -38,7 +38,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<OfferProductAnnex>> GetByProductIdAsync(int productId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<ProductOfferAnnex>> GetByProductIdAsync(int productId, CancellationToken cancellationToken = default)
         {
             return await _context.OfferProducts
                 .Include(op => op.Offer)
@@ -48,7 +48,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<OfferProductAnnex?> GetByOfferAndProductAsync(int offerId, int productId, CancellationToken cancellationToken = default)
+        public async Task<ProductOfferAnnex?> GetByOfferAndProductAsync(int offerId, int productId, CancellationToken cancellationToken = default)
         {
             return await _context.OfferProducts
                 .Include(op => op.Offer)
@@ -56,7 +56,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 .FirstOrDefaultAsync(op => op.OfferId == offerId && op.ProductId == productId, cancellationToken);
         }
 
-        public async Task<IEnumerable<OfferProductAnnex>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<ProductOfferAnnex>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _context.OfferProducts
                 .AsNoTracking()
@@ -72,7 +72,7 @@ namespace SacksDataLayer.Repositories.Implementations
 
         #region Transaction-Aware CRUD Operations
 
-        public void Add(OfferProductAnnex offerProduct)
+        public void Add(ProductOfferAnnex offerProduct)
         {
             if (offerProduct == null)
                 throw new ArgumentNullException(nameof(offerProduct));
@@ -81,7 +81,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.OfferProducts.Add(offerProduct);
         }
 
-        public void AddRange(IEnumerable<OfferProductAnnex> offerProducts)
+        public void AddRange(IEnumerable<ProductOfferAnnex> offerProducts)
         {
             if (offerProducts == null)
                 throw new ArgumentNullException(nameof(offerProducts));
@@ -95,7 +95,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.OfferProducts.AddRange(offerProductsToAdd);
         }
 
-        public void Update(OfferProductAnnex offerProduct)
+        public void Update(ProductOfferAnnex offerProduct)
         {
             if (offerProduct == null)
                 throw new ArgumentNullException(nameof(offerProduct));
@@ -104,7 +104,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.OfferProducts.Update(offerProduct);
         }
 
-        public void UpdateRange(IEnumerable<OfferProductAnnex> offerProducts)
+        public void UpdateRange(IEnumerable<ProductOfferAnnex> offerProducts)
         {
             if (offerProducts == null)
                 throw new ArgumentNullException(nameof(offerProducts));
@@ -118,7 +118,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.OfferProducts.UpdateRange(offerProductsToUpdate);
         }
 
-        public void Remove(OfferProductAnnex offerProduct)
+        public void Remove(ProductOfferAnnex offerProduct)
         {
             if (offerProduct == null)
                 throw new ArgumentNullException(nameof(offerProduct));
@@ -126,7 +126,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.OfferProducts.Remove(offerProduct);
         }
 
-        public void RemoveRange(IEnumerable<OfferProductAnnex> offerProducts)
+        public void RemoveRange(IEnumerable<ProductOfferAnnex> offerProducts)
         {
             if (offerProducts == null)
                 throw new ArgumentNullException(nameof(offerProducts));

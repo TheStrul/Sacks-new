@@ -129,13 +129,13 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Normalizes a single row using unified ColumnProperties configuration
         /// </summary>
-        private async Task<OfferProductAnnex?> NormalizeRowAsync(
+        private async Task<ProductOfferAnnex?> NormalizeRowAsync(
             RowData row,
             ProcessingContext context)
         {
             try
             {
-                var offerProduct = new OfferProductAnnex();
+                var offerProduct = new ProductOfferAnnex();
                 var product = new ProductEntity();
                 offerProduct.Product = product;
                 offerProduct.Offer = context.ProcessingResult.SupplierOffer!;
@@ -271,7 +271,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         private async Task ApplySubtitleDataAsync(
             Dictionary<string, object?> subtitleData, 
             ProductEntity product, 
-            OfferProductAnnex offerProduct)
+            ProductOfferAnnex offerProduct)
         {
             await Task.CompletedTask; // Make method async for consistency
 
@@ -328,7 +328,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Processes cell value through transformations and type conversion
         /// </summary>
-        private object? ProcessCellValueAsync(string rawValue, ColumnProperty columnProperty, ProductEntity product, OfferProductAnnex offerProduct)
+        private object? ProcessCellValueAsync(string rawValue, ColumnProperty columnProperty, ProductEntity product, ProductOfferAnnex offerProduct)
         {
             try
             {
@@ -848,7 +848,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Validates an offer product for supplier offers
         /// </summary>
-        private bool IsValidOfferProduct(OfferProductAnnex offerProduct)
+        private bool IsValidOfferProduct(ProductOfferAnnex offerProduct)
         {
             // For supplier offers, require valid product with EAN
             return offerProduct.Product != null &&

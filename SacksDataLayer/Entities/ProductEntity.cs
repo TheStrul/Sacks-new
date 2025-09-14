@@ -31,7 +31,7 @@ namespace SacksDataLayer.Entities
         /// <summary>
         /// Navigation property to supplier offers for this product
         /// </summary>
-        public virtual ICollection<OfferProductAnnex> OfferProducts { get; set; } = new List<OfferProductAnnex>();
+        public virtual ICollection<ProductOfferAnnex> OfferProducts { get; set; } = new List<ProductOfferAnnex>();
 
         /// <summary>
         /// JSON representation of dynamic properties for database storage

@@ -8,7 +8,7 @@ namespace SacksDataLayer.Entities;
 /// <summary>
 /// Junction table linking offers to products with specific pricing and terms
 /// </summary>
-public class OfferProductAnnex : Annex
+public class ProductOfferAnnex : Annex
 {
     // Foreign Keys
     public int OfferId { get; set; } 
