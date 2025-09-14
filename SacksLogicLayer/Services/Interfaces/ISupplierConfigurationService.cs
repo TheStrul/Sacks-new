@@ -1,7 +1,7 @@
-using SacksDataLayer.FileProcessing.Configuration;
-
-namespace SacksDataLayer.Services.Interfaces
+namespace SacksLogicLayer.Services.Interfaces
 {
+    using SacksDataLayer.FileProcessing.Configuration;
+
     /// <summary>
     /// Service interface for supplier configuration management
     /// </summary>
@@ -11,7 +11,6 @@ namespace SacksDataLayer.Services.Interfaces
         /// Auto-detects supplier configuration from file path/name
         /// </summary>
         /// <param name="filePath">Path to the file to analyze</param>
-        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Supplier configuration if found, null otherwise</returns>
         SupplierConfiguration? DetectSupplierFromFileAsync(string filePath);
 

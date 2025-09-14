@@ -7,7 +7,6 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using SacksDataLayer.Configuration;
 using Microsoft.Extensions.Logging;
-using SacksDataLayer.Models;
 
 namespace SacksDataLayer.FileProcessing.Normalizers
 {

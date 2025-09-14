@@ -1,12 +1,14 @@
-using Microsoft.Extensions.DependencyInjection;
+using SacksLogicLayer.Services.Interfaces;
+using SacksLogicLayer.Services.Implementations;
+using SacksDataLayer.Configuration;
 using SacksDataLayer.Services.Interfaces;
+using SacksLogicLayer.Services;
 using SacksDataLayer.Services.Implementations;
 using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Repositories.Implementations;
-using SacksDataLayer.Configuration;
-using SacksDataLayer.FileProcessing.Services;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace SacksDataLayer.Extensions
+namespace SacksLogicLayer.Extensions
 {
     /// <summary>
     /// Extension methods for registering dynamic product services

@@ -1,6 +1,8 @@
-using SacksDataLayer.FileProcessing.Configuration;
-using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
+
+using Microsoft.Extensions.Logging;
+
+using SacksDataLayer.FileProcessing.Configuration;
 
 namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
 {

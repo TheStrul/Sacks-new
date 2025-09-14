@@ -1,16 +1,18 @@
-﻿using SacksDataLayer.FileProcessing.Configuration;
-using SacksDataLayer.FileProcessing.Normalizers;
-using SacksDataLayer.FileProcessing.Models;
-using SacksDataLayer.Services.Interfaces;
-using SacksDataLayer.Extensions;
-using SacksDataLayer.Configuration;
+﻿using SacksLogicLayer.Services.Interfaces;
+using SacksLogicLayer.Extensions;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
-using Microsoft.Extensions.Logging;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using SacksDataLayer.Services.Interfaces;
+using System;
+using SacksDataLayer.FileProcessing.Models;
+using Microsoft.Extensions.Logging;
+using SacksDataLayer.Configuration;
+using SacksDataLayer.FileProcessing.Configuration;
+using SacksDataLayer.FileProcessing.Normalizers;
 using System.ComponentModel.DataAnnotations;
 
-namespace SacksDataLayer.Services.Implementations
+namespace SacksLogicLayer.Services.Implementations
 {
     /// <summary>
     /// 🚀 BULLETPROOF FILE PROCESSING SERVICE - Performance Champion & Zero Bugs Module

@@ -1,9 +1,10 @@
-using SacksDataLayer.FileProcessing.Configuration;
-using SacksDataLayer.FileProcessing.Services;
-using SacksDataLayer.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace SacksDataLayer.Services.Implementations
+using SacksDataLayer.FileProcessing.Configuration;
+
+using SacksLogicLayer.Services.Interfaces;
+
+namespace SacksLogicLayer.Services.Implementations
 {
     /// <summary>
     /// Service implementation for supplier configuration management
@@ -20,9 +21,6 @@ namespace SacksDataLayer.Services.Implementations
             _configurationManager = configurationManager ?? throw new ArgumentNullException(nameof(configurationManager));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-
-
-
 
         /// <summary>
         /// Auto-detects supplier configuration from file path/name

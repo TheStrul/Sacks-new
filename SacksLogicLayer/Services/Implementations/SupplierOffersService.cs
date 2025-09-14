@@ -1,6 +1,6 @@
-﻿using SacksDataLayer.Repositories.Interfaces;
+﻿using SacksDataLayer.Entities;
+using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Services.Interfaces;
-using SacksDataLayer.Entities;
 
 namespace SacksDataLayer.Services.Implementations
 {

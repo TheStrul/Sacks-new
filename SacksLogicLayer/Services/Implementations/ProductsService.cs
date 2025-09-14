@@ -1,10 +1,12 @@
-﻿using SacksDataLayer.Repositories.Interfaces;
-using SacksDataLayer.Services.Interfaces;
-using SacksDataLayer.Entities;
-using Microsoft.Extensions.Logging;
-using System.Text.Json;
+﻿using System.Text.Json;
 
-namespace SacksDataLayer.Services.Implementations
+using Microsoft.Extensions.Logging;
+
+using SacksDataLayer.Entities;
+using SacksDataLayer.Repositories.Interfaces;
+using SacksLogicLayer.Services.Interfaces;
+
+namespace SacksLogicLayer.Services.Implementations
 {
     /// <summary>
     /// Service implementation for managing products

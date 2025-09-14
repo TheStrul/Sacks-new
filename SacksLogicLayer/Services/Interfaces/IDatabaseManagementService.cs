@@ -1,4 +1,4 @@
-namespace SacksDataLayer.Services.Interfaces
+namespace SacksLogicLayer.Services.Interfaces
 {
     /// <summary>
     /// Service interface for database management operations

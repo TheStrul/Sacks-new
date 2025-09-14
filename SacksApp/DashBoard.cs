@@ -15,6 +15,8 @@
     using SacksDataLayer.Configuration;
     using SacksDataLayer.Services.Interfaces;
 
+    using SacksLogicLayer.Services.Interfaces;
+
     public partial class DashBoard : Form
     {
         IServiceProvider _serviceProvider;

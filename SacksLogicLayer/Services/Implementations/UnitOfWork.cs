@@ -1,15 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using SacksDataLayer.Data;
-using SacksDataLayer.Services.Interfaces;
 
-namespace SacksDataLayer.Services.Implementations
+using SacksDataLayer.Data;
+using SacksLogicLayer.Services.Interfaces;
+
+namespace SacksLogicLayer.Services.Implementations
 {
     /// <summary>
     /// Unit of Work implementation for coordinating database operations
     /// Provides transaction management and ensures data consistency across repositories
     /// </summary>
-    public class UnitOfWork : IUnitOfWork
+    public class UnitOfWork : IUnitOfWork, IDisposable
     {
         private readonly SacksDbContext _context;
         private IDbContextTransaction? _currentTransaction;
@@ -117,17 +118,19 @@ namespace SacksDataLayer.Services.Implementations
             
             return await executionStrategy.ExecuteAsync(async () =>
             {
-                using var transaction = await BeginTransactionAsync(cancellationToken);
-                try
+                using (var transaction = await BeginTransactionAsync(cancellationToken))
                 {
-                    var result = await operation(cancellationToken);
-                    await CommitTransactionAsync(cancellationToken);
-                    return result;
-                }
-                catch
-                {
-                    await RollbackTransactionAsync(cancellationToken);
-                    throw;
+                    try
+                    {
+                        var result = await operation(cancellationToken);
+                        await CommitTransactionAsync(cancellationToken);
+                        return result;
+                    }
+                    catch
+                    {
+                        await RollbackTransactionAsync(cancellationToken);
+                        throw;
+                    }
                 }
             });
         }
@@ -146,16 +149,18 @@ namespace SacksDataLayer.Services.Implementations
             
             await executionStrategy.ExecuteAsync(async () =>
             {
-                using var transaction = await BeginTransactionAsync(cancellationToken);
-                try
+                using (var transaction = await BeginTransactionAsync(cancellationToken))
                 {
-                    await operation(cancellationToken);
-                    await CommitTransactionAsync(cancellationToken);
-                }
-                catch
-                {
-                    await RollbackTransactionAsync(cancellationToken);
-                    throw;
+                    try
+                    {
+                        await operation(cancellationToken);
+                        await CommitTransactionAsync(cancellationToken);
+                    }
+                    catch
+                    {
+                        await RollbackTransactionAsync(cancellationToken);
+                        throw;
+                    }
                 }
             });
         }

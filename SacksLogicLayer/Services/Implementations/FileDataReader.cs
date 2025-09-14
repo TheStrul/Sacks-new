@@ -3,10 +3,10 @@
     using System.Threading.Tasks;
     using System.IO;
     using System.Text;
-    using ExcelDataReader;
+    using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
     using Microsoft.Extensions.Logging;
     using SacksDataLayer.FileProcessing.Configuration;
-    using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
+    using ExcelDataReader;
 
     public class FileDataReader : IFileDataReader
     {

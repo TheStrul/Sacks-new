@@ -4,13 +4,17 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using SacksDataLayer.Configuration;
 using SacksDataLayer.Data;
-using SacksDataLayer.Extensions;
-using SacksDataLayer.Services.Interfaces;
-using SacksDataLayer.Services.Implementations;
 using SacksDataLayer.Repositories.Interfaces;
 using SacksDataLayer.Repositories.Implementations;
-using SacksDataLayer.FileProcessing.Services;
 using Microsoft.EntityFrameworkCore;
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
+using SacksDataLayer.Services.Interfaces;
+using SacksDataLayer.Services.Implementations;
+using SacksLogicLayer.Services.Interfaces;
+using SacksLogicLayer.Services.Implementations;
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
+using SacksLogicLayer.Services;
+using SacksLogicLayer.Extensions;
 
 namespace SacksApp
 {
@@ -300,8 +304,8 @@ namespace SacksApp
             services.AddScoped<ConfigurationDescriptionPropertyExtractor>();
 
             // Add supplier configuration manager
-            services.AddScoped<SacksAIPlatform.InfrastructuresLayer.FileProcessing.IFileDataReader, SacksAIPlatform.InfrastructuresLayer.FileProcessing.FileDataReader>();
-            services.AddScoped<SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services.SubtitleRowProcessor>();
+            services.AddScoped<IFileDataReader, FileDataReader>();
+            services.AddScoped<SubtitleRowProcessor>();
             services.AddScoped<SupplierConfigurationManager>();
 
             return services;

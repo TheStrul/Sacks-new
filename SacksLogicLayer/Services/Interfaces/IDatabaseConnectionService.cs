@@ -1,7 +1,7 @@
-using SacksDataLayer.Configuration;
-
-namespace SacksDataLayer.Services.Interfaces
+namespace SacksLogicLayer.Services.Interfaces
 {
+    using SacksDataLayer.Configuration;
+
     /// <summary>
     /// Service for managing database connections and health checks
     /// </summary>

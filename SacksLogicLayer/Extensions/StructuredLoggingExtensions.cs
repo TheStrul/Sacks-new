@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
-
-namespace SacksDataLayer.Extensions
+namespace SacksLogicLayer.Extensions
 {
+    using Microsoft.Extensions.Logging;
+
     /// <summary>
     /// Extension methods for structured logging with performance monitoring
     /// </summary>

@@ -1,9 +1,9 @@
-using SacksDataLayer.FileProcessing.Configuration;
-using SacksDataLayer.FileProcessing.Models;
-using SacksDataLayer.Entities;
-
 namespace SacksDataLayer.Services.Interfaces
 {
+    using SacksDataLayer.Entities;
+    using SacksDataLayer.FileProcessing.Configuration;
+    using SacksDataLayer.FileProcessing.Models;
+
     /// <summary>
     /// Service interface for database operations during file processing
     /// </summary>

@@ -1,9 +1,10 @@
-using SacksDataLayer.FileProcessing.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
-
-namespace SacksDataLayer.FileProcessing.Services
+namespace SacksLogicLayer.Services
 {
+    using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Logging;
+
+    using SacksDataLayer.FileProcessing.Configuration;
+
     /// <summary>
     /// Manages loading and updating supplier configurations from JSON files
     /// /// </summary>
@@ -116,18 +117,6 @@ namespace SacksDataLayer.FileProcessing.Services
                 {
                     ValidateSupplier(supplier, result, supplierNames);
                 }
-
-                // Remove priority-based validation since Priority no longer exists
-                // var priorities = config.Suppliers
-                //     .Where(s => s.Detection.Priority > 1)
-                //     .GroupBy(s => s.Detection.Priority)
-                //     .Where(g => g.Count() > 1);
-
-                // foreach (var group in priorities)
-                // {
-                //     var suppliers = string.Join(", ", group.Select(s => s.Name));
-                //     result.AddWarning($"Multiple suppliers have priority {group.Key}: {suppliers}");
-                // }
 
                 result.IsValid = !result.Errors.Any();
                 result.AddInfo($"Validated {config.Suppliers.Count} supplier configurations");

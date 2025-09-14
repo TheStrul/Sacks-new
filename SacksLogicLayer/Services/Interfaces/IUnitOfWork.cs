@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace SacksDataLayer.Services.Interfaces
+namespace SacksLogicLayer.Services.Interfaces
 {
     /// <summary>
     /// Unit of Work pattern for coordinating database operations across multiple repositories

@@ -5,10 +5,6 @@
 using System.Text;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.IO;
-using System.Linq;
 
 namespace QMobileDeviceServiceMenu
 {

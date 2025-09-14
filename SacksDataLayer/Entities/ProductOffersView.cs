@@ -1,5 +1,3 @@
-using System;
-
 namespace SacksDataLayer.Entities
 {
     // Keyless entity matching the ProductOffersView database view

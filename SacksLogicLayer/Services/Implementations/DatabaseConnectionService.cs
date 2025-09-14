@@ -1,13 +1,14 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
+
 using SacksDataLayer.Configuration;
 using SacksDataLayer.Data;
-using SacksDataLayer.Services.Interfaces;
 
-namespace SacksDataLayer.Services.Implementations
+using SacksLogicLayer.Services.Interfaces;
+
+namespace SacksLogicLayer.Services.Implementations
 {
     /// <summary>
     /// Implementation of database connection service with proper error handling and logging
@@ -54,8 +55,10 @@ namespace SacksDataLayer.Services.Implementations
             {
                 var connectionString = GetConnectionString();
 
-                using var connection = new SqlConnection(connectionString);
-                await connection.OpenAsync();
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                }
 
                 var serverInfo = await GetServerInfoAsync();
                 var message = $"Successfully connected to {_databaseSettings.Provider}. {serverInfo}";
@@ -88,18 +91,23 @@ namespace SacksDataLayer.Services.Implementations
             try
             {
                 var connectionString = GetConnectionString();
-                using var connection = new SqlConnection(connectionString);
-                await connection.OpenAsync();
-
-                using var command = connection.CreateCommand();
-                command.CommandText = "SELECT @@VERSION, DB_NAME()";
-                using var reader = await command.ExecuteReaderAsync();
-                
-                if (await reader.ReadAsync())
+                using (var connection = new SqlConnection(connectionString))
                 {
-                    var version = reader.GetString(0);
-                    var database = reader.GetString(1);
-                    return $"Server Version: {version}, Database: {database}";
+                    await connection.OpenAsync();
+
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandText = "SELECT @@VERSION, DB_NAME()";
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                var version = reader.GetString(0);
+                                var database = reader.GetString(1);
+                                return $"Server Version: {version}, Database: {database}";
+                            }
+                        }
+                    }
                 }
 
                 return "Server information unavailable";

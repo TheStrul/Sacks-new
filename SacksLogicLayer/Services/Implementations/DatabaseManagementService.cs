@@ -1,10 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+
 using SacksDataLayer.Data;
-using SacksDataLayer.Services.Interfaces;
 using SacksDataLayer.Repositories.Interfaces;
+using SacksLogicLayer.Services.Interfaces;
+
 using System.Diagnostics;
 
-namespace SacksDataLayer.Services.Implementations
+namespace SacksLogicLayer.Services.Implementations
 {
     /// <summary>
     /// Service implementation for database management operations

@@ -1,7 +1,7 @@
-using SacksDataLayer.Entities;
-
 namespace SacksDataLayer.Services.Interfaces
 {
+    using SacksDataLayer.Entities;
+
     /// <summary>
     /// Service interface for managing supplier offers
     /// </summary>
