@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+
 using SacksDataLayer.Configuration;
 
 namespace SacksDataLayer.FileProcessing.Configuration
@@ -21,104 +23,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("productPropertyConfiguration")]
         public ProductPropertyConfiguration? ProductPropertyConfiguration { get; set; }
 
-        /// <summary>
-        /// Resolves all supplier column properties using the embedded market configuration
-        /// </summary>
-        public void ResolveAllSupplierProperties()
-        {
-            if (ProductPropertyConfiguration == null) return;
-
-            foreach (var supplier in Suppliers)
-            {
-                supplier.ParentConfiguration = this;
-                supplier.ResolveColumnProperties(ProductPropertyConfiguration);
-            }
-            // Run a non-failing validation/reporting pass to surface mapping issues
-            var report = GetValidationReport();
-            if (report.MissingReferencedKeys.Any())
-            {
-                // Prefer logging - keep non-breaking for now
-                System.Diagnostics.Debug.WriteLine("SuppliersConfiguration validation: missing market keys referenced by suppliers: " + string.Join(", ", report.MissingReferencedKeys));
-            }
-            if (report.UnusedMarketKeys.Any())
-            {
-                System.Diagnostics.Debug.WriteLine("SuppliersConfiguration validation: unused market keys: " + string.Join(", ", report.UnusedMarketKeys));
-            }
-        }
-
-        /// <summary>
-        /// Gets a supplier configuration by name with resolved properties
-        /// </summary>
-        public SupplierConfiguration? GetResolvedSupplierConfiguration(string supplierName)
-        {
-            var supplier = Suppliers.FirstOrDefault(s => 
-                string.Equals(s.Name, supplierName, StringComparison.OrdinalIgnoreCase));
-            
-            if (supplier != null)
-            {
-                supplier.ParentConfiguration = this;
-                if (ProductPropertyConfiguration != null)
-                {
-                    supplier.ResolveColumnProperties(ProductPropertyConfiguration);
-                }
-            }
-            
-            return supplier;
-        }
-
-        /// <summary>
-        /// Validation report describing mapping gaps between suppliers and market configuration
-        /// </summary>
-        public ValidationReport GetValidationReport()
-        {
-            var report = new ValidationReport();
-
-            var marketKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (ProductPropertyConfiguration?.Properties != null)
-            {
-                foreach (var k in ProductPropertyConfiguration.Properties.Keys)
-                    marketKeys.Add(k);
-            }
-
-            var referenced = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var supplier in Suppliers)
-            {
-                if (supplier.ColumnProperties == null) continue;
-                foreach (var kvp in supplier.ColumnProperties)
-                {
-                    var productKey = kvp.Value?.ProductPropertyKey;
-                    if (!string.IsNullOrWhiteSpace(productKey)) referenced.Add(productKey);
-                }
-            }
-
-            // Missing: referenced by suppliers but not present in market config
-            report.MissingReferencedKeys = referenced.Where(k => !marketKeys.Contains(k)).OrderBy(k => k).ToList();
-
-            // Unused: present in market config but not referenced by any supplier
-            report.UnusedMarketKeys = marketKeys.Where(k => !referenced.Contains(k)).OrderBy(k => k).ToList();
-
-            return report;
-        }
-
-        /// <summary>
-        /// Ensures all suppliers have their parent reference set
-        /// </summary>
-        public void EnsureParentReferences()
-        {
-            foreach (var supplier in Suppliers)
-            {
-                supplier.ParentConfiguration = this;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Simple DTO returned by GetValidationReport describing missing/unused keys
-    /// </summary>
-    public class ValidationReport
-    {
-        public List<string> MissingReferencedKeys { get; set; } = new();
-        public List<string> UnusedMarketKeys { get; set; } = new();
     }
 
     /// <summary>
@@ -182,77 +86,13 @@ namespace SacksDataLayer.FileProcessing.Configuration
                    column.Classification == PropertyClassificationType.ProductEAN ||
                    column.Classification == PropertyClassificationType.ProductDynamic)
                 {
-                    result.Add(column.ProductPropertyKey);
+                    result.Add(column.Key);
                 }
             }
             
             return result.Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
         }
 
-        /// <summary>
-        /// Gets offer properties from column-level classification settings
-        /// </summary>
-        public List<string> GetOfferProperties(ProductPropertyConfiguration? marketConfig = null)
-        {
-            var result = new List<string>();
-            
-            if (ColumnProperties == null) return result;
-
-            // Use provided config, or the effective market configuration
-            var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
-
-            foreach (var kvp in ColumnProperties)
-            {
-                var column = kvp.Value;
-                
-                // Resolve from market config if available
-                if (effectiveConfig != null)
-                {
-                    column.ResolveFromMarketConfig(effectiveConfig);
-                }
-                
-                if (column.Classification == PropertyClassificationType.OfferPrice ||
-                   column.Classification == PropertyClassificationType.OfferQuantity ||
-                   column.Classification == PropertyClassificationType.OfferDescription ||
-                   column.Classification == PropertyClassificationType.OfferDynamic)
-                {
-                    result.Add(column.ProductPropertyKey);
-                }
-            }
-            
-            return result.Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
-        }
-
-        /// <summary>
-        /// Gets required fields from column-level validation settings
-        /// </summary>
-        public List<string> GetRequiredFields(ProductPropertyConfiguration? marketConfig = null)
-        {
-            var result = new List<string>();
-            
-            if (ColumnProperties == null) return result;
-
-            // Use provided config, or the effective market configuration
-            var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
-
-            foreach (var kvp in ColumnProperties)
-            {
-                var column = kvp.Value;
-                
-                // Resolve from market config if available
-                if (effectiveConfig != null)
-                {
-                    column.ResolveFromMarketConfig(effectiveConfig);
-                }
-                
-                if (column.IsRequired == true)
-                {
-                    result.Add(column.ProductPropertyKey);
-                }
-            }
-            
-            return result.Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
-        }
 
         /// <summary>
         /// Resolves all column properties using market configuration
@@ -283,89 +123,37 @@ namespace SacksDataLayer.FileProcessing.Configuration
     /// <summary>
     /// Unified column property configuration - references market property definition
     /// </summary>
-    public class ColumnProperty
+    public class ColumnProperty : ProductPropertyDefinition
     {
-        /// <summary>
-        /// Reference to the property key in the market configuration (e.g., "EAN", "Brand", "Category")
-        /// This establishes the relationship between Excel column and market property
-        /// </summary>
-        [JsonPropertyName("productPropertyKey")]
-        public string ProductPropertyKey { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Classification that determines how this property is processed and stored
-        /// Can be explicitly set in configuration or resolved from market configuration
-        /// </summary>
-        [JsonPropertyName("classification")]
-        public PropertyClassificationType Classification { get; set; } = PropertyClassificationType.ProductDynamic;
 
         // File Processing Specific Properties (Excel column mapping)
-        [JsonPropertyName("dataType")]
-        public string DataType { get; set; } = "string"; // Technical data type for processing (string, int, decimal, bool, etc.)
 
         [JsonPropertyName("format")]
         public string? Format { get; set; } // For dates, numbers, etc.
 
-        [JsonPropertyName("maxLength")]
-        public int? MaxLength { get; set; }
-
-        [JsonPropertyName("transformations")]
-        public List<string> Transformations { get; set; } = new(); // e.g., "trim", "lowercase", "removeSymbols"
-
-        [JsonPropertyName("validationPatterns")]
-        public List<string> ValidationPatterns { get; set; } = new();
-
         [JsonPropertyName("allowedValues")]
         public List<string> AllowedValues { get; set; } = new();
 
-        [JsonPropertyName("skipEntireRow")]
-        public bool SkipEntireRow { get; set; } = false;
-
-        // Computed Properties (derived from market configuration)
-        [JsonIgnore]
-        public string DisplayName { get; set; } = string.Empty; // Will be populated from market config
-
-        [JsonIgnore]
-        public bool IsRequired { get; set; } = false; // Will be populated from market config
-
-        /// <summary>
-        /// Resolves this column property using the market configuration
-        /// If Classification is default/unset, it will be resolved from market config
-        /// </summary>
-        public void ResolveFromMarketConfig(ProductPropertyConfiguration marketConfig)
+        internal void ResolveFromMarketConfig(ProductPropertyConfiguration effectiveConfig)
         {
-            ArgumentNullException.ThrowIfNull(marketConfig);
-            
-            if (marketConfig.Properties.TryGetValue(ProductPropertyKey, out var marketProperty))
+            if(effectiveConfig.Properties == null || effectiveConfig.Properties.Count == 0) return;
+            if (string.IsNullOrWhiteSpace(Key)) return;
+            if (!effectiveConfig.Properties.TryGetValue(Key, out var def)) return;
+            // Merge market definition into this column property
+            DisplayName = def.DisplayName;
+            DataType = def.DataType;
+            MaxLength = def.MaxLength;
+            Description = def.Description;
+            Classification = def.Classification;
+            IsRequired = IsRequired || def.IsRequired;
+            if (def.Transformations.Count > 0)
             {
-                DisplayName = marketProperty.DisplayName;
-                IsRequired = marketProperty.IsRequired;
-                
-                // Only override classification if it's still the default value
-                if (Classification == PropertyClassificationType.ProductDynamic && 
-                    ProductPropertyKey != "ProductDynamic") // Avoid overriding explicit ProductDynamic
-                {
-                    Classification = marketProperty.Classification;
-                }
+                Transformations.InsertRange(0,def.Transformations);
             }
-            else
+            if (def.ValidationPatterns.Count > 0)
             {
-                // Fallback: property not found in market config
-                DisplayName = ProductPropertyKey;
-                IsRequired = false;
-                // Keep existing Classification (don't override)
+                ValidationPatterns.InsertRange(0, def.ValidationPatterns);
             }
-        }
-
-        /// <summary>
-        /// Checks if this column maps to a market property
-        /// </summary>
-        public bool HasValidMarketMapping(ProductPropertyConfiguration marketConfig)
-        {
-            if (marketConfig == null) return false;
-            
-            return !string.IsNullOrEmpty(ProductPropertyKey) && 
-                   marketConfig.Properties.ContainsKey(ProductPropertyKey);
         }
     }
 

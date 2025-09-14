@@ -769,7 +769,8 @@ namespace QMobileDeviceServiceMenu
 
                 // Ensure the form is visible and activated
                 this.Visible = true;
-                this.WindowState = FormWindowState.Normal;
+                // Do not force Normal, allow restored maximized state
+                // this.WindowState = FormWindowState.Normal;
                 this.BringToFront();
                 this.Activate();
             }

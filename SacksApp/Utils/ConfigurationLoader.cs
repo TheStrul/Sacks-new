@@ -22,9 +22,6 @@ namespace SacksApp.Utils
                 if (!string.IsNullOrEmpty(configFiles.SupplierFormats))
                     configBuilder.AddJsonFile(configFiles.SupplierFormats, optional: true, reloadOnChange: false);
 
-                if (!string.IsNullOrEmpty(configFiles.ProductPropertyConfiguration))
-                    configBuilder.AddJsonFile(configFiles.ProductPropertyConfiguration, optional: true, reloadOnChange: false);
-
                 if (!string.IsNullOrEmpty(configFiles.PerfumePropertyNormalization))
                     configBuilder.AddJsonFile(configFiles.PerfumePropertyNormalization, optional: true, reloadOnChange: false);
             }

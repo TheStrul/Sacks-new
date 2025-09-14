@@ -29,6 +29,12 @@ namespace SacksDataLayer.Configuration
         [JsonPropertyName("displayName")]
         public string DisplayName { get; set; } = string.Empty;
 
+        [JsonPropertyName("dataType")]
+        public PropertyDataType DataType { get; set; } = PropertyDataType.String; // Technical data type for processing (string, int, decimal, bool, etc.)
+        
+        [JsonPropertyName("maxLength")]
+        public int? MaxLength { get; set; }
+
         [JsonPropertyName("description")]
         public string? Description { get; set; }
 
@@ -37,6 +43,19 @@ namespace SacksDataLayer.Configuration
 
         [JsonPropertyName("isRequired")]
         public bool IsRequired { get; set; } = false;
+
+        [JsonPropertyName("skipEntireRow")]
+        // is check after all validations - if true, the entire row is skipped if this column fails validation
+        public bool SkipEntireRow { get; set; } = false;
+
+        // New: default transformations defined at the market (property) level
+        [JsonPropertyName("transformations")]
+        public List<string> Transformations { get; set; } = new();
+
+
+        [JsonPropertyName("validationPatterns")]
+        public List<string> ValidationPatterns { get; set; } = new();
+
     }
 
     /// <summary>

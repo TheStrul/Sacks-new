@@ -27,20 +27,19 @@
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>
 
-  <!-- Copy configuration and input files to output directory -->
+  <!-- Copy configuration and input files to output and publish directories -->
   <ItemGroup>
-    <None Include="Configuration\appsettings.json">
+    <None Update="Configuration\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <!-- Copy all configuration JSON files -->
-    <None Include="Configuration\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
     <None Include="..\Inputs\*.xlsx">
       <Link>Inputs\%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
   </ItemGroup>
+
   <ItemGroup>
     <Compile Remove="MainForm.cs" />
     <Compile Remove="MainForm.Designer.cs" />
@@ -61,6 +60,7 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+
   <ItemGroup>
     <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
     <PackageReference Update="Roslynator.Analyzers" Version="4.14.0" />

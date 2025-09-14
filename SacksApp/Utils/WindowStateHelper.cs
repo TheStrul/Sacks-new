@@ -33,14 +33,18 @@ namespace SacksApp.Utils
             if (form == null) return;
             try
             {
+                // Use RestoreBounds when maximized so we persist the normal bounds instead of full-screen size
+                var isMax = form.WindowState == FormWindowState.Maximized;
+                var bounds = isMax ? form.RestoreBounds : form.Bounds;
+
                 var state = new PersistedWindowState
                 {
                     ScreenDeviceName = Screen.FromControl(form)?.DeviceName,
-                    X = form.Location.X,
-                    Y = form.Location.Y,
-                    Width = form.Width,
-                    Height = form.Height,
-                    IsMaximized = form.WindowState == FormWindowState.Maximized
+                    X = bounds.X,
+                    Y = bounds.Y,
+                    Width = bounds.Width,
+                    Height = bounds.Height,
+                    IsMaximized = isMax
                 };
 
                 var path = GetFilePath(fileName);

@@ -350,7 +350,7 @@ namespace SacksLogicLayer.Services.Implementations
                     return supplierConfig; // Early exit without resolution
                 }
                 
-                supplierConfig.ResolveColumnProperties();
+            supplierConfig.ResolveColumnProperties();
                 _logger.LogDebug("Column properties resolved successfully for supplier: {SupplierName}", supplierConfig.Name);
                 
                 return supplierConfig;

@@ -71,6 +71,16 @@ namespace SacksDataLayer.Entities
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Property key cannot be null or empty", nameof(key));
 
+            // Forbid nulls or empty strings in DynamicProperties: remove key on null/empty, otherwise set value
+            if (value is null || (value is string s && string.IsNullOrWhiteSpace(s)))
+            {
+                if (DynamicProperties.Remove(key))
+                {
+                    ModifiedAt = DateTime.UtcNow;
+                }
+                return;
+            }
+
             DynamicProperties[key] = value;
             ModifiedAt = DateTime.UtcNow;
         }
@@ -187,7 +197,15 @@ namespace SacksDataLayer.Entities
             {
                 if (!string.IsNullOrWhiteSpace(kvp.Key))
                 {
-                    DynamicProperties[kvp.Key] = kvp.Value;
+                    if (kvp.Value is null || (kvp.Value is string sv && string.IsNullOrWhiteSpace(sv)))
+                    {
+                        // Remove on nulls or empty strings
+                        DynamicProperties.Remove(kvp.Key);
+                    }
+                    else
+                    {
+                        DynamicProperties[kvp.Key] = kvp.Value;
+                    }
                 }
             }
             ModifiedAt = DateTime.UtcNow;
@@ -216,7 +234,15 @@ namespace SacksDataLayer.Entities
             {
                 if (!string.IsNullOrWhiteSpace(kvp.Key))
                 {
-                    DynamicProperties[kvp.Key] = kvp.Value;
+                    if (kvp.Value is null || (kvp.Value is string sv && string.IsNullOrWhiteSpace(sv)))
+                    {
+                        // Remove key when incoming value is null or empty string
+                        DynamicProperties.Remove(kvp.Key);
+                    }
+                    else
+                    {
+                        DynamicProperties[kvp.Key] = kvp.Value;
+                    }
                 }
             }
             ModifiedAt = DateTime.UtcNow;

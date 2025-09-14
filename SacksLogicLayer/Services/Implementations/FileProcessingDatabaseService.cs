@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Data;
 
 using SacksDataLayer.Data;
 using SacksDataLayer.Entities;
@@ -58,11 +59,43 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
+        private async Task<bool> ViewExistsAsync(string viewName, CancellationToken cancellationToken)
+        {
+            var connection = _context.Database.GetDbConnection();
+            if (connection.State != ConnectionState.Open)
+            {
+                await connection.OpenAsync(cancellationToken);
+            }
+
+            await using var command = connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM sys.views WHERE name = @name AND schema_id = SCHEMA_ID('dbo')";
+            var p = command.CreateParameter();
+            p.ParameterName = "@name";
+            p.Value = viewName;
+            command.Parameters.Add(p);
+            var result = await command.ExecuteScalarAsync(cancellationToken);
+            var count = Convert.ToInt32(result);
+            return count > 0;
+        }
+
         private async Task EnsureViewsAsync(CancellationToken cancellationToken)
         {
             try
             {
-                // Load SQL scripts from the Sql folder and execute them in batches
+                // Check if views already exist; if so, skip creating them
+                var baseViewName = "ProductOffersView";
+                var collapseViewName = "ProductOffersViewCollapse";
+
+                var baseExists = await ViewExistsAsync(baseViewName, cancellationToken);
+                var collapseExists = await ViewExistsAsync(collapseViewName, cancellationToken);
+
+                if (baseExists && collapseExists)
+                {
+                    _logger.LogDebug("Database views already exist. Skipping creation.");
+                    return;
+                }
+
+                // Load SQL scripts from the Sql folder and execute only missing ones
                 string? FindSqlDir()
                 {
                     var current = AppContext.BaseDirectory;
@@ -97,25 +130,39 @@ namespace SacksDataLayer.Services.Implementations
                 }
 
                 var sqlDir = FindSqlDir() ?? throw new DirectoryNotFoundException("Could not locate 'Sql' directory with view scripts.");
-                var baseViewPath = System.IO.Path.Combine(sqlDir, "ProductOffersView.sql");
-                var collapseViewPath = System.IO.Path.Combine(sqlDir, "ProductOffersViewCollapse.sql");
 
-                if (!System.IO.File.Exists(baseViewPath)) throw new FileNotFoundException("Missing SQL script", baseViewPath);
-                if (!System.IO.File.Exists(collapseViewPath)) throw new FileNotFoundException("Missing SQL script", collapseViewPath);
-
-                var baseViewSql = await System.IO.File.ReadAllTextAsync(baseViewPath, cancellationToken);
-                foreach (var batch in SplitBatches(baseViewSql))
+                if (!baseExists)
                 {
-                    await _context.Database.ExecuteSqlRawAsync(batch, cancellationToken);
+                    var baseViewPath = System.IO.Path.Combine(sqlDir, "ProductOffersView.sql");
+                    if (!System.IO.File.Exists(baseViewPath)) throw new FileNotFoundException("Missing SQL script", baseViewPath);
+
+                    var baseViewSql = await System.IO.File.ReadAllTextAsync(baseViewPath, cancellationToken);
+                    foreach (var batch in SplitBatches(baseViewSql))
+                    {
+                        await _context.Database.ExecuteSqlRawAsync(batch, cancellationToken);
+                    }
                 }
 
-                var collapseViewSql = await System.IO.File.ReadAllTextAsync(collapseViewPath, cancellationToken);
-                foreach (var batch in SplitBatches(collapseViewSql))
+                if (!collapseExists)
                 {
-                    await _context.Database.ExecuteSqlRawAsync(batch, cancellationToken);
+                    var collapseViewPath = System.IO.Path.Combine(sqlDir, "ProductOffersViewCollapse.sql");
+                    if (!System.IO.File.Exists(collapseViewPath)) throw new FileNotFoundException("Missing SQL script", collapseViewPath);
+
+                    var collapseViewSql = await System.IO.File.ReadAllTextAsync(collapseViewPath, cancellationToken);
+                    foreach (var batch in SplitBatches(collapseViewSql))
+                    {
+                        await _context.Database.ExecuteSqlRawAsync(batch, cancellationToken);
+                    }
                 }
 
-                _logger.LogInformation("Database views (re)created from SQL scripts in: {SqlDir}", sqlDir);
+                if (!baseExists || !collapseExists)
+                {
+                    _logger.LogInformation("Database views created from SQL scripts in: {SqlDir}", sqlDir);
+                }
+                else
+                {
+                    _logger.LogDebug("No views were created; all target views already exist.");
+                }
             }
             catch (Exception ex)
             {

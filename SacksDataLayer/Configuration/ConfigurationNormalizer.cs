@@ -30,7 +30,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
     public class ConfigurationNormalizer : IOfferNormalizer
     {
         private readonly SupplierConfiguration _configuration;
-        private readonly Dictionary<string, Func<string, object?>> _dataTypeConverters;
+        private readonly Dictionary<PropertyDataType, Func<string, object?>> _dataTypeConverters;
         private readonly ConfigurationDescriptionPropertyExtractor _descriptionExtractor;
         private readonly ILogger _logger;
 
@@ -218,10 +218,10 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                             offerProduct.Description = processedValue?.ToString() ?? offerProduct.Description;
                             break;
                         case PropertyClassificationType.ProductDynamic:
-                            product.SetDynamicProperty(columnProperty.ProductPropertyKey, processedValue);
+                            product.SetDynamicProperty(columnProperty.Key, processedValue);
                             break;
                         case PropertyClassificationType.OfferDynamic:
-                            offerProduct.SetOfferProperty(columnProperty.ProductPropertyKey, processedValue);
+                            offerProduct.SetOfferProperty(columnProperty.Key, processedValue);
                             break;
                         default:
                             _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Unsupported Classification {Classification}",
@@ -284,10 +284,22 @@ namespace SacksDataLayer.FileProcessing.Normalizers
 
                 // Treat all subtitle keys as dynamic properties. Normalize the key to a consistent format and store.
                 var normalizedKey = NormalizeSubtitleKey(key);
+                var stringVal = value.ToString() ?? string.Empty;
+
+                // Normalize known values (e.g., COO, Gender) via extractor's normalizer bridge
+                if (_descriptionExtractor is not null)
+                {
+                    try
+                    {
+                        stringVal = _descriptionExtractor.NormalizeValue(normalizedKey, stringVal);
+                    }
+                    catch { /* ignore normalization errors */ }
+                }
+
                 if (!product.DynamicProperties.ContainsKey(normalizedKey))
                 {
-                    product.SetDynamicProperty(normalizedKey, value);
-                    _logger?.LogTrace("Applied subtitle property '{Key}': '{Value}' to product", normalizedKey, value);
+                    product.SetDynamicProperty(normalizedKey, stringVal);
+                    _logger?.LogTrace("Applied subtitle property '{Key}': '{Value}' to product", normalizedKey, stringVal);
                 }
             }
         }
@@ -333,7 +345,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             try
             {
                 // Apply configured transformations; also collect any extra properties produced by transformations (e.g., named regex groups)
-                var (transformedValue, extraProperties) = ApplyTransformations(rawValue, columnProperty.Transformations, columnProperty.ProductPropertyKey);
+                var (transformedValue, extraProperties) = ApplyTransformations(rawValue, columnProperty.Transformations, columnProperty.Key);
 
                 // If transformation produced extra properties, apply them to product or offer depending on market config
                 if (extraProperties != null && extraProperties.Count > 0)
@@ -370,7 +382,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                 }
 
                 // Convert to target type
-                if (_dataTypeConverters.TryGetValue(columnProperty.DataType.ToLowerInvariant(), out var converter))
+                if (_dataTypeConverters.TryGetValue(columnProperty.DataType, out var converter))
                 {
                     return converter(transformedValue);
                 }
@@ -384,56 +396,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
         }
 
-        /// <summary>
-        /// Validates raw string value against column validation rules (before transformation)
-        /// </summary>
-        private async Task<ValidationResult> ValidateValueAsync(string? rawValue, ColumnProperty columnProperty)
-        {
-            await Task.CompletedTask; // For async consistency
-
-            // Check required field validation
-            if (columnProperty.IsRequired == true && string.IsNullOrWhiteSpace(rawValue))
-            {
-                return ValidationResult.Invalid(
-                    columnProperty.SkipEntireRow,
-                    $"Required field '{columnProperty.ProductPropertyKey}' is empty");
-            }
-
-            // Check allowed values if configured (validate against raw values before transformation)
-            if (columnProperty.AllowedValues.Count > 0)
-            {
-                if (!columnProperty.AllowedValues.Contains(rawValue, StringComparer.OrdinalIgnoreCase))
-                {
-                    return ValidationResult.Invalid(
-                        columnProperty.SkipEntireRow,
-                        $"Value '{rawValue}' is not in allowed values for '{columnProperty.ProductPropertyKey}'");
-                }
-            }
-
-            // Check validation patterns if configured (validate against raw values)
-            if (columnProperty.ValidationPatterns.Count > 0)
-            {
-                if (!string.IsNullOrEmpty(rawValue))
-                {
-                    var matchesPattern = columnProperty.ValidationPatterns
-                        .Any(pattern => Regex.IsMatch(rawValue, pattern, RegexOptions.IgnoreCase));
-                    if (!matchesPattern)
-                    {
-                        return ValidationResult.Invalid(
-                            columnProperty.SkipEntireRow,
-                            $"Value '{rawValue}' does not match validation patterns for '{columnProperty.ProductPropertyKey}'");
-                    }
-                }
-            }
-
-            return ValidationResult.Valid();
-        }
-
-        #endregion
-
-        #region Utility Methods
-
-    private (string TransformedValue, Dictionary<string,string>? ExtraProperties) ApplyTransformations(string value, List<string> transformations, string? currentPropertyKey = null)
+        private (string TransformedValue, Dictionary<string,string>? ExtraProperties) ApplyTransformations(string value, List<string> transformations, string? currentPropertyKey = null)
         {
             var extraProps = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -455,6 +418,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     case "uppercase":
                         value = value.ToUpperInvariant();
                         break;
+                    case "capitalize":
+                        if (!string.IsNullOrEmpty(value))
+                            value = char.ToUpperInvariant(value[0]) + (value.Length > 1 ? value[1..].ToLowerInvariant() : string.Empty);
+                        break;
+                    case "titlecase":
+                    case "capitalizewords":
+                        if (!string.IsNullOrEmpty(value))
+                            value = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(value.ToLowerInvariant());
+                        break;
                     case "removesymbols":
                         value = Regex.Replace(value, @"[^\d.,]", "");
                         break;
@@ -471,8 +443,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                         value = CleanCurrencyValue(value);
                         break;
                     case "extractafterpattern":
-                        value = ExtractAfterPattern(value, parameters ?? "*:"
-                        );
+                        value = ExtractAfterPattern(value, parameters ?? "*:");
                         break;
                     case "extractpattern":
                         // parameters expected to be a regex. Use named groups to populate extra properties.
@@ -538,6 +509,51 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             }
 
             return (value, extraProps.Count > 0 ? extraProps : null);
+        }
+
+        /// <summary>
+        /// Validates raw string value against column validation rules (before transformation)
+        /// </summary>
+        private async Task<ValidationResult> ValidateValueAsync(string? rawValue, ColumnProperty columnProperty)
+        {
+            await Task.CompletedTask; // For async consistency
+
+            // Check required field validation
+            if (columnProperty.IsRequired == true && string.IsNullOrWhiteSpace(rawValue))
+            {
+                return ValidationResult.Invalid(
+                    columnProperty.SkipEntireRow,
+                    $"Required field '{columnProperty.Key}' is empty");
+            }
+
+            // Check allowed values if configured (validate against raw values before transformation)
+            if (columnProperty.AllowedValues.Count > 0)
+            {
+                if (!columnProperty.AllowedValues.Contains(rawValue, StringComparer.OrdinalIgnoreCase))
+                {
+                    return ValidationResult.Invalid(
+                        columnProperty.SkipEntireRow,
+                        $"Value '{rawValue}' is not in allowed values for '{columnProperty.Key}'");
+                }
+            }
+
+            // Check validation patterns if configured (validate against raw values)
+            if (columnProperty.ValidationPatterns.Count > 0)
+            {
+                if (!string.IsNullOrEmpty(rawValue))
+                {
+                    var matchesPattern = columnProperty.ValidationPatterns
+                        .Any(pattern => Regex.IsMatch(rawValue, pattern, RegexOptions.IgnoreCase));
+                    if (!matchesPattern)
+                    {
+                        return ValidationResult.Invalid(
+                            columnProperty.SkipEntireRow,
+                            $"Value '{rawValue}' does not match validation patterns for '{columnProperty.Key}'");
+                    }
+                }
+            }
+
+            return ValidationResult.Valid();
         }
 
         /// <summary>
@@ -773,19 +789,15 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             return result - 1; // Convert to zero-based index
         }
 
-        private Dictionary<string, Func<string, object?>> InitializeDataTypeConverters()
+        private Dictionary<PropertyDataType, Func<string, object?>> InitializeDataTypeConverters()
         {
-            return new Dictionary<string, Func<string, object?>>
+            return new Dictionary<PropertyDataType, Func<string, object?>>
             {
-                ["string"] = value => value,
-                ["int"] = value => int.TryParse(value, out int result) ? result : null,
-                ["integer"] = value => int.TryParse(value, out int result) ? result : null, // Alias for int
-                ["decimal"] = value => decimal.TryParse(value, NumberStyles.Currency, CultureInfo.InvariantCulture, out decimal result) ? result : null,
-                ["bool"] = value => ParseBooleanValue(value),
-                ["boolean"] = value => ParseBooleanValue(value), // Alias for bool
-                ["datetime"] = value => DateTime.TryParse(value, out DateTime result) ? result : null,
-                ["date"] = value => DateOnly.TryParse(value, out DateOnly result) ? result : null,
-                ["time"] = value => TimeOnly.TryParse(value, out TimeOnly result) ? result : null
+                [PropertyDataType.String] = value => value,
+                [PropertyDataType.Integer] = value => int.TryParse(value, out int result) ? result : null,
+                [PropertyDataType.Decimal] = value => decimal.TryParse(value, NumberStyles.Currency, CultureInfo.InvariantCulture, out decimal result) ? result : null,
+                [PropertyDataType.Boolean] = value => ParseBooleanValue(value),
+                [PropertyDataType.DateTime] = value => DateTime.TryParse(value, out DateTime result) ? result : null,
             };
         }
 

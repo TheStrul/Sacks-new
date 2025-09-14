@@ -346,9 +346,8 @@ namespace SacksLogicLayer.Services.Implementations
         }
 
         /// <summary>
-        /// Returns a map of property -> { old = ..., new = ... } for properties that were added or changed
-        /// according to the actual merge semantics (i.e. omitted keys in <c>newProperties</c> are preserved).
-        /// Properties that are unchanged are not returned.
+        /// Returns a map of property -> { old = ..., new = ... } ONLY for properties that are being updated
+        /// (key existed before and new value differs). Newly added properties are not included.
         /// </summary>
         private static Dictionary<string, object?> GetChangedDynamicProperties(
             Dictionary<string, object?> existingProperties,
@@ -357,36 +356,55 @@ namespace SacksLogicLayer.Services.Implementations
             existingProperties = existingProperties ?? new Dictionary<string, object?>();
             newProperties = newProperties ?? new Dictionary<string, object?>();
 
-            // Compute the actual merged result according to MergeDynamicProperties
-            var merged = MergeDynamicProperties(existingProperties, newProperties);
-
             var changes = new Dictionary<string, object?>();
 
-            // Compare merged vs existing and report only keys where the merged value differs
-            foreach (var kvp in merged)
+            foreach (var kvp in existingProperties)
             {
                 var key = kvp.Key;
-                var mergedVal = kvp.Value;
+                var oldVal = kvp.Value;
 
-                existingProperties.TryGetValue(key, out var existingVal);
+                if (!newProperties.TryGetValue(key, out var incomingVal))
+                {
+                    // No incoming value for this existing key => not an update (we don't report removals here)
+                    continue;
+                }
 
-                var equal = false;
-                if (existingVal == null && mergedVal == null)
-                    equal = true;
-                else if (existingVal != null && mergedVal != null)
-                    equal = string.Equals(existingVal.ToString(), mergedVal.ToString(), StringComparison.Ordinal);
+                // Treat empty strings like null per current merge semantics
+                if (incomingVal is string s && string.IsNullOrWhiteSpace(s))
+                {
+                    incomingVal = null;
+                }
 
-                if (!equal)
+                // Only report if both old and incoming differ and incoming is not null (i.e., a real update)
+                if (!AreValuesEqual(oldVal, incomingVal) && incomingVal is not null)
                 {
                     changes[key] = new Dictionary<string, object?>
                     {
-                        ["old"] = existingVal,
-                        ["new"] = mergedVal
+                        ["old"] = oldVal,
+                        ["new"] = incomingVal
                     };
                 }
             }
 
             return changes;
+        }
+
+        private static bool AreValuesEqual(object? a, object? b)
+        {
+            if (a is null && b is null) return true;
+            if (a is null || b is null) return false;
+
+            // Compare string representations for simplicity and cross-JsonElement support
+            if (a is JsonElement jeA)
+            {
+                a = jeA.ToString();
+            }
+            if (b is JsonElement jeB)
+            {
+                b = jeB.ToString();
+            }
+
+            return string.Equals(a.ToString(), b.ToString(), StringComparison.Ordinal);
         }
     }
 }

@@ -14,12 +14,6 @@ namespace SacksDataLayer.Configuration
         public string SupplierFormats { get; set; } = string.Empty;
 
         /// <summary>
-        /// Path to the product property configuration file
-        /// </summary>
-        [Required]
-        public string ProductPropertyConfiguration { get; set; } = string.Empty;
-
-        /// <summary>
         /// Path to the perfume property normalization configuration file
         /// </summary>
         [Required]

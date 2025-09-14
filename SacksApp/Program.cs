@@ -168,7 +168,6 @@ namespace SacksApp
 
             // First, load the main appsettings.json
             var configBuilder = new ConfigurationBuilder()
-                .SetBasePath(basePath)
                 .AddJsonFile("Configuration/appsettings.json", optional: false, reloadOnChange: false)
                 .AddEnvironmentVariables();
 
@@ -182,10 +181,10 @@ namespace SacksApp
             if (configFiles != null)
             {
                 if (!string.IsNullOrEmpty(configFiles.SupplierFormats))
-                    configBuilder.AddJsonFile(configFiles.SupplierFormats, optional: true, reloadOnChange: false);
+                    configBuilder.AddJsonFile(configFiles.SupplierFormats, optional: false, reloadOnChange: false);
                                         
                 if (!string.IsNullOrEmpty(configFiles.PerfumePropertyNormalization))
-                    configBuilder.AddJsonFile(configFiles.PerfumePropertyNormalization, optional: true, reloadOnChange: false);
+                    configBuilder.AddJsonFile(configFiles.PerfumePropertyNormalization, optional: false, reloadOnChange: false);
             }
 
             return configBuilder.Build();
