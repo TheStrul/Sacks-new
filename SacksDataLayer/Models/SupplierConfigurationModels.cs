@@ -38,7 +38,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
         public string Currency { get; set; } = "$";
 
         [JsonPropertyName("columnProperties")]
-        public Dictionary<string, ColumnProperty> ColumnProperties { get; set; } = new();
+        public Dictionary<string, ProductPropertyDefinition> ColumnProperties { get; set; } = new();
 
         [JsonPropertyName("fileStructure")]
         public FileStructureConfiguration FileStructure { get; set; } = new();
@@ -63,23 +63,20 @@ namespace SacksDataLayer.FileProcessing.Configuration
         /// <summary>
         /// Gets core product properties from column-level classification settings
         /// </summary>
-        public List<string> GetCoreProductProperties(ProductPropertyConfiguration? marketConfig = null)
+        public List<string> GetCoreProductProperties()
         {
             var result = new List<string>();
             
             if (ColumnProperties == null) return result;
-
-            // Use provided config, or the effective market configuration
-            var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
 
             foreach (var kvp in ColumnProperties)
             {
                 var column = kvp.Value;
                 
                 // Resolve from market config if available
-                if (effectiveConfig != null)
+                if (EffectiveMarketConfiguration != null)
                 {
-                    column.ResolveFromMarketConfig(effectiveConfig);
+                    column.ResolveFromMarketConfig(EffectiveMarketConfiguration);
                 }
                 
                 if (column.Classification == PropertyClassificationType.ProductName ||
@@ -97,62 +94,15 @@ namespace SacksDataLayer.FileProcessing.Configuration
         /// <summary>
         /// Resolves all column properties using market configuration
         /// </summary>
-        public void ResolveColumnProperties(ProductPropertyConfiguration? marketConfig = null)
+        public void ResolveColumnProperties()
         {
             if (ColumnProperties == null) return;
 
-            // Use provided config, or the effective market configuration
-            var effectiveConfig = marketConfig ?? EffectiveMarketConfiguration;
-            if (effectiveConfig == null) return;
+            if (EffectiveMarketConfiguration == null) return;
 
             foreach (var column in ColumnProperties.Values)
             {
-                column.ResolveFromMarketConfig(effectiveConfig);
-            }
-        }
-
-        /// <summary>
-        /// Resolves all column properties using the effective market configuration
-        /// </summary>
-        public void ResolveColumnProperties()
-        {
-            ResolveColumnProperties(EffectiveMarketConfiguration);
-        }
-    }
-
-    /// <summary>
-    /// Unified column property configuration - references market property definition
-    /// </summary>
-    public class ColumnProperty : ProductPropertyDefinition
-    {
-
-        // File Processing Specific Properties (Excel column mapping)
-
-        [JsonPropertyName("format")]
-        public string? Format { get; set; } // For dates, numbers, etc.
-
-        [JsonPropertyName("allowedValues")]
-        public List<string> AllowedValues { get; set; } = new();
-
-        internal void ResolveFromMarketConfig(ProductPropertyConfiguration effectiveConfig)
-        {
-            if(effectiveConfig.Properties == null || effectiveConfig.Properties.Count == 0) return;
-            if (string.IsNullOrWhiteSpace(Key)) return;
-            if (!effectiveConfig.Properties.TryGetValue(Key, out var def)) return;
-            // Merge market definition into this column property
-            DisplayName = def.DisplayName;
-            DataType = def.DataType;
-            MaxLength = def.MaxLength;
-            Description = def.Description;
-            Classification = def.Classification;
-            IsRequired = IsRequired || def.IsRequired;
-            if (def.Transformations.Count > 0)
-            {
-                Transformations.InsertRange(0,def.Transformations);
-            }
-            if (def.ValidationPatterns.Count > 0)
-            {
-                ValidationPatterns.InsertRange(0, def.ValidationPatterns);
+                column.ResolveFromMarketConfig(EffectiveMarketConfiguration);
             }
         }
     }

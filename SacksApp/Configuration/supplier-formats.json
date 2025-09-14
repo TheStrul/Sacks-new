@@ -191,15 +191,15 @@
         "classification":  "OfferCurrency", 
         "isRequired": true 
       },
-        "Quantity": { 
-        "key": "Quantity", 
-        "displayName": "Quantity", 
-        "description": "Available stock quantity", 
-        "classification": "OfferQuantity", 
-        "transformations": ["removeSymbols"] ,
-        "dataType": "int",
+      "Quantity": {
+        "key": "Quantity",
+        "dataType": "integer",
+        "displayName": "Quantity",
+        "description": "Available stock quantity",
+        "classification": "OfferQuantity",
+        "transformations": [ "removeSymbols" ],
         "skipEntireRow": true,
-        "isRequired": true 
+        "isRequired": true
       },
       "Description": {
         "key": "Description",

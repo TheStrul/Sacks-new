@@ -56,6 +56,34 @@ namespace SacksDataLayer.Configuration
         [JsonPropertyName("validationPatterns")]
         public List<string> ValidationPatterns { get; set; } = new();
 
+
+        [JsonPropertyName("format")]
+        public string? Format { get; set; } // For dates, numbers, etc.
+
+        [JsonPropertyName("allowedValues")]
+        public List<string> AllowedValues { get; set; } = new();
+
+        internal void ResolveFromMarketConfig(ProductPropertyConfiguration effectiveConfig)
+        {
+            if (effectiveConfig.Properties == null || effectiveConfig.Properties.Count == 0) return;
+            if (string.IsNullOrWhiteSpace(Key)) return;
+            if (!effectiveConfig.Properties.TryGetValue(Key, out var def)) return;
+            // Merge market definition into this column property
+            DisplayName = def.DisplayName;
+            DataType = def.DataType;
+            MaxLength = def.MaxLength;
+            Description = def.Description;
+            Classification = def.Classification;
+            IsRequired = IsRequired || def.IsRequired;
+            if (def.Transformations.Count > 0)
+            {
+                Transformations.InsertRange(0, def.Transformations);
+            }
+            if (def.ValidationPatterns.Count > 0)
+            {
+                ValidationPatterns.InsertRange(0, def.ValidationPatterns);
+            }
+        }
     }
 
     /// <summary>

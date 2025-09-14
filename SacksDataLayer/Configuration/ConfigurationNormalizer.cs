@@ -98,18 +98,29 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                             }
                             else
                             {
-                                _logger.LogTrace("Skipped entire row {RowIndex}: Row validation failed or marked for skipping", row.Index);
+                                // Log detailed reason for invalid offer product so operator can see why rows are dropped
+                                var ean = offerProduct.Product?.EAN ?? "<empty>";
+                                var price = offerProduct.Price;
+                                var qty = offerProduct.Quantity;
+                                var msg = $"Row {row.Index}: Skipped - invalid offer product (EAN={ean}, Price={price}, Quantity={qty})";
+                                result.Warnings.Add(msg);
+                                result.Statistics.ProductsSkipped++;
+                                _logger.LogWarning(msg);
                             }
                         }
                         else
                         {
-                            _logger.LogTrace("Skipped entire row {RowIndex}: Row validation failed or marked for skipping", row.Index);
+                            var msg = $"Row {row.Index}: Normalization returned null (row skipped)";
+                            result.Warnings.Add(msg);
+                            _logger.LogWarning(msg);
                         }
                     }
                     catch (Exception ex)
                     {
                         result.Statistics.ErrorCount++;
-                        result.Errors.Add($"Row {row.Index}: {ex.Message}");
+                        var err = $"Row {row.Index}: {ex.Message}";
+                        result.Errors.Add(err);
+                        _logger.LogError(ex, "Error processing row {RowIndex}: {Message}", row.Index, ex.Message);
                     }
                 }
 
@@ -175,10 +186,12 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     var validationResult = await ValidateValueAsync(stringValue, columnProperty);
                     if (!validationResult.IsValid)
                     {
+                        var warn = $"Row {row.Index}: Column {columnKey} validation failed: {validationResult.ErrorMessage}";
+
                         if (validationResult.SkipEntireRow)
                         {
                             // Skip the entire row - return null to indicate row should be skipped
-                            _logger?.LogTrace("Skipping entire row {RowIndex}: Validation failed for column {ColumnKey} with value '{RawValue}' - {ErrorMessage}",
+                            _logger?.LogWarning("Skipping entire row {RowIndex}: Validation failed for column {ColumnKey} with value '{RawValue}' - {ErrorMessage}",
                                 row.Index, columnKey, stringValue, validationResult.ErrorMessage);
                             return null;
                         }
@@ -192,9 +205,13 @@ namespace SacksDataLayer.FileProcessing.Normalizers
                     var processedValue = ProcessCellValueAsync(stringValue!, columnProperty, product, offerProduct);
                     if (processedValue == null && columnProperty.IsRequired)
                     {
+                        var warn = $"Row {row.Index}: Column {columnKey} produced null after processing but IsRequired=true";
+                        context.ProcessingResult.Warnings.Add(warn);
+                        _logger?.LogWarning(warn);
+
                         _logger?.LogDebug("Skipped column {ColumnKey} in row {RowIndex}: Processed value is null but IsRequired=true (raw='{R}'), Proccessd = {P}",
                             columnKey, row.Index, stringValue, processedValue);
-                        continue;
+                        return null;
                     }
 
                     switch (columnProperty.Classification)
@@ -340,7 +357,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Processes cell value through transformations and type conversion
         /// </summary>
-        private object? ProcessCellValueAsync(string rawValue, ColumnProperty columnProperty, ProductEntity product, ProductOfferAnnex offerProduct)
+        private object? ProcessCellValueAsync(string rawValue, ProductPropertyDefinition columnProperty, ProductEntity product, ProductOfferAnnex offerProduct)
         {
             try
             {
@@ -514,7 +531,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
         /// <summary>
         /// Validates raw string value against column validation rules (before transformation)
         /// </summary>
-        private async Task<ValidationResult> ValidateValueAsync(string? rawValue, ColumnProperty columnProperty)
+        private async Task<ValidationResult> ValidateValueAsync(string? rawValue, ProductPropertyDefinition columnProperty)
         {
             await Task.CompletedTask; // For async consistency
 
@@ -522,7 +539,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             if (columnProperty.IsRequired == true && string.IsNullOrWhiteSpace(rawValue))
             {
                 return ValidationResult.Invalid(
-                    columnProperty.SkipEntireRow,
+                    columnProperty.IsRequired,
                     $"Required field '{columnProperty.Key}' is empty");
             }
 
@@ -827,7 +844,7 @@ namespace SacksDataLayer.FileProcessing.Normalizers
             List<string> preferredKeys = new();
             try
             {
-                preferredKeys = _configuration?.GetCoreProductProperties(_configuration.EffectiveMarketConfiguration) ?? new List<string>();
+                preferredKeys = _configuration?.GetCoreProductProperties() ?? new List<string>();
             }
             catch
             {
