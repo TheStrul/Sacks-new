@@ -11,18 +11,58 @@
           "defaultCulture": "en-US",
           "preferFirstAssignment": true
         },
-        "lookups": {},
+        "lookups": {
+          "brandLookups": {
+            "chanel": "Chanel",
+            "dior": "Dior", 
+            "ysl": "Yves Saint Laurent",
+            "ck": "Calvin Klein",
+            "hugo": "Hugo Boss"
+          },
+          "unitLookups": {
+            "ml": "ML",
+            "oz": "OZ",
+            "l": "L",
+            "cl": "CL",
+            "floz": "FL OZ",
+            "fl oz": "FL OZ"
+          },
+          "typeLookups": {
+            "reg": "Regular",
+            "mini": "Mini",
+            "set": "Set",
+            "tube": "Tube",
+            "tester": "Tester",
+            "niche": "Niche"
+          },
+          "concentrationLookups": {
+            "edt": "EDT",
+            "edp": "EDP", 
+            "parfum": "Parfum",
+            "cologne": "Cologne",
+            "eau de toilette": "EDT",
+            "eau de parfum": "EDP"
+          },
+          "countryLookups": {
+            "fr": "France",
+            "us": "United States",
+            "it": "Italy",
+            "de": "Germany",
+            "uk": "United Kingdom"
+          },
+          "genderLookups": {
+            "men": "M",
+            "wom": "W",
+            "homme": "M",
+            "femme": "W",
+            "her": "W",
+            "p/homme": "M"
+          }
+        },
         "columns": [
           {
             "column": "B",
-            "rules": [
-              {
-                "id": "ref-direct",
-                "priority": 100,
-                "type": "DirectAssign",
-                "assign": { "Offer.Ref": "trim" }
-              }
-            ]
+            "rules": [{"id": "ref-direct", "priority": 100, "type": "DirectAssign", "assign": { "Offer.Ref": "trim" }}]
           },
           {
             "column": "C",
@@ -50,10 +90,31 @@
             "column": "E",
             "rules": [
               {
-                "id": "description-direct",
+                "id": "description-pipeline",
                 "priority": 100,
-                "type": "DirectAssign",
-                "assign": { "Offer.Description": "trim" }
+                "type": "Pipeline",
+                "steps": [
+                  {"Op": "Trim"},
+                  {"Op": "Assign", "From": "Text", "To": "Offer.Description"},
+                  {"Op": "ExtractSizeAndUnits", "From": "Text", "SizeOut": "SizeUnit", "RemainingOut": "AfterSize", "Patterns": [
+                    "\\((\\d+(?:\\.\\d)?ml)\\)",
+                    "\\(([^)]*)\\)"
+                  ]},
+                  {"Op": "SplitSizeAndUnits", "From": "SizeUnit", "ValueOut": "TempSize", "UnitOut": "TempUnits"},
+                  {"Op": "ExtractMappedValue", "From": "AfterSize", "Table": "concentrationLookups", "ExtractedOut": "Concentration", "RemainingOut": "AfterConcentration"},
+                  {"Op": "ExtractMappedValue", "From": "AfterConcentration", "Table": "typeLookups", "ExtractedOut": "Type", "RemainingOut": "AfterType"},
+                  {"Op": "ExtractAllCapitalsFromStart", "From": "AfterType", "ExtractedOut": "Brand", "RemainingOut": "AfterBrand"},
+                  {"Op": "ExtractMappedWordAnywhere", "From": "AfterBrand", "Table": "genderLookups", "CaseMode": "lower", "ExtractedOut": "Gender", "RemainingOut": "LineWithGender"},
+                  {"Op": "MapValue", "From": "Gender", "Table": "genderLookups", "CaseMode": "lower", "ExtractedOut": "MappedGender"},
+
+                  {"Op": "Assign", "From": "Brand", "To": "Product.Brand"},
+                  {"Op": "Assign", "From": "AfterBrand", "To": "Product.Line"},
+                  {"Op": "Assign", "From": "Concentration", "To": "Product.Concentration"},
+                  {"Op": "Assign", "From": "Type", "To": "Product.Type"},
+                  {"Op": "Assign", "From": "TempSize", "To": "Product.Size"},
+                  {"Op": "Assign", "From": "TempUnits", "To": "Product.Units"},
+                  {"Op": "Assign", "From": "MappedGender", "To": "Product.Gender"}
+                ]
               }
             ]
           },
@@ -88,137 +149,333 @@
       }
     }   
   ],
-  "productPropertyConfiguration": {
+  "columnTemplates": {
     "version": "1.0",
     "productType": "perfume",
-  "properties": {
+    "templates": {
       "EAN": {
-        "key": "EAN",
-        "displayName": "EAN Code",
-        "description": "European Article Number (barcode)",
-        "classification": "ProductEAN",
-        "validationPatterns": [ "^\\d+$" ],
-        "maxLength": 20,
-        "skipEntireRow": true,
-        "isRequired": true
+        "rules": [{
+          "id": "ean-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "Assign", "From": "Text", "To": "Product.EAN"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "EAN Code",
+          "description": "European Article Number (barcode)",
+          "classification": "ProductEAN",
+          "validation": {
+            "patterns": ["^\\d+$"],
+            "maxLength": 20,
+            "isRequired": true,
+            "skipEntireRow": true
+          }
+        }
       },
       "Name": {
-        "key": "Name",
-        "displayName": "Name",
-        "description": "Product name",
-        "classification": "ProductName"
+        "rules": [{
+          "id": "name-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "Assign", "From": "Text", "To": "Product.Name"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Name",
+          "description": "Product name",
+          "classification": "ProductName"
+        }
       },
       "Price": {
-        "key": "Price",
-        "displayName": "Price",
-        "description": "Product price from offers",
-        "classification": "OfferPrice",
-        "dataType": "decimal",
-        "transformations": [],
-        "skipEntireRow": true,
-        "isRequired": true
+        "rules": [{
+          "id": "price-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "Assign", "From": "Text", "To": "Offer.Price"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Price",
+          "description": "Product price from offers",
+          "classification": "OfferPrice",
+          "validation": {
+            "dataType": "decimal",
+            "isRequired": true,
+            "skipEntireRow": true
+          }
+        }
       },
-        "Currency": { 
-        "key": "Currency", "displayName": "Currency", 
-        "description": "Currency of the price", 
-        "classification":  "OfferCurrency", 
-        "isRequired": true 
+      "Currency": {
+        "rules": [{
+          "id": "currency-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "Assign", "From": "Text", "To": "Offer.Currency"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Currency",
+          "description": "Currency of the price",
+          "classification": "OfferCurrency",
+          "validation": {
+            "isRequired": true
+          }
+        }
       },
       "Quantity": {
-        "key": "Quantity",
-        "dataType": "integer",
-        "displayName": "Quantity",
-        "description": "Available stock quantity",
-        "classification": "OfferQuantity",
-        "transformations": [ "removeSymbols" ],
-        "skipEntireRow": true,
-        "isRequired": true
+        "rules": [{
+          "id": "quantity-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "RemoveSymbols"},
+            {"Op": "Assign", "From": "Text", "To": "Offer.Quantity"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Quantity",
+          "description": "Available stock quantity",
+          "classification": "OfferQuantity",
+          "validation": {
+            "dataType": "integer",
+            "isRequired": true,
+            "skipEntireRow": true
+          }
+        }
       },
       "Description": {
-        "key": "Description",
-        "displayName": "Description",
-        "description": "Product description",
-        "classification": "OfferDescription",
-        "maxLength": 500
+        "rules": [{
+          "id": "description-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "Assign", "From": "Text", "To": "Offer.Description"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Description",
+          "description": "Product description",
+          "classification": "OfferDescription",
+          "validation": {
+            "maxLength": 500
+          }
+        }
       },
       "Brand": {
-        "key": "Product.Brand",
-        "maxLength": 100,
-        "displayName": "Brand",
-        "description": "Product brand or manufacturer",
-        "classification": "ProductDynamic",
-        "transformations": [ "mapvalue", "capitalize" ]
+        "rules": [{
+          "id": "brand-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "MapValue", "Table": "brandLookups"},
+            {"Op": "Capitalize"},
+            {"Op": "Assign", "From": "Text", "To": "Product.Brand"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Brand",
+          "description": "Product brand or manufacturer",
+          "classification": "ProductDynamic",
+          "validation": {
+            "maxLength": 100
+          }
+        }
       },
       "Line": {
-        "key": "Product.Line",
-        "displayName": "Line",
-        "description": "Product line or collection",
-        "classification": "ProductDynamic",
-        "transformations": [ "capitalize" ]
+        "rules": [{
+          "id": "line-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "Capitalize"},
+            {"Op": "Assign", "From": "Text", "To": "Product.Line"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Line",
+          "description": "Product line or collection",
+          "classification": "ProductDynamic"
+        }
       },
-    "Gender": {
-      "key": "Gender",
-      "displayName": "Gender",
-      "description": "Target gender for the perfume",
-      "classification": "ProductDynamic",
-      "isRequired": false
-    },
-    "Size": {
-      "key": "Size",
-      "displayName": "Size",
-      "description": "Volume or size of the perfume",
-      "dataType": "decimal",
-      "classification": "ProductDynamic",
-      "transformations": [ "extractsizeandunits:Size,Units" ]
-    },
-      "Units": { "key": "Units", 
-      "displayName": "Units", 
-      "description": "Unit of measurement", 
-      "classification": "ProductDynamic", 
-      "transformations": [ "mapvalue" ]
-    },
-    "Type": {
-      "key": "Type",
-      "displayName": "Type",
-      "description": "Regular, Mini, Set, Tube, Tester, Niche, etc.",
-      "classification": "ProductDynamic",
-      "transformations": [ "mapvalue" ]
-    },
+      "Gender": {
+        "rules": [{
+          "id": "gender-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "Assign", "From": "Text", "To": "Product.Gender"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Gender",
+          "description": "Target gender for the perfume",
+          "classification": "ProductDynamic",
+          "validation": {
+            "isRequired": false
+          }
+        }
+      },
+      "Size": {
+        "rules": [{
+          "id": "size-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "ExtractSizeAndUnits", "ValueOut": "Size", "UnitOut": "Units"},
+            {"Op": "Assign", "From": "Size", "To": "Product.Size"},
+            {"Op": "Assign", "From": "Units", "To": "Product.Units"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Size",
+          "description": "Volume or size of the perfume",
+          "classification": "ProductDynamic",
+          "validation": {
+            "dataType": "decimal"
+          }
+        }
+      },
+      "Units": {
+        "rules": [{
+          "id": "units-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "MapValue", "Table": "unitLookups"},
+            {"Op": "Assign", "From": "Text", "To": "Product.Units"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Units",
+          "description": "Unit of measurement",
+          "classification": "ProductDynamic"
+        }
+      },
+      "Type": {
+        "rules": [{
+          "id": "type-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "MapValue", "Table": "typeLookups"},
+            {"Op": "Assign", "From": "Text", "To": "Product.Type"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Type",
+          "description": "Regular, Mini, Set, Tube, Tester, Niche, etc.",
+          "classification": "ProductDynamic"
+        }
+      },
       "Concentration": {
-        "key": "Concentration",
-        "displayName": "Concentration",
-        "description": "Concentration (EDT, EDP, Parfum, etc.)",
-        "classification": "ProductDynamic",
-        "transformations": [ "mapvalue" ]
+        "rules": [{
+          "id": "concentration-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "MapValue", "Table": "concentrationLookups"},
+            {"Op": "Assign", "From": "Text", "To": "Product.Concentration"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Concentration",
+          "description": "Concentration (EDT, EDP, Parfum, etc.)",
+          "classification": "ProductDynamic"
+        }
       },
       "Category": {
-        "key": "Category",
-        "displayName": "Category",
-        "description": "Product Category",
-        "classification": "ProductDynamic",
-        "transformations": [ "capitalize" ],
-        "maxLength": 20
+        "rules": [{
+          "id": "category-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "Capitalize"},
+            {"Op": "Assign", "From": "Text", "To": "Product.Category"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Category",
+          "description": "Product Category",
+          "classification": "ProductDynamic",
+          "validation": {
+            "maxLength": 20
+          }
+        }
       },
-      "Decoded": { 
-        "key": "Decoded", 
-        "displayName": "Decoded", 
-        "description": "Whether the product can be tracked by RF", 
-        "classification": "ProductDynamic", 
-        "isRequired": false 
+      "Decoded": {
+        "rules": [{
+          "id": "decoded-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "Assign", "From": "Text", "To": "Product.Decoded"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Decoded",
+          "description": "Whether the product can be tracked by RF",
+          "classification": "ProductDynamic",
+          "validation": {
+            "isRequired": false
+          }
+        }
       },
       "COO": {
-        "key": "COO",
-        "displayName": "Country of Origin",
-        "description": "Country of origin",
-        "classification": "ProductDynamic",
-        "transformations": [ "mapvalue", "capitalize" ]
+        "rules": [{
+          "id": "coo-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "MapValue", "Table": "countryLookups"},
+            {"Op": "Capitalize"},
+            {"Op": "Assign", "From": "Text", "To": "Product.COO"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Country of Origin",
+          "description": "Country of origin",
+          "classification": "ProductDynamic"
+        }
       },
       "Ref": {
-        "key": "Ref",
-        "displayName": "Reference",
-        "description": "Supplier reference code for the product",
-        "classification": "OfferDynamic",
-        "maxLength": 40
+        "rules": [{
+          "id": "ref-processing",
+          "priority": 100,
+          "type": "Pipeline",
+          "steps": [
+            {"Op": "Trim"},
+            {"Op": "Assign", "From": "Text", "To": "Offer.Ref"}
+          ]
+        }],
+        "metadata": {
+          "displayName": "Reference",
+          "description": "Supplier reference code for the product",
+          "classification": "OfferDynamic",
+          "validation": {
+            "maxLength": 40
+          }
+        }
       }
     }
   }

@@ -52,6 +52,12 @@ public sealed class PipelineStep
     public string? UnitOut { get; set; }
     public string? ValueOut { get; set; }
     public string? Form { get; set; }
+    public string? CaseMode { get; set; } // "exact", "lower", "upper"
+    public string? WordOut { get; set; } // For ExtractLastWord operation
+    public string? RemainingOut { get; set; } // For operations that extract and leave remaining text
+    public string? ExtractedOut { get; set; } // For generic extraction operations
+    public string? SizeOut { get; set; } // For ExtractSize operation
+    public string[]? Patterns { get; set; } // For operations that use multiple patterns
     public Dictionary<string,string>? Map { get; set; }
 }
 
