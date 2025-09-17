@@ -1,4 +1,4 @@
-using System.Text.Json;
+using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 
 namespace SacksDataLayer.Configuration
@@ -31,7 +31,7 @@ namespace SacksDataLayer.Configuration
 
         [JsonPropertyName("dataType")]
         public PropertyDataType DataType { get; set; } = PropertyDataType.String; // Technical data type for processing (string, int, decimal, bool, etc.)
-        
+
         [JsonPropertyName("maxLength")]
         public int? MaxLength { get; set; }
 
@@ -68,23 +68,126 @@ namespace SacksDataLayer.Configuration
             if (effectiveConfig.Properties == null || effectiveConfig.Properties.Count == 0) return;
             if (string.IsNullOrWhiteSpace(Key)) return;
             if (!effectiveConfig.Properties.TryGetValue(Key, out var def)) return;
-            // Merge market definition into this column property
-            DisplayName = def.DisplayName;
-            DataType = def.DataType;
-            MaxLength = def.MaxLength;
-            Description = def.Description;
-            Classification = def.Classification;
-            IsRequired = IsRequired || def.IsRequired;
-            if (def.Transformations.Count > 0)
+
+            // Merge market definition into this column property, but prefer supplier-provided values.
+            // Only set supplier properties when they are missing/default.
+
+            if (string.IsNullOrWhiteSpace(DisplayName) && !string.IsNullOrWhiteSpace(def.DisplayName))
             {
-                Transformations.InsertRange(0, def.Transformations);
+                DisplayName = def.DisplayName;
             }
-            if (def.ValidationPatterns.Count > 0)
+
+            if (MaxLength == null && def.MaxLength != null)
             {
-                ValidationPatterns.InsertRange(0, def.ValidationPatterns);
+                MaxLength = def.MaxLength;
+            }
+
+            if (string.IsNullOrWhiteSpace(Description) && !string.IsNullOrWhiteSpace(def.Description))
+            {
+                Description = def.Description;
+            }
+
+            // Classification: do not overwrite an explicit supplier classification.
+            // If supplier left the default (ProductDynamic) and market defines something else, apply market classification.
+            if (Classification == PropertyClassificationType.ProductDynamic && def.Classification != PropertyClassificationType.ProductDynamic)
+            {
+                Classification = def.Classification;
+            }
+
+            // DataType: only apply market data type when supplier left default (String)
+            if (DataType == PropertyDataType.String && def.DataType != PropertyDataType.String)
+            {
+                DataType = def.DataType;
+            }
+
+            // Required/skip flags: treat supplier flag as authoritative; if supplier left default false, inherit market true
+            IsRequired = IsRequired || def.IsRequired;
+            SkipEntireRow = SkipEntireRow || def.SkipEntireRow;
+
+            // Transformations/validation: if supplier provides none, inherit market defaults; otherwise keep supplier list
+            if ((Transformations == null || Transformations.Count == 0) && def.Transformations != null && def.Transformations.Count > 0)
+            {
+                Transformations = new List<string>(def.Transformations);
+            }
+            if ((ValidationPatterns == null || ValidationPatterns.Count == 0) && def.ValidationPatterns != null && def.ValidationPatterns.Count > 0)
+            {
+                ValidationPatterns = new List<string>(def.ValidationPatterns);
+            }
+
+            // Formatting and allowed values: only fill when missing
+            if (string.IsNullOrWhiteSpace(Format) && !string.IsNullOrWhiteSpace(def.Format))
+            {
+                Format = def.Format;
+            }
+            if ((AllowedValues == null || AllowedValues.Count == 0) && def.AllowedValues != null && def.AllowedValues.Count > 0)
+            {
+                AllowedValues = new List<string>(def.AllowedValues);
             }
         }
     }
+
+
+    /// <summary>
+    /// Represents a property that can extract multiple sub-properties from a single column value
+    /// 
+    /// Example JSON configuration:
+    /// "extendedProperties": {
+    ///   "A": {
+    ///     "transformProperties": [
+    ///       {
+    ///         "key": "Brand",
+    ///         "transformation": "extractpattern",
+    ///         "parameters": "Brand:(?&lt;Brand&gt;[^|]+)"
+    ///       },
+    ///       {
+    ///         "key": "Type",
+    ///         "transformation": "extractpattern", 
+    ///         "parameters": "Type:(?&lt;Type&gt;[^|]+)"
+    ///       }
+    ///     ]
+    ///   },
+    ///   "C": {
+    ///     "transformProperties": [
+    ///       {
+    ///         "key": "Size",
+    ///         "transformation": "extractsizeandunits",
+    ///         "parameters": "Size,Units"
+    ///       }
+    ///     ]
+    ///   }
+    /// }
+    /// </summary>
+    public class ExtractedProperty
+    {
+        /// <summary>
+        /// Collection of transformation properties to extract from the source column
+        /// </summary>
+        public List<TransformProps> TransformProperties { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Defines a transformation to extract a specific property
+    /// </summary>
+    public class TransformProps
+    {
+        /// <summary>
+        /// The key/name of the property to extract (e.g., "Brand", "Price", "Type")
+        /// </summary>
+        public string Key { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The transformation to apply (e.g., "UpperCase", "ExtractUpperWordsFromStart", "mapValue", "extractpattern")
+        /// </summary>
+        public string Transformation { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Parameters for the transformation, if needed
+        /// </summary>
+        public string Parameters { get; set; } = string.Empty;
+
+        public PropertyClassificationType Classification = PropertyClassificationType.ProductDynamic;
+    }
+
 
     /// <summary>
     /// Property data types
@@ -150,62 +253,4 @@ namespace SacksDataLayer.Configuration
 
     }
 
-    /// <summary>
-    /// Configuration manager for product property definitions
-    /// </summary>
-    public class ProductPropertyConfigurationManager
-    {
-        private static readonly JsonSerializerOptions DefaultOptions = new()
-        {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-
-        private readonly Dictionary<string, ProductPropertyConfiguration> _configurations = new();
-
-        /// <summary>
-        /// Loads configuration from JSON file
-        /// </summary>
-        public async Task<ProductPropertyConfiguration> LoadConfigurationAsync(string filePath)
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
-
-            if (!File.Exists(filePath))
-                throw new FileNotFoundException($"Configuration file not found: {filePath}");
-
-            var json = await File.ReadAllTextAsync(filePath);
-            var config = System.Text.Json.JsonSerializer.Deserialize<ProductPropertyConfiguration>(json)
-                ?? throw new InvalidOperationException($"Failed to deserialize configuration from {filePath}");
-
-            _configurations[config.ProductType] = config;
-            return config;
-        }
-
-        /// <summary>
-        /// Gets configuration for a specific product type
-        /// </summary>
-        public ProductPropertyConfiguration? GetConfiguration(string productType)
-        {
-            return _configurations.TryGetValue(productType, out var config) ? config : null;
-        }
-
-        /// <summary>
-        /// Saves configuration to JSON file
-        /// </summary>
-        public async Task SaveConfigurationAsync(ProductPropertyConfiguration configuration, string filePath)
-        {
-            ArgumentNullException.ThrowIfNull(configuration);
-            ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
-
-            var json = System.Text.Json.JsonSerializer.Serialize(configuration, DefaultOptions);
-            
-            var directory = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            await File.WriteAllTextAsync(filePath, json);
-        }
-    }
 }

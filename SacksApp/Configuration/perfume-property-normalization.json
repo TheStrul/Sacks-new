@@ -24,7 +24,12 @@
       "u": "U",
       "unisex": "U",
       "unisexe": "U",
-      "mixte": "U"
+      "mixte": "U",
+      "pour femme": "W",
+      "pour homme": "M",
+      "for her": "W",
+      "for him": "M",
+      "p/homme": "M"
     },
     "Size": {
       "50": "50",
@@ -82,8 +87,8 @@
       "eau de toilette": "EDT",
       "edp": "EDP",
       "eau de parfum": "EDP",
-      "parfum": "Parfum",
-      "perfume": "Parfum",
+      "parfum": "EDP",
+      "perfume": "EDP",
       "edc": "EDC",
       "eau de cologne": "EDC",
       "edm": "EDM",
@@ -91,21 +96,7 @@
       "body mist": "Body Mist",
       "aftershave": "Aftershave"
     },
-    "FragranceFamily": {
-      "fresh": "Fresh",
-      "citrus": "Citrus",
-      "floral": "Floral",
-      "oriental": "Oriental",
-      "woody": "Woody",
-      "chypre": "Chypre",
-      "fougere": "Fougère",
-      "gourmand": "Gourmand",
-      "aquatic": "Aquatic",
-      "green": "Green",
-      "spicy": "Spicy",
-      "fruity": "Fruity",
-      "aromatic": "Aromatic"
-    },
+    
     "COO": {
       "france": "France",
       "fr": "France",
@@ -148,8 +139,7 @@
       "dk": "Denmark",
       "no": "Norway"
     },
-    "Brand":
-    {
+    "Brand": {
       "l'occitane": "L'Occitane",
       "l occitane": "L'Occitane",
       "l'occitane en provence": "L'Occitane",
@@ -188,11 +178,13 @@
       "lancome": "Lancôme",
       "lancôme": "Lancôme",
       "valentino": "Valentino",
+      "victor&rolf": "Victor & Rolf",
+      "victor & rolf": "Victor & Rolf",
+      "victor": "Victor & Rolf",
       "coach": "Coach",
       "ysl": "Yves Saint Laurent",
       "yves saint laurent": "Yves Saint Laurent"
-    }
-    ,
+    },
     "Type": {
       "set": "Set",
       "sets": "Set",
@@ -217,173 +209,11 @@
       "promotional": "Promotional",
       "regular": "Regular",
       "full size": "Regular",
+      "regulars": "Regular",
       "niche": "Niche",
       "limited": "Limited Edition",
       "limited edition": "Limited Edition"
     }
-  },
-  "extractionPatterns": {
-    "PriceWithCurrency": [
-      {
-        "pattern": "([\\d.,]+)\\s*(EUR|USD|GBP|CHF|PLN|CZK|HUF|RON|BGN|HRK|DKK|SEK|NOK|€|\\$|£|zł|Kč|Ft|lei|лв|kn|kr)(?!\\s*/\\s*[\\d.,]+\\s*(ml|oz))",
-        "groupIndex": 0,
-        "priority": 1,
-        "transformation": "lowercase",
-        "description": "Extract price and currency, but not when followed by volume units like '/ 76.8 ml'",
-        "outputMappings": {
-          "Price": 1,
-          "Currency": 2
-        }
-      },
-      {
-        "pattern": "(EUR|USD|GBP|CHF|PLN|CZK|HUF|RON|BGN|HRK|DKK|SEK|NOK|€|\\$|£|zł|Kč|Ft|lei|лв|kn|kr)\\s*([\\d.,]+)(?!\\s*(ml|oz|fl\\s*oz))",
-        "groupIndex": 0,
-        "priority": 2,
-        "transformation": "lowercase",
-        "description": "Extract currency and price, but not when followed by volume units",
-        "outputMappings": {
-          "Currency": 1,
-          "Price": 2
-        }
-      }
-    ],
-    "Price": [
-      {
-        "pattern": "(?<!\\d)([\\d.,]+)(?=\\s*(EUR|USD|GBP|CHF|PLN|CZK|HUF|RON|BGN|HRK|DKK|SEK|NOK|€|\\$|£|zł|Kč|Ft|lei|лв|kn|kr))",
-        "groupIndex": 1,
-        "priority": 3,
-        "transformation": "cleanprice",
-        "description": "Extract numeric price values when followed by currency symbols"
-      }
-    ],
-    "SizeWithUnits": [
-      {
-        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(oz)\\s*/\\s*([\\d.,]+)\\s*(ml)",
-        "groupIndex": 0,
-        "priority": 1,
-        "transformation": "lowercase",
-        "description": "Extract size and units from dual format like '2.6 oz / 76.8 ml' - uses the ml value",
-        "outputMappings": {
-          "Size": 3,
-          "Units": 4
-        }
-      },
-      {
-        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(ml)\\s*/\\s*([\\d.,]+)\\s*(oz)",
-        "groupIndex": 0,
-        "priority": 2,
-        "transformation": "lowercase",
-        "description": "Extract size and units from dual format like '76.8 ml / 2.6 oz' - uses the ml value",
-        "outputMappings": {
-          "Size": 1,
-          "Units": 2
-        }
-      },
-      {
-        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(ml|ML|mL)(?!\\s*/)",
-        "groupIndex": 0,
-        "priority": 3,
-        "transformation": "lowercase",
-        "description": "Extract size and units from single ml format like '100ml'",
-        "outputMappings": {
-          "Size": 1,
-          "Units": 2
-        }
-      },
-      {
-        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(oz|fl\\s*oz)(?!\\s*/)",
-        "groupIndex": 0,
-        "priority": 4,
-        "transformation": "lowercase",
-        "description": "Extract size and units from single oz format like '3.4 oz'",
-        "outputMappings": {
-          "Size": 1,
-          "Units": 2
-        }
-      },
-      {
-        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(milliliter|millilitre|fluid\\s*ounce)",
-        "groupIndex": 0,
-        "priority": 5,
-        "transformation": "lowercase",
-        "description": "Extract size and units from full unit names",
-        "outputMappings": {
-          "Size": 1,
-          "Units": 2
-        }
-      }
-    ],
-    "Size": [
-      {
-        "pattern": "(\\d+)\\s*ml",
-        "groupIndex": 1,
-        "priority": 3,
-        "transformation": "lowercase",
-        "description": "Extract ml volume from text (legacy fallback)"
-      },
-      {
-        "pattern": "(\\d+)\\s*(ml|ML)",
-        "groupIndex": 1,
-        "priority": 4,
-        "transformation": "lowercase",
-        "description": "Extract volume with case variations (legacy fallback)"
-      }
-    ],
-    "Gender": [
-      {
-        "pattern": "\\b(men|man|male|homme|hombre|(m)|uomo)\\b",
-        "groupIndex": 1,
-        "priority": 1,
-        "transformation": "lowercase",
-        "description": "Extract male gender indicators"
-      },
-      {
-        "pattern": "\\b(women|woman|female|femme|mujer|(w)|donna|wom|her)\\b",
-        "groupIndex": 1,
-        "priority": 1,
-        "transformation": "lowercase",
-        "description": "Extract female gender indicators"
-      },
-      {
-        "pattern": "\\b(unisex|unisexe|(u)|mixte)\\b",
-        "groupIndex": 1,
-        "priority": 1,
-        "transformation": "lowercase",
-        "description": "Extract unisex indicators"
-      }
-    ],
-    "Concentration": [
-      {
-        "pattern": "\\b(EDT|eau de toilette)\\b",
-        "groupIndex": 1,
-        "priority": 1,
-        "transformation": "lowercase",
-        "description": "Extract Eau de Toilette"
-      },
-      {
-        "pattern": "\\b(EDP|eau de parfum)\\b",
-        "groupIndex": 1,
-        "priority": 1,
-        "transformation": "lowercase",
-        "description": "Extract Eau de Parfum"
-      },
-      {
-        "pattern": "\\b(parfum|perfume)\\b",
-        "groupIndex": 1,
-        "priority": 1,
-        "transformation": "lowercase",
-        "description": "Extract Parfum concentration"
-      }
-    ],
-    "FragranceFamily": [
-      {
-        "pattern": "\\b(fresh|citrus|floral|oriental|woody|chypre|fougere|gourmand|aquatic|green|spicy|fruity|aromatic)\\b",
-        "groupIndex": 1,
-        "priority": 1,
-        "transformation": "lowercase",
-        "description": "Extract fragrance family indicators"
-      }
-    ]
   },
   "filterableProperties": [
     {

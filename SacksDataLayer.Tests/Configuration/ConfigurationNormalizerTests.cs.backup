@@ -1,0 +1,351 @@
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
+using SacksDataLayer.Configuration;
+using SacksDataLayer.FileProcessing.Normalizers;
+using SacksDataLayer.FileProcessing.Configuration;
+using SacksDataLayer.FileProcessing.Models;
+using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
+using Xunit;
+
+namespace SacksDataLayer.Tests.Configuration;
+
+/// <summary>
+/// Comprehensive tests for ConfigurationNormalizer including transforms, validation, and normalization.
+/// </summary>
+public class ConfigurationNormalizerTests : BaseTest
+{
+    private readonly Mock<ILogger> _mockLogger;
+
+    public ConfigurationNormalizerTests()
+    {
+        _mockLogger = new Mock<ILogger>();
+    }
+
+    [Fact]
+    public void Constructor_WithValidConfiguration_ShouldInitializeCorrectly()
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+
+        // Act
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+
+        // Assert
+        normalizer.SupplierName.Should().Be("TestSupplier");
+    }
+
+    [Fact]
+    public void CanHandle_WithMatchingFileNamePattern_ShouldReturnTrue()
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        config.Detection = new SupplierDetectionConfiguration
+        {
+            FileNamePatterns = new List<string> { "test*.xlsx", "*supplier*" }
+        };
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+
+        // Act & Assert
+        normalizer.CanHandle("test_data.xlsx", Array.Empty<RowData>()).Should().BeTrue();
+        normalizer.CanHandle("my_supplier_file.csv", Array.Empty<RowData>()).Should().BeTrue();
+        normalizer.CanHandle("other_file.xlsx", Array.Empty<RowData>()).Should().BeFalse();
+    }
+
+    [Fact]
+    public void CanHandle_WithNoDetectionConfiguration_ShouldReturnFalse()
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        config.Detection = null;
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+
+        // Act & Assert
+        normalizer.CanHandle("any_file.xlsx", Array.Empty<RowData>()).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("123.45", "123.45")]
+    [InlineData("€123.45", "123.45")]
+    [InlineData("$1,234.56", "1234.56")]
+    [InlineData("1.234,56", "1234.56")]
+    [InlineData("abc123.45def", "123.45")]
+    public void NormalizeDecimal_WithVariousInputs_ShouldNormalizeCorrectly(string input, string expected)
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+
+        // Act
+        var result = InvokePrivateMethod<string>(normalizer, "NormalizeDecimal", input);
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("ml", "ml")]
+    [InlineData("ML", "ml")]
+    [InlineData("l", "l")]
+    [InlineData("litre", "l")]
+    [InlineData("litres", "l")]
+    [InlineData("oz", "fl oz")]
+    [InlineData("fl oz", "fl oz")]
+    [InlineData("floz", "fl oz")]
+    [InlineData("g", "g")]
+    [InlineData("kg", "kg")]
+    [InlineData("unknown", "unknown")]
+    public void NormalizeUnit_WithVariousUnits_ShouldNormalizeCorrectly(string input, string expected)
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+
+        // Act
+        var result = InvokePrivateMethod<string>(normalizer, "NormalizeUnit", input);
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public async Task ValidateValueAsync_WithRequiredFieldEmpty_ShouldReturnInvalid()
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+        var propertyDef = new ProductPropertyDefinition
+        {
+            Key = "TestProperty",
+            IsRequired = true
+        };
+
+        // Act
+        var result = await InvokePrivateMethodAsync<ValidationResult>(normalizer, "ValidateValueAsync", null, propertyDef);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("Required field 'TestProperty' is empty");
+    }
+
+    [Fact]
+    public async Task ValidateValueAsync_WithInvalidAllowedValues_ShouldReturnInvalid()
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+        var propertyDef = new ProductPropertyDefinition
+        {
+            Key = "TestProperty",
+            AllowedValues = new List<string> { "value1", "value2", "value3" }
+        };
+
+        // Act
+        var result = await InvokePrivateMethodAsync<ValidationResult>(normalizer, "ValidateValueAsync", "invalidValue", propertyDef);
+
+        // Assert
+        result.IsValid.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("not in allowed values");
+    }
+
+    [Fact]
+    public async Task ValidateValueAsync_WithValidValue_ShouldReturnValid()
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+        var propertyDef = new ProductPropertyDefinition
+        {
+            Key = "TestProperty",
+            AllowedValues = new List<string> { "value1", "value2", "value3" }
+        };
+
+        // Act
+        var result = await InvokePrivateMethodAsync<ValidationResult>(normalizer, "ValidateValueAsync", "value2", propertyDef);
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("hello world", "removespaces", "helloworld")]
+    [InlineData("$123.45€", "removesymbols", "123.45")]
+    [InlineData("hello world", "upperwords", "Hello World")]
+    [InlineData("hello world", "capitalize", "Hello world")]
+    public void ApplyTransformations_WithVariousTransforms_ShouldTransformCorrectly(string input, string transform, string expected)
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+        var transformations = new List<string> { transform };
+
+        // Act
+        var result = InvokePrivateMethod<string>(normalizer, "ApplyTransformations", input, transformations, "TestProperty");
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    [Fact]
+    public async Task NormalizeAsync_WithValidData_ShouldProcessSuccessfully()
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+
+        var fileData = new FileData("test.xlsx")
+        {
+            DataRows = new List<RowData>
+            {
+                new RowData(new Dictionary<string, string>
+                {
+                    { "A", "12345678901234" }, // EAN
+                    { "B", "Test Product" },   // Name
+                    { "C", "123.45" }         // Price
+                })
+                { Index = 1 }
+            }
+        };
+
+        var context = new ProcessingContext
+        {
+            FileData = fileData,
+            ProcessingResult = new ProcessingResult
+            {
+                SourceFile = "test.xlsx",
+                SupplierOffer = new SupplierOfferAnnex()
+            }
+        };
+
+        // Act
+        await normalizer.NormalizeAsync(context);
+
+        // Assert
+        context.ProcessingResult.Errors.Should().BeEmpty();
+        context.ProcessingResult.Statistics.OfferProductsCreated.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task NormalizeAsync_WithEmptyRows_ShouldReturnWithoutErrors()
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+
+        var fileData = new FileData("test.xlsx")
+        {
+            DataRows = new List<RowData>()
+        };
+
+        var context = new ProcessingContext
+        {
+            FileData = fileData,
+            ProcessingResult = new ProcessingResult
+            {
+                SourceFile = "test.xlsx",
+                SupplierOffer = new SupplierOfferAnnex()
+            }
+        };
+
+        // Act
+        await normalizer.NormalizeAsync(context);
+
+        // Assert
+        context.ProcessingResult.Errors.Should().BeEmpty();
+        context.ProcessingResult.Statistics.OfferProductsCreated.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task NormalizeAsync_WithNoColumnProperties_ShouldAddError()
+    {
+        // Arrange
+        var config = CreateTestSupplierConfiguration();
+        config.ColumnProperties = new Dictionary<string, ProductPropertyDefinition>();
+        var normalizer = new ConfigurationNormalizer(config, _mockLogger.Object);
+
+        var fileData = new FileData("test.xlsx")
+        {
+            DataRows = new List<RowData>
+            {
+                new RowData(new Dictionary<string, string> { { "A", "test" } }) { Index = 1 }
+            }
+        };
+
+        var context = new ProcessingContext
+        {
+            FileData = fileData,
+            ProcessingResult = new ProcessingResult
+            {
+                SourceFile = "test.xlsx",
+                SupplierOffer = new SupplierOfferAnnex()
+            }
+        };
+
+        // Act
+        await normalizer.NormalizeAsync(context);
+
+        // Assert
+        context.ProcessingResult.Errors.Should().ContainSingle()
+            .Which.Should().Contain("No column properties configured for supplier");
+    }
+
+    #region Helper Methods
+
+    private static SupplierConfiguration CreateTestSupplierConfiguration()
+    {
+        return new SupplierConfiguration
+        {
+            Name = "TestSupplier",
+            ColumnProperties = new Dictionary<string, ProductPropertyDefinition>
+            {
+                ["A"] = new ProductPropertyDefinition
+                {
+                    Key = "EAN",
+                    DataType = PropertyDataType.String,
+                    IsRequired = true,
+                    DestinationField = "EAN"
+                },
+                ["B"] = new ProductPropertyDefinition
+                {
+                    Key = "Name",
+                    DataType = PropertyDataType.String,
+                    IsRequired = true,
+                    DestinationField = "Name"
+                },
+                ["C"] = new ProductPropertyDefinition
+                {
+                    Key = "Price",
+                    DataType = PropertyDataType.Decimal,
+                    IsRequired = true,
+                    DestinationField = "Price"
+                }
+            },
+            Detection = new SupplierDetectionConfiguration
+            {
+                FileNamePatterns = new List<string> { "test*" }
+            }
+        };
+    }
+
+    private static T InvokePrivateMethod<T>(object obj, string methodName, params object?[] parameters)
+    {
+        var method = obj.GetType().GetMethod(methodName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        method.Should().NotBeNull($"Method {methodName} should exist");
+        var result = method!.Invoke(obj, parameters);
+        return (T)result!;
+    }
+
+    private static async Task<T> InvokePrivateMethodAsync<T>(object obj, string methodName, params object?[] parameters)
+    {
+        var method = obj.GetType().GetMethod(methodName, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        method.Should().NotBeNull($"Method {methodName} should exist");
+        var result = method!.Invoke(obj, parameters);
+        if (result is Task<T> task)
+        {
+            return await task;
+        }
+        return (T)result!;
+    }
+
+    #endregion
+}

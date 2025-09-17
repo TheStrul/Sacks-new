@@ -21,12 +21,10 @@ namespace SacksLogicLayer.Extensions
         public static IServiceCollection AddDynamicProductServices(this IServiceCollection services)
         {
             // Register configuration managers as singleton
-            services.AddSingleton<ProductPropertyConfigurationManager>();
             services.AddSingleton<PropertyNormalizationConfigurationManager>();
             
             // Register configuration-based services as scoped (they need configuration loaded)
             services.AddScoped<ConfigurationPropertyNormalizer>();
-            services.AddScoped<ConfigurationDescriptionPropertyExtractor>();
             
             return services;
         }

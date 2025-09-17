@@ -207,34 +207,6 @@ public class SacksDbContext : DbContext
 
 ## 📊 Property Classification System
 
-### Supplier Configuration Example (DIOR)
-
-```json
-{
-  "name": "DIOR",
-  "description": "DIOR beauty and fragrance products supplier",
-  "detection": {
-    "fileNamePatterns": ["DIOR*.xlsx"]
-  },
-  "columnIndexMappings": {
-    "A": "Category",
-    "C": "Family", 
-    "F": "PricingItemName",
-    "H": "Name",
-    "M": "EAN",
-    "N": "Capacity",
-    "O": "Price"
-  },
-  "propertyClassification": {
-    "coreProductProperties": [
-      "EAN", "Category", "Family", "CommercialLine", "PricingItemName", "Size", "ItemCode"
-    ],
-    "offerProperties": [
-      "Price", "Capacity"
-    ]
-  }
-}
-```
 
 ### Processing Logic
 
@@ -289,40 +261,7 @@ Supplier → "DIOR 2025 Catalog" → Multiple OfferProducts → Multiple Product
 
 ## 📊 JSON Configuration Structure
 
-The `supplier-formats.json` file contains all supplier configurations with Excel column index mappings:
-
-```json
-{
-  "version": "1.0",
-  "suppliers": [
-    {
-      "name": "DIOR",
-      "description": "DIOR beauty and fragrance products supplier",
-      "detection": {
-        "fileNamePatterns": ["DIOR*.xlsx"]
-      },
-      "columnIndexMappings": {
-        "A": "Category",
-        "H": "Name",
-        "M": "EAN",
-        "O": "Price"
-      },
-      "propertyClassification": {
-        "coreProductProperties": ["Category", "Size", "EAN", "Family"],
-        "offerProperties": ["Price", "Capacity"]
-      },
-      "validation": {
-        "dataStartRowIndex": 5,
-        "expectedColumnCount": 11
-      },
-      "transformation": {
-        "skipEmptyRows": true,
-        "trimWhitespace": true
-      }
-    }
-  ]
-}
-```
+T
 
 ## 🔄 Adding New Suppliers
 
@@ -379,10 +318,6 @@ foreach (var normalizationResult in result.NormalizationResults)
 }
 ```
 
-### 3. Property Classification in Action
-```csharp
-// Core properties → ProductEntity.DynamicPropertiesJson
-product.SetDynamicProperty("Category", "Fragrance");
 
 // Offer properties → OfferProductEntity
 offerProduct.Price = 125.50m;

@@ -23,6 +23,7 @@ namespace SacksApp
         private List<string>? _pendingColumnOrder; // loaded order to apply after data bind
         private (string column, ListSortDirection direction)? _pendingSort; // loaded sort to apply after data bind
         private Dictionary<string, float>? _pendingFillWeights; // loaded fill weights to apply after data bind
+        private List<SqlParameter> sqlParametersList  = new List<SqlParameter>();
 
         private static readonly Type ViewType = typeof(SacksDataLayer.Entities.ProductOffersView);
         private static readonly string[] EntityPropertyNames = ViewType
@@ -510,6 +511,15 @@ namespace SacksApp
                     dt.Load(reader);
                     resultsGrid.DataSource = dt;
                     UpdateGridSortability();
+
+                    // Ensure columns have Name set to stable identifier before applying state
+                    foreach (DataGridViewColumn c in resultsGrid.Columns)
+                    {
+                        if (string.IsNullOrEmpty(c.Name)) c.Name = c.HeaderText ?? string.Empty;
+                    }
+
+                    // Apply visibility first (based on checked list), then order/weights/sort
+                    TryApplyColumnVisibility();
                     TryApplyColumnOrder();
                     TryApplySavedColumnFillWeights();
                     TryApplySavedSort();
@@ -546,9 +556,13 @@ namespace SacksApp
             public string? OrderBy { get; set; }
             public string? OrderByDir { get; set; }
             public int Top { get; set; }
+            // ColumnOrder now stores column.Name values (stable identifiers)
             public List<string> ColumnOrder { get; set; } = new();
             public bool CollapseProducts { get; set; } // new
+            // Fill weights keyed by column.Name
             public Dictionary<string, float> ColumnFillWeights { get; set; } = new();
+            // Persist absolute widths as fallback
+            public Dictionary<string, int> ColumnWidths { get; set; } = new();
         }
         private sealed class FilterState
         {
@@ -635,6 +649,7 @@ namespace SacksApp
                 // Saved fill weights (defer until data bound)
                 if (state.ColumnFillWeights is { Count: > 0 })
                 {
+                    // store into pending by name
                     _pendingFillWeights = state.ColumnFillWeights;
                     TryApplySavedColumnFillWeights();
                 }
@@ -666,6 +681,17 @@ namespace SacksApp
                     OrderByDir = orderByDir,
                     ColumnFillWeights = GetCurrentColumnFillWeights()
                 };
+
+                // also store absolute widths for robustness
+                try
+                {
+                    foreach (DataGridViewColumn col in resultsGrid.Columns)
+                    {
+                        state.ColumnWidths[col.Name ?? col.HeaderText ?? string.Empty] = col.Width;
+                    }
+                }
+                catch { }
+
                 var json = JsonSerializer.Serialize(state, JsonOptions);
                 File.WriteAllText(GetStateFilePath(), json, Encoding.UTF8);
             }
@@ -673,6 +699,26 @@ namespace SacksApp
             {
                 _logger.LogWarning(ex, "Failed to save SqlQueryForm user state");
             }
+        }
+
+        private Dictionary<string, float> GetCurrentColumnFillWeights()
+        {
+            var map = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                foreach (DataGridViewColumn col in resultsGrid.Columns)
+                {
+                    var key = col.Name ?? col.HeaderText ?? string.Empty;
+                    map[key] = col.FillWeight;
+                }
+            }
+            catch { }
+            return map;
+        }
+
+        private static bool TryParseOperator(string opString, out FilterOperator op)
+        {
+            return Enum.TryParse(opString, ignoreCase: true, out op);
         }
 
         private (string? orderBy, string? dir) GetCurrentGridSortOrPending()
@@ -696,23 +742,67 @@ namespace SacksApp
             return (null, null);
         }
 
-        private Dictionary<string, float> GetCurrentColumnFillWeights()
+        private List<string> GetCurrentGridColumnOrder()
         {
-            var map = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+            foreach (DataGridViewColumn item in resultsGrid.Columns)
+            {
+                _logger.LogDebug($"{item.Name}:{item.HeaderText}:{item.Width}:{item.DisplayIndex}");
+            }
             try
             {
-                foreach (DataGridViewColumn col in resultsGrid.Columns)
-                {
-                    map[col.HeaderText] = col.FillWeight;
-                }
+                if (resultsGrid.Columns.Count == 0)
+                    return columnsCheckedListBox.CheckedItems.Cast<string>().ToList();
+                return resultsGrid.Columns
+                    .Cast<DataGridViewColumn>()
+                    .OrderBy(c => c.DisplayIndex)
+                    .Select(c => c.Name ?? c.HeaderText)
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .Select(s => s!)
+                    .ToList();
             }
-            catch { }
-            return map;
+            catch { return new(); }
         }
 
-        private static bool TryParseOperator(string opString, out FilterOperator op)
+        private void TryApplyColumnOrder()
         {
-            return Enum.TryParse(opString, ignoreCase: true, out op);
+            if (_pendingColumnOrder == null || resultsGrid.Columns.Count == 0) return;
+            try
+            {
+                var map = resultsGrid.Columns.Cast<DataGridViewColumn>().ToDictionary(c => c.Name ?? c.HeaderText ?? string.Empty, c => c);
+                int displayIndex = 0;
+                foreach (var name in _pendingColumnOrder)
+                {
+                    if (map.TryGetValue(name, out var col))
+                    {
+                        col.DisplayIndex = displayIndex++;
+                    }
+                }
+                _pendingColumnOrder = null; // applied
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to apply saved column order");
+            }
+        }
+
+        // Apply column visibility according to the checked items in the columnsCheckedListBox
+        private void TryApplyColumnVisibility()
+        {
+            try
+            {
+                if (resultsGrid.Columns.Count == 0) return;
+                var checkedSet = new HashSet<string>(columnsCheckedListBox.CheckedItems.Cast<string>(), StringComparer.OrdinalIgnoreCase);
+                foreach (DataGridViewColumn col in resultsGrid.Columns)
+                {
+                    // Match by HeaderText
+                    var name = col.HeaderText ?? string.Empty;
+                    col.Visible = checkedSet.Contains(name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to apply column visibility from checked list");
+            }
         }
         #endregion
 
@@ -807,7 +897,17 @@ namespace SacksApp
         private void HideColumn(DataGridViewColumn column)
         {
             var key = GetColumnKey(column);
-            if (!_hiddenColumns.Contains(key)) _hiddenColumns.Add(key);
+            // Uncheck corresponding entry in the columns checklist so visibility is persisted
+            try
+            {
+                var idx = columnsCheckedListBox.Items.IndexOf(column.HeaderText);
+                if (idx >= 0)
+                {
+                    columnsCheckedListBox.SetItemChecked(idx, false);
+                }
+            }
+            catch { }
+
             column.Visible = false;
         }
 
@@ -864,7 +964,7 @@ namespace SacksApp
                 if (collapseProductsCheckBox?.Checked == true) return;
                 if (_pendingSort == null || resultsGrid.Columns.Count == 0) return;
                 var (name, dir) = _pendingSort.Value;
-                var col = resultsGrid.Columns.Cast<DataGridViewColumn>().FirstOrDefault(c => c.HeaderText == name);
+                var col = resultsGrid.Columns.Cast<DataGridViewColumn>().FirstOrDefault(c => (c.Name ?? c.HeaderText) == name);
                 if (col != null)
                 {
                     col.SortMode = DataGridViewColumnSortMode.Automatic;
@@ -885,7 +985,8 @@ namespace SacksApp
                 if (_pendingFillWeights == null || resultsGrid.Columns.Count == 0) return;
                 foreach (DataGridViewColumn col in resultsGrid.Columns)
                 {
-                    if (_pendingFillWeights.TryGetValue(col.HeaderText, out var weight))
+                    var key = col.Name ?? col.HeaderText ?? string.Empty;
+                    if (_pendingFillWeights.TryGetValue(key, out var weight))
                     {
                         if (weight > 0)
                         {
@@ -930,53 +1031,27 @@ namespace SacksApp
             base.OnFormClosing(e);
         }
 
-        private List<string> GetCurrentGridColumnOrder()
+        // Designer event handler for radioButtonTop CheckedChanged
+        private void RadioButton1_CheckedChanged(object? sender, EventArgs e)
         {
             try
             {
-                if (resultsGrid.Columns.Count == 0)
-                    return columnsCheckedListBox.CheckedItems.Cast<string>().ToList();
-                return resultsGrid.Columns
-                    .Cast<DataGridViewColumn>()
-                    .OrderBy(c => c.DisplayIndex)
-                    .Select(c => c.HeaderText)
-                    .ToList();
+                topNumericUpDown.Enabled = radioButtonTop.Checked;
             }
-            catch { return new(); }
+            catch { }
         }
 
-        private void TryApplyColumnOrder()
+        // Designer "Manual" button click - re-execute current SQL text
+        private async void Button1_Click(object? sender, EventArgs e)
         {
-            if (_pendingColumnOrder == null || resultsGrid.Columns.Count == 0) return;
             try
             {
-                var map = resultsGrid.Columns.Cast<DataGridViewColumn>().ToDictionary(c => c.HeaderText, c => c);
-                int displayIndex = 0;
-                foreach (var name in _pendingColumnOrder)
-                {
-                    if (map.TryGetValue(name, out var col))
-                    {
-                        col.DisplayIndex = displayIndex++;
-                    }
-                }
-                _pendingColumnOrder = null; // applied
+                await ExecuteSqlAsync(sqlLabel.Text, sqlParametersList ?? new List<SqlParameter>(), CancellationToken.None);
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Failed to apply saved column order");
+                _logger.LogDebug(ex, "Manual SQL execution failed");
             }
-        }
-
-        private void RadioButton1_CheckedChanged(object sender, EventArgs e)
-        {
-            topNumericUpDown.Enabled = radioButtonTop.Checked;
-        }
-
-        List<SqlParameter> sqlParametersList  = new List<SqlParameter>();
-        private async void Button1_Click(object sender, EventArgs e)
-        {
-            await ExecuteSqlAsync(sqlLabel.Text, sqlParametersList, CancellationToken.None);
-
         }
     }
 }

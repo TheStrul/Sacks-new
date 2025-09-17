@@ -1,7 +1,5 @@
 using System.Text.Json.Serialization;
 
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-
 using SacksDataLayer.Configuration;
 
 namespace SacksDataLayer.FileProcessing.Configuration
@@ -39,6 +37,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("columnProperties")]
         public Dictionary<string, ProductPropertyDefinition> ColumnProperties { get; set; } = new();
+
+        [JsonPropertyName("extendedProperties")]
+        public Dictionary<string, ExtractedProperty> ExtendedProperties { get; set; } = new();
 
         [JsonPropertyName("fileStructure")]
         public FileStructureConfiguration FileStructure { get; set; } = new();

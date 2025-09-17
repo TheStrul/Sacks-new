@@ -38,7 +38,7 @@ namespace QMobileDeviceServiceMenu
             _model = model ?? throw new ArgumentNullException(nameof(model));
             _refreshTimer = new System.Windows.Forms.Timer
             {
-                Interval = 1000
+                Interval = 500
             };
             _refreshTimer.Tick += RefreshTimer_Tick;
         }

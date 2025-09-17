@@ -260,7 +260,6 @@ namespace SacksApp
             services.AddFileProcessingServices();
 
             // Add configuration-based property normalization services
-            services.AddSingleton<ProductPropertyConfigurationManager>();
             services.AddSingleton<PropertyNormalizationConfigurationManager>();
             
             // Load configuration data from the JSON files via configuration system
@@ -300,7 +299,6 @@ namespace SacksApp
             
             // Now we can register these services without factories - DI will auto-resolve
             services.AddScoped<ConfigurationPropertyNormalizer>();
-            services.AddScoped<ConfigurationDescriptionPropertyExtractor>();
 
             // Add supplier configuration manager
             services.AddScoped<IFileDataReader, FileDataReader>();

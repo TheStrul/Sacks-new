@@ -24,7 +24,7 @@ public class ProductOfferAnnex : Annex
     /// </summary>
     [Required]
     [StringLength(3)]
-    public string Currency { get; set; } = "USD";
+    public string Currency { get; set; } = string.Empty;
     
     [Required]
     public int Quantity { get; set; }

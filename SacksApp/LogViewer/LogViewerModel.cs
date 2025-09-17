@@ -108,7 +108,7 @@ namespace QMobileDeviceServiceMenu
         internal static readonly Dictionary<LogLevel, LogLevelDefinition> LogLevelDefinitions = new()
         {
             [LogLevel.Error] = new(LogLevel.Error, "Error", "ERR", Color.Red, new[] { " ERR]:", " ERR] :" }),
-            [LogLevel.Warning] = new(LogLevel.Warning, "Warning", "WRN", Color.Orange, new[] { " WRN]:", " WRN] :" }),
+            [LogLevel.Warning] = new(LogLevel.Warning, "Warning", "WRN", Color.DarkOrchid, new[] { " WRN]:", " WRN] :" }),
             [LogLevel.Info] = new(LogLevel.Info, "Info", "INF", Color.DarkBlue, new[] { " INF]:", " INF] :" }),
             [LogLevel.Debug] = new(LogLevel.Debug, "Debug", "DBG", Color.DimGray, new[] { " DBG]:", " DBG] :" }),
             [LogLevel.Default] = new(LogLevel.Default, "Default", "DEF", Color.Black, Array.Empty<string>())

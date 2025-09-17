@@ -4,7 +4,6 @@ using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using SacksDataLayer.Services.Interfaces;
-using System;
 using SacksDataLayer.FileProcessing.Models;
 using Microsoft.Extensions.Logging;
 using SacksDataLayer.Configuration;
@@ -495,7 +494,9 @@ namespace SacksLogicLayer.Services.Implementations
         private async Task AnalyzeFileDataAsync(ProcessingContext context, CancellationToken cancellationToken = default)
         {
             
-            var normalizer = new ConfigurationNormalizer(context.SupplierConfiguration, new ConfigurationDescriptionPropertyExtractor(_propertyNormalizer.Configuration), _logger);
+            // Previously we passed a description extractor to the normalizer. Description extraction
+            // has been disabled in favor of supplier-specific transformations (extractpattern).
+                var normalizer = new ConfigurationNormalizer(context.SupplierConfiguration, _logger);
             
             await normalizer.NormalizeAsync(context);            
         }

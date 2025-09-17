@@ -19,9 +19,6 @@ namespace SacksDataLayer.Configuration
         [JsonPropertyName("valueMappings")]
         public Dictionary<string, Dictionary<string, string>> ValueMappings { get; set; } = new();
 
-        [JsonPropertyName("extractionPatterns")]
-        public Dictionary<string, List<PropertyExtractionPattern>> ExtractionPatterns { get; set; } = new();
-
         [JsonPropertyName("filterableProperties")]
         public List<FilterablePropertyDefinition> FilterableProperties { get; set; } = new();
 
@@ -165,7 +162,6 @@ namespace SacksDataLayer.Configuration
             {
                 ProductType = "Perfume",
                 ValueMappings = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase),
-                ExtractionPatterns = new Dictionary<string, List<PropertyExtractionPattern>>(StringComparer.OrdinalIgnoreCase),
                 FilterableProperties = new List<FilterablePropertyDefinition>(),
                 SortableProperties = new List<SortablePropertyDefinition>()
             };

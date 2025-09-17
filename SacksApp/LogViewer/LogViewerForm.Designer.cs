@@ -133,7 +133,7 @@ namespace QMobileDeviceServiceMenu
             warningCheckBox.AutoSize = true;
             warningCheckBox.Checked = true;
             warningCheckBox.CheckState = CheckState.Checked;
-            warningCheckBox.ForeColor = Color.Orange;
+            warningCheckBox.ForeColor = Color.DarkOrchid;
             warningCheckBox.Location = new Point(145, 5);
             warningCheckBox.Name = "warningCheckBox";
             warningCheckBox.Size = new Size(71, 19);
