@@ -18,6 +18,7 @@ public sealed class RuleFactory
             "SplitByDelimiter"  => new SplitByDelimiterRule(rc),
             "Pipeline"          => new PipelineRule(rc, _config),
             "MapValue"          => new MapValueRule(rc),
+            "DirectAssign"      => new DirectAssignRule(rc),
             _ => throw new NotSupportedException($"Unknown rule type: {rc.Type}")
         };
     }

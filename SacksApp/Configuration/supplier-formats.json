@@ -1,195 +1,92 @@
 {
   "version": "2.1",
-  "suppliers": [
-    {
-      "name": "ACE",
-      "detection": { "fileNamePatterns": ["ace*.xls*"] },
-      "columnProperties": {
-        "A": { "Key": "EAN"},
-        "B": { "Key": "Ref"},
-        "C": { "Key": "Brand"},
-        "D": { "Key": "Description" },
-        "E": { "Key": "Category"},
-        "F": { "Key": "COO"},
-        "G": { "Key": "Quantity" },
-        "H": { "Key": "Price" }
-      },
-      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 8, "headerRowIndex": 1 }
-    },
-    {
-      "name": "API",
-      "detection": { "fileNamePatterns": ["api*.xls*"] },
-      "columnProperties": {
-        "A": { "Key": "EAN" },
-        "B": { "Key": "Brand" },
-        "C": { "Key": "Description" },
-        "D": { "Key": "Quantity" },
-        "E": { "Key": "Price"},
-        "F": { "Key": "COO" }
-      },
-      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 6, "headerRowIndex": 1 }
-    },
-    {
-      "name": "CHK",
-      "detection": { "fileNamePatterns": ["chk*.xls*"] },
-      "columnProperties": {
-        "A": { "Key": "EAN" },
-        "B": { "Key": "Ref" },
-        "C": { "Key": "Description" },
-        "E": { "Key": "Gender" },
-        "F": { "Key": "Size" },
-        "G": { "Key": "Units" },
-        "I": { "Key": "Price"},
-        "J": { "Key": "Quantity" },
-        "L": { "Key": "COO" }
-      },
-      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 13, "headerRowIndex": 1 }
-    },
+  "suppliers": [    
     {
       "name": "HAND",
-      "Currency ": "USD",
+      "Currency": "USD",
       "detection": { "fileNamePatterns": [ "hand*.xls*" ] },
-      "columnProperties": {
-        "B": { "Key": "Ref" },
-        "C": { "Key": "EAN" },
-        "D": { "Key": "Type" },
-        "E": { "key": "Description"},
-        "F": { "Key": "Quantity" },
-        "G": { "Key": "Price" }
-      },
-      "extendedProperties": {
-        "E": {
-          "transformProperties": [
-            {
-              "key": "Brand",
-              "transformation": "upperwords",
-              "parameters": ""
-            },
-            {
-              "key": "Line",
-              "transformation": "capitalize",
-              "parameters": ""
-            }
-          ]
-        }
+      "parserConfig": {
+        "settings": {
+          "stopOnFirstMatchPerColumn": false,
+          "defaultCulture": "en-US",
+          "preferFirstAssignment": true
+        },
+        "lookups": {},
+        "columns": [
+          {
+            "column": "B",
+            "rules": [
+              {
+                "id": "ref-direct",
+                "priority": 100,
+                "type": "DirectAssign",
+                "assign": { "Offer.Ref": "trim" }
+              }
+            ]
+          },
+          {
+            "column": "C",
+            "rules": [
+              {
+                "id": "ean-direct",
+                "priority": 100,
+                "type": "DirectAssign",
+                "assign": { "Product.EAN": "trim" }
+              }
+            ]
+          },
+          {
+            "column": "D",
+            "rules": [
+              {
+                "id": "type-direct",
+                "priority": 100,
+                "type": "DirectAssign",
+                "assign": { "Product.Type": "trim" }
+              }
+            ]
+          },
+          {
+            "column": "E",
+            "rules": [
+              {
+                "id": "description-direct",
+                "priority": 100,
+                "type": "DirectAssign",
+                "assign": { "Offer.Description": "trim" }
+              }
+            ]
+          },
+          {
+            "column": "F",
+            "rules": [
+              {
+                "id": "quantity-direct",
+                "priority": 100,
+                "type": "DirectAssign",
+                "assign": { "Offer.Quantity": "trim" }
+              }
+            ]
+          },
+          {
+            "column": "G",
+            "rules": [
+              {
+                "id": "price-direct",
+                "priority": 100,
+                "type": "DirectAssign",
+                "assign": { "Offer.Price": "trim" }
+              }
+            ]
+          }
+        ]
       },
       "fileStructure": {
         "dataStartRowIndex": 2,
         "expectedColumnCount": 7,
         "headerRowIndex": 1
       }
-    },
-    {
-      "name": "JIZAN",
-      "detection": { "fileNamePatterns": ["jiz*.xls*"] },
-      "columnProperties": {
-        "B": { "Key": "EAN"},
-        "C": { "Key": "Brand" },
-        "D": { "Key": "Description" },
-        "E": { "Key": "Type" },
-        "G": { "Key": "Quantity" },
-        "H": { "Key": "Price"}
-      },
-      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 8, "headerRowIndex": 1 }
-    },
-    {
-      "name": "Lux",
-      "detection": { "fileNamePatterns": ["Lux*.xls*"] },
-      "columnProperties": {
-        "A": { "Key": "Ean", "isRequired": true },
-        "B": { "Key": "Description" },
-        "C": { "Key": "Quantity" },
-        "D": { "Key": "Price", "format": "currency" }
-      },
-      "fileStructure": { "dataStartRowIndex": 5, "expectedColumnCount": 8, "headerRowIndex": 1 }
-    },
-    {
-      "name": "MB",
-      "detection": { "fileNamePatterns": ["MB*.xls"] },
-      "columnProperties": {
-        "A": { "Key": "Description" },
-        "B": { "Key": "Price"},
-        "C": { "Key": "Quantity"},
-        "D": { "Key": "EAN"}
-      },
-      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 4, "headerRowIndex": 1 },
-      "subtitleHandling": { 
-        "enabled": true, 
-        "action": "parse", 
-        "detectionRules": [ 
-          { "name": "BrandSubtitle", 
-          "description": "Detects brand information from subtitle rows in column A", 
-          "detectionMethod": "columnCount", 
-          "expectedColumnCount": 1, 
-          "applyToSubsequentRows": true 
-          } 
-        ], 
-        "fallbackAction": "skip" 
-      }
-    },
-    {
-      "name": "PcA",
-      "detection": { "fileNamePatterns": [ "PcA*.xls*" ] },
-      "columnProperties": {
-        "A": { "Key": "Gender" },
-        "B": { "Key": "Decoded" },
-        "C": { "Key": "Brand" },
-        "D": { "Key": "EAN" },
-        "E": { "Key": "COO" },
-        "F": { "Key": "Ref" },
-        "G": { "Key": "Description" },
-        "I": { "Key": "Price" },
-        "J": { "Key": "Quantity" }
-        },
-        "fileStructure": {
-          "dataStartRowIndex": 2,
-          "expectedColumnCount": 10,
-          "headerRowIndex": 1
-        }      
-    },
-    {
-      "name": "POL",
-      "detection": { "fileNamePatterns": ["POL*.xls*"] },
-      "columnProperties": {
-        "A": { "Key": "Brand", "transformations": [ "extractAfterPattern:*:" ], "classification": "ProductDynamic" },
-        "B": { "Key": "Description"},
-        "C": { "Key": "EAN"},
-        "D": { "Key": "Quantity"},
-        "E": { "Key": "Price"}
-      },
-      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 5, "headerRowIndex": 1 }
-    },
-    {
-      "name": "Un",
-      "detection": { "fileNamePatterns": ["Un*.xls*"] },
-      "Currency": "USD",
-      "columnProperties": {
-        "A": { "Key": "EAN"},
-        "B": { "Key": "Ref"},
-        "C": { "Key": "Brand"},
-        "D": { "Key": "Description"},
-        "E": { "Key": "Category"},
-        "F": { "Key": "Type"},
-        "G": { "Key": "Quantity"},
-        "I": { "Key": "Price"},
-        "J": { "Key": "COO"}
-      },
-      "fileStructure": { "dataStartRowIndex": 4, "expectedColumnCount": 10, "headerRowIndex": 3 }
-    },
-    {
-      "name": "ww",
-      "detection": { "fileNamePatterns": ["ww*.xls*"] },
-      "columnProperties": {
-        "A": { "Key": "Ref" },
-        "B": { "Key": "Description" },
-        "C": { "Key": "EAN"},
-        "D": { "Key": "Price"},
-        "E": { "Key": "Quantity" },
-        "H": { "Key": "Type", "transformations": ["extractPattern:^(?:[^\\.]*\\.)?(.+)$","mapvalue"] },
-        "I": { "Key": "Brand" }
-      },
-      "fileStructure": { "dataStartRowIndex": 2, "expectedColumnCount": 8, "headerRowIndex": 1 }
-    }
+    }   
   ],
   "productPropertyConfiguration": {
     "version": "1.0",
@@ -245,7 +142,7 @@
         "maxLength": 500
       },
       "Brand": {
-        "key": "Brand",
+        "key": "Product.Brand",
         "maxLength": 100,
         "displayName": "Brand",
         "description": "Product brand or manufacturer",
@@ -253,7 +150,7 @@
         "transformations": [ "mapvalue", "capitalize" ]
       },
       "Line": {
-        "key": "Line",
+        "key": "Product.Line",
         "displayName": "Line",
         "description": "Product line or collection",
         "classification": "ProductDynamic",

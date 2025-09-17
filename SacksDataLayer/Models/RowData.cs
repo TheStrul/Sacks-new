@@ -1,13 +1,15 @@
 ﻿namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing
 {
-    using System.Collections.ObjectModel;
     using System.Text;
 
     public class RowData
     {
         public int Index { get; init; }
 
-        public Collection<CellData> Cells { get; init; } = new Collection<CellData>();
+        /// <summary>
+        /// Column values using Excel column letters as keys (A, B, C, etc.)
+        /// </summary>
+        public Dictionary<string, string> Cells { get; init; } = new();
 
         /// <summary>
         /// Indicates if this row was detected as a subtitle row
@@ -26,26 +28,26 @@
 
         /// <summary>
         /// Gets a value indicating whether this row contains meaningful data
-        /// Returns false if the row is empty, contains only whitespace, or has no cells
+        /// Returns false if the row is empty, contains only whitespace, or has no columns
         /// </summary>
         public bool HasData
         {
             get
             {
-                // Check if there are any cells
+                // Check if there are any columns
                 if (Cells == null || Cells.Count == 0)
                     return false;
 
-                // Check if any cell contains non-whitespace data
-                foreach (var cell in Cells)
+                // Check if any column contains non-whitespace data
+                foreach (var value in Cells.Values)
                 {
-                    if (cell != null && !string.IsNullOrWhiteSpace(cell.Value))
+                    if (!string.IsNullOrWhiteSpace(value))
                     {
                         return true;
                     }
                 }
 
-                // All cells are empty or contain only whitespace
+                // All columns are empty or contain only whitespace
                 return false;
             }
         }
@@ -65,12 +67,16 @@
                 return string.Empty;
 
             var sb = new StringBuilder();
-            for (int i = 0; i < Cells.Count; i++)
+            var isFirst = true;
+            
+            // Sort by column letter to maintain A, B, C order
+            foreach (var kvp in Cells.OrderBy(k => k.Key))
             {
-                if (i > 0)
+                if (!isFirst)
                     sb.Append(",");
+                isFirst = false;
 
-                var cellValue = Cells[i]?.Value ?? string.Empty;
+                var cellValue = kvp.Value ?? string.Empty;
                 // Escape commas and quotes in cell values for CSV format
                 if (cellValue.Contains(",") || cellValue.Contains("\""))
                 {

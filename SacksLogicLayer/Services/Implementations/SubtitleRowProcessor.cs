@@ -141,7 +141,7 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
         /// </summary>
         private bool DetectByColumnCount(RowData row, SubtitleDetectionRule rule)
         {
-            var nonEmptyColumns = row.Cells.Count(c => !string.IsNullOrWhiteSpace(c?.Value));
+            var nonEmptyColumns = row.Cells.Values.Count(v => !string.IsNullOrWhiteSpace(v));
             return nonEmptyColumns == rule.ExpectedColumnCount;
         }
 
@@ -153,7 +153,7 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
             if (!rule.ValidationPatterns.Any())
                 return true; // No patterns means any content is valid
 
-            var rowContent = string.Join(" ", row.Cells.Select(c => c?.Value ?? "").Where(v => !string.IsNullOrWhiteSpace(v)));
+            var rowContent = string.Join(" ", row.Cells.Values.Where(v => !string.IsNullOrWhiteSpace(v)));
             
             return rule.ValidationPatterns.Any(pattern =>
             {
@@ -183,7 +183,7 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
             // For now, implement basic extraction based on rule name
             // This can be extended based on specific business requirements
                 // Generic extraction - use rule name as key but normalize it to a consistent dynamic property key
-                var extractedValue = row.Cells.FirstOrDefault(c => !string.IsNullOrWhiteSpace(c?.Value))?.Value?.Trim();
+                var extractedValue = row.Cells.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim();
                 if (!string.IsNullOrEmpty(extractedValue))
                 {
                     // Normalize the rule name into TitleCase without separators

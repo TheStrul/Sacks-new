@@ -33,7 +33,7 @@ namespace SacksLogicLayer.Services.Implementations
         private readonly IFileProcessingDatabaseService _databaseService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<FileProcessingService> _logger;
-        private readonly ConfigurationPropertyNormalizer _propertyNormalizer;
+        private readonly ILoggerFactory _loggerFactory;
         
         // Circuit breaker for resilience
         private readonly SemaphoreSlim _processingLock = new(1, 1);
@@ -55,7 +55,7 @@ namespace SacksLogicLayer.Services.Implementations
             IFileProcessingDatabaseService databaseService,
             IUnitOfWork unitOfWork,
             ILogger<FileProcessingService> logger,
-            ConfigurationPropertyNormalizer propertyNormalizer)
+            ILoggerFactory loggerFactory)
         {
             // Comprehensive null validation with detailed messages
             this._fileDataReader = _fileDataReader ?? 
@@ -68,8 +68,8 @@ namespace SacksLogicLayer.Services.Implementations
                 throw new ArgumentNullException(nameof(unitOfWork), "Unit of Work is required for transaction management");
             _logger = logger ?? 
                 throw new ArgumentNullException(nameof(logger), "Logger is required for diagnostics and monitoring");
-            _propertyNormalizer = propertyNormalizer ?? 
-                throw new ArgumentNullException(nameof(propertyNormalizer), "Property normalizer is required for data processing");
+            _loggerFactory = loggerFactory ?? 
+                throw new ArgumentNullException(nameof(loggerFactory), "Logger factory is required for creating specialized loggers");            
         }
 
         #endregion
@@ -342,16 +342,6 @@ namespace SacksLogicLayer.Services.Implementations
                 // Resolve column properties with market configuration
                 _logger.LogDebug("Resolving column properties with market configuration for supplier: {SupplierName}", supplierConfig.Name);
                 
-                if (supplierConfig.EffectiveMarketConfiguration == null)
-                {
-                    _logger.LogWarning("No productPropertyConfiguration found in supplier-formats.json. All properties will use default 'coreProduct' classification.");
-                    _logger.LogWarning("To fix this: Add a 'productPropertyConfiguration' section to supplier-formats.json with proper property classifications.");
-                    return supplierConfig; // Early exit without resolution
-                }
-                
-            supplierConfig.ResolveColumnProperties();
-                _logger.LogDebug("Column properties resolved successfully for supplier: {SupplierName}", supplierConfig.Name);
-                
                 return supplierConfig;
             }
             catch (Exception ex)
@@ -488,17 +478,45 @@ namespace SacksLogicLayer.Services.Implementations
         #region File Analysis Methods
 
         /// <summary>
-        /// Analyzes file data without any database dependencies
+        /// Analyzes file data using the new RuleBasedOfferNormalizer
         /// This creates a pure data analysis of what the file contains
         /// </summary>
         private async Task AnalyzeFileDataAsync(ProcessingContext context, CancellationToken cancellationToken = default)
         {
-            
-            // Previously we passed a description extractor to the normalizer. Description extraction
-            // has been disabled in favor of supplier-specific transformations (extractpattern).
-                var normalizer = new ConfigurationNormalizer(context.SupplierConfiguration, _logger);
-            
-            await normalizer.NormalizeAsync(context);            
+            try
+            {
+                // Check if SupplierConfiguration has ParserConfig
+                if (context.SupplierConfiguration.ParserConfig == null)
+                {
+                    var errorMessage = $"Supplier '{context.SupplierConfiguration.Name}' does not have ParserConfig configured";
+                    _logger.LogError(errorMessage);
+                    context.ProcessingResult.Errors.Add(errorMessage);
+                    return;
+                }
+
+                // Create RuleBasedOfferNormalizer instance with proper logger
+                var normalizerLogger = _loggerFactory.CreateLogger<RuleBasedOfferNormalizer>();
+                var normalizer = new RuleBasedOfferNormalizer(context.SupplierConfiguration, normalizerLogger);
+
+                _logger.LogInformation("Starting rule-based analysis for supplier: {SupplierName}, Rows: {RowCount}", 
+                    context.SupplierConfiguration.Name, context.FileData.DataRows.Count);
+
+                // Use the normalizer to process the data
+                await normalizer.NormalizeAsync(context);
+
+                var stats = context.ProcessingResult.Statistics;
+                _logger.LogInformation("Analysis complete - Products: {ProductCount}, Errors: {ErrorCount}, Warnings: {WarningCount}",
+                    context.ProcessingResult.SupplierOffer?.OfferProducts?.Count ?? 0,
+                    context.ProcessingResult.Errors.Count,
+                    context.ProcessingResult.Warnings.Count);
+            }
+            catch (Exception ex)
+            {
+                var errorMessage = $"Failed to analyze file data: {ex.Message}";
+                _logger.LogError(ex, errorMessage);
+                context.ProcessingResult.Errors.Add(errorMessage);
+                throw;
+            }
         }
 
         #endregion

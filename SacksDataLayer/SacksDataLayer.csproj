@@ -29,4 +29,8 @@
     <PackageReference Update="Roslynator.Analyzers" Version="4.14.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ParsingEngine\ParsingEngine.csproj" />
+  </ItemGroup>
+
 </Project>

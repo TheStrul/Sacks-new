@@ -19,6 +19,20 @@
             _subtitleProcessor = subtitleProcessor ?? new SubtitleRowProcessor();
         }
 
+        /// <summary>
+        /// Converts a zero-based column index to Excel column letter (0=A, 1=B, 25=Z, 26=AA, etc.)
+        /// </summary>
+        private static string GetExcelColumnLetter(int columnIndex)
+        {
+            string columnName = "";
+            while (columnIndex >= 0)
+            {
+                columnName = (char)('A' + (columnIndex % 26)) + columnName;
+                columnIndex = (columnIndex / 26) - 1;
+            }
+            return columnName;
+        }
+
         public async Task<FileData> ReadFileAsync(string fullPath)
         {
             if (string.IsNullOrWhiteSpace(fullPath))
@@ -95,8 +109,8 @@
 
                 for (int cellIndex = 0; cellIndex < cells.Length; cellIndex++)
                 {
-                    var cellData = new CellData(cellIndex, cells[cellIndex]);
-                    rowData.Cells.Add(cellData);
+                    var columnLetter = GetExcelColumnLetter(cellIndex);
+                    rowData.Cells[columnLetter] = cells[cellIndex];
                 }
 
                 fileData.DataRows.Add(rowData);
@@ -143,8 +157,8 @@
                             cellValue = rawValue?.ToString()?.Trim() ?? string.Empty;
                         }
                         
-                        var cellData = new CellData(cellIndex, cellValue);
-                        rowData.Cells.Add(cellData);
+                        var columnLetter = GetExcelColumnLetter(cellIndex);
+                        rowData.Cells[columnLetter] = cellValue;
                     }
 
                     fileData.DataRows.Add(rowData);

@@ -7,7 +7,6 @@ namespace SacksDataLayer.Parsing;
 
 /// <summary>
 /// Provides comprehensive text transformation and data extraction capabilities for parsing operations.
-/// Centralizes all transformation logic previously scattered across ConfigurationNormalizer files.
 /// </summary>
 public class Transformer
 {
@@ -787,29 +786,6 @@ public class Transformer
 
     #region Validation
 
-    /// <summary>
-    /// Validates a value against property definition rules.
-    /// </summary>
-    public async Task<ValidationResult> ValidateValueAsync(string? rawValue, SacksDataLayer.Configuration.ProductPropertyDefinition columnProperty)
-    {
-        ArgumentNullException.ThrowIfNull(columnProperty);
-        await Task.CompletedTask;
-
-        if (columnProperty.IsRequired == true && string.IsNullOrWhiteSpace(rawValue))
-            return ValidationResult.Invalid(columnProperty.IsRequired, $"Required field '{columnProperty.Key}' is empty");
-
-        if (columnProperty.AllowedValues.Count > 0 && !columnProperty.AllowedValues.Contains(rawValue, StringComparer.OrdinalIgnoreCase))
-            return ValidationResult.Invalid(columnProperty.SkipEntireRow, $"Value '{rawValue}' is not in allowed values for '{columnProperty.Key}'");
-
-        if (columnProperty.ValidationPatterns.Count > 0 && !string.IsNullOrEmpty(rawValue))
-        {
-            var matchesPattern = columnProperty.ValidationPatterns.Any(pattern => Regex.IsMatch(rawValue, pattern, RegexOptions.IgnoreCase));
-            if (!matchesPattern) 
-                return ValidationResult.Invalid(columnProperty.SkipEntireRow, $"Value '{rawValue}' does not match validation patterns for '{columnProperty.Key}'");
-        }
-
-        return ValidationResult.Valid();
-    }
 
     #endregion
 

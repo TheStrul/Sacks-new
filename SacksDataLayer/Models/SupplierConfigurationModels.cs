@@ -18,9 +18,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("suppliers")]
         public List<SupplierConfiguration> Suppliers { get; set; } = new();
 
-        [JsonPropertyName("productPropertyConfiguration")]
-        public ProductPropertyConfiguration? ProductPropertyConfiguration { get; set; }
-
     }
 
     /// <summary>
@@ -30,16 +27,14 @@ namespace SacksDataLayer.FileProcessing.Configuration
     {
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
-    [JsonPropertyName("detection")]
-    public DetectionConfiguration? Detection { get; set; }
+        
+        [JsonPropertyName("detection")]
+        public DetectionConfiguration? Detection { get; set; }
 
         public string Currency { get; set; } = "$";
 
-        [JsonPropertyName("columnProperties")]
-        public Dictionary<string, ProductPropertyDefinition> ColumnProperties { get; set; } = new();
-
-        [JsonPropertyName("extendedProperties")]
-        public Dictionary<string, ExtractedProperty> ExtendedProperties { get; set; } = new();
+        [JsonPropertyName("parserConfig")]
+        public ParsingEngine.ParserConfig? ParserConfig { get; set; }
 
         [JsonPropertyName("fileStructure")]
         public FileStructureConfiguration FileStructure { get; set; } = new();
@@ -52,60 +47,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         /// </summary>
         [JsonIgnore]
         public SuppliersConfiguration? ParentConfiguration { get; set; }
-
-        /// <summary>
-        /// Gets the effective market configuration (from parent if available)
-        /// </summary>
-        [JsonIgnore]
-        public ProductPropertyConfiguration? EffectiveMarketConfiguration => 
-            ParentConfiguration?.ProductPropertyConfiguration;
-
-
-        /// <summary>
-        /// Gets core product properties from column-level classification settings
-        /// </summary>
-        public List<string> GetCoreProductProperties()
-        {
-            var result = new List<string>();
-            
-            if (ColumnProperties == null) return result;
-
-            foreach (var kvp in ColumnProperties)
-            {
-                var column = kvp.Value;
-                
-                // Resolve from market config if available
-                if (EffectiveMarketConfiguration != null)
-                {
-                    column.ResolveFromMarketConfig(EffectiveMarketConfiguration);
-                }
-                
-                if (column.Classification == PropertyClassificationType.ProductName ||
-                   column.Classification == PropertyClassificationType.ProductEAN ||
-                   column.Classification == PropertyClassificationType.ProductDynamic)
-                {
-                    result.Add(column.Key);
-                }
-            }
-            
-            return result.Where(s => !string.IsNullOrEmpty(s)).Distinct().ToList();
-        }
-
-
-        /// <summary>
-        /// Resolves all column properties using market configuration
-        /// </summary>
-        public void ResolveColumnProperties()
-        {
-            if (ColumnProperties == null) return;
-
-            if (EffectiveMarketConfiguration == null) return;
-
-            foreach (var column in ColumnProperties.Values)
-            {
-                column.ResolveFromMarketConfig(EffectiveMarketConfiguration);
-            }
-        }
     }
 
     /// <summary>

@@ -242,8 +242,8 @@ namespace SacksApp
             services.AddScoped<ITransactionalSupplierOffersRepository, TransactionalSupplierOffersRepository>();
             services.AddScoped<ITransactionalOfferProductsRepository, TransactionalOfferProductsRepository>();
 
-            // Add Unit of Work for transaction management
-            services.AddUnitOfWork();
+            // Add Unit of Work
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             // Add business services
             services.AddScoped<IProductsService, ProductsService>();
@@ -257,53 +257,11 @@ namespace SacksApp
             services.AddScoped<IFileProcessingDatabaseService, FileProcessingDatabaseService>();
 
             // Add file processing services
-            services.AddFileProcessingServices();
-
-            // Add configuration-based property normalization services
-            services.AddSingleton<PropertyNormalizationConfigurationManager>();
-            
-            // Load configuration data from the JSON files via configuration system
-            services.AddSingleton<ProductPropertyNormalizationConfiguration>(serviceProvider =>
-            {
-                var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-                
-                // The perfume-property-normalization.json file is loaded directly at root level
-                // Try to bind from root configuration first
-                try
-                {
-                    var config = configuration.Get<ProductPropertyNormalizationConfiguration>();
-                    if (config != null && !string.IsNullOrEmpty(config.ProductType))
-                    {
-                        return config;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
-                    var logger = loggerFactory?.CreateLogger("ConfigurationLoader");
-                    logger?.LogWarning(ex, "Failed to bind ProductPropertyNormalizationConfiguration from root configuration");
-                }
-                
-                // Try to get from the loaded JSON configuration section
-                var configSection = configuration.GetSection("PerfumePropertyNormalization");
-                if (configSection.Exists())
-                {
-                    return ConfigurationBinder.Get<ProductPropertyNormalizationConfiguration>(configSection)
-                        ?? throw new InvalidOperationException("Failed to bind PerfumePropertyNormalization configuration");
-                }
-                
-                // Fallback to manager's default
-                var manager = serviceProvider.GetRequiredService<PropertyNormalizationConfigurationManager>();
-                return manager.CreateDefaultPerfumeConfiguration();
-            });
-            
-            // Now we can register these services without factories - DI will auto-resolve
-            services.AddScoped<ConfigurationPropertyNormalizer>();
-
-            // Add supplier configuration manager
             services.AddScoped<IFileDataReader, FileDataReader>();
             services.AddScoped<SubtitleRowProcessor>();
             services.AddScoped<SupplierConfigurationManager>();
+            services.AddScoped<ISupplierConfigurationService, SupplierConfigurationService>();
+            services.AddScoped<IFileProcessingService, FileProcessingService>();
 
             return services;
         }
