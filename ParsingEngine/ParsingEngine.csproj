@@ -4,4 +4,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Rules.DirectAssign.cs" />
+    <Compile Remove="Rules.MapValue.cs" />
+    <Compile Remove="Rules.MultiCaptureRegex.cs" />
+    <Compile Remove="Rules.SplitByDelimiter.cs" />
+    <Compile Remove="Rules.Factory.cs" />
+  </ItemGroup>
 </Project>

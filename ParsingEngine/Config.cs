@@ -18,37 +18,30 @@ public sealed class Settings
 public sealed class ColumnConfig
 {
     public string Column { get; set; } = "";
-    public List<RuleConfig> Rules { get; set; } = new();
+    // Single rule per column
+    public RuleConfig? Rule { get; set; }
 }
 public sealed class RuleConfig
 {
-    public string Id { get; set; } = "";
-    public int Priority { get; set; } = 0;
-    public string Type { get; set; } = ""; // MultiCaptureRegex | SplitByDelimiter | Pipeline | MapValue
-    public string? Pattern { get; set; }
-    public string? Delimiter { get; set; }
     public Dictionary<string, string>? Assign { get; set; }
-    public List<SplitMapping>? Mappings { get; set; }
     public List<PipelineStep>? Steps { get; set; }
 }
 public sealed class SplitMapping
 {
-    public string StartsWith { get; set; } = "";
     public string AssignTo { get; set; } = "";
-    public string After { get; set; } = "";
+    public string Table { get; set; } = ""; // Lookup table name for ConditionalMapping
 }
 public sealed class PipelineStep
 {
     public string Op { get; set; } = "";
     public string? Pattern { get; set; }
     public string? Options { get; set; }
+    public string? Replacement { get; set; } // For RegexReplace operation - replacement text
     public string? Table { get; set; }
     public string? In { get; set; }
     public string? Out { get; set; }
     public string? From { get; set; }
     public string? To { get; set; }
-    public string? ValueFrom { get; set; }
-    public string? UnitFrom { get; set; }
     public string? UnitOut { get; set; }
     public string? ValueOut { get; set; }
     public string? Form { get; set; }
@@ -58,15 +51,30 @@ public sealed class PipelineStep
     public string? ExtractedOut { get; set; } // For generic extraction operations
     public string? SizeOut { get; set; } // For ExtractSize operation
     public string[]? Patterns { get; set; } // For operations that use multiple patterns
-    public Dictionary<string,string>? Map { get; set; }
+    public string? Delimiter { get; set; } // For SplitByDelimiter operation
+    public string? OutputProperty { get; set; } // For SplitByDelimiter operation output property name
+    public int? ExpectedParts { get; set; } // For SplitByDelimiter operation - expected number of parts
+    public bool? Strict { get; set; } // For SplitByDelimiter operation - strict validation mode
+    public List<SplitMapping>? Mappings { get; set; } // For ConditionalMapping operation - mapping rules
 }
 
 public static class ParserConfigLoader
 {
     private static readonly JsonSerializerOptions s_jsonOptions = new JsonSerializerOptions
     {
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        // Allow legacy JSON fields (e.g., "type") without failing deserialization
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true
     };
+
+    public static ParserConfig FromJson(string json)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(json);
+        var cfg = System.Text.Json.JsonSerializer.Deserialize<ParserConfig>(json, s_jsonOptions)
+                  ?? throw new InvalidOperationException("Failed to parse rules JSON");
+        return cfg;
+    }
 
     public static ParserConfig FromJsonFile(string path)
     {

@@ -108,12 +108,13 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                 if (IsValidPropertyBag(propertyBag))
                 {
                 // Convert to ProductOfferAnnex
-                var productOffer = ConvertToProductOfferAnnex(propertyBag, context);                    if (productOffer != null)
+                var productOffer = ConvertToProductOfferAnnex(propertyBag, context);                   
+                 if (productOffer != null)
                     {
                         context.ProcessingResult.SupplierOffer.OfferProducts.Add(productOffer);
                         validOffers++;
-                        
-                        _logger.LogDebug("Created ProductOfferAnnex from row {RowIndex}: {PropertyCount} properties", 
+
+                        _logger.LogDebug("Created ProductOfferAnnex from row {RowIndex}: {PropertyCount} properties",
                             row.Index, propertyBag.Values.Count);
                     }
                     else
@@ -156,6 +157,22 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
         // Basic validation - ensure we have some extracted properties
         if (propertyBag.Values.Count == 0)
             return false;
+
+        // EAN validation - must have non-empty EAN for product creation
+        if (!propertyBag.Values.TryGetValue("Product.EAN", out var eanObj) || 
+            eanObj is not string ean || 
+            string.IsNullOrWhiteSpace(ean))
+        {
+            _logger.LogDebug("Skipping row - missing or empty EAN");
+            return false;
+        }
+
+        // EAN format validation - must be numeric
+        if (!System.Text.RegularExpressions.Regex.IsMatch(ean, @"^\d+$"))
+        {
+            _logger.LogDebug("Skipping row - invalid EAN format: {EAN}", ean);
+            return false;
+        }
 
         // TODO: Add more sophisticated validation rules based on business requirements
         // For example:

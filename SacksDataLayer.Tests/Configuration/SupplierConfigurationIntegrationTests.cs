@@ -48,14 +48,11 @@ public class SupplierConfigurationIntegrationTests
         Assert.NotNull(parserConfig.Columns);
         Assert.NotEmpty(parserConfig.Columns);
 
-        // Verify at least one column has rules
+    // Verify at least one column has a rule
         var columnB = parserConfig.Columns.FirstOrDefault(c => c.Column == "B");
         Assert.NotNull(columnB);
-        Assert.NotEmpty(columnB.Rules);
+    Assert.NotNull(columnB.Rule);
 
-        var rule = columnB.Rules.First();
-        Assert.Equal("Pipeline", rule.Type);
-        Assert.Equal(100, rule.Priority);
     }
 
     [Fact]

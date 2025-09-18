@@ -2,8 +2,6 @@ namespace ParsingEngine;
 
 public interface IRule
 {
-    string Id { get; }
-    int Priority { get; }
     RuleExecutionResult Execute(CellContext ctx);
 }
 

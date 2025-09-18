@@ -50,35 +50,19 @@ namespace SacksDataLayer.Tests.Integration
                     "columns": [
                         {
                             "column": "B",
-                            "rules": [
-                                {
-                                    "id": "ref-direct",
-                                    "priority": 100,
-                                    "type": "Pipeline",
-                                    "steps": [
-                                        {
-                                            "op": "assign",
-                                            "out": "Ref"
-                                        }
-                                    ]
-                                }
-                            ]
+                            "rule": {
+                                "steps": [
+                                    { "op": "assign", "out": "Ref" }
+                                ]
+                            }
                         },
                         {
                             "column": "C",
-                            "rules": [
-                                {
-                                    "id": "ean-direct",
-                                    "priority": 100,
-                                    "type": "Pipeline",
-                                    "steps": [
-                                        {
-                                            "op": "assign",
-                                            "out": "EAN"
-                                        }
-                                    ]
-                                }
-                            ]
+                            "rule": {
+                                "steps": [
+                                    { "op": "assign", "out": "EAN" }
+                                ]
+                            }
                         }
                     ]
                 },

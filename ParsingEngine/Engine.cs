@@ -11,11 +11,11 @@ public sealed class ParserEngine
     {
         ArgumentNullException.ThrowIfNull(config);
         _config = config;
-        var factory = new RuleFactory(config);
-        _rulesByColumn = config.Columns
-            .ToDictionary(c => c.Column,
-                          c => c.Rules.Select(r => factory.Create(r)).OrderBy(r => r.Priority).ToList(),
-                          StringComparer.OrdinalIgnoreCase);
+    _rulesByColumn = config.Columns
+            .ToDictionary(
+                c => c.Column,
+        c => EngineHelpers.BuildRulesForColumn(c, _config),
+                StringComparer.OrdinalIgnoreCase);
     }
 
     public PropertyBag Parse(RowData row)
@@ -32,12 +32,26 @@ public sealed class ParserEngine
             {
                 var result = rule.Execute(ctx);
                 foreach (var a in result.Assignments)
-                    bag.Set(a.Property, a.Value, a.SourceRuleId);
+                    bag.Set(a.Property, a.Value, a.Source);
 
                 if (_config.Settings.StopOnFirstMatchPerColumn && result.Matched)
                     break;
             }
         }
         return bag;
+    }
+}
+
+internal static class EngineHelpers
+{
+    internal static List<IRule> BuildRulesForColumn(ColumnConfig c, ParserConfig? config = null)
+    {
+        var cfg = config ?? throw new ArgumentNullException(nameof(config));
+        var rules = new List<IRule>();
+
+        if (c.Rule != null)
+            rules.Add(new PipelineRule(c.Rule, cfg));
+
+        return rules;
     }
 }
