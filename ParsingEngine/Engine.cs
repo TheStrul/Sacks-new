@@ -26,7 +26,9 @@ public sealed class ParserEngine
         foreach (var (column, raw) in row.Cells)
         {
             if (!_rulesByColumn.TryGetValue(column, out var rules)) continue;
-            var ctx = new CellContext(column, raw, new CultureInfo(_config.Settings.DefaultCulture ?? "en-US"), new Dictionary<string, object?>());
+            var ambient = new Dictionary<string, object?>();
+            ambient["PropertyBag"] = bag; // allow rules/steps to append trace
+            var ctx = new CellContext(column, raw, new CultureInfo(_config.Settings.DefaultCulture ?? "en-US"), ambient);
 
             foreach (var rule in rules)
             {
@@ -50,7 +52,7 @@ internal static class EngineHelpers
         var rules = new List<IRule>();
 
         if (c.Rule != null)
-            rules.Add(new PipelineRule(c.Rule, cfg));
+            rules.Add(new ChainExecuter(c.Rule, cfg));
 
         return rules;
     }

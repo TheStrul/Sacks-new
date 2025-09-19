@@ -63,8 +63,7 @@
           {
             "column": "B",
             "rule": {
-                "steps": [
-                  {"Op": "Trim"},
+                "actions": [
                   {"Op": "Assign", "From": "Text", "To": "Offer.Ref"}
                 ]
             }
@@ -72,8 +71,7 @@
           {
             "column": "C",
             "rule": {
-                "steps": [
-                  {"Op": "Trim"},
+                "actions": [
                   {"Op": "Assign", "From": "Text", "To": "Product.EAN"}
                 ]
             }
@@ -81,8 +79,7 @@
           {
             "column": "D",
             "rule": {
-                "steps": [
-                  {"Op": "Trim"},
+                "actions": [
                   {"Op": "Assign", "From": "Text", "To": "Product.Type"}
                 ]
             }
@@ -90,26 +87,25 @@
           {
             "column": "E",
             "rule": {
-                "steps": [
-                  {"Op": "Trim"},
+                "actions": [
                   {"Op": "Assign", "From": "Text", "To": "Offer.Description"},
-                  {"Op": "ExtractSizeAndUnits", "From": "Text", "SizeOut": "SizeUnit", "RemainingOut": "AfterSize", "Patterns": [
+                  {"Op": "ExtractSizeAndUnits", "From": "Text", "To": "SizeCut", "Patterns": [
                     "\\((\\d+(?:\\.\\d)?ml)\\)",
                     "\\(([^)]*)\\)"
                   ]},
-                  {"Op": "SplitSizeAndUnits", "From": "SizeUnit", "ValueOut": "TempSize", "UnitOut": "TempUnits"},
-                  {"Op": "ExtractMappedValue", "From": "AfterSize", "Table": "concentrationLookups", "ExtractedOut": "Concentration", "RemainingOut": "AfterConcentration"},
-                  {"Op": "ExtractMappedValue", "From": "AfterConcentration", "Table": "typeLookups", "ExtractedOut": "Type", "RemainingOut": "AfterType"},
-                  {"Op": "ExtractAllCapitalsFromStart", "From": "AfterType", "ExtractedOut": "Brand", "RemainingOut": "AfterBrand"},
-                  {"Op": "ExtractMappedWordAnywhere", "From": "AfterBrand", "Table": "genderLookups", "CaseMode": "lower", "ExtractedOut": "Gender", "RemainingOut": "LineWithGender"},
-                  {"Op": "MapValue", "From": "Gender", "Table": "genderLookups", "CaseMode": "lower", "ExtractedOut": "MappedGender"},
+                  {"Op": "SplitSizeAndUnits", "From": "SizeCut.Size", "To": "Temp"},
+                  {"Op": "ExtractMappedValue", "From": "SizeCut.Remaining", "Table": "concentrationLookups", "To": "Conc"},
+                  {"Op": "ExtractMappedValue", "From": "Conc.Remaining", "Table": "typeLookups", "To": "TypeCut"},
+                  {"Op": "ExtractAllCapitalsFromStart", "From": "TypeCut.Remaining", "To": "BrandCut"},
+                  {"Op": "ExtractMappedWordAnywhere", "From": "BrandCut.Remaining", "Table": "genderLookups", "CaseMode": "lower", "To": "GenderCut"},
+                  {"Op": "MapValue", "From": "GenderCut.ExtractedWord", "Table": "genderLookups", "CaseMode": "lower", "To": "MappedGender"},
 
-                  {"Op": "Assign", "From": "Brand", "To": "Product.Brand"},
-                  {"Op": "Assign", "From": "AfterBrand", "To": "Product.Line"},
-                  {"Op": "Assign", "From": "Concentration", "To": "Product.Concentration"},
-                  {"Op": "Assign", "From": "Type", "To": "Product.Type"},
-                  {"Op": "Assign", "From": "TempSize", "To": "Product.Size"},
-                  {"Op": "Assign", "From": "TempUnits", "To": "Product.Units"},
+                  {"Op": "Assign", "From": "BrandCut.Extracted", "To": "Product.Brand"},
+                  {"Op": "Assign", "From": "BrandCut.Remaining", "To": "Product.Line"},
+                  {"Op": "Assign", "From": "Conc.Extracted", "To": "Product.Concentration"},
+                  {"Op": "Assign", "From": "TypeCut.Extracted", "To": "Product.Type"},
+                  {"Op": "Assign", "From": "Temp.Value", "To": "Product.Size"},
+                  {"Op": "Assign", "From": "Temp.Units", "To": "Product.Units"},
                   {"Op": "Assign", "From": "MappedGender", "To": "Product.Gender"}
                 ]
             }
@@ -117,8 +113,7 @@
           {
             "column": "F",
             "rule": {
-                "steps": [
-                  {"Op": "Trim"},
+                "actions": [
                   {"Op": "Assign", "From": "Text", "To": "Offer.Quantity"}
                 ]
             }
@@ -126,8 +121,7 @@
           {
             "column": "G",
             "rule": {
-                "steps": [
-                  {"Op": "Trim"},
+                "actions": [
                   {"Op": "Assign", "From": "Text", "To": "Offer.Price"}
                 ]
             }
@@ -213,9 +207,8 @@
           {
             "column": "A",
             "rule": {
-                "steps": [
-                  {"Op": "Trim"},
-                  {"Op": "SplitByDelimiter", "From": "Text", "Delimiter": ":", "OutputProperty": "Parts", "ExpectedParts": 3, "Strict": true},
+                "actions": [
+                  {"Op": "SplitByDelimiter", "From": "Text", "Delimiter": ":", "To": "Parts", "ExpectedParts": 3, "Strict": true},
                   {"Op": "Assign", "From": "Parts[0]", "To": "Product.Brand"},
                   {"Op": "ConditionalMapping", "From": "Parts[1]", "Delimiter": "|", "Mappings": [
                     {"Table": "genderMappings", "AssignTo": "Product.Gender"},
@@ -228,34 +221,28 @@
           {
             "column": "B",
       "rule": {
-        "steps": [
-                  {"Op": "Trim"},
+        "actions": [
                   {"Op": "Assign", "From": "Text", "To": "Offer.Description"},
-                  
-                  {"Op": "RegexRemove", "Pattern": "/\\s*[0-9.]+\\s*OZ", "Options": "IgnoreCase"},
-                  
-                  {"Op": "RegexExtract", "Pattern": "([0-9.]+)\\s*ML", "Options": "IgnoreCase", "ExtractedOut": "Size"},
+                  {"Op": "Find", "From": "Text", "To": "Text", "Pattern": "\\s*[0-9.]+\\s*OZ", "Options": "IgnoreCase"},
+                  {"Op": "RegexExtract", "From": "Text", "Pattern": "(?<Size>[0-9.]+)\\s*ML", "Options": "IgnoreCase"},
+                  {"Op": "RegexExtract", "From": "Text", "Pattern": "[0-9.]+\\s*(?<Units>ML|G)", "Options": "IgnoreCase"},
                   {"Op": "Assign", "From": "Size", "To": "Product.Size"},
-                  
-                  {"Op": "RegexExtract", "Pattern": "[0-9.]+\\s*(ML|G)", "Options": "IgnoreCase", "ExtractedOut": "Units"},
                   {"Op": "Assign", "From": "Units", "To": "Product.Units"},
-                  
-                  {"Op": "RegexExtract", "Pattern": "(EDT|EDP|PARFUM|COLOGNE)", "Options": "IgnoreCase", "ExtractedOut": "Concentration"},
-                  {"Op": "MapValue", "From": "Concentration", "Table": "concentrationLookups", "CaseMode": "lower", "ExtractedOut": "MappedConcentration"},
+                  {"Op": "RegexRemove", "From": "Text", "To": "Text", "Pattern": "\\s*[0-9.]+\\s*ML", "Options": "IgnoreCase"},
+                  {"Op": "RegexExtract", "From": "Text", "Pattern": "(?<Concentration>EDT|EDP|PARFUM|COLOGNE)", "Options": "IgnoreCase"},
+                  {"Op": "MapValue", "From": "Concentration", "Table": "concentrationLookups", "CaseMode": "lower", "To": "MappedConcentration"},
                   {"Op": "Assign", "From": "MappedConcentration", "To": "Product.Concentration"},
-                  
-                  {"Op": "RegexRemove", "Pattern": "[0-9.]+\\s*(ML|G|OZ)\\s*(EDT|EDP|PARFUM|COLOGNE)?", "Options": "IgnoreCase"},
-                  
-                  {"Op": "ExtractMappedWordAnywhere", "From": "Text", "Table": "genderLookups", "CaseMode": "lower", "ExtractedOut": "Gender", "RemainingOut": "AfterGender"},
-                  {"Op": "Assign", "From": "Gender", "To": "Product.Gender"}
+                  {"Op": "RegexRemove", "From": "Text", "To": "Text", "Pattern": "\\s*(EDT|EDP|PARFUM|COLOGNE)?", "Options": "IgnoreCase"},
+                  {"Op": "ExtractMappedWordAnywhere", "From": "Text", "Table": "genderLookups", "CaseMode": "lower", "To": "GenderCut"},
+                  {"Op": "Assign", "From": "GenderCut.ExtractedWord", "To": "Product.Gender"},
+                  {"Op": "Assign", "From": "Text", "To": "Product.Line"}
                 ]
             }
           },
           {
             "column": "C",
             "rule": {
-                "steps": [
-                  {"Op": "Trim"},
+                "actions": [
                   {"Op": "Assign", "From": "Text", "To": "Product.EAN"}
                 ]
             }
@@ -263,8 +250,7 @@
           {
             "column": "D",
             "rule": {
-                "steps": [
-                  {"Op": "Trim"},
+                "actions": [
                   {"Op": "Assign", "From": "Text", "To": "Offer.Quantity"}
                 ]
             }
@@ -272,8 +258,7 @@
           {
             "column": "E",
             "rule": {
-                "steps": [
-                  {"Op": "Trim"},
+                "actions": [
                   {"Op": "Assign", "From": "Text", "To": "Offer.Price"}
                 ]
             }
@@ -293,8 +278,7 @@
     "templates": {
       "EAN": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
+          "actions": [
             {"Op": "Assign", "From": "Text", "To": "Product.EAN"}
           ]
         },
@@ -312,8 +296,7 @@
       },
       "Name": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
+          "actions": [
             {"Op": "Assign", "From": "Text", "To": "Product.Name"}
           ]
         },
@@ -325,8 +308,7 @@
       },
       "Price": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
+          "actions": [
             {"Op": "Assign", "From": "Text", "To": "Offer.Price"}
           ]
         },
@@ -343,8 +325,7 @@
       },
       "Currency": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
+          "actions": [
             {"Op": "Assign", "From": "Text", "To": "Offer.Currency"}
           ]
         },
@@ -359,10 +340,9 @@
       },
       "Quantity": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
-            {"Op": "RemoveSymbols"},
-            {"Op": "Assign", "From": "Text", "To": "Offer.Quantity"}
+          "actions": [
+            {"Op": "RemoveSymbols", "From": "Text", "To": "Quantity.Clean"},
+            {"Op": "Assign", "From": "Quantity.Clean", "To": "Offer.Quantity"}
           ]
         },
         "metadata": {
@@ -378,8 +358,7 @@
       },
       "Description": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
+          "actions": [
             {"Op": "Assign", "From": "Text", "To": "Offer.Description"}
           ]
         },
@@ -394,11 +373,11 @@
       },
       "Brand": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
-            {"Op": "MapValue", "Table": "brandLookups"},
-            {"Op": "Capitalize"},
-            {"Op": "Assign", "From": "Text", "To": "Product.Brand"}
+          "actions": [
+            {"Op": "Trim", "From": "Text", "To": "Brand.Work"},
+            {"Op": "MapValue", "From": "Brand.Work", "Table": "brandLookups", "To": "Brand.Work"},
+            {"Op": "Capitalize", "From": "Brand.Work", "To": "Brand.Work"},
+            {"Op": "Assign", "From": "Brand.Work", "To": "Product.Brand"}
           ]
         },
         "metadata": {
@@ -412,10 +391,10 @@
       },
       "Line": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
-            {"Op": "Capitalize"},
-            {"Op": "Assign", "From": "Text", "To": "Product.Line"}
+          "actions": [
+            {"Op": "Trim", "From": "Text", "To": "Line.Work"},
+            {"Op": "Capitalize", "From": "Line.Work", "To": "Line.Work"},
+            {"Op": "Assign", "From": "Line.Work", "To": "Product.Line"}
           ]
         },
         "metadata": {
@@ -426,8 +405,7 @@
       },
       "Gender": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
+          "actions": [
             {"Op": "Assign", "From": "Text", "To": "Product.Gender"}
           ]
         },
@@ -442,11 +420,12 @@
       },
       "Size": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
-            {"Op": "ExtractSizeAndUnits", "ValueOut": "Size", "UnitOut": "Units"},
-            {"Op": "Assign", "From": "Size", "To": "Product.Size"},
-            {"Op": "Assign", "From": "Units", "To": "Product.Units"}
+          "actions": [
+            {"Op": "Trim", "From": "Text", "To": "Size.Input"},
+            {"Op": "ExtractSizeAndUnits", "From": "Size.Input", "To": "SizeCut"},
+            {"Op": "SplitSizeAndUnits", "From": "SizeCut.Size", "To": "SizeParts"},
+            {"Op": "Assign", "From": "SizeParts.Value", "To": "Product.Size"},
+            {"Op": "Assign", "From": "SizeParts.Units", "To": "Product.Units"}
           ]
         },
         "metadata": {
@@ -460,10 +439,10 @@
       },
       "Units": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
-            {"Op": "MapValue", "Table": "unitLookups"},
-            {"Op": "Assign", "From": "Text", "To": "Product.Units"}
+          "actions": [
+            {"Op": "Trim", "From": "Text", "To": "Units.Work"},
+            {"Op": "MapValue", "From": "Units.Work", "Table": "unitLookups", "To": "Units.Work"},
+            {"Op": "Assign", "From": "Units.Work", "To": "Product.Units"}
           ]
         },
         "metadata": {
@@ -474,10 +453,10 @@
       },
       "Type": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
-            {"Op": "MapValue", "Table": "typeLookups"},
-            {"Op": "Assign", "From": "Text", "To": "Product.Type"}
+          "actions": [
+            {"Op": "Trim", "From": "Text", "To": "Type.Work"},
+            {"Op": "MapValue", "From": "Type.Work", "Table": "typeLookups", "To": "Type.Work"},
+            {"Op": "Assign", "From": "Type.Work", "To": "Product.Type"}
           ]
         },
         "metadata": {
@@ -488,10 +467,10 @@
       },
       "Concentration": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
-            {"Op": "MapValue", "Table": "concentrationLookups"},
-            {"Op": "Assign", "From": "Text", "To": "Product.Concentration"}
+          "actions": [
+            {"Op": "Trim", "From": "Text", "To": "Conc.Work"},
+            {"Op": "MapValue", "From": "Conc.Work", "Table": "concentrationLookups", "To": "Conc.Work"},
+            {"Op": "Assign", "From": "Conc.Work", "To": "Product.Concentration"}
           ]
         },
         "metadata": {
@@ -502,10 +481,10 @@
       },
       "Category": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
-            {"Op": "Capitalize"},
-            {"Op": "Assign", "From": "Text", "To": "Product.Category"}
+          "actions": [
+            {"Op": "Trim", "From": "Text", "To": "Category.Work"},
+            {"Op": "Capitalize", "From": "Category.Work", "To": "Category.Work"},
+            {"Op": "Assign", "From": "Category.Work", "To": "Product.Category"}
           ]
         },
         "metadata": {
@@ -519,8 +498,7 @@
       },
       "Decoded": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
+          "actions": [
             {"Op": "Assign", "From": "Text", "To": "Product.Decoded"}
           ]
         },
@@ -535,11 +513,11 @@
       },
       "COO": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
-            {"Op": "MapValue", "Table": "countryLookups"},
-            {"Op": "Capitalize"},
-            {"Op": "Assign", "From": "Text", "To": "Product.COO"}
+          "actions": [
+            {"Op": "Trim", "From": "Text", "To": "COO.Work"},
+            {"Op": "MapValue", "From": "COO.Work", "Table": "countryLookups", "To": "COO.Work"},
+            {"Op": "Capitalize", "From": "COO.Work", "To": "COO.Work"},
+            {"Op": "Assign", "From": "COO.Work", "To": "Product.COO"}
           ]
         },
         "metadata": {
@@ -550,8 +528,7 @@
       },
       "Ref": {
         "rule": {
-          "steps": [
-            {"Op": "Trim"},
+          "actions": [
             {"Op": "Assign", "From": "Text", "To": "Offer.Ref"}
           ]
         },

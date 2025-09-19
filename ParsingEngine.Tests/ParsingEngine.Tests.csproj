@@ -6,6 +6,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="BasicParsingTests.cs" />
+    <Compile Remove="ConditionalMappingTests.cs" />
+    <Compile Remove="POLConditionalMappingTests.cs" />
+    <Compile Remove="POLSupplierTests.cs" />
+    <Compile Remove="SplitByDelimiterEnhancedTests.cs" />
+    <Compile Remove="SplitByDelimiterStrictTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ConditionalMappingTests.cs" />
+    <None Include="POLConditionalMappingTests.cs" />
+    <None Include="POLSupplierTests.cs" />
+    <None Include="SplitByDelimiterEnhancedTests.cs" />
+    <None Include="SplitByDelimiterStrictTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="xunit" Version="2.9.0" />

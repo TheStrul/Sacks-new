@@ -39,19 +39,19 @@ namespace ParsingEngine.Tests
                         {
                             Steps = new List<PipelineStep>
                             {
-                                new PipelineStep { Op = "Trim" },
+                                new PipelineStep { Op = "Trim", Input = "Text", Output = "Text"},
                                 new PipelineStep { 
                                     Op = "SplitByDelimiter", 
-                                    From = "Text", 
+                                    Input = "Text", 
                                     Delimiter = ":", 
-                                    OutputProperty = "Parts",
+                                    Output = "Parts",
                                     ExpectedParts = 3,
                                     Strict = false
                                 },
-                                new PipelineStep { Op = "Assign", From = "Parts[0]", To = "Product.Brand" },
+                                new PipelineStep { Op = "Assign", Input = "Parts[0]", Output = "Product.Brand" },
                                 new PipelineStep { 
                                     Op = "ConditionalMapping", 
-                                    From = "Parts[1]", 
+                                    Input = "Parts[1]", 
                                     Delimiter = "|", 
                                     Mappings = new List<SplitMapping>
                                     {
@@ -59,7 +59,7 @@ namespace ParsingEngine.Tests
                                         new SplitMapping { Table = "typeMappings", AssignTo = "Product.Type" }
                                     }
                                 },
-                                new PipelineStep { Op = "Assign", From = "Parts[2]", To = "Offer.Ref" }
+                                new PipelineStep { Op = "Assign", Input = "Parts[2]", Output = "Offer.Ref" }
                             }
                         }
                     }
@@ -122,24 +122,26 @@ namespace ParsingEngine.Tests
                                 new PipelineStep { Op = "Trim" },
                                 new PipelineStep { 
                                     Op = "SplitByDelimiter", 
-                                    From = "Text", 
+                                    Input = "Text", 
                                     Delimiter = ":", 
-                                    OutputProperty = "Parts",
+                                    Output = "Parts",
                                     ExpectedParts = 3,
                                     Strict = false
                                 },
-                                new PipelineStep { Op = "Assign", From = "Parts[0]", To = "Product.Brand" },
+                                new PipelineStep { Op = "Assign", Input = "Parts[0]", Output = "Product.Brand" },
                                 new PipelineStep { 
                                     Op = "ConditionalMapping", 
-                                    From = "Parts[1]", 
+                                    Input = "Parts[1]", 
                                     Delimiter = "|", 
                                     Mappings = new List<SplitMapping>
                                     {
                                         new SplitMapping { Table = "genderMappings", AssignTo = "Product.Gender" },
                                         new SplitMapping { Table = "typeMappings", AssignTo = "Product.Type" }
-                                    }
+                                    },
+                                    Output =    "Text" // Preserve original part for potential debugging
+
                                 },
-                                new PipelineStep { Op = "Assign", From = "Parts[2]", To = "Offer.Ref" }
+                                new PipelineStep { Op = "Assign", Input = "Parts[2]", Output = "Offer.Ref" }
                             }
                         }
                     }
@@ -192,24 +194,26 @@ namespace ParsingEngine.Tests
                                 new PipelineStep { Op = "Trim" },
                                 new PipelineStep { 
                                     Op = "SplitByDelimiter", 
-                                    From = "Text", 
+                                    Input = "Text", 
                                     Delimiter = ":", 
-                                    OutputProperty = "Parts",
+                                    Output = "Parts",
                                     ExpectedParts = 3,
                                     Strict = false
                                 },
-                                new PipelineStep { Op = "Assign", From = "Parts[0]", To = "Product.Brand" },
+                                new PipelineStep { Op = "Assign", Input = "Parts[0]", Output = "Product.Brand" },
                                 new PipelineStep { 
                                     Op = "ConditionalMapping", 
-                                    From = "Parts[1]", 
+                                    Input = "Parts[1]", 
                                     Delimiter = "|", 
                                     Mappings = new List<SplitMapping>
                                     {
                                         new SplitMapping { Table = "genderMappings", AssignTo = "Product.Gender" },
                                         new SplitMapping { Table = "typeMappings", AssignTo = "Product.Type" }
-                                    }
+                                    },
+                                    Output = "Text" // Ensure we read from Parts[1] even if empty
+
                                 },
-                                new PipelineStep { Op = "Assign", From = "Parts[2]", To = "Offer.Ref" }
+                                new PipelineStep { Op = "Assign", Input = "Parts[2]", Output = "Offer.Ref" }
                             }
                         }
                     }

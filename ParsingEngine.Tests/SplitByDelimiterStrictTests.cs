@@ -25,15 +25,15 @@ namespace ParsingEngine.Tests
                                 new PipelineStep { Op = "Trim" },
                                 new PipelineStep { 
                                     Op = "SplitByDelimiter", 
-                                    From = "Text", 
+                                    Input = "Text", 
                                     Delimiter = ":", 
-                                    OutputProperty = "Parts",
+                                    Output = "Parts",
                                     ExpectedParts = 3,
                                     Strict = true // Enable strict mode
                                 },
-                                new PipelineStep { Op = "Assign", From = "Parts[0]", To = "Brand" },
-                                new PipelineStep { Op = "Assign", From = "Parts[1]", To = "Gender" },
-                                new PipelineStep { Op = "Assign", From = "Parts[2]", To = "Ref" }
+                                new PipelineStep { Op = "Assign", Input = "Parts[0]", Output = "Brand" },
+                                new PipelineStep { Op = "Assign", Input = "Parts[1]", Output = "Gender" },
+                                new PipelineStep { Op = "Assign", Input = "Parts[2]", Output = "Ref" }
                             }
                         }
                     }
@@ -79,15 +79,15 @@ namespace ParsingEngine.Tests
                                 new PipelineStep { Op = "Trim" },
                                 new PipelineStep { 
                                     Op = "SplitByDelimiter", 
-                                    From = "Text", 
-                                    Delimiter = ":", 
-                                    OutputProperty = "Parts",
+                                    Input = "Text", 
+                                    Delimiter = ":",
+                                    Output = "Parts",
                                     ExpectedParts = 3,
                                     Strict = true // Enable strict mode
                                 },
-                                new PipelineStep { Op = "Assign", From = "Parts[0]", To = "Brand" },
-                                new PipelineStep { Op = "Assign", From = "Parts[1]", To = "Gender" },
-                                new PipelineStep { Op = "Assign", From = "Parts[2]", To = "Ref" }
+                                new PipelineStep { Op = "Assign", Input = "Parts[0]", Output = "Brand" },
+                                new PipelineStep { Op = "Assign", Input = "Parts[1]", Output = "Gender" },
+                                new PipelineStep { Op = "Assign", Input = "Parts[2]", Output = "Ref" }
                             }
                         }
                     }

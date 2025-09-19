@@ -36,6 +36,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Configuration\RuleBasedOfferNormalizerTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Configuration\RuleBasedOfferNormalizerTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Code Analysis -->
     <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
     <PackageReference Update="Roslynator.Analyzers" Version="4.14.0" />

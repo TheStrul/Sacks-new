@@ -13,6 +13,10 @@ Act as a senior C#/.NET reviewer & implementer.
 - Security: parameterized SQL only; no secrets in code; never compose raw SQL with string concatenation.
 - Time/Money: use `DateTime.UtcNow` (or `Instant` if NodaTime), and `decimal` with explicit precision/scale for currency.
 - Logging: use structured `ILogger<T>`; avoid string concatenation in hot paths.
+- No backward compatibility required — we are on "dec mode".
+- Do not assume anything — if unsure, ask the user first.
+- Do not create tests unless explicitly requested.
+- Prefer single, incremental changes — do one step at a time.
 
 ## Output policy
 - Use **<= 150 lines** per message. For longer changes, chunk and wait for `continue`.
