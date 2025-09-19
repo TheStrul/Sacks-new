@@ -64,7 +64,11 @@
             "column": "B",
             "rule": {
                 "actions": [
-                  {"Op": "Assign", "From": "Text", "To": "Offer.Ref"}
+                  {
+                    "Op": "Assign",
+                    "Input": "Text",
+                    "Output": "Offer.Ref"
+                  }
                 ]
             }
           },
@@ -72,7 +76,11 @@
             "column": "C",
             "rule": {
                 "actions": [
-                  {"Op": "Assign", "From": "Text", "To": "Product.EAN"}
+                  {
+                    "Op": "Assign",
+                    "Input": "Text",
+                    "Output": "Product.EAN"
+                  }
                 ]
             }
           },
@@ -80,41 +88,15 @@
             "column": "D",
             "rule": {
                 "actions": [
-                  {"Op": "Assign", "From": "Text", "To": "Product.Type"}
+                  {"Op": "Assign", "Input": "Text", "Output": "Product.Type"}
                 ]
             }
-          },
-          {
-            "column": "E",
-            "rule": {
-                "actions": [
-                  {"Op": "Assign", "From": "Text", "To": "Offer.Description"},
-                  {"Op": "ExtractSizeAndUnits", "From": "Text", "To": "SizeCut", "Patterns": [
-                    "\\((\\d+(?:\\.\\d)?ml)\\)",
-                    "\\(([^)]*)\\)"
-                  ]},
-                  {"Op": "SplitSizeAndUnits", "From": "SizeCut.Size", "To": "Temp"},
-                  {"Op": "ExtractMappedValue", "From": "SizeCut.Remaining", "Table": "concentrationLookups", "To": "Conc"},
-                  {"Op": "ExtractMappedValue", "From": "Conc.Remaining", "Table": "typeLookups", "To": "TypeCut"},
-                  {"Op": "ExtractAllCapitalsFromStart", "From": "TypeCut.Remaining", "To": "BrandCut"},
-                  {"Op": "ExtractMappedWordAnywhere", "From": "BrandCut.Remaining", "Table": "genderLookups", "CaseMode": "lower", "To": "GenderCut"},
-                  {"Op": "MapValue", "From": "GenderCut.ExtractedWord", "Table": "genderLookups", "CaseMode": "lower", "To": "MappedGender"},
-
-                  {"Op": "Assign", "From": "BrandCut.Extracted", "To": "Product.Brand"},
-                  {"Op": "Assign", "From": "BrandCut.Remaining", "To": "Product.Line"},
-                  {"Op": "Assign", "From": "Conc.Extracted", "To": "Product.Concentration"},
-                  {"Op": "Assign", "From": "TypeCut.Extracted", "To": "Product.Type"},
-                  {"Op": "Assign", "From": "Temp.Value", "To": "Product.Size"},
-                  {"Op": "Assign", "From": "Temp.Units", "To": "Product.Units"},
-                  {"Op": "Assign", "From": "MappedGender", "To": "Product.Gender"}
-                ]
-            }
-          },
+          },          
           {
             "column": "F",
             "rule": {
                 "actions": [
-                  {"Op": "Assign", "From": "Text", "To": "Offer.Quantity"}
+                  {"Op": "Assign", "Input": "Text", "Output": "Offer.Quantity"}
                 ]
             }
           },
@@ -122,7 +104,7 @@
             "column": "G",
             "rule": {
                 "actions": [
-                  {"Op": "Assign", "From": "Text", "To": "Offer.Price"}
+                  {"Op": "Assign", "Input": "Text", "Output": "Offer.Price"}
                 ]
             }
           }
@@ -205,37 +187,10 @@
         },
         "columns": [
           {
-            "column": "A",
-            "rule": {
-                "actions": [
-                  {"Op": "SplitByDelimiter", "From": "Text", "Delimiter": ":", "To": "Parts", "ExpectedParts": 3, "Strict": true},
-                  {"Op": "Assign", "From": "Parts[0]", "To": "Product.Brand"},
-                  {"Op": "ConditionalMapping", "From": "Parts[1]", "Delimiter": "|", "Mappings": [
-                    {"Table": "genderMappings", "AssignTo": "Product.Gender"},
-                    {"Table": "typeMappings", "AssignTo": "Product.Type"}
-                  ]},
-                  {"Op": "Assign", "From": "Parts[2]", "To": "Offer.Ref"}
-                ]
-            }
-          },
-          {
             "column": "B",
-      "rule": {
+        "rule": {
         "actions": [
-                  {"Op": "Assign", "From": "Text", "To": "Offer.Description"},
-                  {"Op": "Find", "From": "Text", "To": "Text", "Pattern": "\\s*[0-9.]+\\s*OZ", "Options": "IgnoreCase"},
-                  {"Op": "RegexExtract", "From": "Text", "Pattern": "(?<Size>[0-9.]+)\\s*ML", "Options": "IgnoreCase"},
-                  {"Op": "RegexExtract", "From": "Text", "Pattern": "[0-9.]+\\s*(?<Units>ML|G)", "Options": "IgnoreCase"},
-                  {"Op": "Assign", "From": "Size", "To": "Product.Size"},
-                  {"Op": "Assign", "From": "Units", "To": "Product.Units"},
-                  {"Op": "RegexRemove", "From": "Text", "To": "Text", "Pattern": "\\s*[0-9.]+\\s*ML", "Options": "IgnoreCase"},
-                  {"Op": "RegexExtract", "From": "Text", "Pattern": "(?<Concentration>EDT|EDP|PARFUM|COLOGNE)", "Options": "IgnoreCase"},
-                  {"Op": "MapValue", "From": "Concentration", "Table": "concentrationLookups", "CaseMode": "lower", "To": "MappedConcentration"},
-                  {"Op": "Assign", "From": "MappedConcentration", "To": "Product.Concentration"},
-                  {"Op": "RegexRemove", "From": "Text", "To": "Text", "Pattern": "\\s*(EDT|EDP|PARFUM|COLOGNE)?", "Options": "IgnoreCase"},
-                  {"Op": "ExtractMappedWordAnywhere", "From": "Text", "Table": "genderLookups", "CaseMode": "lower", "To": "GenderCut"},
-                  {"Op": "Assign", "From": "GenderCut.ExtractedWord", "To": "Product.Gender"},
-                  {"Op": "Assign", "From": "Text", "To": "Product.Line"}
+                  {"Op": "Assign", "Input": "Text", "Output": "Offer.Description"}
                 ]
             }
           },
@@ -243,7 +198,7 @@
             "column": "C",
             "rule": {
                 "actions": [
-                  {"Op": "Assign", "From": "Text", "To": "Product.EAN"}
+                  {"Op": "Assign", "Input": "Text", "Output": "Product.EAN"}
                 ]
             }
           },
@@ -251,7 +206,7 @@
             "column": "D",
             "rule": {
                 "actions": [
-                  {"Op": "Assign", "From": "Text", "To": "Offer.Quantity"}
+                  {"Op": "Assign", "Input": "Text", "Output": "Offer.Quantity"}
                 ]
             }
           },
@@ -259,7 +214,7 @@
             "column": "E",
             "rule": {
                 "actions": [
-                  {"Op": "Assign", "From": "Text", "To": "Offer.Price"}
+                  {"Op": "Assign", "Input": "Text", "Output": "Offer.Price"}
                 ]
             }
           }
@@ -279,7 +234,7 @@
       "EAN": {
         "rule": {
           "actions": [
-            {"Op": "Assign", "From": "Text", "To": "Product.EAN"}
+            {"Op": "Assign", "Input": "Text", "Output": "Product.EAN"}
           ]
         },
         "metadata": {
@@ -297,7 +252,7 @@
       "Name": {
         "rule": {
           "actions": [
-            {"Op": "Assign", "From": "Text", "To": "Product.Name"}
+            {"Op": "Assign", "Input": "Text", "Output": "Product.Name"}
           ]
         },
         "metadata": {
@@ -309,7 +264,7 @@
       "Price": {
         "rule": {
           "actions": [
-            {"Op": "Assign", "From": "Text", "To": "Offer.Price"}
+            {"Op": "Assign", "Input": "Text", "Output": "Offer.Price"}
           ]
         },
         "metadata": {
@@ -326,7 +281,7 @@
       "Currency": {
         "rule": {
           "actions": [
-            {"Op": "Assign", "From": "Text", "To": "Offer.Currency"}
+            {"Op": "Assign", "Input": "Text", "Output": "Offer.Currency"}
           ]
         },
         "metadata": {
@@ -341,8 +296,8 @@
       "Quantity": {
         "rule": {
           "actions": [
-            {"Op": "RemoveSymbols", "From": "Text", "To": "Quantity.Clean"},
-            {"Op": "Assign", "From": "Quantity.Clean", "To": "Offer.Quantity"}
+            {"Op": "RemoveSymbols", "Input": "Text", "Output": "Quantity.Clean"},
+            {"Op": "Assign", "Input": "Quantity.Clean", "Output": "Offer.Quantity"}
           ]
         },
         "metadata": {
@@ -359,7 +314,7 @@
       "Description": {
         "rule": {
           "actions": [
-            {"Op": "Assign", "From": "Text", "To": "Offer.Description"}
+            {"Op": "Assign", "Input": "Text", "Output": "Offer.Description"}
           ]
         },
         "metadata": {
@@ -368,176 +323,6 @@
           "classification": "OfferDescription",
           "validation": {
             "maxLength": 500
-          }
-        }
-      },
-      "Brand": {
-        "rule": {
-          "actions": [
-            {"Op": "Trim", "From": "Text", "To": "Brand.Work"},
-            {"Op": "MapValue", "From": "Brand.Work", "Table": "brandLookups", "To": "Brand.Work"},
-            {"Op": "Capitalize", "From": "Brand.Work", "To": "Brand.Work"},
-            {"Op": "Assign", "From": "Brand.Work", "To": "Product.Brand"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Brand",
-          "description": "Product brand or manufacturer",
-          "classification": "ProductDynamic",
-          "validation": {
-            "maxLength": 100
-          }
-        }
-      },
-      "Line": {
-        "rule": {
-          "actions": [
-            {"Op": "Trim", "From": "Text", "To": "Line.Work"},
-            {"Op": "Capitalize", "From": "Line.Work", "To": "Line.Work"},
-            {"Op": "Assign", "From": "Line.Work", "To": "Product.Line"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Line",
-          "description": "Product line or collection",
-          "classification": "ProductDynamic"
-        }
-      },
-      "Gender": {
-        "rule": {
-          "actions": [
-            {"Op": "Assign", "From": "Text", "To": "Product.Gender"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Gender",
-          "description": "Target gender for the perfume",
-          "classification": "ProductDynamic",
-          "validation": {
-            "isRequired": false
-          }
-        }
-      },
-      "Size": {
-        "rule": {
-          "actions": [
-            {"Op": "Trim", "From": "Text", "To": "Size.Input"},
-            {"Op": "ExtractSizeAndUnits", "From": "Size.Input", "To": "SizeCut"},
-            {"Op": "SplitSizeAndUnits", "From": "SizeCut.Size", "To": "SizeParts"},
-            {"Op": "Assign", "From": "SizeParts.Value", "To": "Product.Size"},
-            {"Op": "Assign", "From": "SizeParts.Units", "To": "Product.Units"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Size",
-          "description": "Volume or size of the perfume",
-          "classification": "ProductDynamic",
-          "validation": {
-            "dataType": "decimal"
-          }
-        }
-      },
-      "Units": {
-        "rule": {
-          "actions": [
-            {"Op": "Trim", "From": "Text", "To": "Units.Work"},
-            {"Op": "MapValue", "From": "Units.Work", "Table": "unitLookups", "To": "Units.Work"},
-            {"Op": "Assign", "From": "Units.Work", "To": "Product.Units"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Units",
-          "description": "Unit of measurement",
-          "classification": "ProductDynamic"
-        }
-      },
-      "Type": {
-        "rule": {
-          "actions": [
-            {"Op": "Trim", "From": "Text", "To": "Type.Work"},
-            {"Op": "MapValue", "From": "Type.Work", "Table": "typeLookups", "To": "Type.Work"},
-            {"Op": "Assign", "From": "Type.Work", "To": "Product.Type"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Type",
-          "description": "Regular, Mini, Set, Tube, Tester, Niche, etc.",
-          "classification": "ProductDynamic"
-        }
-      },
-      "Concentration": {
-        "rule": {
-          "actions": [
-            {"Op": "Trim", "From": "Text", "To": "Conc.Work"},
-            {"Op": "MapValue", "From": "Conc.Work", "Table": "concentrationLookups", "To": "Conc.Work"},
-            {"Op": "Assign", "From": "Conc.Work", "To": "Product.Concentration"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Concentration",
-          "description": "Concentration (EDT, EDP, Parfum, etc.)",
-          "classification": "ProductDynamic"
-        }
-      },
-      "Category": {
-        "rule": {
-          "actions": [
-            {"Op": "Trim", "From": "Text", "To": "Category.Work"},
-            {"Op": "Capitalize", "From": "Category.Work", "To": "Category.Work"},
-            {"Op": "Assign", "From": "Category.Work", "To": "Product.Category"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Category",
-          "description": "Product Category",
-          "classification": "ProductDynamic",
-          "validation": {
-            "maxLength": 20
-          }
-        }
-      },
-      "Decoded": {
-        "rule": {
-          "actions": [
-            {"Op": "Assign", "From": "Text", "To": "Product.Decoded"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Decoded",
-          "description": "Whether the product can be tracked by RF",
-          "classification": "ProductDynamic",
-          "validation": {
-            "isRequired": false
-          }
-        }
-      },
-      "COO": {
-        "rule": {
-          "actions": [
-            {"Op": "Trim", "From": "Text", "To": "COO.Work"},
-            {"Op": "MapValue", "From": "COO.Work", "Table": "countryLookups", "To": "COO.Work"},
-            {"Op": "Capitalize", "From": "COO.Work", "To": "COO.Work"},
-            {"Op": "Assign", "From": "COO.Work", "To": "Product.COO"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Country of Origin",
-          "description": "Country of origin",
-          "classification": "ProductDynamic"
-        }
-      },
-      "Ref": {
-        "rule": {
-          "actions": [
-            {"Op": "Assign", "From": "Text", "To": "Offer.Ref"}
-          ]
-        },
-        "metadata": {
-          "displayName": "Reference",
-          "description": "Supplier reference code for the product",
-          "classification": "OfferDynamic",
-          "validation": {
-            "maxLength": 40
           }
         }
       }

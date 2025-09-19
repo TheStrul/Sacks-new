@@ -49,8 +49,7 @@ public sealed class SimpleAssignAction : IChainAction
         if (bag == null) throw new ArgumentNullException(nameof(bag));
         bag.TryGetValue(_fromKey, out var value);
         var val = value ?? string.Empty;
-        // write standardized list output where result[3] contains the assigned value
-        ActionHelpers.WriteListOutput(bag, _toKey, val, new List<string> { val }, true);
+        bag[$"assign:{_toKey}"] = val;
         return true;
     }
 }
