@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 
 namespace ParsingEngine;
 
@@ -29,19 +30,11 @@ public sealed class SimpleAssignAction : IChainAction
     public string Op => "assign";
     private readonly string _fromKey;
     private readonly string _toKey;
-    private readonly string[] _options;
-    private readonly IDictionary<string, string> _parameters;
 
-    public SimpleAssignAction(string fromKey, string toKey, IEnumerable<string>? options = null, IDictionary<string, string>? parameters = null)
+    public SimpleAssignAction(string fromKey, string toKey)
     {
-        if (string.IsNullOrWhiteSpace(fromKey)) throw new ArgumentException("fromKey required", nameof(fromKey));
-        if (string.IsNullOrWhiteSpace(toKey)) throw new ArgumentException("toKey required", nameof(toKey));
         _fromKey = fromKey;
         _toKey = toKey;
-        _options = options?.ToArray() ?? Array.Empty<string>();
-        _parameters = parameters != null
-            ? new Dictionary<string, string>(parameters, StringComparer.OrdinalIgnoreCase)
-            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     }
 
     public bool Execute(IDictionary<string, string> bag, CellContext ctx)

@@ -11,20 +11,14 @@ public sealed class FindAction : IChainAction
     private readonly string _fromKey;
     private readonly string _toKey;
     private readonly string _pattern;
-    private readonly string[] _options;
-    private readonly IDictionary<string, string> _parameters;
+    private readonly List<string> _options;
 
-    public FindAction(string fromKey, string toKey, string patern, IEnumerable<string>? options = null, IDictionary<string,string>? parameters = null)
+    public FindAction(string fromKey, string toKey, string pattern, List<string> options)
     {
-        if (string.IsNullOrWhiteSpace(fromKey)) throw new ArgumentException("fromKey required", nameof(fromKey));
-        if (string.IsNullOrWhiteSpace(toKey)) throw new ArgumentException("toKey required", nameof(toKey));
         _fromKey = fromKey;
         _toKey = toKey;
-        _pattern = patern ?? string.Empty;
-        _options = options?.ToArray() ?? Array.Empty<string>();
-        _parameters = parameters != null
-            ? new Dictionary<string, string>(parameters, StringComparer.OrdinalIgnoreCase)
-            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        _pattern = pattern;
+        _options = options ?? new List<string>();
     }
 
     public bool Execute(IDictionary<string, string> bag, CellContext ctx)

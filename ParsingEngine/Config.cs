@@ -36,9 +36,8 @@ public class ActionConfig
     required public string Input { get; set; }
     required public string Output { get; set; }
 
-    public string? Pattern { get; set; }
-
-    public List<string>? Options { get; set; }
+    // Parameters dictionary (matches JSON "Parameters" key)
+    public Dictionary<string,string>? Parameters { get; set; }
 
 
 }

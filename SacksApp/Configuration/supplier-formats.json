@@ -11,7 +11,7 @@
           "defaultCulture": "en-US",
           "preferFirstAssignment": true
         },
-        "lookups": {
+        "lookups": {  
           "brandLookups": {
             "chanel": "Chanel",
             "dior": "Dior", 
@@ -61,51 +61,75 @@
         },
         "columns": [
           {
+            "column": "A",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Description"
+                }
+              ]
+            }
+          },
+          {
             "column": "B",
             "rule": {
-                "actions": [
-                  {
-                    "Op": "Assign",
-                    "Input": "Text",
-                    "Output": "Offer.Ref"
-                  }
-                ]
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Ref"
+                }
+              ]
             }
           },
           {
             "column": "C",
             "rule": {
-                "actions": [
-                  {
-                    "Op": "Assign",
-                    "Input": "Text",
-                    "Output": "Product.EAN"
-                  }
-                ]
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Product.EAN"
+                }
+              ]
             }
           },
           {
             "column": "D",
             "rule": {
-                "actions": [
-                  {"Op": "Assign", "Input": "Text", "Output": "Product.Type"}
-                ]
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Product.Type"
+                }
+              ]
             }
-          },          
+          },
           {
             "column": "F",
             "rule": {
-                "actions": [
-                  {"Op": "Assign", "Input": "Text", "Output": "Offer.Quantity"}
-                ]
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Quantity"
+                }
+              ]
             }
           },
           {
             "column": "G",
             "rule": {
-                "actions": [
-                  {"Op": "Assign", "Input": "Text", "Output": "Offer.Price"}
-                ]
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Price"
+                }
+              ]
             }
           }
         ]
@@ -187,35 +211,82 @@
         },
         "columns": [
           {
+            "column": "A",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Split",
+                  "Input": "Text",
+                  "Output": "SplitText",
+                  "Parameters": { "delimiter": ":" }
+                },
+                {
+                  "Op": "Conditional",
+                  "Input": "SplitText[0]",
+                  "Output": "Product.Brand",
+                  "Parameters": { "condition": "SplitText.Length == 3", "assign": "true" }
+                },
+                {
+                  "Op": "Conditional",
+                  "Input": "SplitText[1]",
+                  "Output": "GenderOrType",
+                  "Parameters": { "condition": "SplitText.Length == 3" }
+                },
+                {
+                  "Op": "Conditional",
+                  "Input": "SplitText[2]",
+                  "Output": "Offer.Ref",
+                  "Parameters": { "condition": "SplitText.Length == 3", "assign": "true" }
+                }
+              ]
+            }
+          },
+          {
             "column": "B",
-        "rule": {
-        "actions": [
-                  {"Op": "Assign", "Input": "Text", "Output": "Offer.Description"}
-                ]
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Description"
+                }
+              ]
             }
           },
           {
             "column": "C",
             "rule": {
-                "actions": [
-                  {"Op": "Assign", "Input": "Text", "Output": "Product.EAN"}
-                ]
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Product.EAN"
+                }
+              ]
             }
           },
           {
             "column": "D",
             "rule": {
-                "actions": [
-                  {"Op": "Assign", "Input": "Text", "Output": "Offer.Quantity"}
-                ]
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Quantity"
+                }
+              ]
             }
           },
           {
             "column": "E",
             "rule": {
-                "actions": [
-                  {"Op": "Assign", "Input": "Text", "Output": "Offer.Price"}
-                ]
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Price"
+                }
+              ]
             }
           }
         ]

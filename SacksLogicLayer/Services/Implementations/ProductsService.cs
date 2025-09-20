@@ -83,44 +83,6 @@ namespace SacksLogicLayer.Services.Implementations
             });
         }
 
-        public async Task<ProductEntity> UpdateProductAsync(ProductEntity product, string? modifiedBy = null)
-        {
-            if (product == null)
-                throw new ArgumentNullException(nameof(product));
-
-            // Validate required fields
-            if (string.IsNullOrWhiteSpace(product.Name))
-                throw new ArgumentException("Product name is required", nameof(product));
-
-            return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
-            {
-                // Check if product exists
-                var existingProduct = await _repository.GetByIdAsync(product.Id, ct);
-                if (existingProduct == null)
-                    throw new InvalidOperationException($"Product with ID {product.Id} not found");
-
-                // Check for duplicate EAN if changed
-                if (!string.IsNullOrWhiteSpace(product.EAN) && product.EAN != existingProduct.EAN)
-                {
-                    var duplicateProduct = await _repository.GetByEANAsync(product.EAN, ct);
-                    if (duplicateProduct != null)
-                        throw new InvalidOperationException($"Product with EAN '{product.EAN}' already exists");
-                }
-
-                // Update properties
-                existingProduct.Name = product.Name;
-                
-                // 🔧 MERGE DYNAMIC PROPERTIES: Combine existing and new properties
-                existingProduct.MergeDynamicPropertiesFrom(product);
-                
-                existingProduct.ModifiedAt = DateTime.UtcNow;
-
-                _repository.Update(existingProduct);
-                await _unitOfWork.SaveChangesAsync(ct);
-                return existingProduct;
-            });
-        }
-
         public async Task<bool> DeleteProductAsync(int id)
         {
             return await _unitOfWork.ExecuteInTransactionAsync(async ct =>
@@ -184,33 +146,16 @@ namespace SacksLogicLayer.Services.Implementations
                         
                         // Use the first product instance to check for changes
                         var firstProduct = offerProductsWithSameEAN.First().Product;
-                        
-                        // 🔧 MERGE DYNAMIC PROPERTIES: Create merged properties for comparison
-                        var originalJson = trackedProduct.DynamicPropertiesJson;
-                        var mergedProperties = MergeDynamicProperties(trackedProduct.DynamicProperties, firstProduct.DynamicProperties);
-                        var mergedJson = mergedProperties.Count > 0 ? JsonSerializer.Serialize(mergedProperties) : null;
 
-                        // Compute only the properties that were added or changed so we log a compact diff
-                        var changed = GetChangedDynamicProperties(trackedProduct.DynamicProperties, firstProduct.DynamicProperties);
-
-                        if (changed.Count == 0)
+                        if (MergeDynamicProperties(trackedProduct.EAN, trackedProduct.DynamicProperties, firstProduct.DynamicProperties,_logger))
                         {
-                            // No changes, but still replace with tracked entity for all instances
-                            result.NoChanges++;
+                            result.Updated++;
                         }
                         else
                         {
-                            var changesJson = JsonSerializer.Serialize(changed);
-                            // Use structured logging and emit only the changes (old/new per property)
-                            _logger.LogWarning("Updating ({EAN}), changes: {Changes}", ean, changesJson);
-
-                            // Update existing product properties
-                            trackedProduct.Name = firstProduct.Name;
-                            trackedProduct.MergeDynamicPropertiesFrom(firstProduct);
-
-                            result.Updated++;
+                            result.NoChanges++;
                         }
-                        
+
                         // 🔧 FIX: Replace navigation property with tracked entity for ALL offer products with same EAN
                         foreach (var offerProduct in offerProductsWithSameEAN)
                         {
@@ -323,26 +268,37 @@ namespace SacksLogicLayer.Services.Implementations
         /// <param name="existingProperties">Current dynamic properties</param>
         /// <param name="newProperties">New dynamic properties to merge</param>
         /// <returns>Merged dynamic properties dictionary</returns>
-        private static Dictionary<string, object?> MergeDynamicProperties(
+        private static bool MergeDynamicProperties(string EAN,
             Dictionary<string, object?> existingProperties, 
-            Dictionary<string, object?> newProperties)
+            Dictionary<string, object?> newProperties,
+            ILogger logger)
         {
-            // Start with a copy of existing properties
-            var merged = existingProperties?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, object?>();
-            
-            // Add or overwrite with new properties
-            if (newProperties != null)
+            if (newProperties == null || newProperties.Count == 0)
             {
-                foreach (var kvp in newProperties)
-                {
-                    if (!string.IsNullOrWhiteSpace(kvp.Key))
-                    {
-                        merged[kvp.Key] = kvp.Value;
-                    }
-                }
+                return false;
             }
-            
-            return merged;
+
+            bool changes = false;
+            if (existingProperties == null)
+            {
+                existingProperties = new Dictionary<string, object?>();
+            }
+            foreach (var property in newProperties)
+            {
+                if (existingProperties.ContainsKey(property.Key))
+                {
+                    //report only if value actually changes
+                    if (AreValuesEqual(existingProperties[property.Key], property.Value))
+                    {
+                        continue;
+                    }
+                    logger.LogInformation("Product EAN {EAN}: Dynamic property '{Property}' updated from '{OldValue}' to '{NewValue}'",
+                        EAN, property.Key, existingProperties[property.Key]?.ToString() ?? "null", property.Value?.ToString() ?? "null");
+                }
+                changes = true;
+                existingProperties[property.Key] = property.Value;
+            }
+            return changes;
         }
 
         /// <summary>

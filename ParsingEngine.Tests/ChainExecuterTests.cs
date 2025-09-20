@@ -25,8 +25,7 @@ namespace ParsingEngine.Tests
                         Op = "Find",
                         Input = "Text",
                         Output = "AfterSize",
-                        Options = new List<string> { "remove","all" },
-                        Pattern = @"(([^)]+))"
+                        Parameters = new Dictionary<string,string> {{"options","remove,all" },{"pattern", @"(([^)]+))" } }
                     }
                 }
             };

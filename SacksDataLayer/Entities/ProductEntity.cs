@@ -220,46 +220,8 @@ namespace SacksDataLayer.Entities
             return new Dictionary<string, object?>(DynamicProperties);
         }
 
-        /// <summary>
-        /// ?? MERGE LOGIC: Merges new dynamic properties with existing ones
-        /// New properties overwrite existing ones, but existing properties not in new are preserved
-        /// </summary>
-        /// <param name="newProperties">New dynamic properties to merge</param>
-        public void MergeDynamicProperties(Dictionary<string, object?> newProperties)
-        {
-            if (newProperties == null)
-                return;
+        
 
-            foreach (var kvp in newProperties)
-            {
-                if (!string.IsNullOrWhiteSpace(kvp.Key))
-                {
-                    if (kvp.Value is null || (kvp.Value is string sv && string.IsNullOrWhiteSpace(sv)))
-                    {
-                        // Remove key when incoming value is null or empty string
-                        DynamicProperties.Remove(kvp.Key);
-                    }
-                    else
-                    {
-                        DynamicProperties[kvp.Key] = kvp.Value;
-                    }
-                }
-            }
-            ModifiedAt = DateTime.UtcNow;
-        }
-
-        /// <summary>
-        /// ?? MERGE LOGIC: Merges new dynamic properties with existing ones from another ProductEntity
-        /// New properties overwrite existing ones, but existing properties not in new are preserved
-        /// </summary>
-        /// <param name="sourceProduct">Product entity whose dynamic properties to merge</param>
-        public void MergeDynamicPropertiesFrom(ProductEntity sourceProduct)
-        {
-            if (sourceProduct?.DynamicProperties != null)
-            {
-                MergeDynamicProperties(sourceProduct.DynamicProperties);
-            }
-        }
 
         /// <summary>
         /// Enhanced string representation including dynamic properties count

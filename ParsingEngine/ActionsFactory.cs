@@ -11,7 +11,7 @@ public static class ActionsFactory
 {
 
 
-    // New: create chain action from ActionConfig
+    // create chain action from ActionConfig
     public static IChainAction Create(ActionConfig s, Dictionary<string, Dictionary<string, string>> lookups)
     {
         if (s == null) throw new ArgumentNullException(nameof(s));
@@ -20,17 +20,38 @@ public static class ActionsFactory
         var op = (s.Op ?? string.Empty).ToLowerInvariant();
         var input = s.Input ?? string.Empty;
         var output = s.Output ?? string.Empty;
-        var pattern = s.Pattern ?? string.Empty;
-        var options = s.Options ?? new List<string>();
+        var patameter = s.Parameters ?? new Dictionary<string,string>();
 
-        return op switch
+        IChainAction? ret;
+        switch (op)
         {
-            "assign" => new SimpleAssignAction(input, output, options),
-            "find" => new FindAction(input, output, pattern, options),
-            "split" => new SplitAction(input, output, string.IsNullOrEmpty(pattern) ? ":" : pattern),
-            "removefromstart" => new RemoveFromStartAction(input, output, pattern),
-            _ => new NoOpChainAction(input, output),
-        };
+            case "assign":
+                ret = new SimpleAssignAction(input, output);
+                break;
+            case "conditional":
+                // ensure we have the required parameters
+                if (!patameter.ContainsKey("condition"))
+                    throw new ArgumentException("Missing required parameter 'condition' for conditional action");
+                string condition = patameter["condition"];
+                bool assign = patameter.ContainsKey("assign") && patameter["assign"].Equals("true",StringComparison.OrdinalIgnoreCase);
+                ret = new ConditionalAssignAction(input, output,  condition, assign);
+                break;
+            case "find":
+                string pattern = patameter.ContainsKey("pattern") ? patameter["pattern"] : string.Empty;
+                string[] options = patameter.ContainsKey("options") ? patameter["options"].Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries) : Array.Empty<string>();
+                ret = new FindAction(input, output, pattern, options.ToList());
+                break;
+            case "split":
+                // delimiter parameter expected in Parameters["delimiter"], default to ':'
+                var delimiter = patameter.ContainsKey("delimiter") ? patameter["delimiter"] : ":";
+                ret = new SplitAction(input, output, delimiter);
+                break;
+
+            default:
+                ret = new NoOpChainAction(input, output);
+                break;
+        }
+        return ret;
     }
 
     private sealed class NoOpChainAction : IChainAction

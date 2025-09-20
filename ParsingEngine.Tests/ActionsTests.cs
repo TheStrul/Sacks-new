@@ -34,7 +34,7 @@ namespace ParsingEngine.Tests
 
         [Theory]
         [MemberData(nameof(RemoveActionData))]
-        public void RemoveAction_Removes_Pattern(string input, string expected, string pattern, string[] options)
+        public void RemoveAction_Removes_Pattern(string input, string expected, string pattern, List<string> options)
         {
             var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -59,7 +59,7 @@ namespace ParsingEngine.Tests
             {
                 ["Src"] = input
             };
-            var act = new FindAction("Src", "Found", "(?<num>\\d+)");
+            var act = new FindAction("Src", "Found", "(?<num>\\d+)", new List<string>() {"first" });
             var ok = act.Execute(bag, new CellContext("A", input, CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
             if (string.IsNullOrEmpty(expectedWhole))
             {
@@ -83,7 +83,7 @@ namespace ParsingEngine.Tests
                 ["Src"] = "abc123def45"
             };
             // Use FindAction to remove all digit sequences
-            var act = new FindAction("Src", "Parts", "\\d+", new[] { "all", "remove" });
+            var act = new FindAction("Src", "Parts", "\\d+", new List<string>() { "all", "remove" });
             var ok = act.Execute(bag, new CellContext("A", bag["Src"], CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
             Assert.True(ok);
             // cleaned value is at Parts.Clean
@@ -106,7 +106,7 @@ namespace ParsingEngine.Tests
                 ["Src"] = input
             };
             // Pattern: Unicode uppercase words, remove all
-            var act = new FindAction("Src", "Parts", "\\b\\p{Lu}+\\b", new[] { "all", "remove" });
+            var act = new FindAction("Src", "Parts", "\\b\\p{Lu}+\\b", new List<string>(){ "all", "remove" });
             var ok = act.Execute(bag, new CellContext("A", bag["Src"], CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
             Assert.True(bag.ContainsKey("Parts.Clean"));
             var actualClean = bag["Parts.Clean"] ?? string.Empty;

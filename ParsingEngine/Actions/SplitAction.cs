@@ -18,8 +18,6 @@ public sealed class SplitAction : IChainAction
 
     public SplitAction(string fromKey, string toKey, string delimiter = ":")
     {
-        if (string.IsNullOrWhiteSpace(fromKey)) throw new ArgumentException("fromKey required", nameof(fromKey));
-        if (string.IsNullOrWhiteSpace(toKey)) throw new ArgumentException("toKey required", nameof(toKey));
         _fromKey = fromKey;
         _toKey = toKey;
         _delimiter = delimiter ?? ":";

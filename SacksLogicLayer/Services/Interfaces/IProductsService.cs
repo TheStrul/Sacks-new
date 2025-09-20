@@ -35,11 +35,6 @@ namespace SacksLogicLayer.Services.Interfaces
         Task<ProductEntity> CreateProductAsync(ProductEntity product, string? createdBy = null);
 
         /// <summary>
-        /// Updates an existing product
-        /// </summary>
-        Task<ProductEntity> UpdateProductAsync(ProductEntity product, string? modifiedBy = null);
-
-        /// <summary>
         /// Deletes a product
         /// </summary>
         Task<bool> DeleteProductAsync(int id);
