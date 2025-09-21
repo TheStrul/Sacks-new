@@ -2,145 +2,6 @@
   "version": "2.1",
   "suppliers": [    
     {
-      "name": "HAND",
-      "Currency": "USD",
-      "detection": { "fileNamePatterns": [ "hand*.xls*" ] },
-      "parserConfig": {
-        "settings": {
-          "stopOnFirstMatchPerColumn": false,
-          "defaultCulture": "en-US",
-          "preferFirstAssignment": true
-        },
-        "lookups": {  
-          "brandLookups": {
-            "chanel": "Chanel",
-            "dior": "Dior", 
-            "ysl": "Yves Saint Laurent",
-            "ck": "Calvin Klein",
-            "hugo": "Hugo Boss"
-          },
-          "unitLookups": {
-            "ml": "ML",
-            "oz": "OZ",
-            "l": "L",
-            "cl": "CL",
-            "floz": "FL OZ",
-            "fl oz": "FL OZ"
-          },
-          "typeLookups": {
-            "reg": "Regular",
-            "mini": "Mini",
-            "set": "Set",
-            "tube": "Tube",
-            "tester": "Tester",
-            "niche": "Niche"
-          },
-          "concentrationLookups": {
-            "edt": "EDT",
-            "edp": "EDP", 
-            "parfum": "Parfum",
-            "cologne": "Cologne",
-            "eau de toilette": "EDT",
-            "eau de parfum": "EDP"
-          },
-          "countryLookups": {
-            "fr": "France",
-            "us": "United States",
-            "it": "Italy",
-            "de": "Germany",
-            "uk": "United Kingdom"
-          },
-          "genderLookups": {
-            "men": "M",
-            "wom": "W",
-            "homme": "M",
-            "femme": "W",
-            "her": "W",
-            "p/homme": "M"
-          }
-        },
-        "columns": [
-          {
-            "column": "A",
-            "rule": {
-              "actions": [
-                {
-                  "Op": "Assign",
-                  "Input": "Text",
-                  "Output": "Offer.Description"
-                }
-              ]
-            }
-          },
-          {
-            "column": "B",
-            "rule": {
-              "actions": [
-                {
-                  "Op": "Assign",
-                  "Input": "Text",
-                  "Output": "Offer.Ref"
-                }
-              ]
-            }
-          },
-          {
-            "column": "C",
-            "rule": {
-              "actions": [
-                {
-                  "Op": "Assign",
-                  "Input": "Text",
-                  "Output": "Product.EAN"
-                }
-              ]
-            }
-          },
-          {
-            "column": "D",
-            "rule": {
-              "actions": [
-                {
-                  "Op": "Assign",
-                  "Input": "Text",
-                  "Output": "Product.Type"
-                }
-              ]
-            }
-          },
-          {
-            "column": "F",
-            "rule": {
-              "actions": [
-                {
-                  "Op": "Assign",
-                  "Input": "Text",
-                  "Output": "Offer.Quantity"
-                }
-              ]
-            }
-          },
-          {
-            "column": "G",
-            "rule": {
-              "actions": [
-                {
-                  "Op": "Assign",
-                  "Input": "Text",
-                  "Output": "Offer.Price"
-                }
-              ]
-            }
-          }
-        ]
-      },
-      "fileStructure": {
-        "dataStartRowIndex": 2,
-        "expectedColumnCount": 7,
-        "headerRowIndex": 1
-      }
-    },
-    {
       "name": "POL",
       "Currency": "USD",
       "detection": { "fileNamePatterns": [ "pol*.xls*", "POL*.xls*" ] },
@@ -265,18 +126,60 @@
                   "Input": "Text",
                   "Output": "Offer.Description"
                 },
+
                 {
                   "Op": "Find",
                   "Input": "Text",
-                  "Output": "TextNoOz",
+                  "Output": "Sizes",
                   "Parameters": {
-                    "options": "IgnoreCase, all, remove",
-                    "pattern": "@\"/\\s*\\d+(?:.\\d+)?\\s*(?:fl\\s*oz|oz)\\b\""
+                    "pattern": "(?i)(?<size>\\d+(?:\\.\\d+)?\\s*(?:ml|oz|fl\\s*oz))",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+
+                {
+                  "Op": "Find",
+                  "Input": "Sizes[0]",
+                  "Output": "Product.Size",
+                  "Parameters": {
+                    "pattern": "(?<num>\\d+(?:\\.\\d+)?)",
+                    "options": "first,assign"
+                  }
+                },
+
+                {
+                  "Op": "Find",
+                  "Input": "Sizes[0]",
+                  "Output": "UnitRaw",
+                  "Parameters": {
+                    "pattern": "(?i)(?<unit>ml|oz|fl\\s*oz)",
+                    "options": "first,ignorecase"
+                  }
+                },
+
+                {
+                  "Op": "Map",
+                  "Input": "UnitRaw",
+                  "Output": "Product.Units",
+                  "Parameters": {
+                    "table": "unitLookups",
+                    "assign": "true",
+                    "options": "ignorecase"
                   }
                 },
                 {
+                  "Op": "Find",
+                  "Input": "Sizes.Clean",
+                  "Output": "Concentrations",
+                  "Parameters": {
+                    "pattern": "(?i)(?<c>edt|edp|parfum|cologne|eau de toilette|eau de parfum| tester)",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+
+                {
                   "Op": "Assign",
-                  "Input": "TextNoOz",
+                  "Input": "Sizes.Clean",
                   "Output": "Product.Line"
                 }
               ]

@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" Version="2.9.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+
+    <!-- Additional packages from SacksDataLayer.Tests (optional) -->
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.8" />
+    <PackageReference Include="Moq" Version="4.20.69" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ParsingEngine\ParsingEngine.csproj" />
+    <ProjectReference Include="..\SacksDataLayer\SacksDataLayer.csproj" Condition="Exists('..\SacksDataLayer\SacksDataLayer.csproj')" />
+    <ProjectReference Include="..\SacksLogicLayer\SacksLogicLayer.csproj" Condition="Exists('..\SacksLogicLayer\SacksLogicLayer.csproj')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\SacksDataLayer.Tests\TestData\**\*" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\SacksDataLayer.Tests\TestData')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="BasicParsingTests.cs" />
+    <Compile Remove="ConditionalMappingTests.cs" />
+    <Compile Remove="POLConditionalMappingTests.cs" />
+    <Compile Remove="POLSupplierTests.cs" />
+    <Compile Remove="SplitByDelimiterEnhancedTests.cs" />
+    <Compile Remove="SplitByDelimiterStrictTests.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="TestData\Pol.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

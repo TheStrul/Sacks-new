@@ -38,7 +38,7 @@ public static class ActionsFactory
                 break;
             case "find":
                 string pattern = patameter.ContainsKey("pattern") ? patameter["pattern"] : string.Empty;
-                string[] options = patameter.ContainsKey("options") ? patameter["options"].Split(new[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries) : Array.Empty<string>();
+                string[] options = patameter.ContainsKey("options") ? patameter["options"].Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries  |StringSplitOptions.TrimEntries) : Array.Empty<string>();
                 ret = new FindAction(input, output, pattern, options.ToList());
                 break;
             case "split":
@@ -46,7 +46,13 @@ public static class ActionsFactory
                 var delimiter = patameter.ContainsKey("delimiter") ? patameter["delimiter"] : ":";
                 ret = new SplitAction(input, output, delimiter);
                 break;
-
+            case "map":
+            case "mapping":
+                if (!patameter.TryGetValue("table", out var tableName) || string.IsNullOrWhiteSpace(tableName))
+                    throw new ArgumentException("Missing required parameter 'table' for mapping action");
+                var assignOut = patameter.TryGetValue("assign", out var a) && a.Equals("true", StringComparison.OrdinalIgnoreCase);
+                ret = new MappingAction(input, output, assignOut, lookups[tableName]);
+                break;
             default:
                 ret = new NoOpChainAction(input, output);
                 break;

@@ -41,8 +41,9 @@ public sealed class SimpleAssignAction : IChainAction
     {
         if (bag == null) throw new ArgumentNullException(nameof(bag));
         bag.TryGetValue(_fromKey, out var value);
-        var val = value ?? string.Empty;
-        bag[$"assign:{_toKey}"] = val;
+
+        // No need to use ActionHelpers to write one value 
+        bag[$"assign:{_toKey}"] = value ?? string.Empty;
         return true;
     }
 }

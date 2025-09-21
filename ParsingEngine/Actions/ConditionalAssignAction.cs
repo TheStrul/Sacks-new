@@ -40,14 +40,7 @@ public sealed class ConditionalAssignAction : IChainAction
         {            
             if (string.IsNullOrEmpty(val))
                 return false;
-            if (_doAssign)
-            {
-                bag[$"assign:{_toKey}"] = val;
-            }
-            else
-            {
-                bag[$"{_toKey}"] = val;
-            }
+                ActionHelpers.WriteListOutput(bag, _toKey, val, new List<string> { val }, _doAssign);
             return true;
         }
         return false;

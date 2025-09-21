@@ -70,6 +70,7 @@ public sealed class ChainExecuter : IRule
             }
         }
 
+
         // Collect assignments from bag entries with 'assign:' prefix
         var assigns = bag
             .Where(kv => kv.Key.StartsWith("assign:", StringComparison.OrdinalIgnoreCase))

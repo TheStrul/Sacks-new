@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ParsingEngine;
 
@@ -32,14 +33,27 @@ public sealed class ExecutionConfig
 
 public class ActionConfig
 {
-    required public string Op { get; set; }
-    required public string Input { get; set; }
-    required public string Output { get; set; }
+    [JsonPropertyName("op")]
+    public string Op { get; set; } = string.Empty;
+
+    // Accept both legacy "in"/"input" and modern "Input" names via alias properties
+    [JsonIgnore]
+    public string Input { get; set; } = "Text";
+    [JsonPropertyName("in")]
+    public string? In { set => Input = value ?? Input; }
+    [JsonPropertyName("input")]
+    public string? InputAlias { set => Input = value ?? Input; }
+
+    // Accept both legacy "out"/"output" and modern "Output" names via alias properties
+    [JsonIgnore]
+    public string Output { get; set; } = string.Empty;
+    [JsonPropertyName("out")]
+    public string? Out { set => Output = value ?? Output; }
+    [JsonPropertyName("output")]
+    public string? OutputAlias { set => Output = value ?? Output; }
 
     // Parameters dictionary (matches JSON "Parameters" key)
     public Dictionary<string,string>? Parameters { get; set; }
-
-
 }
 
 public sealed class RuleConfig
@@ -61,10 +75,29 @@ public sealed class SplitMapping
 // Base step abstraction for pipeline operations
 public abstract class BaseStepConfig
 {
+    [JsonPropertyName("op")]
     public string Op { get; set; } = "";
-    // Unified IO contract for all steps. Prefer these over legacy From/To/In/Out.
-    required public string Input { get; set; }
-    required public string Output { get; set; }
+
+    // Unified IO contract for all steps. Provide alias properties to support legacy JSON fields.
+    [JsonIgnore]
+    public string Input { get; set; } = "Text";
+
+    [JsonPropertyName("in")]
+    public string? In { set => Input = value ?? Input; }
+    [JsonPropertyName("input")]
+    public string? InputAlias { set => Input = value ?? Input; }
+    [JsonPropertyName("from")]
+    public string? From { set => Input = value ?? Input; }
+
+    [JsonIgnore]
+    public string Output { get; set; } = string.Empty;
+
+    [JsonPropertyName("out")]
+    public string? Out { set => Output = value ?? Output; }
+    [JsonPropertyName("output")]
+    public string? OutputAlias { set => Output = value ?? Output; }
+    [JsonPropertyName("to")]
+    public string? To { set => Output = value ?? Output; }
 }
 
 // Marker type for parsing-oriented steps (no extra members yet)
