@@ -31,7 +31,7 @@ public sealed class SplitAction : IChainAction
 
         if (string.IsNullOrEmpty(input))
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false);
+            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, false);
             return false;
         }
 
@@ -39,7 +39,7 @@ public sealed class SplitAction : IChainAction
                          .Select(p => p.Trim())
                          .ToArray();
 
-        ActionHelpers.WriteListOutput(bag, _toKey, input, parts, false);
+        ActionHelpers.WriteListOutput(bag, _toKey, input, parts, false, false);
         return true;
     }
 }

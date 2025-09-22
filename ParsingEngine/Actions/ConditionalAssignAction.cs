@@ -40,7 +40,7 @@ public sealed class ConditionalAssignAction : IChainAction
         {            
             if (string.IsNullOrEmpty(val))
                 return false;
-                ActionHelpers.WriteListOutput(bag, _toKey, val, new List<string> { val }, _doAssign);
+                ActionHelpers.WriteListOutput(bag, _toKey, val, new List<string> { val }, _doAssign, true);
             return true;
         }
         return false;

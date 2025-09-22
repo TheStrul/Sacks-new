@@ -131,7 +131,7 @@ namespace ParsingEngine.Tests
             var executer = new ChainExecuter(rc, parserCfg);
 
             // sample input
-            var input = "SPLENDIDA PATCHOULI TENTATION GIFTSET..100ML / 3.4OZ EDP..15ML / 0.5OZ EDP";
+            var input = "CONTRADICTION M 100ML / 3.3OZ EDT";
             var ctx = new CellContext("B", input, CultureInfo.InvariantCulture, new Dictionary<string, object?>());
 
             var result = executer.Execute(ctx);

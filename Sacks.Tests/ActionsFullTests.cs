@@ -273,7 +273,7 @@ namespace ParsingEngine.Tests
         public void ActionHelpers_WriteListOutput_Handles_Null_And_Appends_Clean()
         {
             var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            ActionHelpers.WriteListOutput(bag, "X", "cleaned", new List<string> { "one", "two" }, true);
+            ActionHelpers.WriteListOutput(bag, "X", "cleaned", new List<string> { "one", "two" }, true, false);
             Assert.Equal("cleaned", bag["X.Clean"]);
             Assert.Equal("2", bag["X.Length"]);
             Assert.Equal("true", bag["X.Valid"]);
@@ -282,7 +282,7 @@ namespace ParsingEngine.Tests
 
             // empty results
             var bag2 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            ActionHelpers.WriteListOutput(bag2, "Y", string.Empty, null,false);
+            ActionHelpers.WriteListOutput(bag2, "Y", string.Empty, null,false,false);
             Assert.Equal(string.Empty, bag2["Y.Clean"]);
             Assert.Equal("0", bag2["Y.Length"]);
             Assert.Equal("false", bag2["Y.Vaild"]);

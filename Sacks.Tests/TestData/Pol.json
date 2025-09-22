@@ -12,15 +12,6 @@
           "preferFirstAssignment": true
         },
         "lookups": {
-          "genderMappings": {
-            "MENS": "M",
-            "WOMENS": "W",
-            "UNISEX": "U"
-          },
-          "typeMappings": {
-            "TESTER": "Tester",
-            "GIFTSET": "Gift Set"
-          },
           "unitLookups": {
             "ml": "ML",
             "oz": "OZ",
@@ -32,33 +23,35 @@
           "typeLookups": {
             "reg": "Regular",
             "mini": "Mini",
+            "giftset": "Giftset",
             "set": "Set",
             "tube": "Tube",
             "tester": "Tester",
-            "niche": "Niche"
+            "niche": "Niche",
+            "rollerball": "Roller ball",
+            "flash": "Flash"
           },
           "concentrationLookups": {
             "edt": "EDT",
-            "edp": "EDP", 
+            "edp": "EDP",
+            "edc": "EDC",
             "parfum": "Parfum",
-            "cologne": "Cologne",
+            "perfume": "Parfum",
+            "cologne": "EDC",
             "eau de toilette": "EDT",
             "eau de parfum": "EDP"
           },
-          "countryLookups": {
-            "fr": "France",
-            "us": "United States",
-            "it": "Italy",
-            "de": "Germany",
-            "uk": "United Kingdom"
-          },
+
           "genderLookups": {
             "men": "M",
             "wom": "W",
             "homme": "M",
             "femme": "W",
             "her": "W",
-            "p/homme": "M"
+            "p/homme": "M",
+            "m": "M",
+            "w": "W",
+            "u": "U"
           }
         },
         "columns": [
@@ -101,7 +94,7 @@
                   "Input": "GenderOrType",
                   "Output": "Product.Gender",
                   "Parameters": {
-                    "table": "genderMappings",
+                    "table": "genderLookups",
                     "assign": "true"
                   }
                 },
@@ -110,7 +103,7 @@
                   "Input": "GenderOrType",
                   "Output": "Product.Type",
                   "Parameters": {
-                    "table": "typeMappings",
+                    "table": "typeLookups",
                     "assign": "true"
                   }
                 }
@@ -163,8 +156,7 @@
                   "Output": "Product.Units",
                   "Parameters": {
                     "table": "unitLookups",
-                    "assign": "true",
-                    "options": "ignorecase"
+                    "assign": "true"
                   }
                 },
                 {
@@ -172,14 +164,67 @@
                   "Input": "Sizes.Clean",
                   "Output": "Concentrations",
                   "Parameters": {
-                    "pattern": "(?i)(?<c>edt|edp|parfum|cologne|eau de toilette|eau de parfum| tester)",
+                    "pattern": "lookup:concentrationLookups",
                     "options": "all,ignorecase,remove"
                   }
                 },
-
+                {
+                  "Op": "Map",
+                  "Input": "Concentrations[0]",
+                  "Output": "Product.Concentration",
+                  "Parameters": {
+                    "table": "concentrationLookups",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Concentrations.Clean",
+                  "Output": "Genders",
+                  "Parameters": {
+                    "pattern": "lookup:genderLookups",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+                {
+                  "Op": "Map",
+                  "Input": "Genders[0]",
+                  "Output": "Product.Gender",
+                  "Parameters": {
+                    "table": "genderLookups",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Genders.Clean",
+                  "Output": "Types",
+                  "Parameters": {
+                    "pattern": "lookup:typeLookups",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+                {
+                  "Op": "Map",
+                  "Input": "Types[0]",
+                  "Output": "Product.Type",
+                  "Parameters": {
+                    "table": "typeLookups",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Types.Clean",
+                  "Output": "FinalText",
+                  "Parameters": {
+                    "pattern": "[/-]*",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
                 {
                   "Op": "Assign",
-                  "Input": "Sizes.Clean",
+                  "Input": "FinalText.Clean",
                   "Output": "Product.Line"
                 }
               ]

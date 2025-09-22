@@ -6,7 +6,7 @@ namespace ParsingEngine;
 
 internal static class ActionHelpers
 {
-    public static void WriteListOutput(IDictionary<string, string> bag, string baseKey, string cleaned, IList<string>? results, bool assign = false)
+    public static void WriteListOutput(IDictionary<string, string> bag, string baseKey, string cleaned, IList<string>? results, bool assign, bool isSingle)
     {
         if (bag == null) throw new ArgumentNullException(nameof(bag));
         if (baseKey == null) throw new ArgumentNullException(nameof(baseKey));
@@ -26,7 +26,7 @@ internal static class ActionHelpers
             {
                 if (assign)
                 {
-                    if (results.Count > 1)
+                    if (!isSingle)
                     {
                         bag[$"assign:{baseKey}[{i}]"] = results[i] ?? string.Empty;
                     }
@@ -37,7 +37,7 @@ internal static class ActionHelpers
                 }
                 else
                 {
-                    if (results.Count > 1)
+                    if (!isSingle)
                     {
                         bag[$"{baseKey}[{i}]"] = results[i] ?? string.Empty;
                     }

@@ -47,7 +47,7 @@ public sealed class FindAction : IChainAction
         // If no pattern or empty input -> write empty results and return false
         if (string.IsNullOrEmpty(_pattern) || string.IsNullOrEmpty(input))
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false);
+            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, true);
             return false;
         }
 
@@ -74,7 +74,7 @@ public sealed class FindAction : IChainAction
         }
         catch
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false);
+            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, true);
             return false;
         }
     }
@@ -108,7 +108,7 @@ public sealed class FindAction : IChainAction
         var matches = rx.Matches(input).Cast<Match>().ToArray();
         if (matches.Length == 0)
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false);
+            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, true);
             return false;
         }
 
@@ -120,11 +120,11 @@ public sealed class FindAction : IChainAction
         {
             var cleaned = rx.Replace(input, string.Empty);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, _toKey, cleaned, results, assignFlag);
+            ActionHelpers.WriteListOutput(bag, _toKey, cleaned, results, assignFlag,false);
         }
         else
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, results, assignFlag);
+            ActionHelpers.WriteListOutput(bag, _toKey, input, results, assignFlag, false);
         }
 
         return true;
@@ -135,7 +135,7 @@ public sealed class FindAction : IChainAction
         var matches = rx.Matches(input).Cast<Match>().ToArray();
         if (matches.Length == 0)
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false);
+            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, true);
             return false;
         }
 
@@ -145,11 +145,11 @@ public sealed class FindAction : IChainAction
         {
             var cleaned = input.Remove(m.Index, m.Length);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, _toKey, cleaned, new List<string> { result }, assignFlag);
+            ActionHelpers.WriteListOutput(bag, _toKey, cleaned, new List<string> { result }, assignFlag, true);
             return true;
         }
 
-        ActionHelpers.WriteListOutput(bag, _toKey, input, new List<string> { result }, assignFlag);
+        ActionHelpers.WriteListOutput(bag, _toKey, input, new List<string> { result }, assignFlag, true);
 
 
         return true;
@@ -160,7 +160,7 @@ public sealed class FindAction : IChainAction
         var match = rx.Match(input);
         if (!match.Success)
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false);
+            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, true);
             return false;
         }
 
@@ -169,11 +169,11 @@ public sealed class FindAction : IChainAction
         {
             var cleaned = input.Remove(match.Index, match.Length);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, _toKey, cleaned, new List<string> { result },  assignFlag);
+            ActionHelpers.WriteListOutput(bag, _toKey, cleaned, new List<string> { result },  assignFlag, true);
             return true;
         }
 
-        ActionHelpers.WriteListOutput(bag, _toKey, input, new List<string> { result }, assignFlag);
+        ActionHelpers.WriteListOutput(bag, _toKey, input, new List<string> { result }, assignFlag, true);
 
         return true;
     }

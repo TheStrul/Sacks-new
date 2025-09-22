@@ -151,15 +151,6 @@
           "preferFirstAssignment": true
         },
         "lookups": {
-          "genderMappings": {
-            "MENS": "M",
-            "WOMENS": "W",
-            "UNISEX": "U"
-          },
-          "typeMappings": {
-            "TESTER": "Tester",
-            "GIFTSET": "Gift Set"
-          },
           "unitLookups": {
             "ml": "ML",
             "oz": "OZ",
@@ -171,33 +162,44 @@
           "typeLookups": {
             "reg": "Regular",
             "mini": "Mini",
+            "giftset": "Giftset",
             "set": "Set",
             "tube": "Tube",
             "tester": "Tester",
-            "niche": "Niche"
+            "niche": "Niche",
+            "rollerball": "Roller ball",
+            "flash": "Flash"
           },
           "concentrationLookups": {
             "edt": "EDT",
-            "edp": "EDP", 
-            "parfum": "Parfum",
-            "cologne": "Cologne",
+            "edp": "EDP",
+            "edc": "EDC",
+            "parfum": "EDP",
+            "perfume": "EDP",
+            "cologne": "EDC",
             "eau de toilette": "EDT",
             "eau de parfum": "EDP"
           },
-          "countryLookups": {
-            "fr": "France",
-            "us": "United States",
-            "it": "Italy",
-            "de": "Germany",
-            "uk": "United Kingdom"
-          },
+
           "genderLookups": {
             "men": "M",
+            "man": "M",
+            "boy": "M",
             "wom": "W",
             "homme": "M",
             "femme": "W",
             "her": "W",
-            "p/homme": "M"
+            "p/homme": "M",
+            "m": "M",
+            "w": "W",
+            "u": "U",
+            "for him": "M",
+            "senorita": "W",
+            "bella": "W",
+            "father": "M",
+            "son": "M",
+            "hero": "M"
+
           }
         },
         "columns": [
@@ -240,7 +242,7 @@
                   "Input": "GenderOrType",
                   "Output": "Product.Gender",
                   "Parameters": {
-                    "table": "genderMappings",
+                    "table": "genderLookups",
                     "assign": "true"
                   }
                 },
@@ -249,7 +251,7 @@
                   "Input": "GenderOrType",
                   "Output": "Product.Type",
                   "Parameters": {
-                    "table": "typeMappings",
+                    "table": "typeLookups",
                     "assign": "true"
                   }
                 }
@@ -265,18 +267,112 @@
                   "Input": "Text",
                   "Output": "Offer.Description"
                 },
+
                 {
                   "Op": "Find",
                   "Input": "Text",
-                  "Output": "TextNoOz",
+                  "Output": "Sizes",
                   "Parameters": {
-                    "options": "IgnoreCase, all, remove",
-                    "pattern": "@\"/\\s*\\d+(?:.\\d+)?\\s*(?:fl\\s*oz|oz)\\b\""
+                    "pattern": "(?i)(?<size>\\d+(?:\\.\\d+)?\\s*(?:ml|oz|fl\\s*oz))",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+
+                {
+                  "Op": "Find",
+                  "Input": "Sizes[0]",
+                  "Output": "Product.Size",
+                  "Parameters": {
+                    "pattern": "(?<num>\\d+(?:\\.\\d+)?)",
+                    "options": "first,assign"
+                  }
+                },
+
+                {
+                  "Op": "Find",
+                  "Input": "Sizes[0]",
+                  "Output": "UnitRaw",
+                  "Parameters": {
+                    "pattern": "(?i)(?<unit>ml|oz|fl\\s*oz)",
+                    "options": "first,ignorecase"
+                  }
+                },
+
+                {
+                  "Op": "Map",
+                  "Input": "UnitRaw",
+                  "Output": "Product.Units",
+                  "Parameters": {
+                    "table": "unitLookups",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Sizes.Clean",
+                  "Output": "Concentrations",
+                  "Parameters": {
+                    "pattern": "lookup:concentrationLookups",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+                {
+                  "Op": "Map",
+                  "Input": "Concentrations[0]",
+                  "Output": "Product.Concentration",
+                  "Parameters": {
+                    "table": "concentrationLookups",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Concentrations.Clean",
+                  "Output": "Genders",
+                  "Parameters": {
+                    "pattern": "lookup:genderLookups",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+                {
+                  "Op": "Map",
+                  "Input": "Genders[0]",
+                  "Output": "Product.Gender",
+                  "Parameters": {
+                    "table": "genderLookups",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Genders.Clean",
+                  "Output": "Types",
+                  "Parameters": {
+                    "pattern": "lookup:typeLookups",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+                {
+                  "Op": "Map",
+                  "Input": "Types[0]",
+                  "Output": "Product.Type",
+                  "Parameters": {
+                    "table": "typeLookups",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Types.Clean",
+                  "Output": "FinalText",
+                  "Parameters": {
+                    "pattern": "[/-]*",
+                    "options": "all,ignorecase,remove"
                   }
                 },
                 {
                   "Op": "Assign",
-                  "Input": "TextNoOz",
+                  "Input": "FinalText.Clean",
                   "Output": "Product.Line"
                 }
               ]
