@@ -10,33 +10,33 @@ namespace SacksLogicLayer.Services.Interfaces
         /// <summary>
         /// Gets a supplier by ID
         /// </summary>
-        Task<SupplierEntity?> GetSupplierAsync(int id);
+        Task<Supplier?> GetSupplierAsync(int id);
 
         /// <summary>
         /// Gets a supplier by name
         /// </summary>
-        Task<SupplierEntity?> GetSupplierByNameAsync(string name);
+        Task<Supplier?> GetSupplierByNameAsync(string name);
 
         /// <summary>
         /// Gets all suppliers with pagination
         /// </summary>
-        Task<(IEnumerable<SupplierEntity> Suppliers, int TotalCount)> GetSuppliersAsync(
+        Task<(IEnumerable<Supplier> Suppliers, int TotalCount)> GetSuppliersAsync(
             int pageNumber = 1, int pageSize = 50);
 
         /// <summary>
         /// Creates a new supplier
         /// </summary>
-        Task<SupplierEntity> CreateSupplierAsync(SupplierEntity supplier, string? createdBy = null);
+        Task<Supplier> CreateSupplierAsync(Supplier supplier, string? createdBy = null);
 
         /// <summary>
         /// Updates an existing supplier
         /// </summary>
-        Task<SupplierEntity> UpdateSupplierAsync(SupplierEntity supplier, string? modifiedBy = null);
+        Task<Supplier> UpdateSupplierAsync(Supplier supplier, string? modifiedBy = null);
 
         /// <summary>
         /// Creates or gets an existing supplier based on configuration
         /// </summary>
-        Task<SupplierEntity> CreateOrGetSupplierByName(string supplierName, 
+        Task<Supplier> CreateOrGetSupplierByName(string supplierName, 
             string? description = null);
 
         /// <summary>
@@ -47,6 +47,6 @@ namespace SacksLogicLayer.Services.Interfaces
         /// <summary>
         /// Searches suppliers by various criteria
         /// </summary>
-        Task<IEnumerable<SupplierEntity>> SearchSuppliersAsync(string searchTerm);
+        Task<IEnumerable<Supplier>> SearchSuppliersAsync(string searchTerm);
     }
 }

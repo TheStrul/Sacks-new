@@ -6,7 +6,7 @@ namespace SacksDataLayer.Entities
     /// <summary>
     /// Product entity with support for unlimited dynamic properties
     /// </summary>
-    public class ProductEntity : Entity
+    public class Product : Entity
     {
         /// <summary>
         /// Product name
@@ -31,7 +31,7 @@ namespace SacksDataLayer.Entities
         /// <summary>
         /// Navigation property to supplier offers for this product
         /// </summary>
-        public virtual ICollection<ProductOfferAnnex> OfferProducts { get; set; } = new List<ProductOfferAnnex>();
+        public virtual ICollection<ProductOffer> OfferProducts { get; set; } = new List<ProductOffer>();
 
         /// <summary>
         /// JSON representation of dynamic properties for database storage

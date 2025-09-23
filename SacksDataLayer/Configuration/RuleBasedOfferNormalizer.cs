@@ -50,7 +50,7 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
     }
 
     /// <summary>
-    /// Normalizes supplier data into ProductOfferAnnex objects
+    /// Normalizes supplier data into ProductOffer objects
     /// </summary>
     public async Task NormalizeAsync(ProcessingContext context)
     {
@@ -63,12 +63,12 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
         // Initialize supplier offer if not exists
         if (context.ProcessingResult.SupplierOffer == null)
         {
-            context.ProcessingResult.SupplierOffer = new SupplierOfferAnnex
+            context.ProcessingResult.SupplierOffer = new Offer
             {
                 OfferName = $"{SupplierName} - {context.FileData.FileName}",
                 Currency = _supplierConfiguration.Currency ?? "USD",
                 Description = $"Processed from file: {context.FileData.FileName}",
-                OfferProducts = new List<ProductOfferAnnex>()
+                OfferProducts = new List<ProductOffer>()
             };
         }
 
@@ -107,20 +107,20 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                 // Validate PropertyBag
                 if (IsValidPropertyBag(propertyBag))
                 {
-                // Convert to ProductOfferAnnex
+                // Convert to ProductOffer
                 var productOffer = ConvertToProductOfferAnnex(propertyBag, context);                   
                  if (productOffer != null)
                     {
                         context.ProcessingResult.SupplierOffer.OfferProducts.Add(productOffer);
                         validOffers++;
 
-                        _logger.LogDebug("Created ProductOfferAnnex from row {RowIndex}: {PropertyCount} properties",
+                        _logger.LogDebug("Created ProductOffer from row {RowIndex}: {PropertyCount} properties",
                             row.Index, propertyBag.Values.Count);
                     }
                     else
                     {
                         skippedRows++;
-                        _logger.LogWarning("Failed to convert PropertyBag to ProductOfferAnnex for row {RowIndex}", row.Index);
+                        _logger.LogWarning("Failed to convert PropertyBag to ProductOffer for row {RowIndex}", row.Index);
                     }
                 }
                 else
@@ -150,7 +150,7 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
     }
 
     /// <summary>
-    /// Validates if PropertyBag contains sufficient data for creating a ProductOfferAnnex
+    /// Validates if PropertyBag contains sufficient data for creating a ProductOffer
     /// </summary>
     private bool IsValidPropertyBag(PropertyBag propertyBag)
     {
@@ -184,15 +184,15 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
     }
 
     /// <summary>
-    /// Converts PropertyBag to ProductOfferAnnex entity with proper property categorization
+    /// Converts PropertyBag to ProductOffer entity with proper property categorization
     /// </summary>
-    private ProductOfferAnnex? ConvertToProductOfferAnnex(PropertyBag propertyBag, ProcessingContext context)
+    private ProductOffer? ConvertToProductOfferAnnex(PropertyBag propertyBag, ProcessingContext context)
     {
         try
         {
-            var productOffer = new ProductOfferAnnex
+            var productOffer = new ProductOffer
             {
-                Product = new ProductEntity()
+                Product = new Product()
             };
 
             // Categorize properties from PropertyBag using key patterns
@@ -265,7 +265,7 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
 
                 }
 
-                // Serialize the offer properties (ProductEntity.DynamicPropertiesJson is computed automatically)
+                // Serialize the offer properties (Product.DynamicPropertiesJson is computed automatically)
                 productOffer.SerializeOfferProperties();
             }
 
@@ -273,7 +273,7 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error converting PropertyBag to ProductOfferAnnex");
+            _logger.LogError(ex, "Error converting PropertyBag to ProductOffer");
             return null;
         }
     }

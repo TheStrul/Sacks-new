@@ -13,22 +13,22 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// <summary>
         /// Gets a supplier by its ID
         /// </summary>
-        Task<SupplierEntity?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<Supplier?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets a supplier by name
         /// </summary>
-        Task<SupplierEntity?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
+        Task<Supplier?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all suppliers
         /// </summary>
-        Task<IEnumerable<SupplierEntity>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<Supplier>> GetAllAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets suppliers with pagination
         /// </summary>
-        Task<IEnumerable<SupplierEntity>> GetPagedAsync(int skip, int take, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Supplier>> GetPagedAsync(int skip, int take, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets supplier count
@@ -43,7 +43,7 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// <summary>
         /// Searches suppliers by term
         /// </summary>
-        Task<IEnumerable<SupplierEntity>> SearchAsync(string searchTerm, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Supplier>> SearchAsync(string searchTerm, CancellationToken cancellationToken = default);
 
         #endregion
 
@@ -53,37 +53,37 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// Adds a supplier to the context (does not save)
         /// </summary>
         /// <param name="supplier">Supplier to add</param>
-        void Add(SupplierEntity supplier);
+        void Add(Supplier supplier);
 
         /// <summary>
         /// Adds multiple suppliers to the context (does not save)
         /// </summary>
         /// <param name="suppliers">Suppliers to add</param>
-        void AddRange(IEnumerable<SupplierEntity> suppliers);
+        void AddRange(IEnumerable<Supplier> suppliers);
 
         /// <summary>
         /// Updates a supplier in the context (does not save)
         /// </summary>
         /// <param name="supplier">Supplier to update</param>
-        void Update(SupplierEntity supplier);
+        void Update(Supplier supplier);
 
         /// <summary>
         /// Updates multiple suppliers in the context (does not save)
         /// </summary>
         /// <param name="suppliers">Suppliers to update</param>
-        void UpdateRange(IEnumerable<SupplierEntity> suppliers);
+        void UpdateRange(IEnumerable<Supplier> suppliers);
 
         /// <summary>
         /// Removes a supplier from the context (does not save)
         /// </summary>
         /// <param name="supplier">Supplier to remove</param>
-        void Remove(SupplierEntity supplier);
+        void Remove(Supplier supplier);
 
         /// <summary>
         /// Removes multiple suppliers from the context (does not save)
         /// </summary>
         /// <param name="suppliers">Suppliers to remove</param>
-        void RemoveRange(IEnumerable<SupplierEntity> suppliers);
+        void RemoveRange(IEnumerable<Supplier> suppliers);
 
         /// <summary>
         /// Removes a supplier by ID from the context (does not save)

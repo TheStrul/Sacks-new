@@ -3,7 +3,7 @@ using SacksDataLayer.FileProcessing.Models;
 namespace SacksDataLayer.FileProcessing.Interfaces
 {
     /// <summary>
-    /// Interface for normalizing supplier-specific data into ProductEntity for supplier offers
+    /// Interface for normalizing supplier-specific data into Product for supplier offers
     /// </summary>
     public interface IOfferNormalizer
     {
@@ -22,10 +22,10 @@ namespace SacksDataLayer.FileProcessing.Interfaces
 
 
         /// <summary>
-        /// Normalizes supplier data into ProductEntity objects for supplier offers
+        /// Normalizes supplier data into Product objects for supplier offers
         /// </summary>
         /// <param name="context">Processing context including additional parameters</param>
-        /// <returns>Processing result with normalized ProductEntity objects and statistics</returns>
+        /// <returns>Processing result with normalized Product objects and statistics</returns>
         Task NormalizeAsync(ProcessingContext context);
 
     }

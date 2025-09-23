@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using SacksDataLayer.Data;

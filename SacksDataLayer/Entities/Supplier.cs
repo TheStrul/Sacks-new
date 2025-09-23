@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace SacksDataLayer.Entities;
 
-public class SupplierEntity : Entity
+public class Supplier : Entity
 {
     [MaxLength(100)]
     public required string Name { get; set; }
@@ -12,7 +12,7 @@ public class SupplierEntity : Entity
     public string? Description { get; set; }
         
     // Navigation property
-    public virtual ICollection<SupplierOfferAnnex> Offers { get; set; } = new List<SupplierOfferAnnex>();
+    public virtual ICollection<Offer> Offers { get; set; } = new List<Offer>();
 
     // Dynamic properties stored as key/value pairs and persisted as JSON
     public Dictionary<string, object?> DynamicProperties { get; set; } = new Dictionary<string, object?>();

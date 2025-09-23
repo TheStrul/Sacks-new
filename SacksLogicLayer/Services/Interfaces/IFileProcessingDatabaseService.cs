@@ -22,14 +22,14 @@ namespace SacksDataLayer.Services.Interfaces
         /// <param name="supplierConfig">Supplier configuration</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Supplier entity</returns>
-        Task<SupplierEntity> CreateOrGetSupplierAsync(
+        Task<Supplier> CreateOrGetSupplierAsync(
             SupplierConfiguration supplierConfig, 
             CancellationToken cancellationToken = default);
 
 
 
-        Task<SupplierOfferAnnex> CreateOfferAsync(
-           SupplierEntity supplier,
+        Task<Offer> CreateOfferAsync(
+           Supplier supplier,
            string offerName,
            DateTime processingDate,
            string currency,

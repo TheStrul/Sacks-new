@@ -13,27 +13,27 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// <summary>
         /// Gets a supplier offer by its ID
         /// </summary>
-        Task<SupplierOfferAnnex?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<Offer?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets active offer for a product from a supplier
         /// </summary>
-        Task<SupplierOfferAnnex?> GetActiveOfferAsync(int productId, int supplierId, CancellationToken cancellationToken = default);
+        Task<Offer?> GetActiveOfferAsync(int productId, int supplierId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all offers for a specific product
         /// </summary>
-        Task<IEnumerable<SupplierOfferAnnex>> GetByProductIdAsync(int productId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Offer>> GetByProductIdAsync(int productId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all offers from a specific supplier
         /// </summary>
-        Task<IEnumerable<SupplierOfferAnnex>> GetBySupplierIdAsync(int supplierId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Offer>> GetBySupplierIdAsync(int supplierId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all supplier offers
         /// </summary>
-        Task<IEnumerable<SupplierOfferAnnex>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<Offer>> GetAllAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets offer count
@@ -48,37 +48,37 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// Adds a supplier offer to the context (does not save)
         /// </summary>
         /// <param name="offer">Supplier offer to add</param>
-        void Add(SupplierOfferAnnex offer);
+        void Add(Offer offer);
 
         /// <summary>
         /// Adds multiple supplier offers to the context (does not save)
         /// </summary>
         /// <param name="offers">Supplier offers to add</param>
-        void AddRange(IEnumerable<SupplierOfferAnnex> offers);
+        void AddRange(IEnumerable<Offer> offers);
 
         /// <summary>
         /// Updates a supplier offer in the context (does not save)
         /// </summary>
         /// <param name="offer">Supplier offer to update</param>
-        void Update(SupplierOfferAnnex offer);
+        void Update(Offer offer);
 
         /// <summary>
         /// Updates multiple supplier offers in the context (does not save)
         /// </summary>
         /// <param name="offers">Supplier offers to update</param>
-        void UpdateRange(IEnumerable<SupplierOfferAnnex> offers);
+        void UpdateRange(IEnumerable<Offer> offers);
 
         /// <summary>
         /// Removes a supplier offer from the context (does not save)
         /// </summary>
         /// <param name="offer">Supplier offer to remove</param>
-        void Remove(SupplierOfferAnnex offer);
+        void Remove(Offer offer);
 
         /// <summary>
         /// Removes multiple supplier offers from the context (does not save)
         /// </summary>
         /// <param name="offers">Supplier offers to remove</param>
-        void RemoveRange(IEnumerable<SupplierOfferAnnex> offers);
+        void RemoveRange(IEnumerable<Offer> offers);
 
         /// <summary>
         /// Removes a supplier offer by ID from the context (does not save)

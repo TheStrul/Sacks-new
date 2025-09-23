@@ -27,12 +27,12 @@ namespace SacksLogicLayer.Services.Implementations
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<ProductEntity?> GetProductAsync(int id)
+        public async Task<Product?> GetProductAsync(int id)
         {
             return await _repository.GetByIdAsync(id, CancellationToken.None);
         }
 
-        public async Task<ProductEntity?> GetProductByEANAsync(string ean)
+        public async Task<Product?> GetProductByEANAsync(string ean)
         {
             return await _repository.GetByEANAsync(ean, CancellationToken.None);
         }
@@ -40,12 +40,12 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// 🚀 PERFORMANCE: Get multiple products by EANs in a single database call
         /// </summary>
-        public async Task<Dictionary<string, ProductEntity>> GetProductsByEANsBulkAsync(IEnumerable<string> eans)
+        public async Task<Dictionary<string, Product>> GetProductsByEANsBulkAsync(IEnumerable<string> eans)
         {
             return await _repository.GetByEANsBulkAsync(eans, CancellationToken.None);
         }
 
-        public async Task<(IEnumerable<ProductEntity> Products, int TotalCount)> GetProductsAsync(int pageNumber = 1, int pageSize = 50)
+        public async Task<(IEnumerable<Product> Products, int TotalCount)> GetProductsAsync(int pageNumber = 1, int pageSize = 50)
         {
             if (pageNumber < 1) pageNumber = 1;
             if (pageSize < 1) pageSize = 50;
@@ -58,7 +58,7 @@ namespace SacksLogicLayer.Services.Implementations
             return (products, totalCount);
         }
 
-        public async Task<ProductEntity> CreateProductAsync(ProductEntity product, string? createdBy = null)
+        public async Task<Product> CreateProductAsync(Product product, string? createdBy = null)
         {
             if (product == null)
                 throw new ArgumentNullException(nameof(product));
@@ -96,12 +96,12 @@ namespace SacksLogicLayer.Services.Implementations
             });
         }
 
-        public async Task<IEnumerable<ProductEntity>> SearchProductsByNameAsync(string searchTerm)
+        public async Task<IEnumerable<Product>> SearchProductsByNameAsync(string searchTerm)
         {
             return await _repository.SearchByNameAsync(searchTerm, CancellationToken.None);
         }
 
-        public async Task<IEnumerable<ProductEntity>> GetProductsBySourceFileAsync(string sourceFile)
+        public async Task<IEnumerable<Product>> GetProductsBySourceFileAsync(string sourceFile)
         {
             return await _repository.GetBySourceFileAsync(sourceFile, CancellationToken.None);
         }
@@ -111,7 +111,7 @@ namespace SacksLogicLayer.Services.Implementations
         /// 🚀 PERFORMANCE OPTIMIZED: Bulk create/update with minimal database calls
         /// NOTE: Does not manage transactions - caller must handle transaction scope
         /// </summary>
-        public async Task<ProductImportResult> BulkCreateOrUpdateProductsOptimizedAsync(SupplierOfferAnnex offer)
+        public async Task<ProductImportResult> BulkCreateOrUpdateProductsOptimizedAsync(Offer offer)
         {
             ProductImportResult result = new();
             if (offer == null)
@@ -129,7 +129,7 @@ namespace SacksLogicLayer.Services.Implementations
                 .ToDictionary(g => g.Key, g => g.ToList());
             
             // Separate products into new and existing for proper EF tracking
-            var productsToAdd = new List<ProductEntity>();
+            var productsToAdd = new List<Product>();
             var processedEANs = new HashSet<string>();
             
             foreach (var eanGroup in productsByEAN)
@@ -231,7 +231,7 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// 🔧 FIX: Gets already tracked entity or properly attaches untracked entity to avoid conflicts
         /// </summary>
-        private async Task<ProductEntity> GetOrAttachExistingProductAsync(ProductEntity untrackedProduct)
+        private async Task<Product> GetOrAttachExistingProductAsync(Product untrackedProduct)
         {
             // First check if this entity is already being tracked
             var tracked = await _repository.GetByIdAsync(untrackedProduct.Id, CancellationToken.None);

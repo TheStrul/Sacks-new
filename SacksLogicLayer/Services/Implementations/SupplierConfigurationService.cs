@@ -25,12 +25,12 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// Auto-detects supplier configuration from file path/name
         /// </summary>
-        public SupplierConfiguration? DetectSupplierFromFileAsync(string filePath)
+        public async Task<SupplierConfiguration?> DetectSupplierFromFileAsync(string filePath)
         {
             try
             {
                 _logger.LogDebug("Detecting supplier configuration for file: {FilePath}", filePath);
-                var result = _configurationManager.DetectSupplierFromFileAsync(filePath);
+                var result = await _configurationManager.DetectSupplierFromFileAsync(filePath);
                 
                 if (result != null)
                 {

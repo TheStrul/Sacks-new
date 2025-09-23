@@ -174,7 +174,7 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// Creates or retrieves a supplier based on the supplier configuration
         /// </summary>
-        public async Task<SupplierEntity> CreateOrGetSupplierAsync(
+        public async Task<Supplier> CreateOrGetSupplierAsync(
             SupplierConfiguration supplierConfig, 
             CancellationToken cancellationToken = default)
         {
@@ -199,8 +199,8 @@ namespace SacksDataLayer.Services.Implementations
         /// <summary>
         /// Creates a new offer for the file processing session
         /// </summary>
-        public async Task<SupplierOfferAnnex> CreateOfferAsync(
-            SupplierEntity supplier,
+        public async Task<Offer> CreateOfferAsync(
+            Supplier supplier,
             string offerName,
             DateTime processingDate,
             string currency,
@@ -216,12 +216,12 @@ namespace SacksDataLayer.Services.Implementations
             {
                 await EnsureOfferCanBeProcessedAsync(supplier, offerName, cancellationToken);
 
-                SupplierOfferAnnex offer;
+                Offer offer;
 
                 if (supplier.Id > 0)
                 {
                     // Supplier exists in DB - create offer using SupplierId to avoid attaching a detached Supplier
-                    offer = new SupplierOfferAnnex
+                    offer = new Offer
                     {
                         SupplierId = supplier.Id,
                         OfferName = offerName,
@@ -233,7 +233,7 @@ namespace SacksDataLayer.Services.Implementations
                 else
                 {
                     // Supplier is new / unpersisted - set navigation so EF will insert both
-                    offer = new SupplierOfferAnnex
+                    offer = new Offer
                     {
                         Supplier = supplier,
                         OfferName = offerName,
@@ -423,7 +423,7 @@ namespace SacksDataLayer.Services.Implementations
         /// In development mode, deletes existing offer if found to allow re-processing.
         /// </summary>
         private async Task EnsureOfferCanBeProcessedAsync(
-            SupplierEntity supplier,
+            Supplier supplier,
             string offerName,
             CancellationToken cancellationToken = default)
         {

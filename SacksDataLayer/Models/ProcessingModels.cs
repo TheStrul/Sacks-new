@@ -14,7 +14,7 @@ namespace SacksDataLayer.FileProcessing.Models
         /// <summary>
         /// Supplier offer metadata (one per file processing session)
         /// </summary>
-        public SupplierOfferAnnex? SupplierOffer { get; set; }
+        public Offer? SupplierOffer { get; set; }
 
         public ProcessingStatistics Statistics { get; }  = new();
         public List<string> Warnings { get; } = new();

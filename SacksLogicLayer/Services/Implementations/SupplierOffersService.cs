@@ -18,22 +18,22 @@ namespace SacksDataLayer.Services.Implementations
             _suppliersRepository = suppliersRepository ?? throw new ArgumentNullException(nameof(suppliersRepository));
         }
 
-        public async Task<SupplierOfferAnnex?> GetOfferAsync(int id)
+        public async Task<Offer?> GetOfferAsync(int id)
         {
             return await _offerRepository.GetByIdAsync(id, CancellationToken.None);
         }
 
-        public async Task<IEnumerable<SupplierOfferAnnex>> GetOffersBySupplierAsync(int supplierId)
+        public async Task<IEnumerable<Offer>> GetOffersBySupplierAsync(int supplierId)
         {
             return await _offerRepository.GetBySupplierIdAsync(supplierId, CancellationToken.None);
         }
 
-        public async Task<IEnumerable<SupplierOfferAnnex>> GetOffersByProductAsync(int productId)
+        public async Task<IEnumerable<Offer>> GetOffersByProductAsync(int productId)
         {
             return await _offerRepository.GetByProductIdAsync(productId, CancellationToken.None);
         }
 
-        public async Task<SupplierOfferAnnex> CreateOfferAsync(SupplierOfferAnnex offer, string? createdBy = null)
+        public async Task<Offer> CreateOfferAsync(Offer offer, string? createdBy = null)
         {
             // Validate offer
             await ValidateOfferAsync(offer);
@@ -52,7 +52,7 @@ namespace SacksDataLayer.Services.Implementations
             return offer;
         }
 
-        public async Task<SupplierOfferAnnex> UpdateOfferAsync(SupplierOfferAnnex offer, string? modifiedBy = null)
+        public async Task<Offer> UpdateOfferAsync(Offer offer, string? modifiedBy = null)
         {
             // Validate offer
             await ValidateOfferAsync(offer);
@@ -97,7 +97,7 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        public Task<(IEnumerable<SupplierOfferAnnex> Offers, int TotalCount)> GetOffersAsync(
+        public Task<(IEnumerable<Offer> Offers, int TotalCount)> GetOffersAsync(
             int pageNumber = 1, int pageSize = 50)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -107,22 +107,22 @@ namespace SacksDataLayer.Services.Implementations
             // Note: This is a simplified implementation
             // Since we don't have GetAllAsync, we can't implement proper pagination
             // In a real scenario, you'd add GetAllAsync to the offerRepository interface
-            return Task.FromResult<(IEnumerable<SupplierOfferAnnex>, int)>((Enumerable.Empty<SupplierOfferAnnex>(), 0));
+            return Task.FromResult<(IEnumerable<Offer>, int)>((Enumerable.Empty<Offer>(), 0));
         }
 
-        public async Task<IEnumerable<SupplierOfferAnnex>> SearchOffersAsync(string searchTerm)
+        public async Task<IEnumerable<Offer>> SearchOffersAsync(string searchTerm)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
-                return Enumerable.Empty<SupplierOfferAnnex>();
+                return Enumerable.Empty<Offer>();
 
             // Note: This is a simplified implementation
             // Since we don't have a comprehensive search method, this is a placeholder
             // In a real scenario, you'd implement search in the offerRepository
             await Task.CompletedTask;
-            return Enumerable.Empty<SupplierOfferAnnex>();
+            return Enumerable.Empty<Offer>();
         }
 
-        private async Task ValidateOfferAsync(SupplierOfferAnnex offer)
+        private async Task ValidateOfferAsync(Offer offer)
         {
             if (offer == null)
                 throw new ArgumentNullException(nameof(offer));

@@ -4,34 +4,34 @@ namespace SacksLogicLayer.Services
     using Microsoft.Extensions.Logging;
 
     using SacksDataLayer.FileProcessing.Configuration;
+    using SacksDataLayer.Configuration;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Manages loading and updating supplier configurations from JSON files
     /// /// </summary>
     public class SupplierConfigurationManager
     {
-        private SuppliersConfiguration? _configuration;
-        private readonly ILogger<SupplierConfigurationManager>? _logger;
+        private IConfiguration _configuration;
+        private SuppliersConfiguration? _suppliersConfiguration = null;
+        private readonly ILogger<SupplierConfigurationManager> _logger;
+        private readonly JsonSupplierConfigurationLoader loader;
 
         /// <summary>
-        /// Creates a new instance with IConfiguration support (recommended)
+        /// Creates a new instance using JsonSupplierConfigurationLoader to build SuppliersConfiguration
         /// /// </summary>
-        public SupplierConfigurationManager(IConfiguration configuration, ILogger<SupplierConfigurationManager>? logger = null)
+        public SupplierConfigurationManager(IConfiguration configuration, ILogger<SupplierConfigurationManager> logger)
         {
             ArgumentNullException.ThrowIfNull(configuration);
 
-            // Try to get from root level first (loaded from supplier-formats.json)
-            _configuration = configuration.Get<SuppliersConfiguration>();
-            
-            // If that fails, try the "SupplierFormats" section
-            _configuration ??= configuration.GetSection("SupplierFormats").Get<SuppliersConfiguration>();
-            
-            if (_configuration == null)
-            {
-                throw new InvalidOperationException("Failed to bind SupplierFormats configuration. Ensure supplier-formats.json is loaded correctly.");
-            }
+            ArgumentNullException.ThrowIfNull(logger);
 
             _logger = logger;
+            _configuration = configuration;
+
+
+            loader = new JsonSupplierConfigurationLoader(_logger);
+
         }
 
         /// <summary>
@@ -40,115 +40,32 @@ namespace SacksLogicLayer.Services
         public async Task<SuppliersConfiguration> GetConfigurationAsync()
         {
             await EnsureConfigurationLoadedAsync();
-            return _configuration!;
+            return this._suppliersConfiguration!;
         }
 
-
-        /// <summary>
-        /// Gets all supplier configurations ordered by name
-        /// /// </summary>
-        public async Task<List<SupplierConfiguration>> GetSupplierConfigurationsByPriorityAsync()
-        {
-            var config = await GetConfigurationAsync();
-            var suppliers = config.Suppliers
-                .OrderBy(s => s.Name)
-                .ToList();
-            
-            // Ensure parent references are set
-            foreach (var supplier in suppliers)
-            {
-                supplier.ParentConfiguration = config;
-            }
-            
-            return suppliers;
-        }
-
-        /// <summary>
-        /// Adds a new supplier configuration
-        /// /// </summary>
-        public async Task AddSupplierConfigurationAsync(SupplierConfiguration supplierConfig)
-        {
-            ArgumentNullException.ThrowIfNull(supplierConfig);
-            
-            var config = await GetConfigurationAsync();
-            
-            // Remove existing configuration with same name
-            config.Suppliers.RemoveAll(s => 
-                string.Equals(s.Name, supplierConfig.Name, StringComparison.OrdinalIgnoreCase));
-            
-            // Set parent reference and add new configuration
-            supplierConfig.ParentConfiguration = config;
-            config.Suppliers.Add(supplierConfig);
-            
-            await SaveConfigurationAsync(config);
-        }
-
-
-
-        /// <summary>
-        /// Reloads configuration from file
-        /// /// </summary>
-        public async Task ReloadConfigurationAsync()
-        {
-            await EnsureConfigurationLoadedAsync();
-        }
-
-        /// <summary>
-        /// Validates the configuration file
-        /// /// </summary>
-        public async Task<ConfigurationValidationResult> ValidateConfigurationAsync()
-        {
-            var result = new ConfigurationValidationResult();
-            
-            try
-            {
-                var config = await GetConfigurationAsync();
-                
-                // Validate basic structure
-                if (config.Suppliers == null || !config.Suppliers.Any())
-                {
-                    result.AddError("No suppliers configured");
-                    return result;
-                }
-
-                // Validate each supplier
-                var supplierNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var supplier in config.Suppliers)
-                {
-                    ValidateSupplier(supplier, result, supplierNames);
-                }
-
-                result.IsValid = !result.Errors.Any();
-                result.AddInfo($"Validated {config.Suppliers.Count} supplier configurations");
-            }
-            catch (Exception ex)
-            {
-                result.AddError($"Configuration validation failed: {ex.Message}");
-            }
-
-            return result;
-        }
 
         /// <summary>
         /// Auto-detects supplier configuration from file path/name
         /// /// </summary>
-        public SupplierConfiguration? DetectSupplierFromFileAsync(string filePath)
+        public async Task<SupplierConfiguration?> DetectSupplierFromFileAsync(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath))
                 throw new ArgumentException("File path cannot be null or empty", nameof(filePath));
-                
+
+            await this.EnsureConfigurationLoadedAsync();
             try
             {
+
                 var fileName = Path.GetFileName(filePath);
                 var fileNameLowerCase = fileName.ToLowerInvariant(); // Convert to lowercase for matching
                 _logger?.LogDebug("Detecting supplier configuration for file: {FileName} (matching as: {FileNameLower})", fileName, fileNameLowerCase);
                 
                 // Try to match against each supplier's file name patterns using lowercase filename
-                foreach (var supplier in _configuration!.Suppliers)
+                foreach (var supplier in _suppliersConfiguration!.Suppliers)
                 {
-                    if (supplier.Detection?.FileNamePatterns?.Any() == true)
+                    if (supplier.FileStructure.Detection?.FileNamePatterns?.Any() == true)
                     {
-                        foreach (var pattern in supplier.Detection.FileNamePatterns)
+                        foreach (var pattern in supplier.FileStructure.Detection.FileNamePatterns)
                         {
                             // Convert pattern to lowercase for case-insensitive matching
                             var patternLowerCase = pattern.ToLowerInvariant();
@@ -158,7 +75,7 @@ namespace SacksLogicLayer.Services
                                     supplier.Name, pattern, patternLowerCase, fileName);
                                 
                                 // Set parent reference before returning
-                                supplier.ParentConfiguration = _configuration;
+                                supplier.ParentConfiguration = _suppliersConfiguration;
                                 return supplier;
                             }
                         }
@@ -195,61 +112,28 @@ namespace SacksLogicLayer.Services
 
         private async Task EnsureConfigurationLoadedAsync()
         {
-            // Configuration is loaded in constructor, no need to reload from file
-            await Task.CompletedTask;
-        }
-
-        private async Task SaveConfigurationAsync(SuppliersConfiguration config, string? filePath = null)
-        {
-            // Since we're loading from IConfiguration, we don't support saving back to file
-            // This method is kept for interface compatibility
-            await Task.CompletedTask;
-            _configuration = config;
-        }
-
-        private void ValidateSupplier(SupplierConfiguration supplier, ConfigurationValidationResult result, HashSet<string> supplierNames)
-        {
-            // Check for required fields
-            if (string.IsNullOrWhiteSpace(supplier.Name))
+            if (_suppliersConfiguration != null)
             {
-                result.AddError("Supplier name is required");
                 return;
             }
-
-            // Check for duplicate names
-            if (supplierNames.Contains(supplier.Name))
+            // Read configuration files paths from appsettings
+            var configFiles = _configuration.GetSection("ConfigurationFiles").Get<ConfigurationFileSettings>();
+            if (configFiles == null)
             {
-                result.AddError($"Duplicate supplier name: {supplier.Name}");
-            }
-            else
-            {
-                supplierNames.Add(supplier.Name);
+                throw new InvalidOperationException("ConfigurationFiles section missing in appsettings.json");
             }
 
-            // Validate detection configuration
-            if (supplier.Detection == null)
+            string ResolvePath(string path)
             {
-                result.AddError($"Supplier '{supplier.Name}' missing detection configuration");
+                if (string.IsNullOrWhiteSpace(path)) return path ?? string.Empty;
+                return Path.IsPathRooted(path) ? path : Path.Combine(AppContext.BaseDirectory, path);
             }
-            else if (!supplier.Detection.FileNamePatterns.Any())
-            {
-                result.AddWarning($"Supplier '{supplier.Name}' has no detection patterns");
-            }
+
+            var supplierFormatsPath = ResolvePath(configFiles.SupplierFormats);
+
+            // Configuration is loaded in constructor, no need to reload from file
+            // Load configuration synchronously from loader (loader is async)
+            _suppliersConfiguration = await loader.LoadAsync(supplierFormatsPath);
         }
-    }
-
-    /// <summary>
-    /// Result of configuration validation
-    /// /// </summary>
-    public class ConfigurationValidationResult
-    {
-        public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = new();
-        public List<string> Warnings { get; set; } = new();
-        public List<string> Info { get; set; } = new();
-
-        public void AddError(string error) => Errors.Add(error);
-        public void AddWarning(string warning) => Warnings.Add(warning);
-        public void AddInfo(string info) => Info.Add(info);
-    }
+   }
 }

@@ -13,27 +13,27 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// <summary>
         /// Gets an offer-product relationship by its ID
         /// </summary>
-        Task<ProductOfferAnnex?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task<ProductOffer?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all offer-product relationships for a specific offer
         /// </summary>
-        Task<IEnumerable<ProductOfferAnnex>> GetByOfferIdAsync(int offerId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ProductOffer>> GetByOfferIdAsync(int offerId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all offer-product relationships for a specific product
         /// </summary>
-        Task<IEnumerable<ProductOfferAnnex>> GetByProductIdAsync(int productId, CancellationToken cancellationToken = default);
+        Task<IEnumerable<ProductOffer>> GetByProductIdAsync(int productId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets a specific offer-product relationship
         /// </summary>
-        Task<ProductOfferAnnex?> GetByOfferAndProductAsync(int offerId, int productId, CancellationToken cancellationToken = default);
+        Task<ProductOffer?> GetByOfferAndProductAsync(int offerId, int productId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets all offer-product relationships
         /// </summary>
-        Task<IEnumerable<ProductOfferAnnex>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<ProductOffer>> GetAllAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets offer-product count
@@ -48,37 +48,37 @@ namespace SacksDataLayer.Repositories.Interfaces
         /// Adds an offer-product relationship to the context (does not save)
         /// </summary>
         /// <param name="offerProduct">Offer-product relationship to add</param>
-        void Add(ProductOfferAnnex offerProduct);
+        void Add(ProductOffer offerProduct);
 
         /// <summary>
         /// Adds multiple offer-product relationships to the context (does not save)
         /// </summary>
         /// <param name="offerProducts">Offer-product relationships to add</param>
-        void AddRange(IEnumerable<ProductOfferAnnex> offerProducts);
+        void AddRange(IEnumerable<ProductOffer> offerProducts);
 
         /// <summary>
         /// Updates an offer-product relationship in the context (does not save)
         /// </summary>
         /// <param name="offerProduct">Offer-product relationship to update</param>
-        void Update(ProductOfferAnnex offerProduct);
+        void Update(ProductOffer offerProduct);
 
         /// <summary>
         /// Updates multiple offer-product relationships in the context (does not save)
         /// </summary>
         /// <param name="offerProducts">Offer-product relationships to update</param>
-        void UpdateRange(IEnumerable<ProductOfferAnnex> offerProducts);
+        void UpdateRange(IEnumerable<ProductOffer> offerProducts);
 
         /// <summary>
         /// Removes an offer-product relationship from the context (does not save)
         /// </summary>
         /// <param name="offerProduct">Offer-product relationship to remove</param>
-        void Remove(ProductOfferAnnex offerProduct);
+        void Remove(ProductOffer offerProduct);
 
         /// <summary>
         /// Removes multiple offer-product relationships from the context (does not save)
         /// </summary>
         /// <param name="offerProducts">Offer-product relationships to remove</param>
-        void RemoveRange(IEnumerable<ProductOfferAnnex> offerProducts);
+        void RemoveRange(IEnumerable<ProductOffer> offerProducts);
 
         /// <summary>
         /// Removes an offer-product relationship by ID from the context (does not save)

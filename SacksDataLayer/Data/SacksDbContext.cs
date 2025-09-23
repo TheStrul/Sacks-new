@@ -16,36 +16,31 @@ namespace SacksDataLayer.Data
         /// <summary>
         /// Products table
         /// </summary>
-        public DbSet<ProductEntity> Products { get; set; }
+        public DbSet<Product> Products { get; set; }
 
         /// <summary>
         /// Suppliers table
         /// </summary>
-        public DbSet<SupplierEntity> Suppliers { get; set; }
+        public DbSet<Supplier> Suppliers { get; set; }
 
         /// <summary>
         /// Supplier offers table
         /// </summary>
-        public DbSet<SupplierOfferAnnex> SupplierOffers { get; set; }
+        public DbSet<Offer> SupplierOffers { get; set; }
 
         /// <summary>
         /// Offer products junction table
         /// </summary>
-        public DbSet<ProductOfferAnnex> OfferProducts { get; set; }
+        public DbSet<ProductOffer> OfferProducts { get; set; }
         
-      /// <summary>
-      /// Read-only mapping for the ProductOffersView database view
-      /// </summary>
-      public DbSet<Entities.ProductOffersView> ProductOffersView { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             ArgumentNullException.ThrowIfNull(modelBuilder);
             
             base.OnModelCreating(modelBuilder);
 
-            // Configure ProductEntity
-            modelBuilder.Entity<ProductEntity>(entity =>
+            // Configure Product
+            modelBuilder.Entity<Product>(entity =>
             {
                 // Primary key
                 entity.HasKey(e => e.Id);
@@ -89,8 +84,8 @@ namespace SacksDataLayer.Data
                       .HasDefaultValueSql("GETUTCDATE()");
             });
 
-            // Configure SupplierEntity
-            modelBuilder.Entity<SupplierEntity>(entity =>
+            // Configure Supplier
+            modelBuilder.Entity<Supplier>(entity =>
             {
                 // Primary key
                 entity.HasKey(e => e.Id);
@@ -116,8 +111,8 @@ namespace SacksDataLayer.Data
                 entity.Ignore(e => e.DynamicProperties);
             });
 
-            // Configure SupplierOfferAnnex
-            modelBuilder.Entity<SupplierOfferAnnex>(entity =>
+            // Configure Offer
+            modelBuilder.Entity<Offer>(entity =>
             {
                 // Primary key
                 entity.HasKey(e => e.Id);
@@ -143,8 +138,8 @@ namespace SacksDataLayer.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Configure ProductOfferAnnex (Junction Table)
-            modelBuilder.Entity<ProductOfferAnnex>(entity =>
+            // Configure ProductOffer (Junction Table)
+            modelBuilder.Entity<ProductOffer>(entity =>
             {
                 // Primary key
                 entity.HasKey(e => e.Id);
@@ -220,7 +215,7 @@ namespace SacksDataLayer.Data
         /// </summary>
         private void UpdateAuditFields()
         {
-            var productEntries = ChangeTracker.Entries<ProductEntity>()
+            var productEntries = ChangeTracker.Entries<Product>()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
 
             foreach (var entry in productEntries)
@@ -236,8 +231,8 @@ namespace SacksDataLayer.Data
                 }
             }
 
-            // Handle ProductOfferAnnex serialization before saving
-            var offerProductEntries = ChangeTracker.Entries<ProductOfferAnnex>()
+            // Handle ProductOffer serialization before saving
+            var offerProductEntries = ChangeTracker.Entries<ProductOffer>()
                 .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
 
             foreach (var entry in offerProductEntries)

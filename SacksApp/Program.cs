@@ -14,7 +14,6 @@ using SacksLogicLayer.Services.Interfaces;
 using SacksLogicLayer.Services.Implementations;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
 using SacksLogicLayer.Services;
-using SacksLogicLayer.Extensions;
 
 namespace SacksApp
 {
@@ -174,19 +173,6 @@ namespace SacksApp
             // Build initial configuration to read the ConfigurationFiles section
             var baseConfig = configBuilder.Build();
             
-            // Get the configuration file settings
-            var configFiles = baseConfig.GetSection("ConfigurationFiles").Get<ConfigurationFileSettings>();
-            
-            // Add the referenced configuration files if they exist
-            if (configFiles != null)
-            {
-                if (!string.IsNullOrEmpty(configFiles.SupplierFormats))
-                    configBuilder.AddJsonFile(configFiles.SupplierFormats, optional: false, reloadOnChange: false);
-                                        
-                if (!string.IsNullOrEmpty(configFiles.PerfumePropertyNormalization))
-                    configBuilder.AddJsonFile(configFiles.PerfumePropertyNormalization, optional: false, reloadOnChange: false);
-            }
-
             return configBuilder.Build();
         }
 

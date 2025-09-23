@@ -1,14 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
-using SacksDataLayer.Models;
 
 namespace SacksDataLayer.Entities;
 
 /// <summary>
 /// Junction table linking offers to products with specific pricing and terms
 /// </summary>
-public class ProductOfferAnnex : Annex
+public class ProductOffer : Annex
 {
     // Foreign Keys
     public int OfferId { get; set; } 
@@ -48,16 +47,10 @@ public class ProductOfferAnnex : Annex
     /// </summary>
     [Column(TypeName = "nvarchar(max)")]
     public string? DescriptionExtractionJson { get; set; }
-
-    /// <summary>
-    /// In-memory parsed description outcome (not mapped)
-    /// </summary>
-    [NotMapped]
-    public DescriptionExtractionOutcome? DescriptionExtraction { get; set; }
     
     // Navigation properties
-    public virtual SupplierOfferAnnex Offer { get; set; } = null!;
-    public virtual ProductEntity Product { get; set; } = null!;
+    public virtual Offer Offer { get; set; } = null!;
+    public virtual Product Product { get; set; } = null!;
     
     // Methods to handle dynamic properties
     public void SetOfferProperty(string key, object? value)
@@ -95,28 +88,6 @@ public class ProductOfferAnnex : Annex
         }
     }
 
-    /// <summary>
-    /// Serialize in-memory description extraction outcome to JSON column
-    /// </summary>
-    public void SerializeDescriptionExtraction()
-    {
-        DescriptionExtractionJson = DescriptionExtraction != null
-            ? JsonSerializer.Serialize(DescriptionExtraction)
-            : null;
-    }
 
-    /// <summary>
-    /// Populate in-memory description extraction from JSON column
-    /// </summary>
-    public void DeserializeDescriptionExtraction()
-    {
-        if (!string.IsNullOrWhiteSpace(DescriptionExtractionJson))
-        {
-            DescriptionExtraction = JsonSerializer.Deserialize<DescriptionExtractionOutcome>(DescriptionExtractionJson);
-        }
-        else
-        {
-            DescriptionExtraction = null;
-        }
-    }
+
 }

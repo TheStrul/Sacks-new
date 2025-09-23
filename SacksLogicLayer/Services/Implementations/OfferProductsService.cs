@@ -30,27 +30,27 @@ namespace SacksDataLayer.Services.Implementations
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<ProductOfferAnnex?> GetOfferProductAsync(int id)
+        public async Task<ProductOffer?> GetOfferProductAsync(int id)
         {
             return await _offerProductsRepository.GetByIdAsync(id, CancellationToken.None);
         }
 
-        public async Task<IEnumerable<ProductOfferAnnex>> GetOfferProductsByOfferAsync(int offerId)
+        public async Task<IEnumerable<ProductOffer>> GetOfferProductsByOfferAsync(int offerId)
         {
             return await _offerProductsRepository.GetByOfferIdAsync(offerId, CancellationToken.None);
         }
 
-        public async Task<IEnumerable<ProductOfferAnnex>> GetOfferProductsByProductAsync(int productId)
+        public async Task<IEnumerable<ProductOffer>> GetOfferProductsByProductAsync(int productId)
         {
             return await _offerProductsRepository.GetByProductIdAsync(productId, CancellationToken.None);
         }
 
-        public async Task<ProductOfferAnnex?> GetOfferProductAsync(int offerId, int productId)
+        public async Task<ProductOffer?> GetOfferProductAsync(int offerId, int productId)
         {
             return await _offerProductsRepository.GetByOfferAndProductAsync(offerId, productId, CancellationToken.None);
         }
 
-        public async Task<ProductOfferAnnex> CreateOfferProductAsync(ProductOfferAnnex offerProduct, string? createdBy = null)
+        public async Task<ProductOffer> CreateOfferProductAsync(ProductOffer offerProduct, string? createdBy = null)
         {
             // Validate the offer-product relationship
             await ValidateOfferProductAsync(offerProduct);
@@ -70,7 +70,7 @@ namespace SacksDataLayer.Services.Implementations
             return offerProduct;
         }
 
-        public async Task<ProductOfferAnnex> UpdateOfferProductAsync(ProductOfferAnnex offerProduct, string? modifiedBy = null)
+        public async Task<ProductOffer> UpdateOfferProductAsync(ProductOffer offerProduct, string? modifiedBy = null)
         {
             // Validate the offer-product relationship
             await ValidateOfferProductAsync(offerProduct);
@@ -85,7 +85,7 @@ namespace SacksDataLayer.Services.Implementations
             return offerProduct;
         }
 
-        public async Task<ProductOfferAnnex> CreateOrUpdateOfferProductAsync(int offerId, int productId,
+        public async Task<ProductOffer> CreateOrUpdateOfferProductAsync(int offerId, int productId,
             Dictionary<string, object?> offerProperties, string? createdBy = null)
         {
             // Try to find existing offer-product relationship
@@ -102,7 +102,7 @@ namespace SacksDataLayer.Services.Implementations
             else
             {
                 // Create new relationship
-                var newOfferProduct = new ProductOfferAnnex
+                var newOfferProduct = new ProductOffer
                 {
                     OfferId = offerId,
                     ProductId = productId,
@@ -113,12 +113,12 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        public async Task<IEnumerable<ProductOfferAnnex>> BulkCreateOfferProductsAsync(
-            IEnumerable<ProductOfferAnnex> offerProducts, string? createdBy = null)
+        public async Task<IEnumerable<ProductOffer>> BulkCreateOfferProductsAsync(
+            IEnumerable<ProductOffer> offerProducts, string? createdBy = null)
         {
             ArgumentNullException.ThrowIfNull(offerProducts);
             
-            var results = new List<ProductOfferAnnex>();
+            var results = new List<ProductOffer>();
 
             foreach (var offerProduct in offerProducts)
             {
@@ -152,7 +152,7 @@ namespace SacksDataLayer.Services.Implementations
             }
         }
 
-        public Task<(IEnumerable<ProductOfferAnnex> OfferProducts, int TotalCount)> GetOfferProductsAsync(
+        public Task<(IEnumerable<ProductOffer> OfferProducts, int TotalCount)> GetOfferProductsAsync(
             int pageNumber = 1, int pageSize = 50)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -162,10 +162,10 @@ namespace SacksDataLayer.Services.Implementations
             // Note: This is a simplified implementation
             // Since we don't have GetAllAsync, we can't implement proper pagination
             // In a real scenario, you'd add GetAllAsync to the offerProductsRepository interface
-            return Task.FromResult<(IEnumerable<ProductOfferAnnex>, int)>((Enumerable.Empty<ProductOfferAnnex>(), 0));
+            return Task.FromResult<(IEnumerable<ProductOffer>, int)>((Enumerable.Empty<ProductOffer>(), 0));
         }
 
-        private async Task ValidateOfferProductAsync(ProductOfferAnnex offerProduct)
+        private async Task ValidateOfferProductAsync(ProductOffer offerProduct)
         {
             if (offerProduct == null)
                 throw new ArgumentNullException(nameof(offerProduct));

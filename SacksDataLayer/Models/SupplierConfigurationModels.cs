@@ -1,7 +1,5 @@
 using System.Text.Json.Serialization;
 
-using SacksDataLayer.Configuration;
-
 namespace SacksDataLayer.FileProcessing.Configuration
 {
     /// <summary>
@@ -18,6 +16,9 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("suppliers")]
         public List<SupplierConfiguration> Suppliers { get; set; } = new();
 
+        [JsonPropertyName("lookups")]
+        public Dictionary<string, Dictionary<string, string>> Lookups { get; set; } = new();
+
     }
 
     /// <summary>
@@ -28,9 +29,6 @@ namespace SacksDataLayer.FileProcessing.Configuration
         [JsonPropertyName("name")]
         public string Name { get; set; } = string.Empty;
         
-        [JsonPropertyName("detection")]
-        public DetectionConfiguration? Detection { get; set; }
-
         public string Currency { get; set; } = "$";
 
         [JsonPropertyName("parserConfig")]
@@ -62,6 +60,10 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         [JsonPropertyName("headerRowIndex")]
         public int HeaderRowIndex { get; set; } = 4; // 1-based index
+
+        [JsonPropertyName("detection")]
+        public DetectionConfiguration? Detection { get; set; }
+
     }
 
     /// <summary>

@@ -23,7 +23,7 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// Gets a supplier by ID
         /// </summary>
-        public async Task<SupplierEntity?> GetSupplierAsync(int id)
+        public async Task<Supplier?> GetSupplierAsync(int id)
         {
             return await _suppliersRepository.GetByIdAsync(id, CancellationToken.None);
         }
@@ -31,7 +31,7 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// Gets a supplier by name
         /// </summary>
-        public async Task<SupplierEntity?> GetSupplierByNameAsync(string name)
+        public async Task<Supplier?> GetSupplierByNameAsync(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Supplier name cannot be null or empty", nameof(name));
@@ -42,7 +42,7 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// Gets all suppliers with pagination
         /// </summary>
-        public async Task<(IEnumerable<SupplierEntity> Suppliers, int TotalCount)> GetSuppliersAsync(
+        public async Task<(IEnumerable<Supplier> Suppliers, int TotalCount)> GetSuppliersAsync(
             int pageNumber = 1, int pageSize = 50)
         {
             if (pageNumber < 1) pageNumber = 1;
@@ -59,7 +59,7 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// Creates a new supplier
         /// </summary>
-        public async Task<SupplierEntity> CreateSupplierAsync(SupplierEntity supplier, string? createdBy = null)
+        public async Task<Supplier> CreateSupplierAsync(Supplier supplier, string? createdBy = null)
         {
             if (supplier == null)
                 throw new ArgumentNullException(nameof(supplier));
@@ -85,7 +85,7 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// Updates an existing supplier
         /// </summary>
-        public async Task<SupplierEntity> UpdateSupplierAsync(SupplierEntity supplier, string? modifiedBy = null)
+        public async Task<Supplier> UpdateSupplierAsync(Supplier supplier, string? modifiedBy = null)
         {
             if (supplier == null)
                 throw new ArgumentNullException(nameof(supplier));
@@ -123,7 +123,7 @@ namespace SacksLogicLayer.Services.Implementations
         /// Creates or gets an existing supplier based on configuration
         /// NOTE: Does not manage transactions - caller must handle transaction scope
         /// </summary>
-        public async Task<SupplierEntity> CreateOrGetSupplierByName(string supplierName, 
+        public async Task<Supplier> CreateOrGetSupplierByName(string supplierName, 
             string? description = null)
         {
             if (string.IsNullOrWhiteSpace(supplierName))
@@ -137,7 +137,7 @@ namespace SacksLogicLayer.Services.Implementations
             }
 
             // Create new supplier without transaction wrapper (caller manages transaction)
-            var newSupplier = new SupplierEntity
+            var newSupplier = new Supplier
             {
                 Name = supplierName,
                 Description = description,
@@ -170,10 +170,10 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// Searches suppliers by various criteria
         /// </summary>
-        public async Task<IEnumerable<SupplierEntity>> SearchSuppliersAsync(string searchTerm)
+        public async Task<IEnumerable<Supplier>> SearchSuppliersAsync(string searchTerm)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
-                return Enumerable.Empty<SupplierEntity>();
+                return Enumerable.Empty<Supplier>();
 
             return await _suppliersRepository.SearchAsync(searchTerm, CancellationToken.None);
         }

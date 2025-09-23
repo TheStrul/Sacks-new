@@ -41,10 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="TestData\Pol.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
+    <Content Include="..\SacksApp\Configuration\supplier-formats.json" Link="TestData\supplier-formats.json" />
   </ItemGroup>
 
 </Project>

@@ -41,7 +41,6 @@ namespace SacksDataLayer.Tests.Integration
             {
                 "name": "HAND",
                 "Currency": "USD",
-                "detection": { "fileNamePatterns": [ "hand*.xls*" ] },
                 "parserConfig": {
                     "settings": {
                         "stopOnFirstMatchPerColumn": false,
@@ -71,6 +70,7 @@ namespace SacksDataLayer.Tests.Integration
                 "fileStructure": {
                     "dataStartRowIndex": 2,
                     "expectedColumnCount": 7,
+                    "detection": { "fileNamePatterns": [ "hand*.xls*" ] },
                     "headerRowIndex": 1
                 }
             }

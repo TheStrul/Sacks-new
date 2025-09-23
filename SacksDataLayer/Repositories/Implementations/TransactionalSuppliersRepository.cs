@@ -20,13 +20,13 @@ namespace SacksDataLayer.Repositories.Implementations
 
         #region Query Operations
 
-        public async Task<SupplierEntity?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<Supplier?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             return await _context.Suppliers
                 .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
         }
 
-        public async Task<SupplierEntity?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+        public async Task<Supplier?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(name))
                 return null;
@@ -36,14 +36,14 @@ namespace SacksDataLayer.Repositories.Implementations
                 .FirstOrDefaultAsync(s => s.Name == name, cancellationToken);
         }
 
-        public async Task<IEnumerable<SupplierEntity>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Supplier>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _context.Suppliers
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<SupplierEntity>> GetPagedAsync(int skip, int take, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Supplier>> GetPagedAsync(int skip, int take, CancellationToken cancellationToken = default)
         {
             return await _context.Suppliers
                 .AsNoTracking()
@@ -65,10 +65,10 @@ namespace SacksDataLayer.Repositories.Implementations
             return await _context.Suppliers.AnyAsync(s => s.Name == name, cancellationToken);
         }
 
-        public async Task<IEnumerable<SupplierEntity>> SearchAsync(string searchTerm, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Supplier>> SearchAsync(string searchTerm, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
-                return Enumerable.Empty<SupplierEntity>();
+                return Enumerable.Empty<Supplier>();
 
             var lowerSearchTerm = searchTerm.ToLower();
             return await _context.Suppliers
@@ -82,7 +82,7 @@ namespace SacksDataLayer.Repositories.Implementations
 
         #region Transaction-Aware CRUD Operations
 
-        public void Add(SupplierEntity supplier)
+        public void Add(Supplier supplier)
         {
             if (supplier == null)
                 throw new ArgumentNullException(nameof(supplier));
@@ -91,7 +91,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.Suppliers.Add(supplier);
         }
 
-        public void AddRange(IEnumerable<SupplierEntity> suppliers)
+        public void AddRange(IEnumerable<Supplier> suppliers)
         {
             if (suppliers == null)
                 throw new ArgumentNullException(nameof(suppliers));
@@ -105,7 +105,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.Suppliers.AddRange(suppliersToAdd);
         }
 
-        public void Update(SupplierEntity supplier)
+        public void Update(Supplier supplier)
         {
             if (supplier == null)
                 throw new ArgumentNullException(nameof(supplier));
@@ -114,7 +114,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.Suppliers.Update(supplier);
         }
 
-        public void UpdateRange(IEnumerable<SupplierEntity> suppliers)
+        public void UpdateRange(IEnumerable<Supplier> suppliers)
         {
             if (suppliers == null)
                 throw new ArgumentNullException(nameof(suppliers));
@@ -128,7 +128,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.Suppliers.UpdateRange(suppliersToUpdate);
         }
 
-        public void Remove(SupplierEntity supplier)
+        public void Remove(Supplier supplier)
         {
             if (supplier == null)
                 throw new ArgumentNullException(nameof(supplier));
@@ -136,7 +136,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.Suppliers.Remove(supplier);
         }
 
-        public void RemoveRange(IEnumerable<SupplierEntity> suppliers)
+        public void RemoveRange(IEnumerable<Supplier> suppliers)
         {
             if (suppliers == null)
                 throw new ArgumentNullException(nameof(suppliers));

@@ -20,14 +20,14 @@ namespace SacksDataLayer.Repositories.Implementations
 
         #region Query Operations
 
-        public async Task<ProductEntity?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             return await _context.Products
                 .Include(p => p.OfferProducts)
                 .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         }
 
-        public async Task<ProductEntity?> GetByEANAsync(string ean, CancellationToken cancellationToken = default)
+        public async Task<Product?> GetByEANAsync(string ean, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(ean))
                 return null;
@@ -37,14 +37,14 @@ namespace SacksDataLayer.Repositories.Implementations
                 .FirstOrDefaultAsync(p => p.EAN == ean, cancellationToken);
         }
 
-        public async Task<Dictionary<string, ProductEntity>> GetByEANsBulkAsync(IEnumerable<string> eans, CancellationToken cancellationToken = default)
+        public async Task<Dictionary<string, Product>> GetByEANsBulkAsync(IEnumerable<string> eans, CancellationToken cancellationToken = default)
         {
             if (eans == null || !eans.Any())
-                return new Dictionary<string, ProductEntity>();
+                return new Dictionary<string, Product>();
 
             var eanList = eans.Where(e => !string.IsNullOrWhiteSpace(e)).Distinct().ToList();
             if (!eanList.Any())
-                return new Dictionary<string, ProductEntity>();
+                return new Dictionary<string, Product>();
 
             var products = await _context.Products
                 .AsNoTracking()
@@ -54,14 +54,14 @@ namespace SacksDataLayer.Repositories.Implementations
             return products;
         }
 
-        public async Task<IEnumerable<ProductEntity>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             return await _context.Products
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<ProductEntity>> GetPagedAsync(int skip, int take, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Product>> GetPagedAsync(int skip, int take, CancellationToken cancellationToken = default)
         {
             return await _context.Products
                 .AsNoTracking()
@@ -70,7 +70,7 @@ namespace SacksDataLayer.Repositories.Implementations
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<ProductEntity>> FindAsync(System.Linq.Expressions.Expression<Func<ProductEntity, bool>> predicate, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Product>> FindAsync(System.Linq.Expressions.Expression<Func<Product, bool>> predicate, CancellationToken cancellationToken = default)
         {
             return await _context.Products
                 .AsNoTracking()
@@ -78,10 +78,10 @@ namespace SacksDataLayer.Repositories.Implementations
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<ProductEntity>> SearchByNameAsync(string searchTerm, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Product>> SearchByNameAsync(string searchTerm, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
-                return Enumerable.Empty<ProductEntity>();
+                return Enumerable.Empty<Product>();
 
             var lowerSearchTerm = searchTerm.ToLower();
             return await _context.Products
@@ -98,10 +98,10 @@ namespace SacksDataLayer.Repositories.Implementations
             return await _context.Products.AnyAsync(p => p.EAN == ean, cancellationToken);
         }
 
-        public async Task<IEnumerable<ProductEntity>> GetBySourceFileAsync(string sourceFile, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Product>> GetBySourceFileAsync(string sourceFile, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(sourceFile))
-                return Enumerable.Empty<ProductEntity>();
+                return Enumerable.Empty<Product>();
 
             return await _context.Products
                 .AsNoTracking()
@@ -114,7 +114,7 @@ namespace SacksDataLayer.Repositories.Implementations
             return await _context.Products.CountAsync(cancellationToken);
         }
 
-        public async Task<IEnumerable<ProductEntity>> GetByCreatedDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Product>> GetByCreatedDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
         {
             return await _context.Products
                 .AsNoTracking()
@@ -126,7 +126,7 @@ namespace SacksDataLayer.Repositories.Implementations
 
         #region Transaction-Aware CRUD Operations
 
-        public void Add(ProductEntity product, string? createdBy = null)
+        public void Add(Product product, string? createdBy = null)
         {
             if (product == null)
                 throw new ArgumentNullException(nameof(product));
@@ -135,7 +135,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.Products.Add(product);
         }
 
-        public void AddRange(IEnumerable<ProductEntity> products, string? createdBy = null)
+        public void AddRange(IEnumerable<Product> products, string? createdBy = null)
         {
             if (products == null)
                 throw new ArgumentNullException(nameof(products));
@@ -149,7 +149,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.Products.AddRange(productsToAdd);
         }
 
-        public void Update(ProductEntity product, string? modifiedBy = null)
+        public void Update(Product product, string? modifiedBy = null)
         {
             if (product == null)
                 throw new ArgumentNullException(nameof(product));
@@ -158,7 +158,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.Products.Update(product);
         }
 
-        public void UpdateRange(IEnumerable<ProductEntity> products, string? modifiedBy = null)
+        public void UpdateRange(IEnumerable<Product> products, string? modifiedBy = null)
         {
             if (products == null)
                 throw new ArgumentNullException(nameof(products));
@@ -172,7 +172,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.Products.UpdateRange(productsToUpdate);
         }
 
-        public void Remove(ProductEntity product)
+        public void Remove(Product product)
         {
             if (product == null)
                 throw new ArgumentNullException(nameof(product));
@@ -180,7 +180,7 @@ namespace SacksDataLayer.Repositories.Implementations
             _context.Products.Remove(product);
         }
 
-        public void RemoveRange(IEnumerable<ProductEntity> products)
+        public void RemoveRange(IEnumerable<Product> products)
         {
             if (products == null)
                 throw new ArgumentNullException(nameof(products));

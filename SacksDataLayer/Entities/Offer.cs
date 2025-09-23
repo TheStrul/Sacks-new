@@ -8,7 +8,7 @@ namespace SacksDataLayer.Entities;
 /// Represents a supplier's offer/catalog (like a price list or promotion)
 /// Uses navigation property pattern for consistent FK management
 /// </summary>
-public class SupplierOfferAnnex : Annex
+public class Offer : Annex
 {
     // Foreign Key - EF Core will manage this via navigation properties
     public int SupplierId { get; set; }
@@ -25,8 +25,8 @@ public class SupplierOfferAnnex : Annex
 
     // Navigation properties - EF Core manages relationships through these
     // Make Supplier optional so the offer can be created using SupplierId only
-    public virtual SupplierEntity? Supplier { get; set; }
-    public virtual ICollection<ProductOfferAnnex> OfferProducts { get; set; } = new List<ProductOfferAnnex>();
+    public virtual Supplier? Supplier { get; set; }
+    public virtual ICollection<ProductOffer> OfferProducts { get; set; } = new List<ProductOffer>();
 
     // Offer-level dynamic properties
     [Column(TypeName = "nvarchar(max)")]

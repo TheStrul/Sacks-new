@@ -8,7 +8,6 @@ using SacksDataLayer.FileProcessing.Models;
 using Microsoft.Extensions.Logging;
 using SacksDataLayer.Configuration;
 using SacksDataLayer.FileProcessing.Configuration;
-using SacksDataLayer.FileProcessing.Normalizers;
 using System.ComponentModel.DataAnnotations;
 
 namespace SacksLogicLayer.Services.Implementations
@@ -122,7 +121,7 @@ namespace SacksLogicLayer.Services.Implementations
                 // 🛡️ STEP 1: Enhanced file validation with size and accessibility checks
                 
                 // 🎯 STEP 2: Auto-detect supplier
-                var supplierConfig = DetectSupplier(filePath, correlationId);
+                var supplierConfig = await DetectSupplier(filePath, correlationId);
 
                 // Use the injected file validation service which should handle subtitle processing
                 var fileData = await _fileDataReader.ReadFileAsync(filePath);
@@ -319,11 +318,11 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// 🎯 ENHANCED: Supplier detection using synchronous service method
         /// </summary>
-        private SupplierConfiguration DetectSupplier(string filePath, string correlationId)
+        private async Task<SupplierConfiguration> DetectSupplier(string filePath, string correlationId)
         {
             try
             {
-                var supplierConfig = _supplierConfigurationService.DetectSupplierFromFileAsync(filePath);
+                var supplierConfig = await _supplierConfigurationService.DetectSupplierFromFileAsync(filePath);
                 
                 if (supplierConfig == null)
                 {

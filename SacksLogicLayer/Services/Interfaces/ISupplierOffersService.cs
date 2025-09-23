@@ -10,28 +10,28 @@ namespace SacksDataLayer.Services.Interfaces
         /// <summary>
         /// Gets a supplier offer by ID
         /// </summary>
-        Task<SupplierOfferAnnex?> GetOfferAsync(int id);
+        Task<Offer?> GetOfferAsync(int id);
 
         /// <summary>
         /// Gets all offers for a specific supplier
         /// </summary>
-        Task<IEnumerable<SupplierOfferAnnex>> GetOffersBySupplierAsync(int supplierId);
+        Task<IEnumerable<Offer>> GetOffersBySupplierAsync(int supplierId);
 
 
         /// <summary>
         /// Gets offers for a specific product
         /// </summary>
-        Task<IEnumerable<SupplierOfferAnnex>> GetOffersByProductAsync(int productId);
+        Task<IEnumerable<Offer>> GetOffersByProductAsync(int productId);
 
         /// <summary>
         /// Creates a new supplier offer
         /// </summary>
-        Task<SupplierOfferAnnex> CreateOfferAsync(SupplierOfferAnnex offer, string? createdBy = null);
+        Task<Offer> CreateOfferAsync(Offer offer, string? createdBy = null);
 
         /// <summary>
         /// Updates an existing supplier offer
         /// </summary>
-        Task<SupplierOfferAnnex> UpdateOfferAsync(SupplierOfferAnnex offer, string? modifiedBy = null);
+        Task<Offer> UpdateOfferAsync(Offer offer, string? modifiedBy = null);
 
 
 
@@ -49,12 +49,12 @@ namespace SacksDataLayer.Services.Interfaces
         /// <summary>
         /// Gets offers with pagination
         /// </summary>
-        Task<(IEnumerable<SupplierOfferAnnex> Offers, int TotalCount)> GetOffersAsync(
+        Task<(IEnumerable<Offer> Offers, int TotalCount)> GetOffersAsync(
             int pageNumber = 1, int pageSize = 50);
 
         /// <summary>
         /// Searches offers by various criteria
         /// </summary>
-        Task<IEnumerable<SupplierOfferAnnex>> SearchOffersAsync(string searchTerm);
+        Task<IEnumerable<Offer>> SearchOffersAsync(string searchTerm);
     }
 }
