@@ -23,6 +23,7 @@ namespace SacksApp
         private List<string>? _pendingColumnOrder; // loaded order to apply after data bind
         private (string column, ListSortDirection direction)? _pendingSort; // loaded sort to apply after data bind
         private Dictionary<string, float>? _pendingFillWeights; // loaded fill weights to apply after data bind
+        private List<ColumnState>? _pendingColumnStates; // loaded per-column states to apply after data bind
         private List<SqlParameter> sqlParametersList  = new List<SqlParameter>();
 
         private static readonly Type ViewType = typeof(SacksDataLayer.Entities.ProductOffersView);
@@ -519,6 +520,9 @@ namespace SacksApp
                     }
 
                     // Apply visibility first (based on checked list), then order/weights/sort
+                    // Try to apply any saved per-column states (visibility, width, order, fill weights)
+                    TryApplyPendingColumnStates();
+                    // Keep legacy visibility/order attempts as fallback
                     TryApplyColumnVisibility();
                     TryApplyColumnOrder();
                     TryApplySavedColumnFillWeights();
@@ -563,12 +567,24 @@ namespace SacksApp
             public Dictionary<string, float> ColumnFillWeights { get; set; } = new();
             // Persist absolute widths as fallback
             public Dictionary<string, int> ColumnWidths { get; set; } = new();
+            // Per-column persisted state (preferred)
+            public List<ColumnState> ColumnStates { get; set; } = new();
         }
         private sealed class FilterState
         {
             public string Property { get; set; } = string.Empty;
             public string Operator { get; set; } = string.Empty;
             public string? Value { get; set; }
+        }
+
+        // Per-column persisted state
+        private sealed class ColumnState
+        {
+            public string Key { get; set; } = string.Empty; // column.Name (if present) or HeaderText
+            public int DisplayIndex { get; set; }
+            public bool Visible { get; set; }
+            public int Width { get; set; }
+            public float FillWeight { get; set; }
         }
 
         private string GetStateFilePath()
@@ -633,6 +649,12 @@ namespace SacksApp
                     _pendingColumnOrder = state.ColumnOrder;
                     TryApplyColumnOrder(); // in case grid already has data
                 }
+                // Column states (visibility/width/displayindex) - prefer these
+                if (state.ColumnStates is { Count: > 0 })
+                {
+                    _pendingColumnStates = state.ColumnStates;
+                    TryApplyPendingColumnStates();
+                }
                 if (collapseProductsCheckBox != null)
                     collapseProductsCheckBox.Checked = state.CollapseProducts;
 
@@ -685,10 +707,21 @@ namespace SacksApp
                 // also store absolute widths for robustness
                 try
                 {
+                    var colStates = new List<ColumnState>();
                     foreach (DataGridViewColumn col in resultsGrid.Columns)
                     {
-                        state.ColumnWidths[col.Name ?? col.HeaderText ?? string.Empty] = col.Width;
+                        var key = col.Name ?? col.HeaderText ?? string.Empty;
+                        state.ColumnWidths[key] = col.Width;
+                        colStates.Add(new ColumnState
+                        {
+                            Key = key,
+                            DisplayIndex = col.DisplayIndex,
+                            Visible = col.Visible,
+                            Width = col.Width,
+                            FillWeight = col.FillWeight
+                        });
                     }
+                    state.ColumnStates = colStates.OrderBy(c => c.DisplayIndex).ToList();
                 }
                 catch { }
 
@@ -716,342 +749,390 @@ namespace SacksApp
             return map;
         }
 
-        private static bool TryParseOperator(string opString, out FilterOperator op)
-        {
-            return Enum.TryParse(opString, ignoreCase: true, out op);
-        }
-
-        private (string? orderBy, string? dir) GetCurrentGridSortOrPending()
+        // Apply pending column states (visibility, width, display index, fill weight)
+        private void TryApplyPendingColumnStates()
         {
             try
             {
-                // If grid has an active sort, use it
-                if (resultsGrid.SortedColumn != null && resultsGrid.SortOrder != System.Windows.Forms.SortOrder.None)
+                if (_pendingColumnStates == null || resultsGrid.Columns.Count == 0) return;
+                // Map current columns by key
+                var map = resultsGrid.Columns.Cast<DataGridViewColumn>().ToDictionary(c => c.Name ?? c.HeaderText ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+
+                // First apply visibility and width/fill
+                foreach (var state in _pendingColumnStates)
                 {
-                    var dir = resultsGrid.SortOrder == System.Windows.Forms.SortOrder.Descending ? "Descending" : "Ascending";
-                    return (resultsGrid.SortedColumn.HeaderText, dir);
+                    if (map.TryGetValue(state.Key, out var col))
+                    {
+                        try { col.Visible = state.Visible; } catch { }
+                        try { if (state.Width > 0) col.Width = state.Width; } catch { }
+                        try { if (state.FillWeight > 0) col.FillWeight = state.FillWeight; } catch { }
+                    }
                 }
-                // Else if collapse is active but we have a pending sort from state, persist that
-                if (_pendingSort != null)
-                {
-                    var (col, d) = _pendingSort.Value;
-                    return (col, d == ListSortDirection.Descending ? "Descending" : "Ascending");
-                }
-            }
-            catch { }
-            return (null, null);
-        }
 
-        private List<string> GetCurrentGridColumnOrder()
-        {
-            foreach (DataGridViewColumn item in resultsGrid.Columns)
-            {
-                _logger.LogDebug($"{item.Name}:{item.HeaderText}:{item.Width}:{item.DisplayIndex}");
-            }
-            try
-            {
-                if (resultsGrid.Columns.Count == 0)
-                    return columnsCheckedListBox.CheckedItems.Cast<string>().ToList();
-                return resultsGrid.Columns
-                    .Cast<DataGridViewColumn>()
-                    .OrderBy(c => c.DisplayIndex)
-                    .Select(c => c.Name ?? c.HeaderText)
-                    .Where(s => !string.IsNullOrEmpty(s))
-                    .Select(s => s!)
-                    .ToList();
-            }
-            catch { return new(); }
-        }
-
-        private void TryApplyColumnOrder()
-        {
-            if (_pendingColumnOrder == null || resultsGrid.Columns.Count == 0) return;
-            try
-            {
-                var map = resultsGrid.Columns.Cast<DataGridViewColumn>().ToDictionary(c => c.Name ?? c.HeaderText ?? string.Empty, c => c);
+                // Then apply display order in saved order
                 int displayIndex = 0;
-                foreach (var name in _pendingColumnOrder)
+                foreach (var state in _pendingColumnStates.OrderBy(s => s.DisplayIndex))
                 {
-                    if (map.TryGetValue(name, out var col))
+                    if (map.TryGetValue(state.Key, out var col))
                     {
-                        col.DisplayIndex = displayIndex++;
-                    }
-                }
-                _pendingColumnOrder = null; // applied
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Failed to apply saved column order");
-            }
-        }
-
-        // Apply column visibility according to the checked items in the columnsCheckedListBox
-        private void TryApplyColumnVisibility()
-        {
-            try
-            {
-                if (resultsGrid.Columns.Count == 0) return;
-                var checkedSet = new HashSet<string>(columnsCheckedListBox.CheckedItems.Cast<string>(), StringComparer.OrdinalIgnoreCase);
-                foreach (DataGridViewColumn col in resultsGrid.Columns)
-                {
-                    // Match by HeaderText
-                    var name = col.HeaderText ?? string.Empty;
-                    col.Visible = checkedSet.Contains(name);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Failed to apply column visibility from checked list");
-            }
-        }
-        #endregion
-
-        #region Existing UI Logic (Adjusted)
-        private void SetupControls()
-        {
-            resultsGrid.AllowUserToAddRows = false;
-            resultsGrid.AllowUserToDeleteRows = false;
-            resultsGrid.ReadOnly = true;
-            resultsGrid.AllowUserToOrderColumns = true;
-            resultsGrid.AllowUserToResizeColumns = true;
-            resultsGrid.AllowUserToResizeRows = true;
-            resultsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            resultsGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            resultsGrid.MultiSelect = true;
-            resultsGrid.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithAutoHeaderText;
-            resultsGrid.ColumnHeaderMouseClick += ResultsGrid_ColumnHeaderMouseClick;
-            resultsGrid.ColumnDisplayIndexChanged += ResultsGrid_ColumnDisplayIndexChanged;
-            resultsGrid.ColumnWidthChanged += ResultsGrid_ColumnWidthChanged;
-            resultsGrid.Sorted += ResultsGrid_Sorted;
-        }
-
-        private void ResultsGrid_ColumnWidthChanged(object? sender, DataGridViewColumnEventArgs e)
-        {
-            try
-            {
-                // Update pending fill weights whenever a user resizes a column
-                _pendingFillWeights = GetCurrentColumnFillWeights();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Failed to capture column width change");
-            }
-        }
-
-        private void ResultsGrid_Sorted(object? sender, EventArgs e)
-        {
-            try
-            {
-                if (resultsGrid.SortedColumn == null) return;
-                var dir = resultsGrid.SortOrder == System.Windows.Forms.SortOrder.Descending
-                    ? ListSortDirection.Descending
-                    : ListSortDirection.Ascending;
-                _pendingSort = (resultsGrid.SortedColumn.HeaderText, dir);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Failed to capture sorted state");
-            }
-        }
-
-        private void ResultsGrid_ColumnDisplayIndexChanged(object? sender, DataGridViewColumnEventArgs e)
-        {
-            try
-            {
-                _pendingColumnOrder = GetCurrentGridColumnOrder();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Failed to capture column order change");
-            }
-        }
-
-        private ContextMenuStrip CreateColumnContextMenu(DataGridViewColumn column)
-        {
-#pragma warning disable CA2000
-            var menu = new ContextMenuStrip();
-#pragma warning restore CA2000
-            var hideItem = new ToolStripMenuItem($"Hide '{column.HeaderText}'");
-            hideItem.Click += (s, e) => HideColumn(column);
-            menu.Items.Add(hideItem);
-
-            var sortAscItem = new ToolStripMenuItem("Sort Ascending");
-            sortAscItem.Click += (s, e) => SortColumn(column, ListSortDirection.Ascending);
-            var sortDescItem = new ToolStripMenuItem("Sort Descending");
-            sortDescItem.Click += (s, e) => SortColumn(column, ListSortDirection.Descending);
-
-            bool collapseActive = collapseProductsCheckBox?.Checked == true;
-            sortAscItem.Enabled = !collapseActive;
-            sortDescItem.Enabled = !collapseActive;
-
-            menu.Items.Add(sortAscItem);
-            menu.Items.Add(sortDescItem);
-
-            menu.Items.Add(new ToolStripSeparator());
-            var autoSizeItem = new ToolStripMenuItem("Auto-size Column");
-            autoSizeItem.Click += (s, e) => column.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            menu.Items.Add(autoSizeItem);
-            return menu;
-        }
-
-        private void HideColumn(DataGridViewColumn column)
-        {
-            var key = GetColumnKey(column);
-            // Uncheck corresponding entry in the columns checklist so visibility is persisted
-            try
-            {
-                var idx = columnsCheckedListBox.Items.IndexOf(column.HeaderText);
-                if (idx >= 0)
-                {
-                    columnsCheckedListBox.SetItemChecked(idx, false);
-                }
-            }
-            catch { }
-
-            column.Visible = false;
-        }
-
-        private static string GetColumnKey(DataGridViewColumn column)
-            => !string.IsNullOrEmpty(column.Name) ? column.Name : column.HeaderText ?? string.Empty;
-
-        private void SortColumn(DataGridViewColumn column, ListSortDirection direction)
-        {
-            // Disable manual sort in collapse mode
-            if (collapseProductsCheckBox?.Checked == true) return;
-            resultsGrid.Sort(column, direction);
-        }
-
-        private void UpdateGridSortability()
-        {
-            try
-            {
-                bool collapseActive = collapseProductsCheckBox?.Checked == true;
-
-                // Clear any existing sort if collapse turned on
-                if (collapseActive)
-                {
-                    if (resultsGrid.DataSource is DataTable dt)
-                    {
-                        dt.DefaultView.Sort = string.Empty;
-                    }
-                    if (resultsGrid.SortedColumn != null)
-                    {
-                        resultsGrid.SortedColumn.HeaderCell.SortGlyphDirection = System.Windows.Forms.SortOrder.None;
+                        try { col.DisplayIndex = displayIndex++; } catch { }
                     }
                 }
 
-                foreach (DataGridViewColumn col in resultsGrid.Columns)
-                {
-                    col.SortMode = collapseActive ? DataGridViewColumnSortMode.NotSortable : DataGridViewColumnSortMode.Automatic;
-                }
-
-                // If collapse is off, try to reapply saved sort
-                if (!collapseActive)
-                {
-                    TryApplySavedSort();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Failed to update grid sortability state");
-            }
-        }
-
-        private void TryApplySavedSort()
-        {
-            try
-            {
-                if (collapseProductsCheckBox?.Checked == true) return;
-                if (_pendingSort == null || resultsGrid.Columns.Count == 0) return;
-                var (name, dir) = _pendingSort.Value;
-                var col = resultsGrid.Columns.Cast<DataGridViewColumn>().FirstOrDefault(c => (c.Name ?? c.HeaderText) == name);
-                if (col != null)
-                {
-                    col.SortMode = DataGridViewColumnSortMode.Automatic;
-                    resultsGrid.Sort(col, dir);
-                    _pendingSort = null; // applied
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Failed to apply saved sort");
-            }
-        }
-
-        private void TryApplySavedColumnFillWeights()
-        {
-            try
-            {
-                if (_pendingFillWeights == null || resultsGrid.Columns.Count == 0) return;
-                foreach (DataGridViewColumn col in resultsGrid.Columns)
+                // Place any columns not in saved list after saved ones
+                foreach (var col in resultsGrid.Columns.Cast<DataGridViewColumn>())
                 {
                     var key = col.Name ?? col.HeaderText ?? string.Empty;
-                    if (_pendingFillWeights.TryGetValue(key, out var weight))
+                    if (!_pendingColumnStates.Any(s => string.Equals(s.Key, key, StringComparison.OrdinalIgnoreCase)))
                     {
-                        if (weight > 0)
-                        {
-                            col.FillWeight = weight;
-                        }
+                        try { col.DisplayIndex = displayIndex++; } catch { }
                     }
                 }
-                _pendingFillWeights = null; // applied
+
+                _pendingColumnStates = null; // applied
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Failed to apply saved column fill weights");
+                _logger.LogDebug(ex, "Failed to apply saved column states");
             }
         }
 
-        private void UpdateStatus(string message) => statusLabel.Text = message;
+         private static bool TryParseOperator(string opString, out FilterOperator op)
+         {
+             return Enum.TryParse(opString, ignoreCase: true, out op);
+         }
 
-        private void ResultsGrid_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Right)
-            {
-                var column = resultsGrid.Columns[e.ColumnIndex];
-                using var menu = CreateColumnContextMenu(column);
-                var location = resultsGrid.PointToScreen(new Point(e.X, e.Y));
-                menu.Show(location);
-            }
-        }
-        #endregion
+         private (string? orderBy, string? dir) GetCurrentGridSortOrPending()
+         {
+             try
+             {
+                 // If grid has an active sort, use it
+                 if (resultsGrid.SortedColumn != null && resultsGrid.SortOrder != System.Windows.Forms.SortOrder.None)
+                 {
+                     var dir = resultsGrid.SortOrder == System.Windows.Forms.SortOrder.Descending ? "Descending" : "Ascending";
+                     return (resultsGrid.SortedColumn.HeaderText, dir);
+                 }
+                 // Else if collapse is active but we have a pending sort from state, persist that
+                 if (_pendingSort != null)
+                 {
+                     var (col, d) = _pendingSort.Value;
+                     return (col, d == ListSortDirection.Descending ? "Descending" : "Ascending");
+                 }
+             }
+             catch { }
+             return (null, null);
+         }
 
-        private async void BuildButton_Click(object? sender, EventArgs e)
-        {
-            var (sql, parameters) = BuildSqlQuery();
-            sqlParametersList  = parameters;
-            _logger.LogDebug("Executing generated query: {SqlPreview}", sql.Length > 200 ? sql[..200] + "..." : sql);
-            sqlLabel.Text = sql; // still hidden, for diagnostics
-            await ExecuteSqlAsync(sql, parameters, CancellationToken.None);
-        }
+         private List<string> GetCurrentGridColumnOrder()
+         {
+             foreach (DataGridViewColumn item in resultsGrid.Columns)
+             {
+                 _logger.LogDebug($"{item.Name}:{item.HeaderText}:{item.Width}:{item.DisplayIndex}");
+             }
+             try
+             {
+                 if (resultsGrid.Columns.Count == 0)
+                     return columnsCheckedListBox.CheckedItems.Cast<string>().ToList();
+                 return resultsGrid.Columns
+                     .Cast<DataGridViewColumn>()
+                     .OrderBy(c => c.DisplayIndex)
+                     .Select(c => c.Name ?? c.HeaderText)
+                     .Where(s => !string.IsNullOrEmpty(s))
+                     .Select(s => s!)
+                     .ToList();
+             }
+             catch { return new(); }
+         }
 
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            SaveUserState();
-            base.OnFormClosing(e);
-        }
+         private void TryApplyColumnOrder()
+         {
+             if (_pendingColumnOrder == null || resultsGrid.Columns.Count == 0) return;
+             try
+             {
+                 var map = resultsGrid.Columns.Cast<DataGridViewColumn>().ToDictionary(c => c.Name ?? c.HeaderText ?? string.Empty, c => c);
+                 int displayIndex = 0;
+                 foreach (var name in _pendingColumnOrder)
+                 {
+                     if (map.TryGetValue(name, out var col))
+                     {
+                         col.DisplayIndex = displayIndex++;
+                     }
+                 }
+                 _pendingColumnOrder = null; // applied
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogDebug(ex, "Failed to apply saved column order");
+             }
+         }
 
-        // Designer event handler for radioButtonTop CheckedChanged
-        private void RadioButton1_CheckedChanged(object? sender, EventArgs e)
-        {
-            try
-            {
-                topNumericUpDown.Enabled = radioButtonTop.Checked;
-            }
-            catch { }
-        }
+         // Apply column visibility according to the checked items in the columnsCheckedListBox
+         private void TryApplyColumnVisibility()
+         {
+             try
+             {
+                 if (resultsGrid.Columns.Count == 0) return;
+                 var checkedSet = new HashSet<string>(columnsCheckedListBox.CheckedItems.Cast<string>(), StringComparer.OrdinalIgnoreCase);
+                 foreach (DataGridViewColumn col in resultsGrid.Columns)
+                 {
+                     // Match by HeaderText
+                     var name = col.HeaderText ?? string.Empty;
+                     col.Visible = checkedSet.Contains(name);
+                 }
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogDebug(ex, "Failed to apply column visibility from checked list");
+             }
+         }
+         #endregion
 
-        // Designer "Manual" button click - re-execute current SQL text
-        private async void Button1_Click(object? sender, EventArgs e)
-        {
-            try
-            {
-                await ExecuteSqlAsync(sqlLabel.Text, sqlParametersList ?? new List<SqlParameter>(), CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogDebug(ex, "Manual SQL execution failed");
-            }
-        }
-    }
-}
+         #region Existing UI Logic (Adjusted)
+         private void SetupControls()
+         {
+             resultsGrid.AllowUserToAddRows = false;
+             resultsGrid.AllowUserToDeleteRows = false;
+             resultsGrid.ReadOnly = true;
+             resultsGrid.AllowUserToOrderColumns = true;
+             resultsGrid.AllowUserToResizeColumns = true;
+             resultsGrid.AllowUserToResizeRows = true;
+             resultsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+             resultsGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+             resultsGrid.MultiSelect = true;
+             resultsGrid.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithAutoHeaderText;
+             resultsGrid.ColumnHeaderMouseClick += ResultsGrid_ColumnHeaderMouseClick;
+             resultsGrid.ColumnDisplayIndexChanged += ResultsGrid_ColumnDisplayIndexChanged;
+             resultsGrid.ColumnWidthChanged += ResultsGrid_ColumnWidthChanged;
+             resultsGrid.Sorted += ResultsGrid_Sorted;
+         }
+
+         private void ResultsGrid_ColumnWidthChanged(object? sender, DataGridViewColumnEventArgs e)
+         {
+             try
+             {
+                 // Update pending fill weights whenever a user resizes a column
+                 _pendingFillWeights = GetCurrentColumnFillWeights();
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogDebug(ex, "Failed to capture column width change");
+             }
+         }
+
+         private void ResultsGrid_Sorted(object? sender, EventArgs e)
+         {
+             try
+             {
+                 if (resultsGrid.SortedColumn == null) return;
+                 var dir = resultsGrid.SortOrder == System.Windows.Forms.SortOrder.Descending
+                     ? ListSortDirection.Descending
+                     : ListSortDirection.Ascending;
+                 _pendingSort = (resultsGrid.SortedColumn.HeaderText, dir);
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogDebug(ex, "Failed to capture sorted state");
+             }
+         }
+
+         private void ResultsGrid_ColumnDisplayIndexChanged(object? sender, DataGridViewColumnEventArgs e)
+         {
+             try
+             {
+                 _pendingColumnOrder = GetCurrentGridColumnOrder();
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogDebug(ex, "Failed to capture column order change");
+             }
+         }
+
+         private ContextMenuStrip CreateColumnContextMenu(DataGridViewColumn column)
+         {
+ #pragma warning disable CA2000
+             var menu = new ContextMenuStrip();
+ #pragma warning restore CA2000
+             var hideItem = new ToolStripMenuItem($"Hide '{column.HeaderText}'");
+             hideItem.Click += (s, e) => HideColumn(column);
+             menu.Items.Add(hideItem);
+
+             var sortAscItem = new ToolStripMenuItem("Sort Ascending");
+             sortAscItem.Click += (s, e) => SortColumn(column, ListSortDirection.Ascending);
+             var sortDescItem = new ToolStripMenuItem("Sort Descending");
+             sortDescItem.Click += (s, e) => SortColumn(column, ListSortDirection.Descending);
+
+             bool collapseActive = collapseProductsCheckBox?.Checked == true;
+             sortAscItem.Enabled = !collapseActive;
+             sortDescItem.Enabled = !collapseActive;
+
+             menu.Items.Add(sortAscItem);
+             menu.Items.Add(sortDescItem);
+
+             menu.Items.Add(new ToolStripSeparator());
+             var autoSizeItem = new ToolStripMenuItem("Auto-size Column");
+             autoSizeItem.Click += (s, e) => column.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+             menu.Items.Add(autoSizeItem);
+             return menu;
+         }
+
+         private void HideColumn(DataGridViewColumn column)
+         {
+             var key = GetColumnKey(column);
+             // Uncheck corresponding entry in the columns checklist so visibility is persisted
+             try
+             {
+                 var idx = columnsCheckedListBox.Items.IndexOf(column.HeaderText);
+                 if (idx >= 0)
+                 {
+                     columnsCheckedListBox.SetItemChecked(idx, false);
+                 }
+             }
+             catch { }
+
+             column.Visible = false;
+         }
+
+         private static string GetColumnKey(DataGridViewColumn column)
+             => !string.IsNullOrEmpty(column.Name) ? column.Name : column.HeaderText ?? string.Empty;
+
+         private void SortColumn(DataGridViewColumn column, ListSortDirection direction)
+         {
+             // Disable manual sort in collapse mode
+             if (collapseProductsCheckBox?.Checked == true) return;
+             resultsGrid.Sort(column, direction);
+         }
+
+         private void UpdateGridSortability()
+         {
+             try
+             {
+                 bool collapseActive = collapseProductsCheckBox?.Checked == true;
+
+                 // Clear any existing sort if collapse turned on
+                 if (collapseActive)
+                 {
+                     if (resultsGrid.DataSource is DataTable dt)
+                     {
+                         dt.DefaultView.Sort = string.Empty;
+                     }
+                     if (resultsGrid.SortedColumn != null)
+                     {
+                         resultsGrid.SortedColumn.HeaderCell.SortGlyphDirection = System.Windows.Forms.SortOrder.None;
+                     }
+                 }
+
+                 foreach (DataGridViewColumn col in resultsGrid.Columns)
+                 {
+                     col.SortMode = collapseActive ? DataGridViewColumnSortMode.NotSortable : DataGridViewColumnSortMode.Automatic;
+                 }
+
+                 // If collapse is off, try to reapply saved sort
+                 if (!collapseActive)
+                 {
+                     TryApplySavedSort();
+                 }
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogDebug(ex, "Failed to update grid sortability state");
+             }
+         }
+
+         private void TryApplySavedSort()
+         {
+             try
+             {
+                 if (collapseProductsCheckBox?.Checked == true) return;
+                 if (_pendingSort == null || resultsGrid.Columns.Count == 0) return;
+                 var (name, dir) = _pendingSort.Value;
+                 var col = resultsGrid.Columns.Cast<DataGridViewColumn>().FirstOrDefault(c => (c.Name ?? c.HeaderText) == name);
+                 if (col != null)
+                 {
+                     col.SortMode = DataGridViewColumnSortMode.Automatic;
+                     resultsGrid.Sort(col, dir);
+                     _pendingSort = null; // applied
+                 }
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogDebug(ex, "Failed to apply saved sort");
+             }
+         }
+
+         private void TryApplySavedColumnFillWeights()
+         {
+             try
+             {
+                 if (_pendingFillWeights == null || resultsGrid.Columns.Count == 0) return;
+                 foreach (DataGridViewColumn col in resultsGrid.Columns)
+                 {
+                     var key = col.Name ?? col.HeaderText ?? string.Empty;
+                     if (_pendingFillWeights.TryGetValue(key, out var weight))
+                     {
+                         if (weight > 0)
+                         {
+                             col.FillWeight = weight;
+                         }
+                     }
+                 }
+                 _pendingFillWeights = null; // applied
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogDebug(ex, "Failed to apply saved column fill weights");
+             }
+         }
+
+         private void UpdateStatus(string message) => statusLabel.Text = message;
+
+         private void ResultsGrid_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
+         {
+             if (e.Button == MouseButtons.Right)
+             {
+                 var column = resultsGrid.Columns[e.ColumnIndex];
+                 using var menu = CreateColumnContextMenu(column);
+                 var location = resultsGrid.PointToScreen(new Point(e.X, e.Y));
+                 menu.Show(location);
+             }
+         }
+         #endregion
+
+         private async void BuildButton_Click(object? sender, EventArgs e)
+         {
+             var (sql, parameters) = BuildSqlQuery();
+             sqlParametersList  = parameters;
+             _logger.LogDebug("Executing generated query: {SqlPreview}", sql.Length > 200 ? sql[..200] + "..." : sql);
+             sqlLabel.Text = sql; // still hidden, for diagnostics
+             await ExecuteSqlAsync(sql, parameters, CancellationToken.None);
+         }
+
+         protected override void OnFormClosing(FormClosingEventArgs e)
+         {
+             SaveUserState();
+             base.OnFormClosing(e);
+         }
+
+         // Designer event handler for radioButtonTop CheckedChanged
+         private void RadioButton1_CheckedChanged(object? sender, EventArgs e)
+         {
+             try
+             {
+                 topNumericUpDown.Enabled = radioButtonTop.Checked;
+             }
+             catch { }
+         }
+
+         // Designer "Manual" button click - re-execute current SQL text
+         private async void Button1_Click(object? sender, EventArgs e)
+         {
+             try
+             {
+                 await ExecuteSqlAsync(sqlLabel.Text, sqlParametersList ?? new List<SqlParameter>(), CancellationToken.None);
+             }
+             catch (Exception ex)
+             {
+                 _logger.LogDebug(ex, "Manual SQL execution failed");
+             }
+         }
+     }
+ }
