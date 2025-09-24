@@ -36,37 +36,29 @@
       "son": "M",
       "hero": "M"
     },
-    "Size": {
-      "50": "50",
-      "100": "100",
-      "125": "125",
-      "200": "200",
-      "250": "250",
-      "mini": "5",
-      "travel": "15",
-      "sample": "2"
-    },
     "Unit": {
       "ml": "ml",
       "millilitre": "ml",
       "oz": "oz",
       "fl oz": "oz",
       "floz": "oz",
-      "fluid ounce": "oz"
+      "fluid ounce": "oz",
+      "gram": "g",
+      "g": "g",
     },
     "Currency": {
-      "€": "EUR",
-      "eur": "EUR",
-      "euro": "EUR",
-      "euros": "EUR",
-      "$": "USD",
-      "usd": "USD",
-      "dollar": "USD",
-      "dollars": "USD",
-      "£": "GBP",
-      "gbp": "GBP",
-      "pound": "GBP",
-      "pounds": "GBP",
+      "€": "€",
+      "eur": "€",
+      "euro": "€",
+      "euros": "€",
+      "$": "$",
+      "usd": "$",
+      "dollar": "$",
+      "dollars": "$",
+      "£": "£",
+      "gbp": "£",
+      "pound": "£",
+      "pounds": "£",
       "chf": "CHF",
       "franc": "CHF",
       "francs": "CHF",
@@ -450,6 +442,258 @@
         "expectedColumnCount": 7,
         "headerRowIndex": 1,
         "detection": { "fileNamePatterns": [ "hand*.xls*" ] }
+      }
+    },
+    {
+      "name": "Lux",
+      "Currency": "USD",
+      "parserConfig": {
+        "settings": {
+          "stopOnFirstMatchPerColumn": false,
+          "defaultCulture": "en-US",
+          "preferFirstAssignment": true
+        },
+        "columns": [
+          {
+            "column": "A",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Product.EAN"
+                }
+              ]
+            }
+          },
+          {
+            "column": "B",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Ref"
+                }
+              ]
+            }
+          },
+          {
+            "column": "C",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Description"
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Text",
+                  "Output": "Concentrations",
+                  "Parameters": {
+                    "pattern": "lookup:Concentration",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+                {
+                  "Op": "Map",
+                  "Input": "Concentrations[0]",
+                  "Output": "Product.Concentration",
+                  "Parameters": {
+                    "table": "Concentration",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Concentrations.Clean",
+                  "Output": "Genders",
+                  "Parameters": {
+                    "pattern": "lookup:Gender",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+                {
+                  "Op": "Map",
+                  "Input": "Genders[0]",
+                  "Output": "Product.Gender",
+                  "Parameters": {
+                    "table": "Gender",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Genders.Clean",
+                  "Output": "Types",
+                  "Parameters": {
+                    "pattern": "lookup:Type",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+                {
+                  "Op": "Map",
+                  "Input": "Types[0]",
+                  "Output": "Product.Type",
+                  "Parameters": {
+                    "table": "Type",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Types.Clean",
+                  "Output": "Brands",
+                  "Parameters": {
+                    "pattern": "lookup:Brand",
+                    "options": "all,ignorecase,remove"
+                  }
+                },
+                {
+                  "Op": "Map",
+                  "Input": "Brands[0]",
+                  "Output": "Product.Brand",
+                  "Parameters": {
+                    "table": "Brand",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Find",
+                  "Input": "Types.Clean",
+                  "Output": "BrandsDefault",
+                  "Parameters": {
+                    "pattern": "^\\s*(\\S+)",
+                    "options": "first,ignorecase"
+                  }
+                },
+                {
+                  "Op": "Conditional",
+                  "Input": "Brands[0]",
+                  "Output": "Product.Brand",
+                  "Parameters": {
+                    "condition": "Brands.Length > 0",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Conditional",
+                  "Input": "BrandsDefault",
+                  "Output": "Product.Brand",
+                  "Parameters": {
+                    "condition": "Brands.Length == -1",
+                    "assign": "true"
+                  }
+                },
+                {
+                  "Op": "Assign",
+                  "Input": "Brands.Clean",
+                  "Output": "Product.Line"
+                }
+              ]
+            }
+          },
+          {
+            "column": "E",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Map",
+                  "Input": "Text",
+                  "Output": "Product.Gender",
+                  "Parameters": {
+                    "table": "Gender",
+                    "assign": "true"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "column": "F",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Product.Size"
+                }
+              ]
+            }
+          },
+          {
+            "column": "G",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Map",
+                  "Input": "Text",
+                  "Output": "Product.Units",
+                  "Parameters": {
+                    "table": "Unit",
+                    "assign": "true"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "column": "I",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Price"
+                }
+              ]
+            }
+          },
+          {
+            "column": "J",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Quantity"
+                }
+              ]
+            }
+          },
+          {
+            "column": "K",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Offer.Incomming"
+                }
+              ]
+            }
+          },
+          {
+            "column": "L",
+            "rule": {
+              "actions": [
+                {
+                  "Op": "Assign",
+                  "Input": "Text",
+                  "Output": "Product.COO"
+                }
+              ]
+            }
+          }
+
+        ]
+      },
+      "fileStructure": {
+        "dataStartRowIndex": 2,
+        "expectedColumnCount": 7,
+        "headerRowIndex": 1,
+        "detection": { "fileNamePatterns": [ "chk*.xls*" ] }
       }
     },
     {

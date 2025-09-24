@@ -7,24 +7,21 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel; // Needed for ListSortDirection
 using Microsoft.Data.SqlClient; // Added for parameterized SQL execution
 using System.Text.Json; // For state persistence
+using SacksDataLayer.FileProcessing.Configuration;
 
 namespace SacksApp
 {
     public partial class SqlQueryForm : Form
     {
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceProvider? _serviceProvider;
         private readonly ILogger<SqlQueryForm> _logger;
         private readonly SacksDbContext _dbContext;
         private readonly List<string> _hiddenColumns = new();
         private readonly List<FilterCondition> _filters = new();
         private List<string> _availableColumns = new();
-        private const string StateFileName = "SqlQueryForm.UserState.json";
-        private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
-        private List<string>? _pendingColumnOrder; // loaded order to apply after data bind
-        private (string column, ListSortDirection direction)? _pendingSort; // loaded sort to apply after data bind
-        private Dictionary<string, float>? _pendingFillWeights; // loaded fill weights to apply after data bind
-        private List<ColumnState>? _pendingColumnStates; // loaded per-column states to apply after data bind
-        private List<SqlParameter> sqlParametersList  = new List<SqlParameter>();
+        private SuppliersConfiguration? _suppliersConfiguration = null;
+
+        private List<SqlParameter> sqlParametersList = new List<SqlParameter>();
 
         private static readonly Type ViewType = typeof(SacksDataLayer.Entities.ProductOffersView);
         private static readonly string[] EntityPropertyNames = ViewType
@@ -49,11 +46,27 @@ namespace SacksApp
         public SqlQueryForm(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-            _logger = _serviceProvider.GetRequiredService<ILogger<SqlQueryForm>>();
-            _dbContext = _serviceProvider.GetRequiredService<SacksDbContext>();
+            _logger = _serviceProvider!.GetRequiredService<ILogger<SqlQueryForm>>();
+            _dbContext = _serviceProvider!.GetRequiredService<SacksDbContext>();
+
+            // Try to eagerly load supplier configurations so lookup lists are available in the UI
+            try
+            {
+                var svc = _serviceProvider?.GetService<SacksLogicLayer.Services.Interfaces.ISupplierConfigurationService>()
+                          ?? _serviceProvider?.GetService<SacksLogicLayer.Services.Implementations.SupplierConfigurationService>();
+                if (svc != null)
+                {
+                    // Synchronously block here - configuration load is expected to be small and fast
+                    _suppliersConfiguration = svc.GetAllConfigurationsAsync().GetAwaiter().GetResult();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load supplier configurations during form initialization");
+                _suppliersConfiguration = null;
+            }
 
             InitializeComponent();
-            SetupControls();
             InitializeQueryDesigner();
         }
 
@@ -78,21 +91,11 @@ namespace SacksApp
                 if (filterColumnComboBox.Items.Count > 0) filterColumnComboBox.SelectedIndex = 0;
 
                 filterOperatorComboBox.Items.Clear();
-                filterColumnComboBox.SelectedIndexChanged += (s, e) => RefreshOperatorList();
                 RefreshOperatorList();
 
-                addFilterButton.Click += (s, e) => AddFilter();
-                removeFilterButton.Click += (s, e) => RemoveSelectedFilter();
-                buildButton.Click += BuildButton_Click; // wire build/run button
-
-                // also react when collapse mode toggles to update grid behavior
-                if (collapseProductsCheckBox != null)
-                {
-                    collapseProductsCheckBox.CheckedChanged += (s, e) => UpdateGridSortability();
-                }
-
+                // No persisted UI state load — session state persistence has been removed
                 // Load persisted state after controls are populated
-                LoadUserState();
+                // LoadUserState();
 
                 UpdateStatus("Ready - Design your query and click Run");
             }
@@ -288,7 +291,7 @@ namespace SacksApp
         }
 
         // Helper: escape SQL identifiers like column names
-        private static string EscapeIdentifier(string name) => "[" + name.Replace("]", "]]" ) + "]";
+        private static string EscapeIdentifier(string name) => "[" + name.Replace("]", "]]") + "]";
 
         // Helper: builds a single predicate for a filter condition against a given table alias
         private string BuildPredicate(string alias, FilterCondition f, ref int paramIndex, List<SqlParameter> parameters)
@@ -404,12 +407,11 @@ namespace SacksApp
             => string.Join(", ", columns.Select(EscapeIdentifier));
 
         // Simple query from base view
-        private string BuildSimpleQuery(List<string> selectedColumns, string where, bool applyTop)
+        private string BuildSimpleQuery(List<string> selectedColumns, string where)
         {
             var sb = new StringBuilder();
             var cols = BuildSelectList(selectedColumns);
-            if (applyTop) sb.Append($"SELECT TOP ({(int)topNumericUpDown.Value}) {cols} FROM [ProductOffersView]");
-            else sb.Append($"SELECT {cols} FROM [ProductOffersView]");
+            sb.Append($"SELECT {cols} FROM [ProductOffersView]");
             sb.Append(where);
             var orderCols = new List<string>();
             if (selectedColumns.Contains("EAN", StringComparer.OrdinalIgnoreCase)) orderCols.Add("[EAN]");
@@ -420,19 +422,18 @@ namespace SacksApp
         }
 
         // Collapsed query using dedicated collapsed view
-        private string BuildCollapsedUsingView(List<string> selectedColumns, string where, bool applyTop)
+        private string BuildCollapsedUsingView(List<string> selectedColumns, string where)
         {
             var sb = new StringBuilder();
             var cols = BuildSelectList(selectedColumns);
-            if (applyTop) sb.Append($"SELECT TOP ({(int)topNumericUpDown.Value}) {cols} FROM [ProductOffersViewCollapse] AS c");
-            else sb.Append($"SELECT {cols} FROM [ProductOffersViewCollapse] AS c");
+            sb.Append($"SELECT {cols} FROM [ProductOffersViewCollapse] AS c");
             sb.Append(where);
             sb.Append(" ORDER BY [EANKey], [OfferRank]");
             return sb.ToString();
         }
 
         // Dynamic collapsed query: filter base view then recompute collapse using ROW_NUMBER
-        private string BuildDynamicCollapsed(List<string> selectedColumns, string innerWhere, bool applyTop)
+        private string BuildDynamicCollapsed(List<string> selectedColumns, string innerWhere)
         {
             var inner = new StringBuilder();
             inner.Append("SELECT v.*, ROW_NUMBER() OVER (PARTITION BY v.[EAN] ORDER BY v.[OfferRank]) AS rn, COUNT(*) OVER (PARTITION BY v.[EAN]) AS cnt FROM [ProductOffersView] AS v");
@@ -448,7 +449,7 @@ namespace SacksApp
             }
 
             var sb = new StringBuilder();
-            if (applyTop) sb.Append($"SELECT TOP ({(int)topNumericUpDown.Value}) "); else sb.Append("SELECT ");
+            sb.Append("SELECT ");
             sb.Append(string.Join(", ", projected));
             sb.Append(" FROM (");
             sb.Append(inner);
@@ -463,12 +464,11 @@ namespace SacksApp
 
             var parameters = new List<SqlParameter>();
             bool collapse = collapseProductsCheckBox?.Checked == true;
-            bool applyTop = radioButtonTop.Checked; // only apply TOP when radio selected
 
             if (!collapse)
             {
                 var where = BuildBaseWhere(parameters);
-                var sql = BuildSimpleQuery(selectedColumns, where, applyTop);
+                var sql = BuildSimpleQuery(selectedColumns, where);
                 return (sql, parameters);
             }
 
@@ -477,13 +477,13 @@ namespace SacksApp
             if (!hasOfferFilters)
             {
                 var where = BuildCollapsedViewWhere(parameters);
-                var sql = BuildCollapsedUsingView(selectedColumns, where, applyTop);
+                var sql = BuildCollapsedUsingView(selectedColumns, where);
                 return (sql, parameters);
             }
             else
             {
                 var innerWhere = BuildDynamicInnerWhere(parameters);
-                var sql = BuildDynamicCollapsed(selectedColumns, innerWhere, applyTop);
+                var sql = BuildDynamicCollapsed(selectedColumns, innerWhere);
                 return (sql, parameters);
             }
         }
@@ -519,15 +519,8 @@ namespace SacksApp
                         if (string.IsNullOrEmpty(c.Name)) c.Name = c.HeaderText ?? string.Empty;
                     }
 
-                    // Apply visibility first (based on checked list), then order/weights/sort
-                    // Try to apply any saved per-column states (visibility, width, order, fill weights)
-                    TryApplyPendingColumnStates();
-                    // Keep legacy visibility/order attempts as fallback
+                    // Apply visibility based on checked list
                     TryApplyColumnVisibility();
-                    TryApplyColumnOrder();
-                    TryApplySavedColumnFillWeights();
-                    TryApplySavedSort();
-                    UpdateStatus($"{dt.Rows.Count:N0} rows - {dt.Columns.Count} columns ({sw.ElapsedMilliseconds}ms)");
                 }
             }
             catch (Exception ex)
@@ -545,594 +538,36 @@ namespace SacksApp
         private void SetExecuting(bool executing)
         {
             progressBar.Visible = executing;
-            buildButton.Enabled = !executing;
+            runQueryButton.Enabled = !executing;
             addFilterButton.Enabled = !executing;
             removeFilterButton.Enabled = !executing;
             columnsCheckedListBox.Enabled = !executing;
         }
-        #endregion
 
-        #region State Persistence
-        private sealed class QueryFormState
-        {
-            public List<string> SelectedColumns { get; set; } = new();
-            public List<FilterState> Filters { get; set; } = new();
-            public string? OrderBy { get; set; }
-            public string? OrderByDir { get; set; }
-            public int Top { get; set; }
-            // ColumnOrder now stores column.Name values (stable identifiers)
-            public List<string> ColumnOrder { get; set; } = new();
-            public bool CollapseProducts { get; set; } // new
-            // Fill weights keyed by column.Name
-            public Dictionary<string, float> ColumnFillWeights { get; set; } = new();
-            // Persist absolute widths as fallback
-            public Dictionary<string, int> ColumnWidths { get; set; } = new();
-            // Per-column persisted state (preferred)
-            public List<ColumnState> ColumnStates { get; set; } = new();
-        }
-        private sealed class FilterState
-        {
-            public string Property { get; set; } = string.Empty;
-            public string Operator { get; set; } = string.Empty;
-            public string? Value { get; set; }
-        }
-
-        // Per-column persisted state
-        private sealed class ColumnState
-        {
-            public string Key { get; set; } = string.Empty; // column.Name (if present) or HeaderText
-            public int DisplayIndex { get; set; }
-            public bool Visible { get; set; }
-            public int Width { get; set; }
-            public float FillWeight { get; set; }
-        }
-
-        private string GetStateFilePath()
+        // Apply column visibility according to the checked items in the columnsCheckedListBox
+        private void TryApplyColumnVisibility()
         {
             try
             {
-                // Store beside main form window state file (AppContext.BaseDirectory) for simplicity
-                return Path.Combine(AppContext.BaseDirectory, StateFileName);
-            }
-            catch
-            {
-                return StateFileName;
-            }
-        }
-
-        private void LoadUserState()
-        {
-            try
-            {
-                var path = GetStateFilePath();
-                if (!File.Exists(path)) return;
-                var json = File.ReadAllText(path);
-                var state = JsonSerializer.Deserialize<QueryFormState>(json);
-                if (state == null) return;
-
-                // Restore top
-                if (state.Top >= topNumericUpDown.Minimum && state.Top <= topNumericUpDown.Maximum)
-                    topNumericUpDown.Value = state.Top;
-
-                // Restore columns
-                for (int i = 0; i < columnsCheckedListBox.Items.Count; i++)
-                    columnsCheckedListBox.SetItemChecked(i, false);
-                foreach (var col in state.SelectedColumns)
-                {
-                    var idx = columnsCheckedListBox.Items.IndexOf(col);
-                    if (idx >= 0) columnsCheckedListBox.SetItemChecked(idx, true);
-                }
-
-                // Restore filters
-                _filters.Clear();
-                filtersListBox.Items.Clear();
-                foreach (var f in state.Filters)
-                {
-                    if (!_availableColumns.Contains(f.Property, StringComparer.OrdinalIgnoreCase)) continue;
-                    if (!TryParseOperator(f.Operator, out var op)) continue;
-                    var propInfo = ViewType.GetProperty(f.Property);
-                    var type = propInfo != null ? (Nullable.GetUnderlyingType(propInfo.PropertyType) ?? propInfo.PropertyType) : typeof(string);
-                    var cond = new FilterCondition
-                    {
-                        PropertyName = f.Property,
-                        Operator = op,
-                        RawValue = f.Value,
-                        PropertyType = type
-                    };
-                    _filters.Add(cond);
-                    filtersListBox.Items.Add(cond.ToString());
-                }
-
-                // Column order (defer until data bound)
-                if (state.ColumnOrder is { Count: > 0 })
-                {
-                    _pendingColumnOrder = state.ColumnOrder;
-                    TryApplyColumnOrder(); // in case grid already has data
-                }
-                // Column states (visibility/width/displayindex) - prefer these
-                if (state.ColumnStates is { Count: > 0 })
-                {
-                    _pendingColumnStates = state.ColumnStates;
-                    TryApplyPendingColumnStates();
-                }
-                if (collapseProductsCheckBox != null)
-                    collapseProductsCheckBox.Checked = state.CollapseProducts;
-
-                // Saved sort (defer until data bound)
-                if (!string.IsNullOrWhiteSpace(state.OrderBy) && !string.IsNullOrWhiteSpace(state.OrderByDir))
-                {
-                    var dir = state.OrderByDir.Equals("Descending", StringComparison.OrdinalIgnoreCase)
-                        ? ListSortDirection.Descending
-                        : ListSortDirection.Ascending;
-                    _pendingSort = (state.OrderBy, dir);
-                    TryApplySavedSort();
-                }
-
-                // Saved fill weights (defer until data bound)
-                if (state.ColumnFillWeights is { Count: > 0 })
-                {
-                    // store into pending by name
-                    _pendingFillWeights = state.ColumnFillWeights;
-                    TryApplySavedColumnFillWeights();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to load SqlQueryForm user state");
-            }
-        }
-
-        private void SaveUserState()
-        {
-            try
-            {
-                var (orderBy, orderByDir) = GetCurrentGridSortOrPending();
-                var state = new QueryFormState
-                {
-                    Top = (int)topNumericUpDown.Value,
-                    SelectedColumns = columnsCheckedListBox.CheckedItems.Cast<string>().ToList(),
-                    Filters = _filters.Select(f => new FilterState
-                    {
-                        Property = f.PropertyName,
-                        Operator = f.Operator.ToString(),
-                        Value = f.RawValue
-                    }).ToList(),
-                    ColumnOrder = GetCurrentGridColumnOrder(),
-                    CollapseProducts = collapseProductsCheckBox?.Checked == true,
-                    OrderBy = orderBy,
-                    OrderByDir = orderByDir,
-                    ColumnFillWeights = GetCurrentColumnFillWeights()
-                };
-
-                // also store absolute widths for robustness
-                try
-                {
-                    var colStates = new List<ColumnState>();
-                    foreach (DataGridViewColumn col in resultsGrid.Columns)
-                    {
-                        var key = col.Name ?? col.HeaderText ?? string.Empty;
-                        state.ColumnWidths[key] = col.Width;
-                        colStates.Add(new ColumnState
-                        {
-                            Key = key,
-                            DisplayIndex = col.DisplayIndex,
-                            Visible = col.Visible,
-                            Width = col.Width,
-                            FillWeight = col.FillWeight
-                        });
-                    }
-                    state.ColumnStates = colStates.OrderBy(c => c.DisplayIndex).ToList();
-                }
-                catch { }
-
-                var json = JsonSerializer.Serialize(state, JsonOptions);
-                File.WriteAllText(GetStateFilePath(), json, Encoding.UTF8);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to save SqlQueryForm user state");
-            }
-        }
-
-        private Dictionary<string, float> GetCurrentColumnFillWeights()
-        {
-            var map = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
-            try
-            {
+                if (resultsGrid.Columns.Count == 0) return;
+                var checkedSet = new HashSet<string>(columnsCheckedListBox.CheckedItems.Cast<string>(), StringComparer.OrdinalIgnoreCase);
                 foreach (DataGridViewColumn col in resultsGrid.Columns)
                 {
-                    var key = col.Name ?? col.HeaderText ?? string.Empty;
-                    map[key] = col.FillWeight;
+                    // Match by HeaderText
+                    var name = col.HeaderText ?? string.Empty;
+                    col.Visible = checkedSet.Contains(name);
                 }
-            }
-            catch { }
-            return map;
-        }
-
-        // Apply pending column states (visibility, width, display index, fill weight)
-        private void TryApplyPendingColumnStates()
-        {
-            try
-            {
-                if (_pendingColumnStates == null || resultsGrid.Columns.Count == 0) return;
-                // Map current columns by key
-                var map = resultsGrid.Columns.Cast<DataGridViewColumn>().ToDictionary(c => c.Name ?? c.HeaderText ?? string.Empty, StringComparer.OrdinalIgnoreCase);
-
-                // First apply visibility and width/fill
-                foreach (var state in _pendingColumnStates)
-                {
-                    if (map.TryGetValue(state.Key, out var col))
-                    {
-                        try { col.Visible = state.Visible; } catch { }
-                        try { if (state.Width > 0) col.Width = state.Width; } catch { }
-                        try { if (state.FillWeight > 0) col.FillWeight = state.FillWeight; } catch { }
-                    }
-                }
-
-                // Then apply display order in saved order
-                int displayIndex = 0;
-                foreach (var state in _pendingColumnStates.OrderBy(s => s.DisplayIndex))
-                {
-                    if (map.TryGetValue(state.Key, out var col))
-                    {
-                        try { col.DisplayIndex = displayIndex++; } catch { }
-                    }
-                }
-
-                // Place any columns not in saved list after saved ones
-                foreach (var col in resultsGrid.Columns.Cast<DataGridViewColumn>())
-                {
-                    var key = col.Name ?? col.HeaderText ?? string.Empty;
-                    if (!_pendingColumnStates.Any(s => string.Equals(s.Key, key, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        try { col.DisplayIndex = displayIndex++; } catch { }
-                    }
-                }
-
-                _pendingColumnStates = null; // applied
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Failed to apply saved column states");
+                _logger.LogDebug(ex, "Failed to apply column visibility from checked list");
             }
         }
+        #endregion
 
-         private static bool TryParseOperator(string opString, out FilterOperator op)
-         {
-             return Enum.TryParse(opString, ignoreCase: true, out op);
-         }
-
-         private (string? orderBy, string? dir) GetCurrentGridSortOrPending()
-         {
-             try
-             {
-                 // If grid has an active sort, use it
-                 if (resultsGrid.SortedColumn != null && resultsGrid.SortOrder != System.Windows.Forms.SortOrder.None)
-                 {
-                     var dir = resultsGrid.SortOrder == System.Windows.Forms.SortOrder.Descending ? "Descending" : "Ascending";
-                     return (resultsGrid.SortedColumn.HeaderText, dir);
-                 }
-                 // Else if collapse is active but we have a pending sort from state, persist that
-                 if (_pendingSort != null)
-                 {
-                     var (col, d) = _pendingSort.Value;
-                     return (col, d == ListSortDirection.Descending ? "Descending" : "Ascending");
-                 }
-             }
-             catch { }
-             return (null, null);
-         }
-
-         private List<string> GetCurrentGridColumnOrder()
-         {
-             foreach (DataGridViewColumn item in resultsGrid.Columns)
-             {
-                 _logger.LogDebug($"{item.Name}:{item.HeaderText}:{item.Width}:{item.DisplayIndex}");
-             }
-             try
-             {
-                 if (resultsGrid.Columns.Count == 0)
-                     return columnsCheckedListBox.CheckedItems.Cast<string>().ToList();
-                 return resultsGrid.Columns
-                     .Cast<DataGridViewColumn>()
-                     .OrderBy(c => c.DisplayIndex)
-                     .Select(c => c.Name ?? c.HeaderText)
-                     .Where(s => !string.IsNullOrEmpty(s))
-                     .Select(s => s!)
-                     .ToList();
-             }
-             catch { return new(); }
-         }
-
-         private void TryApplyColumnOrder()
-         {
-             if (_pendingColumnOrder == null || resultsGrid.Columns.Count == 0) return;
-             try
-             {
-                 var map = resultsGrid.Columns.Cast<DataGridViewColumn>().ToDictionary(c => c.Name ?? c.HeaderText ?? string.Empty, c => c);
-                 int displayIndex = 0;
-                 foreach (var name in _pendingColumnOrder)
-                 {
-                     if (map.TryGetValue(name, out var col))
-                     {
-                         col.DisplayIndex = displayIndex++;
-                     }
-                 }
-                 _pendingColumnOrder = null; // applied
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogDebug(ex, "Failed to apply saved column order");
-             }
-         }
-
-         // Apply column visibility according to the checked items in the columnsCheckedListBox
-         private void TryApplyColumnVisibility()
-         {
-             try
-             {
-                 if (resultsGrid.Columns.Count == 0) return;
-                 var checkedSet = new HashSet<string>(columnsCheckedListBox.CheckedItems.Cast<string>(), StringComparer.OrdinalIgnoreCase);
-                 foreach (DataGridViewColumn col in resultsGrid.Columns)
-                 {
-                     // Match by HeaderText
-                     var name = col.HeaderText ?? string.Empty;
-                     col.Visible = checkedSet.Contains(name);
-                 }
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogDebug(ex, "Failed to apply column visibility from checked list");
-             }
-         }
-         #endregion
-
-         #region Existing UI Logic (Adjusted)
-         private void SetupControls()
-         {
-             resultsGrid.AllowUserToAddRows = false;
-             resultsGrid.AllowUserToDeleteRows = false;
-             resultsGrid.ReadOnly = true;
-             resultsGrid.AllowUserToOrderColumns = true;
-             resultsGrid.AllowUserToResizeColumns = true;
-             resultsGrid.AllowUserToResizeRows = true;
-             resultsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-             resultsGrid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-             resultsGrid.MultiSelect = true;
-             resultsGrid.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithAutoHeaderText;
-             resultsGrid.ColumnHeaderMouseClick += ResultsGrid_ColumnHeaderMouseClick;
-             resultsGrid.ColumnDisplayIndexChanged += ResultsGrid_ColumnDisplayIndexChanged;
-             resultsGrid.ColumnWidthChanged += ResultsGrid_ColumnWidthChanged;
-             resultsGrid.Sorted += ResultsGrid_Sorted;
-         }
-
-         private void ResultsGrid_ColumnWidthChanged(object? sender, DataGridViewColumnEventArgs e)
-         {
-             try
-             {
-                 // Update pending fill weights whenever a user resizes a column
-                 _pendingFillWeights = GetCurrentColumnFillWeights();
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogDebug(ex, "Failed to capture column width change");
-             }
-         }
-
-         private void ResultsGrid_Sorted(object? sender, EventArgs e)
-         {
-             try
-             {
-                 if (resultsGrid.SortedColumn == null) return;
-                 var dir = resultsGrid.SortOrder == System.Windows.Forms.SortOrder.Descending
-                     ? ListSortDirection.Descending
-                     : ListSortDirection.Ascending;
-                 _pendingSort = (resultsGrid.SortedColumn.HeaderText, dir);
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogDebug(ex, "Failed to capture sorted state");
-             }
-         }
-
-         private void ResultsGrid_ColumnDisplayIndexChanged(object? sender, DataGridViewColumnEventArgs e)
-         {
-             try
-             {
-                 _pendingColumnOrder = GetCurrentGridColumnOrder();
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogDebug(ex, "Failed to capture column order change");
-             }
-         }
-
-         private ContextMenuStrip CreateColumnContextMenu(DataGridViewColumn column)
-         {
- #pragma warning disable CA2000
-             var menu = new ContextMenuStrip();
- #pragma warning restore CA2000
-             var hideItem = new ToolStripMenuItem($"Hide '{column.HeaderText}'");
-             hideItem.Click += (s, e) => HideColumn(column);
-             menu.Items.Add(hideItem);
-
-             var sortAscItem = new ToolStripMenuItem("Sort Ascending");
-             sortAscItem.Click += (s, e) => SortColumn(column, ListSortDirection.Ascending);
-             var sortDescItem = new ToolStripMenuItem("Sort Descending");
-             sortDescItem.Click += (s, e) => SortColumn(column, ListSortDirection.Descending);
-
-             bool collapseActive = collapseProductsCheckBox?.Checked == true;
-             sortAscItem.Enabled = !collapseActive;
-             sortDescItem.Enabled = !collapseActive;
-
-             menu.Items.Add(sortAscItem);
-             menu.Items.Add(sortDescItem);
-
-             menu.Items.Add(new ToolStripSeparator());
-             var autoSizeItem = new ToolStripMenuItem("Auto-size Column");
-             autoSizeItem.Click += (s, e) => column.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-             menu.Items.Add(autoSizeItem);
-             return menu;
-         }
-
-         private void HideColumn(DataGridViewColumn column)
-         {
-             var key = GetColumnKey(column);
-             // Uncheck corresponding entry in the columns checklist so visibility is persisted
-             try
-             {
-                 var idx = columnsCheckedListBox.Items.IndexOf(column.HeaderText);
-                 if (idx >= 0)
-                 {
-                     columnsCheckedListBox.SetItemChecked(idx, false);
-                 }
-             }
-             catch { }
-
-             column.Visible = false;
-         }
-
-         private static string GetColumnKey(DataGridViewColumn column)
-             => !string.IsNullOrEmpty(column.Name) ? column.Name : column.HeaderText ?? string.Empty;
-
-         private void SortColumn(DataGridViewColumn column, ListSortDirection direction)
-         {
-             // Disable manual sort in collapse mode
-             if (collapseProductsCheckBox?.Checked == true) return;
-             resultsGrid.Sort(column, direction);
-         }
-
-         private void UpdateGridSortability()
-         {
-             try
-             {
-                 bool collapseActive = collapseProductsCheckBox?.Checked == true;
-
-                 // Clear any existing sort if collapse turned on
-                 if (collapseActive)
-                 {
-                     if (resultsGrid.DataSource is DataTable dt)
-                     {
-                         dt.DefaultView.Sort = string.Empty;
-                     }
-                     if (resultsGrid.SortedColumn != null)
-                     {
-                         resultsGrid.SortedColumn.HeaderCell.SortGlyphDirection = System.Windows.Forms.SortOrder.None;
-                     }
-                 }
-
-                 foreach (DataGridViewColumn col in resultsGrid.Columns)
-                 {
-                     col.SortMode = collapseActive ? DataGridViewColumnSortMode.NotSortable : DataGridViewColumnSortMode.Automatic;
-                 }
-
-                 // If collapse is off, try to reapply saved sort
-                 if (!collapseActive)
-                 {
-                     TryApplySavedSort();
-                 }
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogDebug(ex, "Failed to update grid sortability state");
-             }
-         }
-
-         private void TryApplySavedSort()
-         {
-             try
-             {
-                 if (collapseProductsCheckBox?.Checked == true) return;
-                 if (_pendingSort == null || resultsGrid.Columns.Count == 0) return;
-                 var (name, dir) = _pendingSort.Value;
-                 var col = resultsGrid.Columns.Cast<DataGridViewColumn>().FirstOrDefault(c => (c.Name ?? c.HeaderText) == name);
-                 if (col != null)
-                 {
-                     col.SortMode = DataGridViewColumnSortMode.Automatic;
-                     resultsGrid.Sort(col, dir);
-                     _pendingSort = null; // applied
-                 }
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogDebug(ex, "Failed to apply saved sort");
-             }
-         }
-
-         private void TryApplySavedColumnFillWeights()
-         {
-             try
-             {
-                 if (_pendingFillWeights == null || resultsGrid.Columns.Count == 0) return;
-                 foreach (DataGridViewColumn col in resultsGrid.Columns)
-                 {
-                     var key = col.Name ?? col.HeaderText ?? string.Empty;
-                     if (_pendingFillWeights.TryGetValue(key, out var weight))
-                     {
-                         if (weight > 0)
-                         {
-                             col.FillWeight = weight;
-                         }
-                     }
-                 }
-                 _pendingFillWeights = null; // applied
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogDebug(ex, "Failed to apply saved column fill weights");
-             }
-         }
-
-         private void UpdateStatus(string message) => statusLabel.Text = message;
-
-         private void ResultsGrid_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
-         {
-             if (e.Button == MouseButtons.Right)
-             {
-                 var column = resultsGrid.Columns[e.ColumnIndex];
-                 using var menu = CreateColumnContextMenu(column);
-                 var location = resultsGrid.PointToScreen(new Point(e.X, e.Y));
-                 menu.Show(location);
-             }
-         }
-         #endregion
-
-         private async void BuildButton_Click(object? sender, EventArgs e)
-         {
-             var (sql, parameters) = BuildSqlQuery();
-             sqlParametersList  = parameters;
-             _logger.LogDebug("Executing generated query: {SqlPreview}", sql.Length > 200 ? sql[..200] + "..." : sql);
-             sqlLabel.Text = sql; // still hidden, for diagnostics
-             await ExecuteSqlAsync(sql, parameters, CancellationToken.None);
-         }
-
-         protected override void OnFormClosing(FormClosingEventArgs e)
-         {
-             SaveUserState();
-             base.OnFormClosing(e);
-         }
-
-         // Designer event handler for radioButtonTop CheckedChanged
-         private void RadioButton1_CheckedChanged(object? sender, EventArgs e)
-         {
-             try
-             {
-                 topNumericUpDown.Enabled = radioButtonTop.Checked;
-             }
-             catch { }
-         }
-
-         // Designer "Manual" button click - re-execute current SQL text
-         private async void Button1_Click(object? sender, EventArgs e)
-         {
-             try
-             {
-                 await ExecuteSqlAsync(sqlLabel.Text, sqlParametersList ?? new List<SqlParameter>(), CancellationToken.None);
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogDebug(ex, "Manual SQL execution failed");
-             }
-         }
-     }
- }
+        private void AddToLookupToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // retrive all lookup values from selected cells in the first column
+        }
+    }
+}
