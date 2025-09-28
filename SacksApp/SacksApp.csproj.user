@@ -10,8 +10,5 @@
     <Compile Update="SqlQueryForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="SqlQueryForm.UI.cs">
-      <SubType>Form</SubType>
-    </Compile>
   </ItemGroup>
 </Project>

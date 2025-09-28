@@ -6,7 +6,7 @@ public sealed class ParserConfig
 {
     public Settings Settings { get; set; } = new();
     public Dictionary<string, Dictionary<string, string>> Lookups { get; set; } = new();
-    public List<ColumnConfig> Columns { get; set; } = new();
+    public Dictionary<string, RuleConfig> ColumnRules { get; set; } = new();
 
     public void DoMergeLoookUpTables(Dictionary<string, Dictionary<string, string>> lookups)
     {
@@ -67,79 +67,29 @@ public sealed class Settings
     public bool PreferFirstAssignment { get; set; } = false;
 }
 
-public sealed class ColumnConfig
-{
-    public string Column { get; set; } = "";
-    // Single rule per column
-    public RuleConfig? Rule { get; set; }
-}
-
-
 
 public class ActionConfig
 {
-    [JsonPropertyName("op")]
-    public string Op { get; set; } = string.Empty;
+    public required string Op { get; set; }
 
-    // Accept both legacy "in"/"input" and modern "Input" names via alias properties
-    [JsonIgnore]
-    public string Input { get; set; } = "Text";
-    [JsonPropertyName("in")]
-    public string? In { set => Input = value ?? Input; }
-    [JsonPropertyName("input")]
-    public string? InputAlias { set => Input = value ?? Input; }
+    public required string Input { get; set; }
 
-    // Accept both legacy "out"/"output" and modern "Output" names via alias properties
-    [JsonIgnore]
-    public string Output { get; set; } = string.Empty;
-    [JsonPropertyName("out")]
-    public string? Out { set => Output = value ?? Output; }
-    [JsonPropertyName("output")]
-    public string? OutputAlias { set => Output = value ?? Output; }
+    public required string Output { get; set; }
 
-    // Parameters dictionary (matches JSON "Parameters" key)
+    public bool Assign { get; set; } = false;
+
+    public string? Condition { get; set; } = null;
+
     public Dictionary<string,string>? Parameters { get; set; }
 }
 
 public sealed class RuleConfig
 {
-    public Dictionary<string, string>? Assign { get; set; }
+    [JsonIgnore]
+    public Dictionary<string, string> Assign { get;} = new Dictionary<string, string>();
 
-    public List<ActionConfig>? Actions { get; set; }
+    required public List<ActionConfig> Actions { get; set; }
 
     // When true, emit per-step trace lines (input/output) during execution
-    public bool Trace { get; set; } = true;
+    public bool Trace { get; set; }
 }
-
-
-// Base step abstraction for pipeline operations
-public abstract class BaseStepConfig
-{
-    [JsonPropertyName("op")]
-    public string Op { get; set; } = "";
-
-    // Unified IO contract for all steps. Provide alias properties to support legacy JSON fields.
-    [JsonIgnore]
-    public string Input { get; set; } = "Text";
-
-    [JsonPropertyName("in")]
-    public string? In { set => Input = value ?? Input; }
-    [JsonPropertyName("input")]
-    public string? InputAlias { set => Input = value ?? Input; }
-    [JsonPropertyName("from")]
-    public string? From { set => Input = value ?? Input; }
-
-    [JsonIgnore]
-    public string Output { get; set; } = string.Empty;
-
-    [JsonPropertyName("out")]
-    public string? Out { set => Output = value ?? Output; }
-    [JsonPropertyName("output")]
-    public string? OutputAlias { set => Output = value ?? Output; }
-    [JsonPropertyName("to")]
-    public string? To { set => Output = value ?? Output; }
-}
-
-
-
-

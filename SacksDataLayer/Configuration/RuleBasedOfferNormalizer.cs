@@ -25,7 +25,7 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
         _supplierConfiguration = supplierConfiguration ?? throw new ArgumentNullException(nameof(supplierConfiguration));
         
         if (_supplierConfiguration.ParserConfig == null)
-            throw new ArgumentException("SupplierConfiguration must have a ParserConfig", nameof(supplierConfiguration));
+            throw new ArgumentException("Suppl  ierConfiguration must have a ParserConfig", nameof(supplierConfiguration));
             
         _parserEngine = new ParserEngine(_supplierConfiguration.ParserConfig);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

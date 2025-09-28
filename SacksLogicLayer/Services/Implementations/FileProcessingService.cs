@@ -130,7 +130,7 @@ namespace SacksLogicLayer.Services.Implementations
                 {
                     FileData = fileData,
                     CorrelationId = correlationId,
-                    SupplierConfiguration = supplierConfig,
+                    SupplierConfiguration = supplierConfig!,
                     ProcessingResult = new ProcessingResult
                     {
                         SupplierOffer = null!, // Will be set later
@@ -138,7 +138,7 @@ namespace SacksLogicLayer.Services.Implementations
                     }
                 };
                 context.ProcessingResult.Statistics.TotalRowsInFile = fileData.RowCount;
-                context.ProcessingResult.Statistics.TotalTitlesRows = supplierConfig.FileStructure.DataStartRowIndex-1;
+                context.ProcessingResult.Statistics.TotalTitlesRows = supplierConfig!.FileStructure.DataStartRowIndex-1;
 
                 //get all rows that have data starting from supplierConfig.FileStructure.DataStartRowIndex
                 var validRows =
@@ -318,11 +318,12 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// 🎯 ENHANCED: Supplier detection using synchronous service method
         /// </summary>
-        private async Task<SupplierConfiguration> DetectSupplier(string filePath, string correlationId)
+        private async Task<SupplierConfiguration?> DetectSupplier(string filePath, string correlationId)
         {
             try
             {
-                var supplierConfig = await _supplierConfigurationService.DetectSupplierFromFileAsync(filePath);
+                await _supplierConfigurationService.GetAllConfigurationsAsync();
+                var supplierConfig =  _supplierConfigurationService.DetectSupplierFromFileAsync(filePath);
                 
                 if (supplierConfig == null)
                 {

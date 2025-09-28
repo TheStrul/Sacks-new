@@ -26,14 +26,6 @@ public static class ActionsFactory
             case "assign":
                 ret = new SimpleAssignAction(input, output);
                 break;
-            case "conditional":
-                // ensure we have the required parameters
-                if (!patameter.ContainsKey("condition"))
-                    throw new ArgumentException("Missing required parameter 'condition' for conditional action");
-                string condition = patameter["condition"];
-                bool assign = patameter.ContainsKey("assign") && patameter["assign"].Equals("true",StringComparison.OrdinalIgnoreCase);
-                ret = new ConditionalAssignAction(input, output,  condition, assign);
-                break;
             case "find":
                 string pattern = patameter.ContainsKey("pattern") ? patameter["pattern"] : string.Empty;
 
@@ -65,7 +57,7 @@ public static class ActionsFactory
                 }
 
                 string[] options = patameter.ContainsKey("options") ? patameter["options"].Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries  |StringSplitOptions.TrimEntries) : Array.Empty<string>();
-                ret = new FindAction(input, output, pattern, options.ToList());
+                ret = new FindAction(input, output, pattern, options.ToList(),false,null);
                 break;
             case "split":
                 // delimiter parameter expected in Parameters["delimiter"], default to ':'
@@ -74,12 +66,10 @@ public static class ActionsFactory
                 break;
             case "map":
             case "mapping":
-                if (!patameter.TryGetValue("table", out var mapTable) || string.IsNullOrWhiteSpace(mapTable))
-                    throw new ArgumentException("Missing required parameter 'table' for mapping action");
+                string tableName = patameter["table"];
                 var assignOut = patameter.TryGetValue("assign", out var a) && a.Equals("true", StringComparison.OrdinalIgnoreCase);
                 // Resolve lookup table
-                if (!lookups.TryGetValue(mapTable, out var mapDict))
-                    throw new ArgumentException($"Lookup table '{mapTable}' not found", nameof(lookups));
+                var mapDict = lookups[tableName];
                 ret = new MappingAction(input, output, assignOut, mapDict);
                 break;
             default:

@@ -13,7 +13,7 @@ namespace SacksLogicLayer.Services
     public class SupplierConfigurationManager
     {
         private IConfiguration _configuration;
-        private SuppliersConfiguration? _suppliersConfiguration = null;
+        private ISuppliersConfiguration? _suppliersConfiguration = null;
         private readonly ILogger<SupplierConfigurationManager> _logger;
         private readonly JsonSupplierConfigurationLoader loader;
 
@@ -37,7 +37,7 @@ namespace SacksLogicLayer.Services
         /// <summary>
         /// Gets all supplier configurations
         /// /// </summary>
-        public async Task<SuppliersConfiguration> GetConfigurationAsync()
+        public async Task<ISuppliersConfiguration> GetConfigurationAsync()
         {
             await EnsureConfigurationLoadedAsync();
             return this._suppliersConfiguration!;
@@ -47,19 +47,19 @@ namespace SacksLogicLayer.Services
         /// <summary>
         /// Auto-detects supplier configuration from file path/name
         /// /// </summary>
-        public async Task<SupplierConfiguration?> DetectSupplierFromFileAsync(string filePath)
+        public SupplierConfiguration? DetectSupplierFromFileAsync(string filePath)
         {
+
             if (string.IsNullOrWhiteSpace(filePath))
                 throw new ArgumentException("File path cannot be null or empty", nameof(filePath));
 
-            await this.EnsureConfigurationLoadedAsync();
             try
             {
 
                 var fileName = Path.GetFileName(filePath);
                 var fileNameLowerCase = fileName.ToLowerInvariant(); // Convert to lowercase for matching
                 _logger?.LogDebug("Detecting supplier configuration for file: {FileName} (matching as: {FileNameLower})", fileName, fileNameLowerCase);
-                
+
                 // Try to match against each supplier's file name patterns using lowercase filename
                 foreach (var supplier in _suppliersConfiguration!.Suppliers)
                 {
@@ -71,9 +71,9 @@ namespace SacksLogicLayer.Services
                             var patternLowerCase = pattern.ToLowerInvariant();
                             if (IsFileNameMatch(fileNameLowerCase, patternLowerCase))
                             {
-                                _logger?.LogDebug("Matched supplier '{SupplierName}' with pattern '{Pattern}' (as '{PatternLower}') for file '{FileName}'", 
+                                _logger?.LogDebug("Matched supplier '{SupplierName}' with pattern '{Pattern}' (as '{PatternLower}') for file '{FileName}'",
                                     supplier.Name, pattern, patternLowerCase, fileName);
-                                
+
                                 // Set parent reference before returning
                                 supplier.ParentConfiguration = _suppliersConfiguration;
                                 return supplier;
@@ -123,17 +123,25 @@ namespace SacksLogicLayer.Services
                 throw new InvalidOperationException("ConfigurationFiles section missing in appsettings.json");
             }
 
-            string ResolvePath(string path)
+            string fileName = configFiles.SupplierFormats;
+            string baseFolder = AppContext.BaseDirectory;
+            string fullPath = Path.Combine(baseFolder, fileName);
+            for (int i = 0; i < 5; i++)
             {
-                if (string.IsNullOrWhiteSpace(path)) return path ?? string.Empty;
-                return Path.IsPathRooted(path) ? path : Path.Combine(AppContext.BaseDirectory, path);
+                fullPath = Path.Combine(baseFolder, fileName);
+                if (File.Exists(fullPath))
+                {
+                    break;
+                }
+                else
+                {
+                    baseFolder = Directory.GetParent(baseFolder)!.FullName;
+                }
+                
             }
-
-            var supplierFormatsPath = ResolvePath(configFiles.SupplierFormats);
-
             // Configuration is loaded in constructor, no need to reload from file
             // Load configuration synchronously from loader (loader is async)
-            _suppliersConfiguration = await loader.LoadAsync(supplierFormatsPath);
+            _suppliersConfiguration = await loader.LoadAsync(fullPath);
         }
-   }
+    }
 }

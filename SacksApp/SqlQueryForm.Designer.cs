@@ -28,7 +28,7 @@ namespace SacksApp
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
             mainSplitContainer = new SplitContainer();
             tableLayoutPanel1 = new TableLayoutPanel();
             filtersListBox = new ListBox();
@@ -43,19 +43,19 @@ namespace SacksApp
             collapseProductsCheckBox = new CheckBox();
             sqlLabel = new TextBox();
             resultsGrid = new DataGridView();
+            contextMenuStrip1 = new ContextMenuStrip(components);
+            addToLookupToolStripMenuItem = new ToolStripMenuItem();
             statusStrip = new StatusStrip();
             statusLabel = new ToolStripStatusLabel();
             progressBar = new ToolStripProgressBar();
-            contextMenuStrip1 = new ContextMenuStrip(components);
-            addToLookupToolStripMenuItem = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)mainSplitContainer).BeginInit();
             mainSplitContainer.Panel1.SuspendLayout();
             mainSplitContainer.Panel2.SuspendLayout();
             mainSplitContainer.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)resultsGrid).BeginInit();
-            statusStrip.SuspendLayout();
             contextMenuStrip1.SuspendLayout();
+            statusStrip.SuspendLayout();
             SuspendLayout();
             // 
             // mainSplitContainer
@@ -228,14 +228,15 @@ namespace SacksApp
             resultsGrid.AllowUserToDeleteRows = false;
             resultsGrid.AllowUserToOrderColumns = true;
             resultsGrid.AllowUserToResizeRows = false;
-            dataGridViewCellStyle2.BackColor = Color.FromArgb(224, 224, 224);
-            resultsGrid.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle1.BackColor = Color.FromArgb(224, 224, 224);
+            resultsGrid.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
             resultsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
             resultsGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.DisplayedCells;
             resultsGrid.BackgroundColor = SystemColors.Window;
             resultsGrid.BorderStyle = BorderStyle.Fixed3D;
             resultsGrid.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableAlwaysIncludeHeaderText;
             resultsGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            resultsGrid.ContextMenuStrip = contextMenuStrip1;
             resultsGrid.Dock = DockStyle.Fill;
             resultsGrid.EditMode = DataGridViewEditMode.EditOnEnter;
             resultsGrid.Location = new Point(0, 0);
@@ -245,10 +246,22 @@ namespace SacksApp
             resultsGrid.ShowEditingIcon = false;
             resultsGrid.Size = new Size(1200, 454);
             resultsGrid.TabIndex = 0;
-            resultsGrid.ColumnDisplayIndexChanged += ResultsGrid_ColumnDisplayIndexChanged;
-            resultsGrid.ColumnHeaderMouseClick += ResultsGrid_ColumnHeaderMouseClick;
-            resultsGrid.ColumnWidthChanged += ResultsGrid_ColumnWidthChanged;
-            resultsGrid.Sorted += ResultsGrid_Sorted;
+            resultsGrid.CellEndEdit += ResultsGrid_CellEndEdit;
+            resultsGrid.CellMouseUp += ResultsGrid_CellMouseUp;
+            resultsGrid.EditingControlShowing += ResultsGrid_EditingControlShowing;
+            // 
+            // contextMenuStrip1
+            // 
+            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { addToLookupToolStripMenuItem });
+            contextMenuStrip1.Name = "contextMenuStrip1";
+            contextMenuStrip1.Size = new Size(181, 48);
+            // 
+            // addToLookupToolStripMenuItem
+            // 
+            addToLookupToolStripMenuItem.Name = "addToLookupToolStripMenuItem";
+            addToLookupToolStripMenuItem.Size = new Size(180, 22);
+            addToLookupToolStripMenuItem.Text = "Add to lookup...";
+            addToLookupToolStripMenuItem.Click += AddToLookupToolStripMenuItem_Click;
             // 
             // statusStrip
             // 
@@ -271,19 +284,6 @@ namespace SacksApp
             progressBar.Style = ProgressBarStyle.Marquee;
             progressBar.Visible = false;
             // 
-            // contextMenuStrip1
-            // 
-            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { addToLookupToolStripMenuItem });
-            contextMenuStrip1.Name = "contextMenuStrip1";
-            contextMenuStrip1.Size = new Size(181, 48);
-            // 
-            // addToLookupToolStripMenuItem
-            // 
-            addToLookupToolStripMenuItem.Name = "addToLookupToolStripMenuItem";
-            addToLookupToolStripMenuItem.Size = new Size(180, 22);
-            addToLookupToolStripMenuItem.Text = "Add to lookup...";
-            addToLookupToolStripMenuItem.Click += AddToLookupToolStripMenuItem_Click;
-            // 
             // SqlQueryForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -304,9 +304,9 @@ namespace SacksApp
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)resultsGrid).EndInit();
+            contextMenuStrip1.ResumeLayout(false);
             statusStrip.ResumeLayout(false);
             statusStrip.PerformLayout();
-            contextMenuStrip1.ResumeLayout(false);
             ResumeLayout(false);
         }
 

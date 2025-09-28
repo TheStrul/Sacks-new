@@ -25,12 +25,12 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// Auto-detects supplier configuration from file path/name
         /// </summary>
-        public async Task<SupplierConfiguration?> DetectSupplierFromFileAsync(string filePath)
+        public SupplierConfiguration? DetectSupplierFromFileAsync(string filePath)
         {
             try
             {
                 _logger.LogDebug("Detecting supplier configuration for file: {FilePath}", filePath);
-                var result = await _configurationManager.DetectSupplierFromFileAsync(filePath);
+                var result = _configurationManager.DetectSupplierFromFileAsync(filePath);
                 
                 if (result != null)
                 {
@@ -54,7 +54,7 @@ namespace SacksLogicLayer.Services.Implementations
         /// <summary>
         /// Gets all supplier configurations
         /// </summary>
-        public async Task<SuppliersConfiguration> GetAllConfigurationsAsync()
+        public async Task<ISuppliersConfiguration> GetAllConfigurationsAsync()
         {
             try
             {
@@ -63,7 +63,7 @@ namespace SacksLogicLayer.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting all supplier configurations");
+                    _logger.LogError(ex, "Error getting all supplier configurations");
                 throw;
             }
         }

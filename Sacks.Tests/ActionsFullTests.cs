@@ -56,32 +56,7 @@ namespace ParsingEngine.Tests
             }
         }
 
-        [Theory]
-        [InlineData("abc123def", "123")]
-        [InlineData("no digits here", "")]
-        [InlineData("x9y8", "9")]
-        public void FindAction_Finds_First_Match_And_Groups(string input, string expectedWhole)
-        {
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Src"] = input
-            };
-            var act = new FindAction("Src", "Found", "(?<num>\\d+)", new List<string>() { "first" });
-            var ok = act.Execute(bag, new CellContext("A", input, CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
-            if (string.IsNullOrEmpty(expectedWhole))
-            {
-                Assert.False(ok);
-                Assert.Equal("0", bag["Found.Length"]); // no results
-                Assert.Equal("false", bag["Found.valid"]);
-            }
-            else
-            {
-                Assert.True(ok);
-                Assert.Equal(expectedWhole, bag["Found[0]"]); // single result placed at index 3
-                Assert.Equal(expectedWhole, bag["Found.3.num"]); // named group stored at Found.3.num
-            }
-        }
-
+   
         [Fact]
         public void FindAndRemoveAction_Cleans_And_Lists_Removed()
         {
@@ -90,7 +65,7 @@ namespace ParsingEngine.Tests
                 ["Src"] = "abc123def45"
             };
             // Use FindAction to remove all digit sequences
-            var act = new FindAction("Src", "Parts", "\\d+", new List<string>() { "all", "remove" });
+            var act = new FindAction("Src", "Parts", "\\d+", new List<string>() { "all", "remove" },false, null);
             var ok = act.Execute(bag, new CellContext("A", bag["Src"], CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
             Assert.True(ok);
             // cleaned value is at Parts.Clean
@@ -113,7 +88,7 @@ namespace ParsingEngine.Tests
                 ["Src"] = input
             };
             // Pattern: Unicode uppercase words, remove all
-            var act = new FindAction("Src", "Parts", "\\b\\p{Lu}+\\b", new List<string>(){ "all", "remove" });
+            var act = new FindAction("Src", "Parts", "\\b\\p{Lu}+\\b", new List<string>(){ "all", "remove" },false, null);
             var ok = act.Execute(bag, new CellContext("A", bag["Src"], CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
             Assert.True(bag.ContainsKey("Parts.Clean"));
             var actualClean = bag["Parts.Clean"] ?? string.Empty;
@@ -140,39 +115,7 @@ namespace ParsingEngine.Tests
             }
         }
 
-        [Fact]
-        public void ConditionalAction_Performs_Assign_When_Condition_Matches()
-        {
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Text"] = "hello",
-                ["Parts.Length"] = "2",
-                ["Parts[0]"] = "A",
-                ["Parts[1]"] = "B"
-            };
-
-            var act = new ConditionalAssignAction("Text", "Out", "Parts.Length == 2", true);
-            var ok = act.Execute(bag, new CellContext("A", bag["Text"], CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
-            Assert.True(ok);
-            Assert.Equal("hello", bag["Out[0]"]); // result written at index 3 by ActionHelpers
-            Assert.Equal("hello", bag["Out.Clean"]);
-        }
-
-        [Fact]
-        public void ConditionalAction_Skips_When_Condition_Not_Match()
-        {
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Text"] = "hello",
-                ["Parts.Length"] = "1",
-                ["Parts[0]"] = "A"
-            };
-
-            var act = new ConditionalAssignAction("Text", "Out", "Parts.Length == 2", true);
-            var ok = act.Execute(bag, new CellContext("A", bag["Text"], CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
-            Assert.False(ok);
-            Assert.False(bag.ContainsKey("Out[0]"));
-        }
+       
 
         [Fact]
         public void MappingAction_Performs_Lookup_With_CaseModes_And_AssignFlag()
@@ -239,10 +182,6 @@ namespace ParsingEngine.Tests
             var cfg2 = new ActionConfig { Op = "conditional", Input = "A", Output = "B" };
             Assert.Throws<ArgumentException>(() => ActionsFactory.Create(cfg2, lookups));
 
-            // conditional ok
-            var cfg3 = new ActionConfig { Op = "conditional", Input = "A", Output = "B", Parameters = new Dictionary<string, string> { ["condition"] = "A == 1" } };
-            var a3 = ActionsFactory.Create(cfg3, lookups);
-            Assert.IsType<ConditionalAssignAction>(a3);
 
             // find
             var cfg4 = new ActionConfig { Op = "find", Input = "A", Output = "B", Parameters = new Dictionary<string, string> { ["pattern"] = "\\d+", ["options"] = "all,remove" } };

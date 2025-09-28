@@ -1,13 +1,19 @@
+using System.Data;
+using System.Globalization;
+using System.Runtime.Intrinsics.Arm;
+using System.Text;
+
+using Microsoft.Data.SqlClient; // Added for parameterized SQL execution
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using SacksDataLayer.Data;
-using System.Data;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
-using System.ComponentModel; // Needed for ListSortDirection
-using Microsoft.Data.SqlClient; // Added for parameterized SQL execution
-using System.Text.Json; // For state persistence
+using SacksDataLayer.Entities;
 using SacksDataLayer.FileProcessing.Configuration;
+
+using SacksLogicLayer.Services;
+using SacksLogicLayer.Services.Interfaces;
 
 namespace SacksApp
 {
@@ -19,7 +25,8 @@ namespace SacksApp
         private readonly List<string> _hiddenColumns = new();
         private readonly List<FilterCondition> _filters = new();
         private List<string> _availableColumns = new();
-        private SuppliersConfiguration? _suppliersConfiguration = null;
+        private ISupplierConfigurationService? svc;
+        private ISuppliersConfiguration? _suppliersConfiguration;
 
         private List<SqlParameter> sqlParametersList = new List<SqlParameter>();
 
@@ -52,19 +59,15 @@ namespace SacksApp
             // Try to eagerly load supplier configurations so lookup lists are available in the UI
             try
             {
-                var svc = _serviceProvider?.GetService<SacksLogicLayer.Services.Interfaces.ISupplierConfigurationService>()
-                          ?? _serviceProvider?.GetService<SacksLogicLayer.Services.Implementations.SupplierConfigurationService>();
-                if (svc != null)
-                {
-                    // Synchronously block here - configuration load is expected to be small and fast
-                    _suppliersConfiguration = svc.GetAllConfigurationsAsync().GetAwaiter().GetResult();
-                }
+                svc = _serviceProvider?.GetService<SacksLogicLayer.Services.Interfaces.ISupplierConfigurationService>();
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to load supplier configurations during form initialization");
-                _suppliersConfiguration = null;
+                throw;
             }
+
+           
 
             InitializeComponent();
             InitializeQueryDesigner();
@@ -404,7 +407,9 @@ namespace SacksApp
 
         // Helper: build SELECT column list
         private static string BuildSelectList(IEnumerable<string> columns)
-            => string.Join(", ", columns.Select(EscapeIdentifier));
+        {
+            return string.Join(", ", columns.Select(EscapeIdentifier));
+        }
 
         // Simple query from base view
         private string BuildSimpleQuery(List<string> selectedColumns, string where)
@@ -456,37 +461,185 @@ namespace SacksApp
             sb.Append(") AS x WHERE x.[cnt] > 1 ORDER BY x.[EAN], x.[OfferRank]");
             return sb.ToString();
         }
+        #endregion
 
-        private (string sql, List<SqlParameter> parameters) BuildSqlQuery()
+
+
+        private void ResultsGrid_CellMouseUp(object sender, DataGridViewCellMouseEventArgs e)
+        {
+
+        }
+
+        #region Existing UI Logic (Moved to partial)
+
+        // Track current editing TextBox to observe selection changes
+        private TextBox? _currentEditingTextBox;
+        private KeyEventHandler? _editingKeyUpHandler;
+        private MouseEventHandler? _editingMouseUpHandler;
+        // Shared empty context menu used to suppress default TextBox context menu
+        private static readonly ContextMenuStrip s_emptyContextMenu = new ContextMenuStrip();
+
+        private void ResultsGrid_EditingControlShowing(object? sender, DataGridViewEditingControlShowingEventArgs e)
+        {
+            try
+            {
+                // Detach from previous
+                if (_currentEditingTextBox != null)
+                {
+                    if (_editingKeyUpHandler != null) _currentEditingTextBox.KeyUp -= _editingKeyUpHandler;
+                    if (_editingMouseUpHandler != null) _currentEditingTextBox.MouseUp -= _editingMouseUpHandler;
+                    _editingKeyUpHandler = null;
+                    _editingMouseUpHandler = null;
+                    _currentEditingTextBox = null;
+                }
+
+                if (e.Control is TextBox tb)
+                {
+                    _currentEditingTextBox = tb;
+                    // Suppress default TextBox context menu by assigning an empty ContextMenuStrip
+                    try { tb.ContextMenuStrip = s_emptyContextMenu; } catch { }
+                    // create handlers and attach so we can detach later
+                    _editingKeyUpHandler = new KeyEventHandler((s, ev) => OnEditingSelectionChanged(s));
+                    _editingMouseUpHandler = new MouseEventHandler((s, ev) => OnEditingSelectionChangedMousup(s, ev));
+                    _currentEditingTextBox.KeyUp += _editingKeyUpHandler;
+                    _currentEditingTextBox.MouseUp += _editingMouseUpHandler;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed during EditingControlShowing");
+            }
+        }
+
+        private void ResultsGrid_CellEndEdit(object? sender, DataGridViewCellEventArgs e)
+        {
+            try
+            {
+                if (_currentEditingTextBox != null)
+                {
+                    if (_editingKeyUpHandler != null) _currentEditingTextBox.KeyUp -= _editingKeyUpHandler;
+                    if (_editingMouseUpHandler != null) _currentEditingTextBox.MouseUp -= _editingMouseUpHandler;
+                    _editingKeyUpHandler = null;
+                    _editingMouseUpHandler = null;
+                    _currentEditingTextBox = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed during CellEndEdit");
+            }
+        }
+
+        private void OnEditingSelectionChangedMousup(object? sender, MouseEventArgs e)
+        {
+            if ((e.Button == MouseButtons.Right) &&
+                (resultsGrid.CurrentCell != null) &&
+                (e.Clicks == 1))
+            {
+                int r = resultsGrid.CurrentCell.RowIndex;
+                int c = resultsGrid.CurrentCell.ColumnIndex;
+                if (r >= 0 && c >= 0)
+                {
+                    var rect = resultsGrid.GetCellDisplayRectangle(c, r, true); // true to include header offset
+                    Point buttomLeft = new Point(rect.X, rect.Y + rect.Height);
+                    Point cellButtomLeft = resultsGrid.PointToScreen(buttomLeft);
+                    contextMenuStrip1.Show(cellButtomLeft);
+                }
+            }
+        }
+        private void OnEditingSelectionChanged(object? sender)
+        {
+            try
+            {
+                var tb = sender as TextBox ?? _currentEditingTextBox;
+                var selected = tb?.SelectedText ?? string.Empty;
+                UpdateStatus($"Selection length: {selected.Length}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to handle selection change");
+            }
+        }
+
+        private void UpdateGridSortability()
+        {
+            try
+            {
+                bool collapseActive = collapseProductsCheckBox?.Checked == true;
+
+                if (collapseActive)
+                {
+                    if (resultsGrid.DataSource is DataTable dt)
+                    {
+                        dt.DefaultView.Sort = string.Empty;
+                    }
+                    if (resultsGrid.SortedColumn != null)
+                    {
+                        resultsGrid.SortedColumn.HeaderCell.SortGlyphDirection = System.Windows.Forms.SortOrder.None;
+                    }
+                }
+
+                foreach (DataGridViewColumn col in resultsGrid.Columns)
+                {
+                    col.SortMode = collapseActive ? DataGridViewColumnSortMode.NotSortable : DataGridViewColumnSortMode.Automatic;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to update grid sortability state");
+            }
+        }
+
+        private void UpdateStatus(string message) => statusLabel.Text = message;
+
+
+
+        #endregion
+
+        // Designer event handlers required by Designer.cs
+        private async void RunQueryButton_Click(object? sender, EventArgs e)
         {
             var selectedColumns = columnsCheckedListBox.CheckedItems.Cast<string>().ToList();
             if (selectedColumns.Count == 0) selectedColumns = _availableColumns.ToList();
 
             var parameters = new List<SqlParameter>();
+            string sql;
             bool collapse = collapseProductsCheckBox?.Checked == true;
 
             if (!collapse)
             {
                 var where = BuildBaseWhere(parameters);
-                var sql = BuildSimpleQuery(selectedColumns, where);
-                return (sql, parameters);
-            }
-
-            // collapse mode
-            bool hasOfferFilters = _filters.Any(f => OfferColumns.Contains(f.PropertyName));
-            if (!hasOfferFilters)
-            {
-                var where = BuildCollapsedViewWhere(parameters);
-                var sql = BuildCollapsedUsingView(selectedColumns, where);
-                return (sql, parameters);
+                sql = BuildSimpleQuery(selectedColumns, where);
             }
             else
             {
-                var innerWhere = BuildDynamicInnerWhere(parameters);
-                var sql = BuildDynamicCollapsed(selectedColumns, innerWhere);
-                return (sql, parameters);
+
+                // collapse mode
+                bool hasOfferFilters = _filters.Any(f => OfferColumns.Contains(f.PropertyName));
+                if (!hasOfferFilters)
+                {
+                    var where = BuildCollapsedViewWhere(parameters);
+                    sql = BuildCollapsedUsingView(selectedColumns, where);
+                }
+                else
+                {
+                    var innerWhere = BuildDynamicInnerWhere(parameters);
+                    sql = BuildDynamicCollapsed(selectedColumns, innerWhere);
+                }
             }
+            sqlParametersList = parameters;
+            _logger.LogDebug("Executing generated query: {SqlPreview}", sql.Length > 200 ? sql[..200] + "..." : sql);
+            sqlLabel.Text = sql;
+            await ExecuteSqlAsync(sql, parameters, CancellationToken.None);
         }
+
+        private void AddFilterButton_Click(object? sender, EventArgs e) => AddFilter();
+
+        private void RemoveFilterButton_Click(object? sender, EventArgs e) => RemoveSelectedFilter();
+
+        private void FilterColumnComboBox_SelectedIndexChanged(object? sender, EventArgs e) => RefreshOperatorList();
+
+        private void CollapseProductsCheckBox_CheckedChanged(object? sender, EventArgs e) => UpdateGridSortability();
 
         private async Task ExecuteSqlAsync(string sql, List<SqlParameter> parameters, CancellationToken cancellationToken)
         {
@@ -543,8 +696,6 @@ namespace SacksApp
             removeFilterButton.Enabled = !executing;
             columnsCheckedListBox.Enabled = !executing;
         }
-
-        // Apply column visibility according to the checked items in the columnsCheckedListBox
         private void TryApplyColumnVisibility()
         {
             try
@@ -563,11 +714,93 @@ namespace SacksApp
                 _logger.LogDebug(ex, "Failed to apply column visibility from checked list");
             }
         }
-        #endregion
 
-        private void AddToLookupToolStripMenuItem_Click(object sender, EventArgs e)
+        private async void AddToLookupToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // retrive all lookup values from selected cells in the first column
+            try
+            {
+                if (svc != null)
+                {
+                    // Synchronously block here - configuration load is expected to be small and fast
+                    _suppliersConfiguration = await svc.GetAllConfigurationsAsync();
+                }
+
+                // Prefer selection from the active editing TextBox (only selected substring will be added)
+                string? selectedText = null;
+
+                if (_currentEditingTextBox != null)
+                {
+                    selectedText = _currentEditingTextBox.SelectedText;
+                }
+                else if (resultsGrid.IsCurrentCellInEditMode && resultsGrid.EditingControl is TextBox editTb)
+                {
+                    selectedText = editTb.SelectedText;
+                }
+
+                selectedText = selectedText?.Trim();
+
+                if (string.IsNullOrEmpty(selectedText))
+                {
+                    MessageBox.Show("Please select the text inside the cell (start editing the cell and select a substring) before using 'Add to lookup'.", "Add to lookup", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                const string lookupName = "Brand";
+
+                // Check existing in-memory
+                bool exists = false;
+                if (_suppliersConfiguration != null && _suppliersConfiguration.Lookups != null && _suppliersConfiguration.Lookups.TryGetValue(lookupName, out var inner))
+                {
+                    if (inner != null && inner.ContainsKey(selectedText)) exists = true;
+                }
+
+                if (exists)
+                {
+                    MessageBox.Show($"Value '{selectedText}' already exists in lookup '{lookupName}'.", "Add to lookup", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+
+                string key = selectedText.ToLowerInvariant();
+                string value = ChangeToCapital(selectedText);
+                await AddValueToLookupAsync(lookupName, key, value);
+                MessageBox.Show($"Added '{selectedText}' to lookup '{lookupName}'.", "Lookup Updated", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding selected value to Brand lookup");
+                MessageBox.Show($"Failed to add value to lookup: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // Persist a single value into the specified lookup table inside supplier-formats.json
+        private async Task AddValueToLookupAsync(string lookupName, string key,string value)
+        {
+
+            if (!_suppliersConfiguration!.Lookups.TryGetValue(lookupName, out var inner))
+            {
+                inner = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                _suppliersConfiguration.Lookups[lookupName] = inner;
+            }
+
+            if (inner.ContainsKey(key)) return; // already present
+
+            inner[key] = value; // map to itself
+
+            await _suppliersConfiguration.Save();
+        }
+
+        // Convert a raw lookup value to a canonical capitalized form.
+        // Examples: "apple juice" -> "Apple Juice"; trims and collapses whitespace.
+        private static string ChangeToCapital(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            // Normalize whitespace
+            var parts = input.Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var normalized = string.Join(' ', parts).Trim();
+            var ti = CultureInfo.InvariantCulture.TextInfo;
+            // ToTitleCase expects lower-case for proper behavior on invariant culture
+            return ti.ToTitleCase(normalized.ToLowerInvariant());
         }
     }
 }

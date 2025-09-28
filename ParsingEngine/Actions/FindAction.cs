@@ -2,11 +2,9 @@ using System.Text.RegularExpressions;
 
 namespace ParsingEngine;
 
-public sealed class FindAction : IChainAction
+public sealed class FindAction : BaseAction
 {
-    public string Op => "find";
-    private readonly string _fromKey;
-    private readonly string _toKey;
+    public override string Op => "find";
     private readonly string _pattern;
     private readonly List<string> _options;
 
@@ -25,29 +23,27 @@ public sealed class FindAction : IChainAction
     /// <param name="toKey">The key array name to write the output . Cannot be null.</param>
     /// <param name="pattern">The pattern to match during the search. If null, an empty string is used.</param>
     /// <param name="options">A list of options that modify the search behavior. If null, an empty list is used.</param>
-    public FindAction(string fromKey, string toKey, string pattern, List<string> options)
+    public FindAction(string fromKey, string toKey, string pattern, List<string> options, bool assign, string? condition):
+        base(fromKey, toKey, assign, condition)
     {
-        _fromKey = fromKey;
-        _toKey = toKey;
         _pattern = pattern ?? string.Empty;
         _options = options ?? new List<string>();
     }
 
-    public bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
     {
-        if (bag == null) throw new ArgumentNullException(nameof(bag));
+        if (base.Execute(bag, ctx) == false) return false; // basic checks
 
-        bag.TryGetValue(_fromKey, out var value);
+        bag.TryGetValue(base.input, out var value);
         var input = value ?? string.Empty;
 
         // If no pattern or empty input -> write empty results and return false
         if (string.IsNullOrEmpty(_pattern) || string.IsNullOrEmpty(input))
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, true);
+            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
             return false;
         }
 
-        var assignFlag = _options.Any(o => string.Equals(o, "assign", StringComparison.OrdinalIgnoreCase));
         var remove = _options.Any(o => string.Equals(o, "remove", StringComparison.OrdinalIgnoreCase));
         var ignoreCase = _options.Any(o => string.Equals(o, "ignorecase", StringComparison.OrdinalIgnoreCase));
 
@@ -63,14 +59,14 @@ public sealed class FindAction : IChainAction
 
             return mode.ToLowerInvariant() switch
             {
-                "all" => remove ? RemoveAll(bag, rx, input, assignFlag) : FindAll(bag, rx, input, assignFlag),
-                "last" => remove ? RemoveLast(bag, rx, input, assignFlag) : FindLast(bag, rx, input, assignFlag),
-                _ => remove ? RemoveFirst(bag, rx, input, assignFlag) : FindFirst(bag, rx, input, assignFlag),
+                "all" => remove ? RemoveAll(bag, rx, input, base.assign) : FindAll(bag, rx, input, base.assign),
+                "last" => remove ? RemoveLast(bag, rx, input, base.assign) : FindLast(bag, rx, input, base.assign),
+                _ => remove ? RemoveFirst(bag, rx, input, base.assign) : FindFirst(bag, rx, input, base.assign),
             };
         }
         catch
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, true);
+            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
             return false;
         }
     }
@@ -104,7 +100,7 @@ public sealed class FindAction : IChainAction
         var matches = rx.Matches(input).Cast<Match>().ToArray();
         if (matches.Length == 0)
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, true);
+            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
             return false;
         }
 
@@ -116,11 +112,11 @@ public sealed class FindAction : IChainAction
         {
             var cleaned = rx.Replace(input, string.Empty);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, _toKey, cleaned, results, assignFlag,false);
+            ActionHelpers.WriteListOutput(bag, base.output, cleaned, results, assignFlag,false);
         }
         else
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, results, assignFlag, false);
+            ActionHelpers.WriteListOutput(bag, base.output, input, results, assignFlag, false);
         }
 
         return true;
@@ -131,7 +127,7 @@ public sealed class FindAction : IChainAction
         var matches = rx.Matches(input).Cast<Match>().ToArray();
         if (matches.Length == 0)
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, true);
+            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
             return false;
         }
 
@@ -141,11 +137,11 @@ public sealed class FindAction : IChainAction
         {
             var cleaned = input.Remove(m.Index, m.Length);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, _toKey, cleaned, new List<string> { result }, assignFlag, true);
+            ActionHelpers.WriteListOutput(bag, base.output, cleaned, new List<string> { result }, assignFlag, true);
             return true;
         }
 
-        ActionHelpers.WriteListOutput(bag, _toKey, input, new List<string> { result }, assignFlag, true);
+        ActionHelpers.WriteListOutput(bag, base.output, input, new List<string> { result }, assignFlag, true);
 
 
         return true;
@@ -156,7 +152,7 @@ public sealed class FindAction : IChainAction
         var match = rx.Match(input);
         if (!match.Success)
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, true);
+            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
             return false;
         }
 
@@ -165,11 +161,11 @@ public sealed class FindAction : IChainAction
         {
             var cleaned = input.Remove(match.Index, match.Length);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, _toKey, cleaned, new List<string> { result },  assignFlag, true);
+            ActionHelpers.WriteListOutput(bag, base.output, cleaned, new List<string> { result },  assignFlag, true);
             return true;
         }
 
-        ActionHelpers.WriteListOutput(bag, _toKey, input, new List<string> { result }, assignFlag, true);
+        ActionHelpers.WriteListOutput(bag, base.output, input, new List<string> { result }, assignFlag, true);
 
         return true;
     }

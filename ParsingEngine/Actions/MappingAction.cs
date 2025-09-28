@@ -7,31 +7,21 @@ namespace ParsingEngine;
 /// - casemode: "exact" (default), "upper", "lower"
 /// - assign: "true" to write to assign:{Output} instead of Output
 /// </summary>
-public sealed class MappingAction : IChainAction
+public sealed class MappingAction : BaseAction
 {
-    public string Op => "map";
-    private readonly string _fromKey;
-    private readonly string _toKey;
-    private readonly bool _assign;
+    public override string Op => "map";
     private readonly Dictionary<string, string> _lookup;
 
-    public MappingAction(string fromKey, string toKey, bool assign, Dictionary<string, string> lookup)
+    public MappingAction(string fromKey, string toKey, bool assign, Dictionary<string, string> lookup, string? condition = null) : base(fromKey, toKey,assign,condition)
     {
-        if (string.IsNullOrWhiteSpace(fromKey)) throw new ArgumentException("fromKey required", nameof(fromKey));
-        if (string.IsNullOrWhiteSpace(toKey)) throw new ArgumentException("toKey required", nameof(toKey));
-        ArgumentNullException.ThrowIfNull(lookup);
-
-        _fromKey = fromKey;
-        _toKey = toKey;
-        _assign = assign;
         _lookup = lookup;
     }
 
-    public bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
     {
-        if (bag == null) throw new ArgumentNullException(nameof(bag));
+        if (base.Execute(bag, ctx) == false) return false; // basic checks
 
-        bag.TryGetValue(_fromKey, out var raw);
+        bag.TryGetValue(base.input, out var raw);
         var input = raw ?? string.Empty;
         if (string.IsNullOrEmpty(input)) return false;
 
@@ -40,10 +30,10 @@ public sealed class MappingAction : IChainAction
         {
             if (string.Equals(kv.Key, input, StringComparison.OrdinalIgnoreCase))
             {
-                if (_assign)
-                    bag[$"assign:{_toKey}"] = kv.Value;
+                if (base.assign)
+                    bag[$"assign:{base.output}"] = kv.Value;
                 else
-                    bag[_toKey] = kv.Value;
+                    bag[base.output] = kv.Value;
                 return true;
             }
         }

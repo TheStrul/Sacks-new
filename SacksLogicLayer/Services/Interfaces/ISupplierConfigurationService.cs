@@ -12,12 +12,12 @@ namespace SacksLogicLayer.Services.Interfaces
         /// </summary>
         /// <param name="filePath">Path to the file to analyze</param>
         /// <returns>Supplier configuration if found, null otherwise</returns>
-        Task<SupplierConfiguration?> DetectSupplierFromFileAsync(string filePath);
+        SupplierConfiguration? DetectSupplierFromFileAsync(string filePath);
 
         /// <summary>
         /// Gets all supplier configurations
         /// </summary>
         /// <returns>All supplier configurations</returns>
-        Task<SuppliersConfiguration> GetAllConfigurationsAsync();
+        Task<ISuppliersConfiguration> GetAllConfigurationsAsync();
     }
 }

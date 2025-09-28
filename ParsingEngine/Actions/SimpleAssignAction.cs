@@ -20,25 +20,22 @@ public interface IChainAction
 /// Simple assign action: reads a source key from the bag and writes it to the target key.
 /// Always succeeds (writes empty string when source missing).
 /// </summary>
-public sealed class SimpleAssignAction : IChainAction
+public sealed class SimpleAssignAction : BaseAction
 {
-    public string Op => "assign";
-    private readonly string _fromKey;
-    private readonly string _toKey;
+    public override string Op => "assign";
 
-    public SimpleAssignAction(string fromKey, string toKey)
+    public SimpleAssignAction(string fromKey, string toKey, bool assign = true, string? condition = null) : base(fromKey, toKey,assign,condition)
     {
-        _fromKey = fromKey;
-        _toKey = toKey;
     }
 
-    public bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
     {
-        if (bag == null) throw new ArgumentNullException(nameof(bag));
-        bag.TryGetValue(_fromKey, out var value);
-
-        // No need to use ActionHelpers to write one value 
-        bag[$"assign:{_toKey}"] = value ?? string.Empty;
-        return true;
+        if (base.Execute(bag, ctx) == false) return false;
+        if (bag.TryGetValue(input, out var value))
+        {
+            bag[$"assign:{output}"] = value ?? string.Empty;
+            return true;
+        }
+        return false;
     }
 }

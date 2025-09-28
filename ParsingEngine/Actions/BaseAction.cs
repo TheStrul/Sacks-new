@@ -1,53 +1,45 @@
-using System.Text.RegularExpressions;
-
 namespace ParsingEngine;
 
-/// <summary>
-/// ConditionalAssignAction: evaluates a simple condition expression against the current property bag
-/// and when true copies the Input value to Output (behaves like a guarded assign).
-/// Supported expressions (simple): "Left == Right" and "Left != Right" where Left/Right may be:
-/// - a bag key (e.g. Parts.Length or Parts[0] or Text)
-/// - a quoted string "literal"
-/// - an integer literal
-/// </summary>
-public sealed class ConditionalAssignAction : IChainAction
-{
-    public string Op => "conditional";
-    private readonly string _fromKey;
-    private readonly string _toKey;
-    private readonly string _condition;
-    private readonly bool _doAssign;
+using System.Text.RegularExpressions;
 
-    public ConditionalAssignAction(string fromKey, string toKey, string condition, bool assign)
+/// <summary>
+/// Base class for chain actions providing common input/output storage.
+/// Concrete actions should inherit and call base constructor to set the keys.
+/// </summary>
+public abstract class BaseAction : IChainAction
+{
+    protected readonly string input;
+    protected readonly string output;
+    protected readonly bool assign;
+    protected readonly string? condition;
+    
+
+
+    protected BaseAction(string input, string output, bool assign = false, string? condition = null)
     {
-        _fromKey = fromKey;
-        _toKey = toKey;
-        _condition = condition;
-        _doAssign = assign;
+        this.input = input;
+        this.output = output;
+        this.condition = condition;
+        this.assign = assign;
     }
 
-    public bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    // Derived types must provide Op and Execute
+    public abstract string Op { get; }
+    public virtual bool Execute(IDictionary<string, string> bag, CellContext ctx)
     {
-        if (bag == null) throw new ArgumentNullException(nameof(bag));
-
-        bool cond = EvaluateCondition(bag);
-        if (!cond)
-            return false;
-
-        if (bag.TryGetValue(_fromKey, out var val))
-        {            
-            if (string.IsNullOrEmpty(val))
+        if (string.IsNullOrEmpty(condition) == false)
+        {
+            bool cond = EvaluateCondition(bag);
+            if (!cond)
                 return false;
-                ActionHelpers.WriteListOutput(bag, _toKey, val, new List<string> { val }, _doAssign, true);
-            return true;
         }
-        return false;
+        return true;
     }
 
     private bool EvaluateCondition(IDictionary<string, string> bag)
     {
-        if (string.IsNullOrWhiteSpace(_condition)) return false;
-        var s = _condition.Trim();
+        if (string.IsNullOrWhiteSpace(condition)) return false;
+        var s = condition.Trim();
 
         // Try equality
         var eqIdx = s.IndexOf("==", StringComparison.Ordinal);

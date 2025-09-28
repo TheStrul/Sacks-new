@@ -11,10 +11,10 @@ public sealed class ParserEngine
     {
         ArgumentNullException.ThrowIfNull(config);
         _config = config;
-    _rulesByColumn = config.Columns
+    _rulesByColumn = config.ColumnRules
             .ToDictionary(
-                c => c.Column,
-        c => EngineHelpers.BuildRulesForColumn(c, _config),
+                c => c.Key,
+        c => EngineHelpers.BuildRulesForColumn(c.Value, _config),
                 StringComparer.OrdinalIgnoreCase);
     }
 
@@ -46,13 +46,11 @@ public sealed class ParserEngine
 
 internal static class EngineHelpers
 {
-    internal static List<IRule> BuildRulesForColumn(ColumnConfig c, ParserConfig? config = null)
+    internal static List<IRule> BuildRulesForColumn(RuleConfig c, ParserConfig config)
     {
-        var cfg = config ?? throw new ArgumentNullException(nameof(config));
         var rules = new List<IRule>();
 
-        if (c.Rule != null)
-            rules.Add(new ChainExecuter(c.Rule, cfg));
+        rules.Add(new ChainExecuter(c, config));
 
         return rules;
     }

@@ -4,29 +4,26 @@ namespace ParsingEngine;
 /// SplitAction: splits a source value by a delimiter and writes parts into a target collection
 /// as Target[0], Target[1], ... and sets Target.Length and Target.Valid flags.
 /// </summary>
-public sealed class SplitAction : IChainAction
+public sealed class SplitAction : BaseAction
 {
-    public string Op => "split";
-    private readonly string _fromKey;
-    private readonly string _toKey;
+    public override string Op => "split";
     private readonly string _delimiter;
 
-    public SplitAction(string fromKey, string toKey, string delimiter = ":")
+    public SplitAction(string fromKey, string toKey, string delimiter):
+        base(fromKey, toKey)
     {
-        _fromKey = fromKey;
-        _toKey = toKey;
-        _delimiter = delimiter ?? ":";
+        _delimiter = delimiter;
     }
 
-    public bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
     {
-        if (bag == null) throw new ArgumentNullException(nameof(bag));
-        bag.TryGetValue(_fromKey, out var value);
-        var input = value ?? string.Empty;
+        if (base.Execute(bag, ctx) == false) return false; // already processed
+        bag.TryGetValue(base.input, out var value);
+        var inputVal = value ?? string.Empty;
 
         if (string.IsNullOrEmpty(input))
         {
-            ActionHelpers.WriteListOutput(bag, _toKey, input, null, false, false);
+            ActionHelpers.WriteListOutput(bag, input, input, null, false, false);
             return false;
         }
 
@@ -34,7 +31,7 @@ public sealed class SplitAction : IChainAction
                          .Select(p => p.Trim())
                          .ToArray();
 
-        ActionHelpers.WriteListOutput(bag, _toKey, input, parts, false, false);
+        ActionHelpers.WriteListOutput(bag, input, input, parts, false, false);
         return true;
     }
 }
