@@ -23,7 +23,7 @@ public sealed class FindAction : BaseAction
     /// <param name="toKey">The key array name to write the output . Cannot be null.</param>
     /// <param name="pattern">The pattern to match during the search. If null, an empty string is used.</param>
     /// <param name="options">A list of options that modify the search behavior. If null, an empty list is used.</param>
-    public FindAction(string fromKey, string toKey, string pattern, List<string> options, bool assign, string? condition):
+    public FindAction(string fromKey, string toKey, string pattern, List<string> options, bool assign, string? condition) :
         base(fromKey, toKey, assign, condition)
     {
         _pattern = pattern ?? string.Empty;
@@ -97,7 +97,29 @@ public sealed class FindAction : BaseAction
 
     private bool HandleAll(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag, bool remove)
     {
-        var matches = rx.Matches(input).Cast<Match>().ToArray();
+        // Try primary regex first, but if it yields no matches and pattern contains \b try a Unicode-letter based boundary fallback
+        Regex effectiveRx = rx;
+        var matches = effectiveRx.Matches(input).Cast<Match>().ToArray();
+        if (matches.Length == 0 && _pattern.Contains("\\b"))
+        {
+            try
+            {
+                var altPattern = _pattern.Replace("\\b", string.Empty);
+                var altWrapped = @"(?<!\p{L})(?:" + altPattern + @")(?!\p{L})";
+                var altRx = new Regex(altWrapped, rx.Options);
+                var altMatches = altRx.Matches(input).Cast<Match>().ToArray();
+                if (altMatches.Length > 0)
+                {
+                    effectiveRx = altRx;
+                    matches = altMatches;
+                }
+            }
+            catch
+            {
+                // ignore fallback errors and continue with original behavior
+            }
+        }
+
         if (matches.Length == 0)
         {
             ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
@@ -106,13 +128,13 @@ public sealed class FindAction : BaseAction
 
         // Use group values when available (e.g., 'size') so results list contains clean values while the regex
         // match may include surrounding separators for removal.
-        var results = matches.Select(m => GetMatchResult(m, rx)).ToList();
+        var results = matches.Select(m => GetMatchResult(m, effectiveRx)).ToList();
 
         if (remove)
         {
-            var cleaned = rx.Replace(input, string.Empty);
+            var cleaned = effectiveRx.Replace(input, string.Empty);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, base.output, cleaned, results, assignFlag,false);
+            ActionHelpers.WriteListOutput(bag, base.output, cleaned, results, assignFlag, false);
         }
         else
         {
@@ -124,7 +146,28 @@ public sealed class FindAction : BaseAction
 
     private bool HandleLast(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag, bool remove)
     {
-        var matches = rx.Matches(input).Cast<Match>().ToArray();
+        Regex effectiveRx = rx;
+        var matches = effectiveRx.Matches(input).Cast<Match>().ToArray();
+        if (matches.Length == 0 && _pattern.Contains("\\b"))
+        {
+            try
+            {
+                var altPattern = _pattern.Replace("\\b", string.Empty);
+                var altWrapped = @"(?<!\p{L})(?:" + altPattern + @")(?!\p{L})";
+                var altRx = new Regex(altWrapped, rx.Options);
+                var altMatches = altRx.Matches(input).Cast<Match>().ToArray();
+                if (altMatches.Length > 0)
+                {
+                    effectiveRx = altRx;
+                    matches = altMatches;
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
         if (matches.Length == 0)
         {
             ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
@@ -132,7 +175,7 @@ public sealed class FindAction : BaseAction
         }
 
         var m = matches[^1];
-        var result = GetMatchResult(m, rx);
+        var result = GetMatchResult(m, effectiveRx);
         if (remove)
         {
             var cleaned = input.Remove(m.Index, m.Length);
@@ -149,14 +192,34 @@ public sealed class FindAction : BaseAction
 
     private bool HandleFirst(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag, bool remove)
     {
-        var match = rx.Match(input);
+        Regex effectiveRx = rx;
+        var match = effectiveRx.Match(input);
+        if (!match.Success && _pattern.Contains("\\b"))
+        {
+            try
+            {
+                var altPattern = _pattern.Replace("\\b", string.Empty);
+                var altWrapped = @"(?<!\p{L})(?:" + altPattern + @")(?!\p{L})";
+                var altRx = new Regex(altWrapped, rx.Options);
+                match = altRx.Match(input);
+                if (match.Success)
+                {
+                    effectiveRx = altRx;
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
         if (!match.Success)
         {
             ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
             return false;
         }
 
-        var result = GetMatchResult(match, rx);
+        var result = GetMatchResult(match, effectiveRx);
         if (remove)
         {
             var cleaned = input.Remove(match.Index, match.Length);

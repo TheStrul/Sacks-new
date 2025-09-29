@@ -1,4 +1,6 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.IO;
 
 using ParsingEngine;
 
@@ -9,6 +11,8 @@ namespace SacksDataLayer.FileProcessing.Configuration
     /// </summary>
     public sealed class SuppliersConfiguration : ISuppliersConfiguration
     {
+        private static readonly JsonSerializerOptions s_jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+
         public string Version { get; set; } = "2.1";
 
         public string FullPath { get; set; } = ".";
@@ -17,9 +21,20 @@ namespace SacksDataLayer.FileProcessing.Configuration
 
         public Dictionary<string, Dictionary<string, string>> Lookups { get; set; } = new();
 
-        public Task Save()
+        public async Task Save()
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(this.FullPath))
+                throw new InvalidOperationException("SuppliersConfiguration.FullPath is not set");
+
+            // Ensure directory exists
+            var dir = Path.GetDirectoryName(this.FullPath);
+            if (!string.IsNullOrWhiteSpace(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            var json = JsonSerializer.Serialize(this, s_jsonOptions);
+            await File.WriteAllTextAsync(this.FullPath, json).ConfigureAwait(false);
         }
 
         /// <summary>

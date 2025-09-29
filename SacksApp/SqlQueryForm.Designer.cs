@@ -235,8 +235,8 @@ namespace SacksApp
             // 
             addToLookupToolStripMenuItem.Name = "addToLookupToolStripMenuItem";
             addToLookupToolStripMenuItem.Size = new Size(190, 22);
-            addToLookupToolStripMenuItem.Text = "Add to lookup...";
-            addToLookupToolStripMenuItem.Click += AddToLookupToolStripMenuItem_Click;
+            addToLookupToolStripMenuItem.Text = "Add New Brand...";
+            addToLookupToolStripMenuItem.Click += AddToBrandLookupToolStripMenuItem_Click;
             // 
             // showHideCoulmnsToolStripMenuItem
             // 
