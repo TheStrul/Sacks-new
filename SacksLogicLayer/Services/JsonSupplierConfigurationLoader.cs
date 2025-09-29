@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using SacksDataLayer.FileProcessing.Configuration;
 
@@ -36,16 +35,11 @@ namespace SacksLogicLayer.Services
             try
             {
                 _logger?.LogDebug("Loading supplier formats from {Path}", supplierFormatsPath);
-                string? supplierJson = null;
 
-                supplierJson = await File.ReadAllTextAsync(supplierFormatsPath).ConfigureAwait(false);
+                var supplierJson = await File.ReadAllTextAsync(supplierFormatsPath).ConfigureAwait(false);
 
-                // Parse into mutable JsonNode so we can normalize legacy shapes before deserialization
-                var root = JsonNode.Parse(supplierJson, new JsonNodeOptions { PropertyNameCaseInsensitive = true });
-                NormalizeColumnRules(root);
-                var normalizedJson = root!.ToJsonString();
-
-                retval = JsonSerializer.Deserialize<SuppliersConfiguration>(normalizedJson, s_jsonOptions)!;
+                // In dev mode we expect canonical JSON shape; deserialize directly without legacy normalization
+                retval = JsonSerializer.Deserialize<SuppliersConfiguration>(supplierJson, s_jsonOptions)!;
                 retval!.FullPath = supplierFormatsPath;
 
                 var errors = retval.ValidateConfiguration();
@@ -69,69 +63,6 @@ namespace SacksLogicLayer.Services
 
             }
             return retval;
-        }
-
-        // Normalize legacy columnRules shapes so deserialization into ParsingEngine.RuleConfig
-        // (which requires Actions) succeeds. Handles:
-        // - columnRules as array: [ { "column": "C", "rule": { ... } }, ... ]
-        // - columnRules entries wrapped with "rule": { "actions": [...] }
-        private static void NormalizeColumnRules(JsonNode? root)
-        {
-            if (root is not JsonObject rootObj) return;
-            if (!rootObj.TryGetPropertyValue("suppliers", out var suppliersNode) || suppliersNode is not JsonArray suppliers) return;
-
-            foreach (var supplierNode in suppliers)
-            {
-                if (supplierNode is not JsonObject supplierObj) continue;
-                if (!supplierObj.TryGetPropertyValue("parserConfig", out var parserNode) || parserNode is not JsonObject parserObj) continue;
-
-                if (!parserObj.TryGetPropertyValue("columnRules", out var colRulesNode)) continue;
-
-                // If columnRules is an array -> convert to object { columnName: ruleObject, ... }
-                if (colRulesNode is JsonArray colRulesArray)
-                {
-                    var newObj = new JsonObject();
-                    foreach (var item in colRulesArray)
-                    {
-                        if (item is not JsonObject itemObj) continue;
-                        string? column = null;
-                        if (itemObj.TryGetPropertyValue("column", out var col) && col is JsonValue colVal)
-                            column = colVal.GetValue<string>();
-                        if (string.IsNullOrWhiteSpace(column)) continue;
-
-                        JsonNode? ruleNode = null;
-                        if (itemObj.TryGetPropertyValue("rule", out var rn))
-                        {
-                            ruleNode = rn;
-                        }
-                        else
-                        {
-                            // treat remaining properties as the rule
-                            var clone = new JsonObject(itemObj);
-                            clone.Remove("column");
-                            ruleNode = clone;
-                        }
-
-                        if (ruleNode != null)
-                            newObj[column] = ruleNode;
-                    }
-                    parserObj["columnRules"] = newObj;
-                    continue;
-                }
-
-                // If columnRules is an object, some entries might be wrapped as { "C": { "rule": { ... } } }
-                if (colRulesNode is JsonObject colRulesObj)
-                {
-                    var keys = colRulesObj.Select(kvp => kvp.Key).ToList();
-                    foreach (var key in keys)
-                    {
-                        if (colRulesObj[key] is JsonObject propObj && propObj.TryGetPropertyValue("rule", out var innerRule))
-                        {
-                            colRulesObj[key] = innerRule;
-                        }
-                    }
-                }
-            }
         }
     }
 }

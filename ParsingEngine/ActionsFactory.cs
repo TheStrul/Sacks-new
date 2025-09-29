@@ -19,18 +19,19 @@ public static class ActionsFactory
         var input = s.Input ?? string.Empty;
         var output = s.Output ?? string.Empty;
         var patameter = s.Parameters ?? new Dictionary<string,string>();
-
+        var assign = s.Assign;
+        var condition = s.Condition;
         IChainAction? ret;
         switch (op)
         {
             case "assign":
-                ret = new SimpleAssignAction(input, output);
+                ret = new SimpleAssignAction(input, output,assign,condition);
                 break;
             case "find":
-                string pattern = patameter.ContainsKey("pattern") ? patameter["pattern"] : string.Empty;
+                string pattern = patameter.ContainsKey("Pattern") ? patameter["Pattern"] : string.Empty;
 
                 // Support special pattern: lookup:<tableName> expands to alternation of lookup keys
-                if (!string.IsNullOrEmpty(pattern) && pattern.StartsWith("lookup:", StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(pattern) && pattern.StartsWith("Lookup:", StringComparison.OrdinalIgnoreCase))
                 {
                     var tblName = pattern[("lookup:").Length..].Trim();
                     if (!string.IsNullOrEmpty(tblName) && lookups.TryGetValue(tblName, out var table))
@@ -49,28 +50,22 @@ public static class ActionsFactory
                             pattern = string.Empty;
                         }
                     }
-                    else
-                    {
-                        // fallback to empty pattern (no matches)
-                        pattern = string.Empty;
-                    }
                 }
 
-                string[] options = patameter.ContainsKey("options") ? patameter["options"].Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries  |StringSplitOptions.TrimEntries) : Array.Empty<string>();
-                ret = new FindAction(input, output, pattern, options.ToList(),false,null);
+                string[] options = patameter.ContainsKey("Options") ? patameter["Options"].Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries  |StringSplitOptions.TrimEntries) : Array.Empty<string>();
+                ret = new FindAction(input, output, pattern, options.ToList(), assign, condition);
                 break;
             case "split":
                 // delimiter parameter expected in Parameters["delimiter"], default to ':'
-                var delimiter = patameter.ContainsKey("delimiter") ? patameter["delimiter"] : ":";
+                var delimiter = patameter.ContainsKey("Delimiter") ? patameter["Delimiter"] : ":";
                 ret = new SplitAction(input, output, delimiter);
                 break;
             case "map":
             case "mapping":
-                string tableName = patameter["table"];
-                var assignOut = patameter.TryGetValue("assign", out var a) && a.Equals("true", StringComparison.OrdinalIgnoreCase);
+                string tableName = patameter["Table"];
                 // Resolve lookup table
                 var mapDict = lookups[tableName];
-                ret = new MappingAction(input, output, assignOut, mapDict);
+                ret = new MappingAction(input, output, assign, mapDict,condition);
                 break;
             default:
                 ret = new NoOpChainAction(input, output);

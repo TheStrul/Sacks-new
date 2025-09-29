@@ -31,7 +31,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
             var errors = new List<string>();
 
             if (string.IsNullOrWhiteSpace(this.Version))
-                errors.Add("Missing or empty 'version' in supplier configuration");
+                errors.Add("Missing or empty 'Version' in supplier configuration");
 
             // Lookups
             if (this.Lookups == null)
@@ -164,7 +164,7 @@ namespace SacksDataLayer.FileProcessing.Configuration
                                         // If map op, ensure table parameter exists
                                         if (string.Equals(act.Op, "map", StringComparison.OrdinalIgnoreCase) || string.Equals(act.Op, "mapping", StringComparison.OrdinalIgnoreCase))
                                         {
-                                            if (act.Parameters == null || !act.Parameters.ContainsKey("table") || string.IsNullOrWhiteSpace(act.Parameters["table"]))
+                                            if (act.Parameters == null || !act.Parameters.ContainsKey("Table") || string.IsNullOrWhiteSpace(act.Parameters["Table"]))
                                                 errors.Add($"Supplier '{s.Name}' column '{keyVal.Key}' mapping action at index {aidx} missing Parameters.table");
                                         }
                                     }

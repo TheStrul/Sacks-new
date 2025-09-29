@@ -68,6 +68,12 @@ public abstract class BaseAction : IChainAction
 
     private static string ResolveToken(string token, IDictionary<string, string> bag)
     {
+        switch (token.ToLower())
+        {
+            case "true":
+            case "false":
+                return token;
+        }
         if (string.IsNullOrWhiteSpace(token)) return string.Empty;
         // quoted string
         if ((token.StartsWith("\"") && token.EndsWith("\"")) || (token.StartsWith("'") && token.EndsWith("'")))

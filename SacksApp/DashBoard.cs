@@ -27,6 +27,27 @@
             this._serviceProvider = serviceProvider;
             this._logger = serviceProvider.GetRequiredService<ILogger<DashBoard>>();
 
+            // Apply modern colorful theme/icons
+            try { ApplyModernTheme(); } catch { }
+
+        }
+
+        private void ApplyModernTheme()
+        {
+            // Designer now contains static styling; keep only runtime icons via UITheme
+            try
+            {
+                UITheme.ApplyButtonStyle(processFilesButton, Color.FromArgb(76, 175, 80), "📁");
+                UITheme.ApplyButtonStyle(showStatisticsButton, Color.FromArgb(33, 150, 243), "📈");
+                UITheme.ApplyButtonStyle(testConfigurationButton, Color.FromArgb(255, 193, 7), "⚙️");
+                UITheme.ApplyButtonStyle(sqlQueryButton, Color.FromArgb(156, 39, 176), "🔍");
+                UITheme.ApplyButtonStyle(viewLogsButton, Color.FromArgb(0, 150, 136), "📝");
+                UITheme.ApplyButtonStyle(clearDatabaseButton, Color.FromArgb(244, 67, 54), "🧹");
+            }
+            catch (Exception ex)
+            {
+                try { _logger?.LogDebug(ex, "Failed to create dashboard icons"); } catch { }
+            }
         }
 
         private async void ProcessFilesButton_Click(object sender, EventArgs e)
