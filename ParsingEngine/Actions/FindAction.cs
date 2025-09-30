@@ -7,27 +7,14 @@ public sealed class FindAction : BaseAction
     public override string Op => "find";
     private readonly string _pattern;
     private readonly List<string> _options;
+    private readonly List<KeyValuePair<string,string>>? _lookupEntries;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FindAction"/> class with the specified range, pattern, and options.
-    /// Supports regex patterns
-    /// Options:
-    /// "first" (default) - find first match
-    /// "last" - find last match
-    /// "all" - find all matches
-    /// "remove" - remove matches from input and return the rest
-    /// "ignorecase" - case insensitive matching
-    /// "assign" - add 'assign' to the output key (to indicate this is an assign action)
-    /// </summary>
-    /// <param name="fromKey">The key name that holds the value (Input). Cannot be null.</param>
-    /// <param name="toKey">The key array name to write the output . Cannot be null.</param>
-    /// <param name="pattern">The pattern to match during the search. If null, an empty string is used.</param>
-    /// <param name="options">A list of options that modify the search behavior. If null, an empty list is used.</param>
-    public FindAction(string fromKey, string toKey, string pattern, List<string> options, bool assign, string? condition) :
+    public FindAction(string fromKey, string toKey, string pattern, List<string> options, bool assign, string? condition, List<KeyValuePair<string,string>>? lookupEntries = null) :
         base(fromKey, toKey, assign, condition)
     {
         _pattern = pattern ?? string.Empty;
         _options = options ?? new List<string>();
+        _lookupEntries = lookupEntries;
     }
 
     public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
@@ -37,8 +24,8 @@ public sealed class FindAction : BaseAction
         bag.TryGetValue(base.input, out var value);
         var input = value ?? string.Empty;
 
-        // If no pattern or empty input -> write empty results and return false
-        if (string.IsNullOrEmpty(_pattern) || string.IsNullOrEmpty(input))
+        // If no pattern/lookup or empty input -> write empty results and return false
+        if (string.IsNullOrEmpty(_pattern) && (_lookupEntries == null || _lookupEntries.Count == 0) || string.IsNullOrEmpty(input))
         {
             ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
             return false;
@@ -54,6 +41,17 @@ public sealed class FindAction : BaseAction
 
         try
         {
+            // If lookup entries were provided, perform ordered lookup-based matching
+            if (_lookupEntries != null && _lookupEntries.Count > 0)
+            {
+                return mode.ToLowerInvariant() switch
+                {
+                    "all" => HandleAllLookup(bag, ctx, input, ignoreCase, remove, base.assign),
+                    "last" => HandleLastLookup(bag, ctx, input, ignoreCase, remove, base.assign),
+                    _ => HandleFirstLookup(bag, ctx, input, ignoreCase, remove, base.assign),
+                };
+            }
+
             var rxOpts = ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
             var rx = new Regex(_pattern, rxOpts);
 
@@ -68,6 +66,21 @@ public sealed class FindAction : BaseAction
         {
             ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
             return false;
+        }
+    }
+
+    private void AddTrace(CellContext ctx, string text)
+    {
+        try
+        {
+            if (ctx.Ambient != null && ctx.Ambient.TryGetValue("PropertyBag", out var obj) && obj is PropertyBag pb)
+            {
+                pb.Trace.Add(text);
+            }
+        }
+        catch
+        {
+            // ignore tracing failures
         }
     }
 
@@ -93,6 +106,153 @@ public sealed class FindAction : BaseAction
         }
 
         return m.Value;
+    }
+
+    // Lookup-based handlers: prefer longest-key-first to avoid short-substring wins
+    private IEnumerable<KeyValuePair<string,string>> OrderedLookupEntries(bool ignoreCase)
+    {
+        // Sort by key length descending; stable for equal lengths
+        return _lookupEntries!
+            .Where(kv => !string.IsNullOrEmpty(kv.Key))
+            .OrderByDescending(kv => (kv.Key?.Length) ?? 0);
+    }
+
+    private bool HandleAllLookup(IDictionary<string, string> bag, CellContext ctx, string input, bool ignoreCase, bool remove, bool assignFlag)
+    {
+        // trace lookup order
+        AddTrace(ctx, $"FindAction ordered lookup keys: {string.Join(',', OrderedLookupEntries(ignoreCase).Select(kv => kv.Key))}");
+
+        var results = new List<string>();
+        var opts = ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
+
+        foreach (var kv in OrderedLookupEntries(ignoreCase))
+        {
+            var key = kv.Key ?? string.Empty;
+            try
+            {
+                var pat = $"(?<!\\p{{L}})" + Regex.Escape(key) + $"(?!\\p{{L}})";
+                var rx = new Regex(pat, opts);
+                if (rx.IsMatch(input))
+                {
+                    results.Add(kv.Value ?? string.Empty);
+                    AddTrace(ctx, $"Matched key='{key}' -> value='{kv.Value}'");
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        if (results.Count == 0)
+        {
+            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+            return false;
+        }
+
+        if (remove)
+        {
+            // remove all matches of each key in lookup order
+            var cleaned = input;
+            foreach (var kv in OrderedLookupEntries(ignoreCase))
+            {
+                var key = kv.Key ?? string.Empty;
+                try
+                {
+                    var pat = $"(?<!\\p{{L}})" + Regex.Escape(key) + $"(?!\\p{{L}})";
+                    cleaned = Regex.Replace(cleaned, pat, string.Empty, ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None);
+                }
+                catch { }
+            }
+            cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
+            ActionHelpers.WriteListOutput(bag, base.output, cleaned, results, assignFlag, false);
+        }
+        else
+        {
+            ActionHelpers.WriteListOutput(bag, base.output, input, results, assignFlag, false);
+        }
+
+        return true;
+    }
+
+    private bool HandleFirstLookup(IDictionary<string, string> bag, CellContext ctx, string input, bool ignoreCase, bool remove, bool assignFlag)
+    {
+        AddTrace(ctx, $"FindAction ordered lookup keys: {string.Join(',', OrderedLookupEntries(ignoreCase).Select(kv => kv.Key))}");
+
+        var opts = ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
+        foreach (var kv in OrderedLookupEntries(ignoreCase))
+        {
+            var key = kv.Key ?? string.Empty;
+            try
+            {
+                var pat = $"(?<!\\p{{L}})" + Regex.Escape(key) + $"(?!\\p{{L}})";
+                var rx = new Regex(pat, opts);
+                var match = rx.Match(input);
+                if (match.Success)
+                {
+                    var mapped = kv.Value ?? string.Empty;
+                    AddTrace(ctx, $"Matched key='{key}' -> value='{mapped}'");
+                    if (remove)
+                    {
+                        var cleaned = input.Remove(match.Index, match.Length);
+                        cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
+                        ActionHelpers.WriteListOutput(bag, base.output, cleaned, new List<string> { mapped }, assignFlag, true);
+                        return true;
+                    }
+
+                    ActionHelpers.WriteListOutput(bag, base.output, input, new List<string> { mapped }, assignFlag, true);
+                    return true;
+                }
+            }
+            catch { }
+        }
+
+        ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+        return false;
+    }
+
+    private bool HandleLastLookup(IDictionary<string, string> bag, CellContext ctx, string input, bool ignoreCase, bool remove, bool assignFlag)
+    {
+        AddTrace(ctx, $"FindAction ordered lookup keys: {string.Join(',', OrderedLookupEntries(ignoreCase).Select(kv => kv.Key))}");
+
+        var opts = ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
+        Match? lastMatch = null;
+        string? lastMapped = null;
+
+        foreach (var kv in OrderedLookupEntries(ignoreCase))
+        {
+            var key = kv.Key ?? string.Empty;
+            try
+            {
+                var pat = $"(?<!\\p{{L}})" + Regex.Escape(key) + $"(?!\\p{{L}})";
+                var rx = new Regex(pat, opts);
+                var matches = rx.Matches(input).Cast<Match>().ToArray();
+                if (matches.Length > 0)
+                {
+                    var m = matches[^1];
+                    lastMatch = m;
+                    lastMapped = kv.Value ?? string.Empty;
+                    AddTrace(ctx, $"Candidate last: key='{key}' at {m.Index}-{m.Length} -> '{lastMapped}'");
+                }
+            }
+            catch { }
+        }
+
+        if (lastMatch == null)
+        {
+            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+            return false;
+        }
+
+        if (remove)
+        {
+            var cleaned = input.Remove(lastMatch.Index, lastMatch.Length);
+            cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
+            ActionHelpers.WriteListOutput(bag, base.output, cleaned, new List<string> { lastMapped! }, assignFlag, true);
+            return true;
+        }
+
+        ActionHelpers.WriteListOutput(bag, base.output, input, new List<string> { lastMapped! }, assignFlag, true);
+        return true;
     }
 
     private bool HandleAll(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag, bool remove)
@@ -164,7 +324,6 @@ public sealed class FindAction : BaseAction
             }
             catch
             {
-                // ignore
             }
         }
 
@@ -209,7 +368,6 @@ public sealed class FindAction : BaseAction
             }
             catch
             {
-                // ignore
             }
         }
 

@@ -30,30 +30,21 @@ public static class ActionsFactory
             case "find":
                 string pattern = patameter.ContainsKey("Pattern") ? patameter["Pattern"] : string.Empty;
 
-                // Support special pattern: lookup:<tableName> expands to alternation of lookup keys
+                // Support special pattern: lookup:<tableName> - pass lookup table entries (preserve order)
+                List<KeyValuePair<string,string>>? lookupEntries = null;
                 if (!string.IsNullOrEmpty(pattern) && pattern.StartsWith("Lookup:", StringComparison.OrdinalIgnoreCase))
                 {
                     var tblName = pattern[("lookup:").Length..].Trim();
                     if (!string.IsNullOrEmpty(tblName) && lookups.TryGetValue(tblName, out var table))
                     {
-                        // build regex alternation from table keys, prefer longer keys first
-                        var keys = table.Keys.Where(k => !string.IsNullOrEmpty(k)).OrderByDescending(k => k.Length)
-                                    .Select(k => Regex.Escape(k));
-                        var joined = string.Join("|", keys);
-                        if (!string.IsNullOrEmpty(joined))
-                        {
-                            // match whole tokens (word boundaries) and capture as group
-                            pattern = $"(?i)\\b(?:{joined})\\b";
-                        }
-                        else
-                        {
-                            pattern = string.Empty;
-                        }
+                        // Preserve the dictionary enumeration order by materializing a list of entries
+                        lookupEntries = table.ToList();
+                        pattern = string.Empty; // FindAction will use lookupEntries when provided
                     }
                 }
 
                 string[] options = patameter.ContainsKey("Options") ? patameter["Options"].Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries  |StringSplitOptions.TrimEntries) : Array.Empty<string>();
-                ret = new FindAction(input, output, pattern, options.ToList(), assign, condition);
+                ret = new FindAction(input, output, pattern, options.ToList(), assign, condition, lookupEntries);
                 break;
             case "split":
                 // delimiter parameter expected in Parameters["delimiter"], default to ':'

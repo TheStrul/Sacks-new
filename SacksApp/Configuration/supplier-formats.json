@@ -3,7 +3,7 @@
   "FullPath": "C:\\Users\\avist\\source\\repos\\GitHubLocal\\Customers\\Sacks-New\\SacksApp\\Configuration/supplier-formats.json",
   "Suppliers": [
     {
-      "Name": "Chk",
+      "Name": "HAND",
       "Currency": "USD",
       "ParserConfig": {
         "Settings": {
@@ -11,251 +11,232 @@
           "DefaultCulture": "en-US",
           "PreferFirstAssignment": true
         },
-        "Lookups": {
-          "Gender": {
-            "m": "M",
-            "man": "M",
-            "men": "M",
-            "male": "M",
-            "homme": "M",
-            "hombre": "M",
-            "uomo": "M",
-            "masculino": "M",
-            "w": "W",
-            "her": "W",
-            "woman": "W",
-            "women": "W",
-            "wom": "W",
-            "female": "W",
-            "femme": "W",
-            "mujer": "W",
-            "donna": "W",
-            "feminino": "W",
-            "u": "U",
-            "unisex": "U",
-            "unisexe": "U",
-            "mixte": "U",
-            "pour femme": "W",
-            "pour homme": "M",
-            "for her": "W",
-            "for him": "M",
-            "p/homme": "M",
-            "boy": "M",
-            "senorita": "W",
-            "bella": "W",
-            "father": "M",
-            "son": "M",
-            "hero": "M"
+        "ColumnRules": {
+          "A": {
+            "Actions": [
+              {
+                "Op": "Split",
+                "Input": "Text",
+                "Output": "SplitText",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Delimiter": ":"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "SplitText[0]",
+                "Output": "Product.Type",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": {
+                  "Table": "Type"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "SplitText[1]",
+                "Output": "Product.Brand",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": {
+                  "Table": "Brand"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "SplitText[2]",
+                "Output": "Offer.Ref",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": {
+                  "Table": "Type"
+                }
+              }
+            ],
+            "Trace": false
           },
-          "Unit": {
-            "ml": "ml",
-            "millilitre": "ml",
-            "oz": "oz",
-            "fl oz": "oz",
-            "floz": "oz",
-            "fluid ounce": "oz",
-            "gram": "g",
-            "g": "g"
+          "B": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Ref",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
           },
-          "Currency": {
-            "\u20AC": "\u20AC",
-            "eur": "\u20AC",
-            "euro": "\u20AC",
-            "euros": "\u20AC",
-            "$": "$",
-            "usd": "$",
-            "dollar": "$",
-            "dollars": "$",
-            "\u00A3": "\u00A3",
-            "gbp": "\u00A3",
-            "pound": "\u00A3",
-            "pounds": "\u00A3",
-            "chf": "CHF",
-            "franc": "CHF",
-            "francs": "CHF",
-            "z\u0142": "PLN",
-            "pln": "PLN",
-            "zloty": "PLN",
-            "k\u010D": "CZK",
-            "czk": "CZK",
-            "koruna": "CZK",
-            "ft": "HUF",
-            "huf": "HUF",
-            "forint": "HUF",
-            "lei": "RON",
-            "ron": "RON",
-            "\u043B\u0432": "BGN",
-            "bgn": "BGN",
-            "lev": "BGN",
-            "kn": "HRK",
-            "hrk": "HRK",
-            "kr": "NOK"
+          "C": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.EAN",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
           },
-          "Concentration": {
-            "edt": "EDT",
-            "eau de toilette": "EDT",
-            "edp": "EDP",
-            "eau de parfum": "EDP",
-            "parfum": "EDP",
-            "perfume": "EDP",
-            "edc": "EDC",
-            "eau de cologne": "EDC",
-            "edm": "EDM",
-            "eau de mist": "EDM",
-            "body mist": "Body Mist",
-            "aftershave": "Aftershave",
-            "cologne": "Cologne"
+          "E": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Description",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "Parenthesis",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "\\((?\u003Csize\u003E[^)]\u002B)\\)",
+                  "Options": "first,remove"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Parenthesis",
+                "Output": "Product.Size",
+                "Assign": true,
+                "Condition": "Parenthesis.Valid==true",
+                "Parameters": {
+                  "Pattern": "(?\u003Cnum\u003E\\d\u002B(?:\\.\\d\u002B)?)",
+                  "Options": "first"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Parenthesis",
+                "Output": "UnitRaw",
+                "Assign": false,
+                "Condition": "Parenthesis.Valid==true",
+                "Parameters": {
+                  "Pattern": "(?i)(?\u003Cunit\u003Eml|oz|fl\\s*oz)",
+                  "Options": "first,ignorecase"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "UnitRaw",
+                "Output": "Product.Units",
+                "Assign": true,
+                "Condition": "UnitRaw.Valid==true",
+                "Parameters": {
+                  "Table": "Unit"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Parenthesis.Clean",
+                "Output": "Concentrations",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Concentration",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Concentrations[0]",
+                "Output": "Product.Concentration",
+                "Assign": true,
+                "Condition": "Concentrations.Valid==true",
+                "Parameters": {
+                  "Table": "Concentration"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Concentrations.Clean",
+                "Output": "Genders",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Gender",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Genders[0]",
+                "Output": "Product.Gender",
+                "Assign": true,
+                "Condition": "Genders.Valid==true",
+                "Parameters": {
+                  "Table": "Gender"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "Genders.Clean",
+                "Output": "Product.Line",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": true
           },
-          "COO": {
-            "france": "France",
-            "fr": "France",
-            "italy": "Italy",
-            "it": "Italy",
-            "spain": "Spain",
-            "germany": "Germany",
-            "united kingdom": "United Kingdom",
-            "usa": "USA",
-            "united states": "USA",
-            "switzerland": "Switzerland",
-            "sweden": "Sweden",
-            "austria": "Austria",
-            "belgium": "Belgium",
-            "netherlands": "Netherlands",
-            "poland": "Poland",
-            "czech republic": "Czech Republic",
-            "hungary": "Hungary",
-            "romania": "Romania",
-            "bulgaria": "Bulgaria",
-            "croatia": "Croatia",
-            "denmark": "Denmark",
-            "norway": "Norway",
-            "es": "Spain",
-            "de": "Germany",
-            "uk": "United Kingdom",
-            "gb": "United Kingdom",
-            "us": "USA",
-            "ch": "Switzerland",
-            "se": "Sweden",
-            "at": "Austria",
-            "be": "Belgium",
-            "nl": "Netherlands",
-            "pl": "Poland",
-            "cz": "Czech Republic",
-            "hu": "Hungary",
-            "ro": "Romania",
-            "bg": "Bulgaria",
-            "hr": "Croatia",
-            "dk": "Denmark",
-            "no": "Norway"
+          "F": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Quantity",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
           },
-          "Brand": {
-            "l\u0027occitane": "L\u0027Occitane",
-            "l occitane": "L\u0027Occitane",
-            "l\u0027occitane en provence": "L\u0027Occitane",
-            "l occitane en provence": "L\u0027Occitane",
-            "bvlgari": "Bvlgari",
-            "bvlgar": "Bvlgari",
-            "bvl": "Bvlgari",
-            "adidas": "Adidas",
-            "calvin klein": "Calvin Klein",
-            "ck": "Calvin Klein",
-            "dolce \u0026 gabbana": "Dolce \u0026 Gabbana",
-            "dolce and gabbana": "Dolce \u0026 Gabbana",
-            "d\u0026g": "Dolce \u0026 Gabbana",
-            "d and g": "Dolce \u0026 Gabbana",
-            "dkny": "DONNA KARAN",
-            "giorgio armani": "Giorgio Armani",
-            "armani": "Giorgio Armani",
-            "paco rabanne": "Paco Rabanne",
-            "jean paul gaultier": "Jean Paul Gaultier",
-            "jpg": "Jean Paul Gaultier",
-            "ralph lauren": "Ralph Lauren",
-            "ralph": "Ralph Lauren",
-            "tom ford": "Tom Ford",
-            "ford": "Tom Ford",
-            "versace": "Versace",
-            "givenchy": "Givenchy",
-            "chanel": "Chanel",
-            "dior": "Dior",
-            "christian dior": "Dior",
-            "hermes": "Herm\u00E8s",
-            "herm\u00E8s": "Herm\u00E8s",
-            "gucci": "Gucci",
-            "burberry": "Burberry",
-            "montblanc": "Montblanc",
-            "mont blanc": "Montblanc",
-            "lancome": "Lanc\u00F4me",
-            "lanc\u00F4me": "Lanc\u00F4me",
-            "valentino": "Valentino",
-            "victor\u0026rolf": "Victor \u0026 Rolf",
-            "victor \u0026 rolf": "Victor \u0026 Rolf",
-            "victor": "Victor \u0026 Rolf",
-            "coach": "Coach",
-            "ysl": "Yves Saint Laurent",
-            "yves saint laurent": "Yves Saint Laurent",
-            "j.p.": "J.P.",
-            "cacharel": "Cacharel",
-            "aramis": "Aramis",
-            "estee lauder": "Estee Lauder",
-            "e.arden": "E.Arden",
-            "kenzo": "Kenzo",
-            "guerlain": "Guerlain",
-            "azzaro": "Azzaro",
-            "guy laroche": "Guy Laroche",
-            "paloma": "Paloma",
-            "jimmy choo": "Jimmy Choo",
-            "lanvin": "Lanvin",
-            "karl lagerfeld": "Karl Lagerfeld",
-            "lacoste": "Lacoste",
-            "joop": "Joop",
-            "narciso rodriguez": "Narciso Rodriguez",
-            "issey miyake": "Issey Miyake",
-            "thierry mugler": "Thierry Mugler",
-            "lalique": "Lalique",
-            "davidoff": "Davidoff",
-            "hugo boss": "Hugo Boss",
-            "prada": "Prada",
-            "lattafa": "Lattafa",
-            "christina aguilera": "Christina Aguilera",
-            "a. banderas": "Antonio Banderas",
-            "carolina herrera": "Carolina Herrera"
-          },
-          "Type": {
-            "deo stick": "Deodorant",
-            "deo spray": "Deodorant",
-            "set": "Set",
-            "spray": "Spray",
-            "sets": "Set",
-            "gift": "Set",
-            "gift set": "Set",
-            "giftset": "Set",
-            "gift-set": "Set",
-            "giftbox": "Set",
-            "kit": "Set",
-            "tester": "Tester",
-            "test": "Tester",
-            "testeur": "Tester",
-            "tube": "Tube",
-            "mini": "Mini",
-            "mini set": "Mini",
-            "sample": "Sample",
-            "samples": "Sample",
-            "sample size": "Sample",
-            "travel": "Travel",
-            "travel size": "Travel",
-            "promo": "Promotional",
-            "promotional": "Promotional",
-            "regular": "Regular",
-            "full size": "Regular",
-            "regulars": "Regular",
-            "rollerball": "Roller ball",
-            "flash": "Flash",
-            "reg": "Regular",
-            "testers": "Tester",
-            "niche": "Niche",
-            "limited": "Limited Edition",
-            "limited edition": "Limited Edition"
+          "G": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Price",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
           }
+        }
+      },
+      "FileStructure": {
+        "DataStartRowIndex": 2,
+        "ExpectedColumnCount": 7,
+        "HeaderRowIndex": 1,
+        "Detection": {
+          "FileNamePatterns": [
+            "hand*.xls*"
+          ]
+        }
+      },
+      "SubtitleHandling": null
+    },
+    {
+      "Name": "Chk",
+      "Currency": "USD",
+      "ParserConfig": {
+        "Settings": {
+          "StopOnFirstMatchPerColumn": false,
+          "DefaultCulture": "en-US",
+          "PreferFirstAssignment": true
         },
         "ColumnRules": {
           "A": {
@@ -512,39 +493,39 @@
   ],
   "Lookups": {
     "Gender": {
-      "m": "M",
-      "man": "M",
-      "men": "M",
-      "male": "M",
-      "homme": "M",
-      "hombre": "M",
-      "uomo": "M",
-      "masculino": "M",
-      "w": "W",
-      "her": "W",
-      "woman": "W",
-      "women": "W",
-      "wom": "W",
-      "female": "W",
-      "femme": "W",
-      "mujer": "W",
+      "bella": "W",
+      "boy": "M",
       "donna": "W",
+      "father": "M",
+      "female": "W",
       "feminino": "W",
+      "femme": "W",
+      "for her": "W",
+      "for him": "M",
+      "her": "W",
+      "hero": "M",
+      "hombre": "M",
+      "homme": "M",
+      "m": "M",
+      "male": "M",
+      "man": "M",
+      "masculino": "M",
+      "men": "M",
+      "mixte": "U",
+      "mujer": "W",
+      "p/homme": "M",
+      "pour femme": "W",
+      "pour homme": "M",
+      "senorita": "W",
+      "son": "M",
       "u": "U",
       "unisex": "U",
       "unisexe": "U",
-      "mixte": "U",
-      "pour femme": "W",
-      "pour homme": "M",
-      "for her": "W",
-      "for him": "M",
-      "p/homme": "M",
-      "boy": "M",
-      "senorita": "W",
-      "bella": "W",
-      "father": "M",
-      "son": "M",
-      "hero": "M"
+      "uomo": "M",
+      "w": "W",
+      "wom": "W",
+      "woman": "W",
+      "women": "W"
     },
     "Unit": {
       "ml": "ml",
@@ -719,7 +700,13 @@
       "a. banderas": "Antonio Banderas",
       "carolina herrera": "Carolina Herrera",
       "antonio": "Antonio Banderas",
-      "loewe": "Loewe"
+      "loewe": "Loewe",
+      "gaultier": "Gaultier",
+      "m kors": "M Kors",
+      "n rodriguez": "Narciso Rodriguez",
+      "l lempicka": "Lolita Lempicka",
+      "n rodr": "Narciso Rodriguez",
+      "moschino": "Moschino"
     },
     "Type": {
       "deo stick": "Deodorant",

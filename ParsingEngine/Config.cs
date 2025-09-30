@@ -5,6 +5,7 @@ namespace ParsingEngine;
 public sealed class ParserConfig
 {
     public Settings Settings { get; set; } = new();
+    [JsonIgnore]
     public Dictionary<string, Dictionary<string, string>> Lookups { get; set; } = new();
     public Dictionary<string, RuleConfig> ColumnRules { get; set; } = new();
 
