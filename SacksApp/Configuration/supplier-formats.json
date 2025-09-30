@@ -3,6 +3,255 @@
   "FullPath": "C:\\Users\\avist\\source\\repos\\GitHubLocal\\Customers\\Sacks-New\\SacksApp\\Configuration/supplier-formats.json",
   "Suppliers": [
     {
+      "Name": "POL",
+      "Currency": "USD",
+      "ParserConfig": {
+        "Settings": {
+          "StopOnFirstMatchPerColumn": false,
+          "DefaultCulture": "en-US",
+          "PreferFirstAssignment": true
+        },
+        "ColumnRules": {
+          "A": {
+            "Actions": [
+              {
+                "Op": "Split",
+                "Input": "Text",
+                "Output": "SplitText",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Delimiter": ":"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "SplitText[0]",
+                "Output": "Product.Brand",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+              },
+              {
+                "Op": "Map",
+                "Input": "SplitText[1]",
+                "Output": "Product.Gender",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": {
+                  "Table": "Gender"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "SplitText[1]",
+                "Output": "Product.Type",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": {
+                  "Table": "Type"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "SplitText[2]",
+                "Output": "Offer.Ref",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "B": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Description",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "Sizes",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)(?\u003Csize\u003E\\d\u002B(?:\\.\\d\u002B)?\\s*(?:ml|oz|fl\\s*oz))",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "Sizes[0]",
+                "Output": "Product.Size",
+                "Assign": true,
+                "Condition": "Sizes.Valid == true",
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Sizes[0]",
+                "Output": "UnitRaw",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)(?\u003Cunit\u003Eml|oz|fl\\s*oz)",
+                  "Options": "first,ignorecase"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "UnitRaw",
+                "Output": "Product.Units",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Unit"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Sizes.Clean",
+                "Output": "Concentrations",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Concentration",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Concentrations[0]",
+                "Output": "Product.Concentration",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Concentration"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Concentrations.Clean",
+                "Output": "Genders",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Gender",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Genders[0]",
+                "Output": "Product.Gender",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Gender"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Genders.Clean",
+                "Output": "Types",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Type",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Types[0]",
+                "Output": "Product.Type",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Type"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Types.Clean",
+                "Output": "FinalText",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "[/-]*",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "FinalText.Clean",
+                "Output": "Product.Line",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "C": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.EAN",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "D": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Quantity",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "E": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Price",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          }
+        }
+      },
+      "FileStructure": {
+        "DataStartRowIndex": 8,
+        "ExpectedColumnCount": 5,
+        "HeaderRowIndex": 1,
+        "Detection": {
+          "FileNamePatterns": [
+            "pol*.xls*",
+            "POL*.xls*"
+          ]
+        }
+      },
+      "SubtitleHandling": null
+    },
+    {
       "Name": "HAND",
       "Currency": "USD",
       "ParserConfig": {
@@ -706,7 +955,10 @@
       "n rodriguez": "Narciso Rodriguez",
       "l lempicka": "Lolita Lempicka",
       "n rodr": "Narciso Rodriguez",
-      "moschino": "Moschino"
+      "moschino": "Moschino",
+      "4711": "4711",
+      "acqua colonia": "Acqua Colonia",
+      "acqua de parma": "Acqua Di Parma"
     },
     "Type": {
       "deo stick": "Deodorant",
