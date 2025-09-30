@@ -3,6 +3,238 @@
   "FullPath": "C:\\Users\\avist\\source\\repos\\GitHubLocal\\Customers\\Sacks-New\\SacksApp\\Configuration/supplier-formats.json",
   "Suppliers": [
     {
+      "Name": "Lux",
+      "Currency": "USD",
+      "ParserConfig": {
+        "Settings": {
+          "StopOnFirstMatchPerColumn": false,
+          "DefaultCulture": "en-US",
+          "PreferFirstAssignment": true
+        },
+        "ColumnRules": {
+          "A": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.EAN",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "B": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Description",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "SizeAndUnits",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "@(?i)(?<num>\\d+(?:[.,]\\d+)?)[\\s-](?<unit>ml|oz|fl.?\\soz|g|kg)\\b\")",
+                  "Options": "first,remove"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "Concentrations",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Concentration",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Concentrations[0]",
+                "Output": "Product.Concentration",
+                "Assign": true,
+                "Condition": "Concentrations.Valid==true",
+                "Parameters": {
+                  "Table": "Concentration"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Concentrations.Clean",
+                "Output": "Genders",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Gender",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Genders[0]",
+                "Output": "Product.Gender",
+                "Assign": true,
+                "Condition": "Genders.Valid==true",
+                "Parameters": {
+                  "Table": "Gender"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Genders.Clean",
+                "Output": "Brands",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Brand",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Brands[0]",
+                "Output": "Product.Brand",
+                "Assign": true,
+                "Condition": "Brands.Valid==true",
+                "Parameters": {
+                  "Table": "Brand"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Brands.Clean",
+                "Output": "BrandsDefault",
+                "Assign": false,
+                "Condition": "Brands.Valid==false",
+                "Parameters": {
+                  "Pattern": "^\\s*(\\S\u002B)",
+                  "Options": "first,ignorecase"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "BrandsDefault",
+                "Output": "Product.Brand",
+                "Assign": true,
+                "Condition": "Brands.Valid==false",
+                "Parameters": {
+                  "Table": "Brand"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Brands.Clean",
+                "Output": "Types",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Type",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Types[0]",
+                "Output": "Product.Type",
+                "Assign": true,
+                "Condition": "Types.Valid==true",
+                "Parameters": {
+                  "Table": "Type"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Types.Clean",
+                "Output": "SizeAndUnits",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "@(?i)(?<num>\\d+(?:[.,]\\d+)?)[\\s-](?<unit>ml|oz|fl.?\\soz|g|kg)\\b\")",
+                  "Options": "first,remove"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Types.Clean",
+                "Output": "UnitRaw",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)(?\u003Cunit\u003Eml|oz|fl\\s*oz)",
+                  "Options": "first,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "UnitRaw",
+                "Output": "Product.Units",
+                "Assign": true,
+                "Condition": "UnitRaw.Valid==true",
+                "Parameters": {
+                  "Table": "Unit"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "UnitRaw.Clean",
+                "Output": "Product.Line",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": true
+          },
+          "C": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Quantity",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "D": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Price",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          }
+        }
+      },
+      "FileStructure": {
+        "DataStartRowIndex": 5,
+        "ExpectedColumnCount": 4,
+        "HeaderRowIndex": 1,
+        "Detection": {
+          "FileNamePatterns": [
+            "lux*.xls*"
+          ]
+        }
+      },
+      "SubtitleHandling": null
+    },
+    {
       "Name": "POL",
       "Currency": "USD",
       "ParserConfig": {
@@ -30,6 +262,7 @@
                 "Output": "Product.Brand",
                 "Assign": true,
                 "Condition": "SplitText.Length == 3",
+                "Parameters": null
               },
               {
                 "Op": "Map",
@@ -299,9 +532,7 @@
                 "Output": "Offer.Ref",
                 "Assign": true,
                 "Condition": "SplitText.Length == 3",
-                "Parameters": {
-                  "Table": "Type"
-                }
+                "Parameters": null
               }
             ],
             "Trace": false
@@ -958,7 +1189,30 @@
       "moschino": "Moschino",
       "4711": "4711",
       "acqua colonia": "Acqua Colonia",
-      "acqua de parma": "Acqua Di Parma"
+      "acqua de parma": "Acqua Di Parma",
+      "afnan": "Afnan",
+      "al hambra": "Al Hambra",
+      "ard al zaafaran": "Ard Al Zaafaran",
+      "armaf": "Armaf",
+      "asdaaf": "Asdaaf",
+      "atralia": "Atralia",
+      "ard al zaafran": "Ard Al Zaafaran",
+      "aroma": "Aroma",
+      "auraa desire": "Auraa Desire",
+      "elizabeth arden": "Elizabeth Arden",
+      "emper le chameau": "Emper Le Chameau",
+      "ferrari": "Ferrari",
+      "flavia": "Flavia",
+      "khadlaj": "Khadlaj",
+      "latafa": "Lattafa",
+      "hollister": "Hollister",
+      "viktor \u0026 rolf": "Viktor \u0026 Rolf",
+      "auraa": "Auraa",
+      "vurv": "Vurv",
+      "lolita lompicka": "Lolita Lompicka",
+      "nylaa": "Nylaa",
+      "rasasi": "Rasasi",
+      "rave": "Rave"
     },
     "Type": {
       "deo stick": "Deodorant",

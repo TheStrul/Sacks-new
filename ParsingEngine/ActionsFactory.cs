@@ -32,7 +32,7 @@ public static class ActionsFactory
 
                 // Support special pattern: lookup:<tableName> - pass lookup table entries (preserve order)
                 List<KeyValuePair<string,string>>? lookupEntries = null;
-                if (!string.IsNullOrEmpty(pattern) && pattern.StartsWith("Lookup:", StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(pattern) && pattern.StartsWith("lookup:", StringComparison.OrdinalIgnoreCase))
                 {
                     var tblName = pattern[("lookup:").Length..].Trim();
                     if (!string.IsNullOrEmpty(tblName) && lookups.TryGetValue(tblName, out var table))

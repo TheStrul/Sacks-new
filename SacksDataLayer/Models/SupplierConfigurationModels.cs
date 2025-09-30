@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.IO;
+using System.Text.RegularExpressions;
 
 using ParsingEngine;
 
@@ -157,31 +158,37 @@ namespace SacksDataLayer.FileProcessing.Configuration
                             foreach (KeyValuePair<string,RuleConfig> keyVal in s.ParserConfig.ColumnRules)
                             {
                                 index++;
-                                
-                                if (string.IsNullOrEmpty(keyVal.Key))
+                                var columnName = keyVal.Key;
+                                var ruleCfg = keyVal.Value;
+                                if (string.IsNullOrEmpty(columnName))
                                     errors.Add($"Supplier '{s.Name}' parserConfig contains a column with empty 'column' field at index {index}");
-                                if (keyVal.Value== null)
-                                    errors.Add($"Supplier '{s.Name}' parserConfig column '{keyVal.Key}' missing rule");
-                                else if (keyVal.Value.Actions == null || keyVal.Value.Actions.Count == 0)
-                                    errors.Add($"Supplier '{s.Name}' parserConfig column '{keyVal.Key}' rule contains no actions");
+                                if (ruleCfg== null)
+                                    errors.Add($"Supplier '{s.Name}' parserConfig column '{columnName}' missing rule");
+                                else if (ruleCfg.Actions == null || ruleCfg.Actions.Count == 0)
+                                    errors.Add($"Supplier '{s.Name}' parserConfig column '{columnName}' rule contains no actions");
                                 else
                                 {
-                                    for (int aidx = 0; aidx < keyVal.Value.Actions.Count; aidx++)
+                                    for (int aidx = 0; aidx < ruleCfg.Actions.Count; aidx++)
                                     {
-                                        var act = keyVal.Value.Actions[aidx];
+                                        var act = ruleCfg.Actions[aidx];
                                         if (act == null)
                                         {
-                                            errors.Add($"Supplier '{s.Name}' column '{keyVal.Key}' has null action at index {aidx}");
+                                            errors.Add($"Supplier '{s.Name}' column '{columnName}' has null action at index {aidx}");
                                             continue;
                                         }
+
+                                        // Basic action fields
                                         if (string.IsNullOrWhiteSpace(act.Op))
-                                            errors.Add($"Supplier '{s.Name}' column '{keyVal.Key}' action at index {aidx} missing Op");
-                                        // If map op, ensure table parameter exists
-                                        if (string.Equals(act.Op, "map", StringComparison.OrdinalIgnoreCase) || string.Equals(act.Op, "mapping", StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            if (act.Parameters == null || !act.Parameters.ContainsKey("Table") || string.IsNullOrWhiteSpace(act.Parameters["Table"]))
-                                                errors.Add($"Supplier '{s.Name}' column '{keyVal.Key}' mapping action at index {aidx} missing Parameters.table");
-                                        }
+                                            errors.Add($"Supplier '{s.Name}' column '{columnName}' action at index {aidx} missing Op");
+
+                                        if (string.IsNullOrWhiteSpace(act.Input))
+                                            errors.Add($"Supplier '{s.Name}' column '{columnName}' action '{act.Op}' at index {aidx} missing Input");
+
+                                        if (string.IsNullOrWhiteSpace(act.Output) && !string.Equals(act.Op, "noop", StringComparison.OrdinalIgnoreCase))
+                                            errors.Add($"Supplier '{s.Name}' column '{columnName}' action '{act.Op}' at index {aidx} missing Output");
+
+                                        // Validate per-op parameters and detect unused ones
+                                        ValidateActionParameters(s, columnName, act, aidx, errors);
                                     }
                                 }
                             }
@@ -191,6 +198,88 @@ namespace SacksDataLayer.FileProcessing.Configuration
             }
 
             return errors;
+        }
+
+        private static void ValidateActionParameters(SupplierConfiguration supplier, string columnName, ActionConfig act, int actionIndex, List<string> errors)
+        {
+            if (act == null) return;
+            var op = (act.Op ?? string.Empty).Trim();
+            var parameters = act.Parameters ?? new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
+
+            // helper to add error with context
+            void AddErr(string msg) => errors.Add($"Supplier '{supplier.Name}' column '{columnName}' action[{actionIndex}] op='{op}': {msg}");
+
+            switch (op.ToLowerInvariant())
+            {
+                case "assign":
+                    // assign uses Input/Output only; no parameters expected
+                    if (parameters.Count > 0)
+                        AddErr($"unused Parameters: {string.Join(',', parameters.Keys)} (assign expects no parameters)");
+                    break;
+                case "find":
+                    // expected keys: Pattern, Options (optional)
+                    if (!parameters.TryGetValue("Pattern", out var pattern) || string.IsNullOrWhiteSpace(pattern))
+                    {
+                        AddErr("missing Parameters['Pattern'] or Pattern is empty");
+                    }
+                    else
+                    {
+                        if (pattern.StartsWith("Lookup:", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var tbl = pattern[("Lookup:").Length..].Trim();
+                            // merged lookups are in supplier.ParserConfig.Lookups
+                            var available = supplier.ParserConfig?.Lookups ?? new Dictionary<string, Dictionary<string,string>>();
+                            if (!available.ContainsKey(tbl))
+                                AddErr($"Pattern references lookup table '{tbl}' which is not present in merged lookups");
+                        }
+                        else
+                        {
+                            // Try compiling regex to detect invalid patterns early
+                            try
+                            {
+                                _ = new Regex(pattern);
+                            }
+                            catch (Exception ex)
+                            {
+                                AddErr($"invalid regex Pattern: {ex.Message}");
+                            }
+                        }
+                    }
+                    // detect unused parameter keys
+                    var allowedFind = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Pattern", "Options" };
+                    var unusedFind = parameters.Keys.Where(k => !allowedFind.Contains(k)).ToList();
+                    if (unusedFind.Count > 0) AddErr($"unused Parameters: {string.Join(',', unusedFind)}");
+                    break;
+                case "split":
+                case "splitbydelimiter":
+                    // allowed: Delimiter, ExpectedParts, Strict
+                    var allowedSplit = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Delimiter", "ExpectedParts", "Strict" };
+                    var unusedSplit = parameters.Keys.Where(k => !allowedSplit.Contains(k)).ToList();
+                    if (unusedSplit.Count > 0) AddErr($"unused Parameters: {string.Join(',', unusedSplit)}");
+                    break;
+                case "map":
+                case "mapping":
+                    // required: Table
+                    if (!parameters.TryGetValue("Table", out var tableName) || string.IsNullOrWhiteSpace(tableName))
+                    {
+                        AddErr("missing Parameters['Table'] for mapping action");
+                    }
+                    else
+                    {
+                        var available = supplier.ParserConfig?.Lookups ?? new Dictionary<string, Dictionary<string,string>>();
+                        if (!available.ContainsKey(tableName))
+                            AddErr($"mapping Parameters['Table'] references unknown lookup table '{tableName}'");
+                    }
+                    var allowedMap = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Table", "CaseMode" };
+                    var unusedMap = parameters.Keys.Where(k => !allowedMap.Contains(k)).ToList();
+                    if (unusedMap.Count > 0) AddErr($"unused Parameters: {string.Join(',', unusedMap)}");
+                    break;
+                default:
+                    // Unknown ops: warn about parameters (can't validate semantics)
+                    if (parameters.Count > 0)
+                        AddErr($"unknown Op '{op}' - cannot validate parameters but found: {string.Join(',', parameters.Keys)}");
+                    break;
+            }
         }
     }
 
