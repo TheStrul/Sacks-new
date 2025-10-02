@@ -1,0 +1,260 @@
+{
+  "Name": "Chk",
+  "Currency": "USD",
+  "ParserConfig": {
+    "Settings": {
+      "StopOnFirstMatchPerColumn": false,
+      "DefaultCulture": "en-US",
+      "PreferFirstAssignment": true
+    },
+    "ColumnRules": {
+      "A": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.EAN",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ]
+      },
+      "B": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Ref",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "C": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Description",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          },
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "Concentrations",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Concentration",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Concentrations[0]",
+            "Output": "Product.Concentration",
+            "Assign": true,
+            "Condition": "Concentrations.Valid==true",
+            "Parameters": {
+              "Table": "Concentration"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Concentrations.Clean",
+            "Output": "Genders",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Gender",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Genders[0]",
+            "Output": "Product.Gender",
+            "Assign": true,
+            "Condition": "Genders.Valid==true",
+            "Parameters": {
+              "Table": "Gender"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Genders.Clean",
+            "Output": "Types",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Type",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Types[0]",
+            "Output": "Product.Type",
+            "Assign": true,
+            "Condition": "Types.Valid==true",
+            "Parameters": {
+              "Table": "Type"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Types.Clean",
+            "Output": "Brands",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Brand",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Brands[0]",
+            "Output": "Product.Brand",
+            "Assign": true,
+            "Condition": "Brands.Valid==true",
+            "Parameters": {
+              "Table": "Brand"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Types.Clean",
+            "Output": "BrandsDefault",
+            "Assign": true,
+            "Condition": "Brands.Length == -1",
+            "Parameters": {
+              "Pattern": "^\\s*(\\S+)(?=\\s|$)",
+              "Options": "first,ignorecase"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "Brands.Clean",
+            "Output": "Product.Line",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "E": {
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.Gender",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": {
+              "Table": "Gender"
+            }
+          }
+        ],
+        "Trace": false
+      },
+      "F": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.Size",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "G": {
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.Units",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": {
+              "Table": "Unit"
+            }
+          }
+        ],
+        "Trace": false
+      },
+      "I": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Price",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "J": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Quantity",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "K": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Incomming",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "L": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.COO",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      }
+    }
+  },
+  "FileStructure": {
+    "DataStartRowIndex": 2,
+    "ExpectedColumnCount": 7,
+    "HeaderRowIndex": 1,
+    "Detection": {
+      "FileNamePatterns": [
+        "chk*.xls*"
+      ]
+    }
+  },
+  "SubtitleHandling": null
+}

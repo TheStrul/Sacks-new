@@ -1,0 +1,225 @@
+{
+  "Name": "HAND",
+  "Currency": "USD",
+  "ParserConfig": {
+    "Settings": {
+      "StopOnFirstMatchPerColumn": false,
+      "DefaultCulture": "en-US",
+      "PreferFirstAssignment": true
+    },
+    "ColumnRules": {
+      "A": {
+        "Actions": [
+          {
+            "Op": "Split",
+            "Input": "Text",
+            "Output": "SplitText",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Delimiter": ":"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "SplitText[0]",
+            "Output": "Product.Type",
+            "Assign": true,
+            "Condition": "SplitText.Length == 3",
+            "Parameters": {
+              "Table": "Type"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "SplitText[1]",
+            "Output": "Product.Brand",
+            "Assign": true,
+            "Condition": "SplitText.Length == 3",
+            "Parameters": {
+              "Table": "Brand"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "SplitText[2]",
+            "Output": "Offer.Ref",
+            "Assign": true,
+            "Condition": "SplitText.Length == 3",
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "B": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Ref",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "C": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.EAN",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "E": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Description",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          },
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "Parenthesis",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "\\((?\u003Csize\u003E[^)]+)\\)",
+              "Options": "first,remove"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Parenthesis",
+            "Output": "Product.Size",
+            "Assign": true,
+            "Condition": "Parenthesis.Valid==true",
+            "Parameters": {
+              "Pattern": "(?\u003Cnum\u003E\\d+(?:\\.\\d+)?)",
+              "Options": "first"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Parenthesis",
+            "Output": "UnitRaw",
+            "Assign": false,
+            "Condition": "Parenthesis.Valid==true",
+            "Parameters": {
+              "Pattern": "(?i)(?\u003Cunit\u003Eml|oz|fl\\s*oz)",
+              "Options": "first,ignorecase"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "UnitRaw",
+            "Output": "Product.Units",
+            "Assign": true,
+            "Condition": "UnitRaw.Valid==true",
+            "Parameters": {
+              "Table": "Unit"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Parenthesis.Clean",
+            "Output": "Concentrations",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Concentration",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Concentrations[0]",
+            "Output": "Product.Concentration",
+            "Assign": true,
+            "Condition": "Concentrations.Valid==true",
+            "Parameters": {
+              "Table": "Concentration"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Parenthesis.Clean",
+            "Output": "Genders",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Gender",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Genders[0]",
+            "Output": "Product.Gender",
+            "Assign": true,
+            "Condition": "Genders.Valid==true",
+            "Parameters": {
+              "Table": "Gender"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "Genders.Clean",
+            "Output": "Product.Line",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": true
+      },
+      "F": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Quantity",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "G": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Price",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      }
+    }
+  },
+  "FileStructure": {
+    "DataStartRowIndex": 2,
+    "ExpectedColumnCount": 7,
+    "HeaderRowIndex": 1,
+    "Detection": {
+      "FileNamePatterns": [
+        "hand*.xls*"
+      ]
+    }
+  },
+  "SubtitleHandling": null
+}

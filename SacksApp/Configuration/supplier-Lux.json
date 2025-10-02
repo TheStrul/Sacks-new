@@ -1,0 +1,235 @@
+{
+  "Name": "Lux",
+  "Currency": "USD",
+  "ParserConfig": {
+    "Settings": {
+      "StopOnFirstMatchPerColumn": false,
+      "DefaultCulture": "en-US",
+      "PreferFirstAssignment": true
+    },
+    "ColumnRules": {
+      "A": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.EAN",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "B": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Description",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          },
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "Sizes",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "(?i)(?\u003Csize\u003E\\b\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\s*oz|g|gram)\\b)",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Sizes[0]",
+            "Output": "Product.Size",
+            "Assign": true,
+            "Condition": "Sizes.Valid==true",
+            "Parameters": {
+              "Pattern": "(?i)(?\u003Cnum\u003E\\d+(?:[.,]\\d+)?)(?=\\s*(?:ml|oz|fl\\soz|g|gram)\\b)",
+              "Options": "first"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Sizes[0]",
+            "Output": "UnitRaw",
+            "Assign": false,
+            "Condition": "Sizes.Valid==true",
+            "Parameters": {
+              "Pattern": "(?i)\\b(?\u003Cunit\u003Eml|oz|fl\\soz|g|gram)\\b",
+              "Options": "first"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "UnitRaw",
+            "Output": "Product.Units",
+            "Assign": true,
+            "Condition": "UnitRaw.Valid==true",
+            "Parameters": {
+              "Table": "Unit"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Sizes.Clean",
+            "Output": "Concentrations",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Concentration",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Concentrations[0]",
+            "Output": "Product.Concentration",
+            "Assign": true,
+            "Condition": "Concentrations.Valid==true",
+            "Parameters": {
+              "Table": "Concentration"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Concentrations.Clean",
+            "Output": "Genders",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Gender",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Genders[0]",
+            "Output": "Product.Gender",
+            "Assign": true,
+            "Condition": "Genders.Valid==true",
+            "Parameters": {
+              "Table": "Gender"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Genders.Clean",
+            "Output": "Brands",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Brand",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Brands[0]",
+            "Output": "Product.Brand",
+            "Assign": true,
+            "Condition": "Brands.Valid==true",
+            "Parameters": {
+              "Table": "Brand"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Brands.Clean",
+            "Output": "BrandsDefault",
+            "Assign": false,
+            "Condition": "Brands.Valid==false",
+            "Parameters": {
+              "Pattern": "^\\s*(\\S+)(?=\\s|$)",
+              "Options": "first,ignorecase"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "BrandsDefault",
+            "Output": "Product.Brand",
+            "Assign": true,
+            "Condition": "Brands.Valid==false",
+            "Parameters": {
+              "Table": "Brand"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Brands.Clean",
+            "Output": "Types",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Type",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Types[0]",
+            "Output": "Product.Type",
+            "Assign": true,
+            "Condition": "Types.Valid==true",
+            "Parameters": {
+              "Table": "Type"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "Types.Clean",
+            "Output": "Product.Line",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": true
+      },
+      "C": {
+        "Actions": [
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "Offer.Quantity",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "^\\s*(?\u003Cnum\u003E\\d+)\\s*\\\\u002B?\\s*$",
+              "Options": "first"
+            }
+          }
+        ],
+        "Trace": false
+      },
+      "D": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Price",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      }
+    }
+  },
+  "FileStructure": {
+    "DataStartRowIndex": 5,
+    "ExpectedColumnCount": 4,
+    "HeaderRowIndex": 1,
+    "Detection": {
+      "FileNamePatterns": [
+        "lux*.xls*"
+      ]
+    }
+  },
+  "SubtitleHandling": null
+}

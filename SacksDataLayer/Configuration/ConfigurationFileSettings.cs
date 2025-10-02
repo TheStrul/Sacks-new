@@ -3,16 +3,21 @@ using System.ComponentModel.DataAnnotations;
 namespace SacksDataLayer.Configuration
 {
     /// <summary>
-    /// Configuration settings for external configuration file paths
+    /// Configuration settings for external configuration path(s).
     /// </summary>
     public class ConfigurationFileSettings
     {
         /// <summary>
-        /// Path to the supplier formats configuration file
+        /// Folder name (relative to base directory) where configuration files reside, e.g., "Configuration"
         /// </summary>
         [Required]
-        public string SupplierFormats { get; set; } = string.Empty;
+        public string ConfigurationFolder { get; set; } = "Configuration";
 
+        /// <summary>
+        /// Mandatory main file name inside the configuration folder, e.g., "supplier-formats.json"
+        /// </summary>
+        [Required]
+        public string MainFileName { get; set; } = "supplier-formats.json";
     }
 
     /// <summary>

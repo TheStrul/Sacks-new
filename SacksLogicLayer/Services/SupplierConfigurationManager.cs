@@ -123,25 +123,32 @@ namespace SacksLogicLayer.Services
                 throw new InvalidOperationException("ConfigurationFiles section missing in appsettings.json");
             }
 
-            string fileName = configFiles.SupplierFormats;
-            string baseFolder = AppContext.BaseDirectory;
-            string fullPath = Path.Combine(baseFolder, fileName);
-            for (int i = 0; i < 5; i++)
+            var baseFolder = AppContext.BaseDirectory;
+            string fileNmae = Path.Combine(configFiles.ConfigurationFolder, configFiles.MainFileName);
+            string? foundPath = null;
+
+            // climb a few levels to locate the configuration folder
+            for (int i = 0; i < 6; i++)
             {
-                fullPath = Path.Combine(baseFolder, fileName);
+                string fullPath = Path.Combine(baseFolder, fileNmae);
+
                 if (File.Exists(fullPath))
                 {
+                    foundPath = fullPath;
                     break;
                 }
-                else
-                {
-                    baseFolder = Directory.GetParent(baseFolder)!.FullName;
-                }
-                
+                var dir = Directory.GetParent(baseFolder);
+                if (dir == null) break;
+                baseFolder = dir.FullName;
             }
-            // Configuration is loaded in constructor, no need to reload from file
-            // Load configuration synchronously from loader (loader is async)
-            _suppliersConfiguration = await loader.LoadAsync(fullPath);
+
+            if (foundPath == null)
+            {
+                throw new FileNotFoundException($"Could not locate configuration folder '{configFiles.ConfigurationFolder}' with required main file '{configFiles.MainFileName}' starting from '{baseFolder}'");
+            }
+
+            // Load configuration from loader (supports file or directory)
+            _suppliersConfiguration = await loader.LoadAllFromFolderAsync(foundPath);
         }
     }
 }

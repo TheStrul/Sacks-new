@@ -1,0 +1,172 @@
+{
+  "Name": "MB",
+  "Currency": "USD",
+  "ParserConfig": {
+    "Settings": {
+      "StopOnFirstMatchPerColumn": false,
+      "DefaultCulture": "en-US",
+      "PreferFirstAssignment": true
+    },
+    "ColumnRules": {
+      "A": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Description",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          },
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "RemovedOz",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "(?i)\\b\\d+(?:[.,]\\d+)?\\s*oz\\s*/\\s*",
+              "Options": "first,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "RemovedOz.Clean",
+            "Output": "Sizes",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "(?i)(?\u003Csize\u003E\\b\\d+(?:[.,]\\d+)?\\s*ml\\b)",
+              "Options": "first,ignorecase"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Sizes[0]",
+            "Output": "Product.Size",
+            "Assign": true,
+            "Condition": "Sizes.Valid==true",
+            "Parameters": {
+              "Pattern": "(?i)(?\u003Cnum\u003E\\d+(?:[.,]\\d+)?)(?=\\s*ml\\b)",
+              "Options": "first"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Sizes[0]",
+            "Output": "UnitRaw",
+            "Assign": false,
+            "Condition": "Sizes.Valid==true",
+            "Parameters": {
+              "Pattern": "(?i)\\b(?\u003Cunit\u003Eml)\\b",
+              "Options": "first"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "UnitRaw",
+            "Output": "Product.Units",
+            "Assign": true,
+            "Condition": "UnitRaw.Valid==true",
+            "Parameters": {
+              "Table": "Unit"
+            }
+          }
+        ],
+        "Trace": true
+      },
+      "B": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Price",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "C": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Quantity",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "D": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.EAN",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      }
+    }
+  },
+  "FileStructure": {
+    "DataStartRowIndex": 5,
+    "ExpectedColumnCount": 4,
+    "HeaderRowIndex": 1,
+    "Detection": {
+      "FileNamePatterns": [
+        "MB*.xls*"
+      ]
+    }
+  },
+  "SubtitleHandling": {
+    "Enabled": true,
+    "Action": "parse",
+    "DetectionRules": [
+      {
+        "Name": "Brand",
+        "Description": "Rows with only a single non-empty cell (column A) denote a brand header or type header",
+        "DetectionMethod": "columnCount",
+        "ExpectedColumnCount": 1,
+        "ApplyToSubsequentRows": true,
+        "ValidationPatterns": []
+      }
+    ],
+    "FallbackAction": "skip",
+    "Transforms": [
+      {
+        "SourceKey": "Brand",
+        "Mode": "ignoreEquals",
+        "Pattern": "COSMETICS",
+        "IgnoreCase": true
+      },
+      {
+        "SourceKey": "Brand",
+        "Mode": "removePrefix",
+        "Pattern": "COSMETICS",
+        "IgnoreCase": true
+      }
+    ],
+    "Assignments": [
+      {
+        "SourceKey": "Brand",
+        "TargetProperty": "Product.Brand",
+        "LookupTable": "Brand",
+        "Overwrite": true
+      },
+      {
+        "SourceKey": "Type",
+        "TargetProperty": "Product.Type",
+        "LookupTable": "Type",
+        "Overwrite": false
+      }
+    ]
+  }
+}

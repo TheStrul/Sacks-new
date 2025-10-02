@@ -19,8 +19,13 @@ namespace SacksApp.Utils
 
             if (configFiles != null)
             {
-                if (!string.IsNullOrEmpty(configFiles.SupplierFormats))
-                    configBuilder.AddJsonFile(configFiles.SupplierFormats, optional: true, reloadOnChange: false);
+                var folder = configFiles.ConfigurationFolder;
+                var main = configFiles.MainFileName;
+                if (!string.IsNullOrWhiteSpace(folder) && !string.IsNullOrWhiteSpace(main))
+                {
+                    var relPath = System.IO.Path.Combine(folder, main).Replace("\\", "/");
+                    configBuilder.AddJsonFile(relPath, optional: true, reloadOnChange: false);
+                }
             }
 
             return configBuilder.Build();
