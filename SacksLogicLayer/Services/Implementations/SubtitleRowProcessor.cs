@@ -78,6 +78,9 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
                     {
                         var extractedData = ExtractSubtitleDataAsync(row, detectedRule, cancellationToken);
                         
+                        // Apply configured transforms before persisting current subtitle state
+                        ApplySubtitleTransforms(extractedData, subtitleConfig);
+
                         // Update current subtitle data
                         foreach (var kvp in extractedData)
                         {
@@ -96,7 +99,6 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
 
                     if (currentSubtitleData.Any())
                     {
-                        // Apply subtitle data to this row
                         row.SubtitleData = new Dictionary<string, object?>(currentSubtitleData);
                         
                         _logger?.LogTrace("Applied subtitle data to row {RowIndex}: {SubtitleData}", 
@@ -105,6 +107,61 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
                 }
             }
             return fileData;
+        }
+
+        private static void ApplySubtitleTransforms(Dictionary<string, object?> extractedData, SubtitleRowHandlingConfiguration subtitleConfig)
+        {
+            if (extractedData.Count == 0) return;
+            var transforms = subtitleConfig.Transforms;
+            if (transforms == null || transforms.Count == 0) return;
+
+            foreach (var tr in transforms)
+            {
+                if (tr == null || string.IsNullOrWhiteSpace(tr.SourceKey) || string.IsNullOrWhiteSpace(tr.Mode)) continue;
+                var key = tr.SourceKey;
+                if (!extractedData.TryGetValue(key, out var valObj) || valObj is null) continue;
+                var value = valObj.ToString() ?? string.Empty;
+                var comp = tr.IgnoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+                switch (tr.Mode.ToLowerInvariant())
+                {
+                    case "ignoreequals":
+                        if (!string.IsNullOrWhiteSpace(tr.Pattern) && string.Equals(value.Trim(), tr.Pattern.Trim(), comp))
+                        {
+                            // remove the key (effectively clears current Brand)
+                            extractedData.Remove(key);
+                        }
+                        break;
+                    case "removeprefix":
+                        if (!string.IsNullOrEmpty(tr.Pattern))
+                        {
+                            var prefix = tr.Pattern;
+                            if (value.StartsWith(prefix, comp))
+                            {
+                                var rest = value.Substring(prefix.Length).TrimStart();
+                                // If replacement provided, prepend it; otherwise just use rest
+                                var newVal = string.IsNullOrEmpty(tr.Replacement) ? rest : (tr.Replacement + rest);
+                                extractedData[key] = newVal;
+                            }
+                        }
+                        break;
+                    case "regexreplace":
+                        if (!string.IsNullOrWhiteSpace(tr.Pattern))
+                        {
+                            var opts = tr.IgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
+                            var replaced = Regex.Replace(value, tr.Pattern, tr.Replacement ?? string.Empty, opts).Trim();
+                            if (string.IsNullOrEmpty(replaced))
+                            {
+                                extractedData.Remove(key);
+                            }
+                            else
+                            {
+                                extractedData[key] = replaced;
+                            }
+                        }
+                        break;
+                }
+            }
         }
 
         /// <summary>
@@ -136,22 +193,16 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
             return null;
         }
 
-        /// <summary>
-        /// Detects subtitle row by column count
-        /// </summary>
         private bool DetectByColumnCount(RowData row, SubtitleDetectionRule rule)
         {
             var nonEmptyColumns = row.Cells.Values.Count(v => !string.IsNullOrWhiteSpace(v));
             return nonEmptyColumns == rule.ExpectedColumnCount;
         }
 
-        /// <summary>
-        /// Detects subtitle row by pattern matching
-        /// </summary>
         private bool DetectByPattern(RowData row, SubtitleDetectionRule rule)
         {
             if (!rule.ValidationPatterns.Any())
-                return true; // No patterns means any content is valid
+                return true;
 
             var rowContent = string.Join(" ", row.Cells.Values.Where(v => !string.IsNullOrWhiteSpace(v)));
             
@@ -170,9 +221,6 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
             });
         }
 
-        /// <summary>
-        /// Extracts subtitle data from a detected subtitle row
-        /// </summary>
         private Dictionary<string, object?> ExtractSubtitleDataAsync(
             RowData row, 
             SubtitleDetectionRule rule, 
@@ -180,17 +228,13 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
         {           
             var extractedData = new Dictionary<string, object?>();
 
-            // For now, implement basic extraction based on rule name
-            // This can be extended based on specific business requirements
-                // Generic extraction - use rule name as key but normalize it to a consistent dynamic property key
-                var extractedValue = row.Cells.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim();
-                if (!string.IsNullOrEmpty(extractedValue))
-                {
-                    // Normalize the rule name into TitleCase without separators
-                    var normalizedKey = Regex.Replace(System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(rule.Name.Trim().ToLowerInvariant()), @"[\s_\-]+", string.Empty);
-                    extractedData[normalizedKey] = extractedValue;
-                    _logger?.LogDebug("Extracted subtitle property '{Key}': {Value}", normalizedKey, extractedValue);
-                }
+            var extractedValue = row.Cells.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim();
+            if (!string.IsNullOrEmpty(extractedValue))
+            {
+                var normalizedKey = Regex.Replace(System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(rule.Name.Trim().ToLowerInvariant()), @"[\s_\-]+", string.Empty);
+                extractedData[normalizedKey] = extractedValue;
+                _logger?.LogDebug("Extracted subtitle property '{Key}': {Value}", normalizedKey, extractedValue);
+            }
 
             return extractedData;
         }
@@ -204,7 +248,7 @@ namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
         {
             if (subtitleConfig?.Enabled != true)
             {
-                return rows; // No filtering if subtitle handling is disabled
+                return rows;
             }
 
             return rows.Where(row => !row.IsSubtitleRow);

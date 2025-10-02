@@ -203,9 +203,10 @@ namespace SacksApp
             resultsGrid.AllowUserToDeleteRows = false;
             resultsGrid.AllowUserToOrderColumns = true;
             resultsGrid.AllowUserToResizeRows = false;
+            resultsGrid.AllowUserToResizeColumns = true;
             dataGridViewCellStyle1.BackColor = Color.FromArgb(224, 224, 224);
             resultsGrid.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
-            resultsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.AllCells;
+            resultsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
             resultsGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.DisplayedCells;
             resultsGrid.BackgroundColor = SystemColors.Window;
             resultsGrid.BorderStyle = BorderStyle.Fixed3D;

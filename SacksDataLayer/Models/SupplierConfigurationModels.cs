@@ -138,6 +138,48 @@ namespace SacksDataLayer.FileProcessing.Configuration
                             if (rule.DetectionMethod != "columnCount" && rule.DetectionMethod != "pattern" && rule.DetectionMethod != "hybrid")
                                 errors.Add($"Supplier '{s.Name}' subtitle detection rule '{rule.Name}' has invalid detectionMethod '{rule.DetectionMethod}'");
                         }
+
+                        // Validate optional assignments
+                        if (sh.Assignments != null)
+                        {
+                            for (int a = 0; a < sh.Assignments.Count; a++)
+                            {
+                                var m = sh.Assignments[a];
+                                if (m == null)
+                                {
+                                    errors.Add($"Supplier '{s.Name}' subtitle assignment at index {a} is null");
+                                    continue;
+                                }
+                                if (string.IsNullOrWhiteSpace(m.SourceKey))
+                                    errors.Add($"Supplier '{s.Name}' subtitle assignment[{a}] missing SourceKey");
+                                if (string.IsNullOrWhiteSpace(m.TargetProperty))
+                                    errors.Add($"Supplier '{s.Name}' subtitle assignment[{a}] missing TargetProperty");
+                                // If LookupTable specified ensure present in merged lookups
+                                if (!string.IsNullOrWhiteSpace(m.LookupTable))
+                                {
+                                    var available = s.ParserConfig?.Lookups ?? new Dictionary<string, Dictionary<string,string>>();
+                                    if (!available.ContainsKey(m.LookupTable))
+                                        errors.Add($"Supplier '{s.Name}' subtitle assignment[{a}] references unknown lookup table '{m.LookupTable}'");
+                                }
+                            }
+                        }
+
+                        // Validate transforms if present
+                        if (sh.Transforms != null)
+                        {
+                            foreach (var tr in sh.Transforms)
+                            {
+                                if (tr == null) { errors.Add($"Supplier '{s.Name}' has a null subtitle transform"); continue; }
+                                if (string.IsNullOrWhiteSpace(tr.SourceKey)) errors.Add($"Supplier '{s.Name}' subtitle transform missing SourceKey");
+                                if (string.IsNullOrWhiteSpace(tr.Mode)) errors.Add($"Supplier '{s.Name}' subtitle transform missing Mode");
+                                if (string.Equals(tr.Mode, "regexreplace", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(tr.Pattern))
+                                    errors.Add($"Supplier '{s.Name}' subtitle transform regexReplace missing Pattern");
+                                if (string.Equals(tr.Mode, "regexreplace", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    try { _ = new Regex(tr.Pattern!); } catch (Exception ex) { errors.Add($"Supplier '{s.Name}' subtitle transform invalid regex: {ex.Message}"); }
+                                }
+                            }
+                        }
                     }
 
                     // ParserConfig light validation
@@ -332,6 +374,35 @@ namespace SacksDataLayer.FileProcessing.Configuration
         public List<SubtitleDetectionRule> DetectionRules { get; set; } = new();
 
        public string FallbackAction { get; set; } = "skip"; // "skip" or "ignore"
+
+       // Generic assignments to apply extracted subtitle values to properties
+       public List<SubtitleAssignmentMapping> Assignments { get; set; } = new();
+
+       // Optional normalization/transformation rules applied to subtitle values before assignment
+       public List<SubtitleTransformRule> Transforms { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Transformation applied to a subtitle value before mapping
+    /// </summary>
+    public class SubtitleTransformRule
+    {
+        public string SourceKey { get; set; } = string.Empty; // e.g., "Brand"
+        public string Mode { get; set; } = "regexReplace";   // ignoreEquals | regexReplace | removePrefix
+        public string? Pattern { get; set; }                  // required for regexReplace/removePrefix
+        public string? Replacement { get; set; } = string.Empty; // used for regexReplace/removePrefix
+        public bool IgnoreCase { get; set; } = true;
+    }
+
+    /// <summary>
+    /// Mapping from extracted subtitle key to a target property, with optional lookup normalization
+    /// </summary>
+    public class SubtitleAssignmentMapping
+    {
+        public string SourceKey { get; set; } = string.Empty; // e.g., "Brand", "Type"
+        public string TargetProperty { get; set; } = string.Empty; // e.g., "Product.Brand"
+        public string? LookupTable { get; set; } // e.g., "Brand", "Type"
+        public bool Overwrite { get; set; } = false; // default: only set when missing
     }
 
     /// <summary>

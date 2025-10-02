@@ -3,6 +3,136 @@
   "FullPath": "C:\\Users\\avist\\source\\repos\\GitHubLocal\\Customers\\Sacks-New\\SacksApp\\Configuration/supplier-formats.json",
   "Suppliers": [
     {
+      "Name": "MB",
+      "Currency": "USD",
+      "ParserConfig": {
+        "Settings": {
+          "StopOnFirstMatchPerColumn": false,
+          "DefaultCulture": "en-US",
+          "PreferFirstAssignment": true
+        },
+        "ColumnRules": {
+          "A": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Description",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "RemovedOz",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)\\b\\d+(?:[.,]\\d+)?\\s*oz\\s*/\\s*",
+                  "Options": "all,ignorecase,remove"
+                }
+              }
+
+            ],
+            "Trace": true
+          },
+          "B": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Price",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "C": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Quantity",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "D": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.EAN",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          }
+        }
+      },
+      "FileStructure": {
+        "DataStartRowIndex": 5,
+        "ExpectedColumnCount": 4,
+        "HeaderRowIndex": 1,
+        "Detection": {
+          "FileNamePatterns": [
+            "MB*.xls*"
+          ]
+        }
+      },
+      "SubtitleHandling": {
+        "Enabled": true,
+        "Action": "parse",
+        "DetectionRules": [
+          {
+            "Name": "Brand",
+            "Description": "Rows with only a single non-empty cell (column A) denote a brand header or type header",
+            "DetectionMethod": "columnCount",
+            "ExpectedColumnCount": 1,
+            "ApplyToSubsequentRows": true,
+            "ValidationPatterns": []
+          }
+        ],
+        "FallbackAction": "skip",
+        "Transforms": [
+          {
+            "SourceKey": "Brand",
+            "Mode": "ignoreEquals",
+            "Pattern": "COSMETICS",
+            "IgnoreCase": true
+          },
+          {
+            "SourceKey": "Brand",
+            "Mode": "removePrefix",
+            "Pattern": "COSMETICS",
+            "IgnoreCase": true
+          }
+        ],
+        "Assignments": [
+          {
+            "SourceKey": "Brand",
+            "TargetProperty": "Product.Brand",
+            "LookupTable": "Brand",
+            "Overwrite": true
+          },
+          {
+            "SourceKey": "Type",
+            "TargetProperty": "Product.Type",
+            "LookupTable": "Type",
+            "Overwrite": false
+          }
+        ]
+      }
+    },
+    {
       "Name": "Lux",
       "Currency": "USD",
       "ParserConfig": {
@@ -18,7 +148,7 @@
                 "Op": "Assign",
                 "Input": "Text",
                 "Output": "Product.EAN",
-                "Assign": false,
+                "Assign": true,
                 "Condition": null,
                 "Parameters": null
               }
@@ -31,24 +161,56 @@
                 "Op": "Assign",
                 "Input": "Text",
                 "Output": "Offer.Description",
-                "Assign": false,
+                "Assign": true,
                 "Condition": null,
                 "Parameters": null
               },
               {
                 "Op": "Find",
                 "Input": "Text",
-                "Output": "SizeAndUnits",
+                "Output": "Sizes",
                 "Assign": false,
                 "Condition": null,
                 "Parameters": {
-                  "Pattern": "@(?i)(?<num>\\d+(?:[.,]\\d+)?)[\\s-](?<unit>ml|oz|fl.?\\soz|g|kg)\\b\")",
-                  "Options": "first,remove"
+                  "Pattern": "(?i)(?\u003Csize\u003E\\b\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\s*oz|g|gram)\\b)",
+                  "Options": "all,ignorecase,remove"
                 }
               },
               {
                 "Op": "Find",
-                "Input": "Text",
+                "Input": "Sizes[0]",
+                "Output": "Product.Size",
+                "Assign": true,
+                "Condition": "Sizes.Valid==true",
+                "Parameters": {
+                  "Pattern": "(?i)(?\u003Cnum\u003E\\d+(?:[.,]\\d+)?)(?=\\s*(?:ml|oz|fl\\soz|g|gram)\\b)",
+                  "Options": "first"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Sizes[0]",
+                "Output": "UnitRaw",
+                "Assign": false,
+                "Condition": "Sizes.Valid==true",
+                "Parameters": {
+                  "Pattern": "(?i)\\b(?\u003Cunit\u003Eml|oz|fl\\soz|g|gram)\\b",
+                  "Options": "first"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "UnitRaw",
+                "Output": "Product.Units",
+                "Assign": true,
+                "Condition": "UnitRaw.Valid==true",
+                "Parameters": {
+                  "Table": "Unit"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Sizes.Clean",
                 "Output": "Concentrations",
                 "Assign": false,
                 "Condition": null,
@@ -116,7 +278,7 @@
                 "Assign": false,
                 "Condition": "Brands.Valid==false",
                 "Parameters": {
-                  "Pattern": "^\\s*(\\S\u002B)",
+                  "Pattern": "^\\s*(\\S+)(?=\\s|$)",
                   "Options": "first,ignorecase"
                 }
               },
@@ -152,40 +314,8 @@
                 }
               },
               {
-                "Op": "Find",
-                "Input": "Types.Clean",
-                "Output": "SizeAndUnits",
-                "Assign": false,
-                "Condition": null,
-                "Parameters": {
-                  "Pattern": "@(?i)(?<num>\\d+(?:[.,]\\d+)?)[\\s-](?<unit>ml|oz|fl.?\\soz|g|kg)\\b\")",
-                  "Options": "first,remove"
-                }
-              },
-              {
-                "Op": "Find",
-                "Input": "Types.Clean",
-                "Output": "UnitRaw",
-                "Assign": false,
-                "Condition": null,
-                "Parameters": {
-                  "Pattern": "(?i)(?\u003Cunit\u003Eml|oz|fl\\s*oz)",
-                  "Options": "first,ignorecase,remove"
-                }
-              },
-              {
-                "Op": "Map",
-                "Input": "UnitRaw",
-                "Output": "Product.Units",
-                "Assign": true,
-                "Condition": "UnitRaw.Valid==true",
-                "Parameters": {
-                  "Table": "Unit"
-                }
-              },
-              {
                 "Op": "Assign",
-                "Input": "UnitRaw.Clean",
+                "Input": "Types.Clean",
                 "Output": "Product.Line",
                 "Assign": true,
                 "Condition": null,
@@ -197,12 +327,15 @@
           "C": {
             "Actions": [
               {
-                "Op": "Assign",
+                "Op": "Find",
                 "Input": "Text",
                 "Output": "Offer.Quantity",
                 "Assign": true,
                 "Condition": null,
-                "Parameters": null
+                "Parameters": {
+                  "Pattern": "^\\s*(?\u003Cnum\u003E\\d+)\\s*\\\\u002B?\\s*$",
+                  "Options": "first"
+                }
               }
             ],
             "Trace": false
@@ -312,7 +445,7 @@
                 "Assign": false,
                 "Condition": null,
                 "Parameters": {
-                  "Pattern": "(?i)(?\u003Csize\u003E\\d\u002B(?:\\.\\d\u002B)?\\s*(?:ml|oz|fl\\s*oz))",
+                  "Pattern": "(?i)(?\u003Csize\u003E\\d+(?:\\.\\d+)?\\s*(?:ml|oz|fl\\s*oz))",
                   "Options": "all,ignorecase,remove"
                 }
               },
@@ -389,7 +522,7 @@
               },
               {
                 "Op": "Find",
-                "Input": "Genders.Clean",
+                "Input": "Concentrations.Clean",
                 "Output": "Types",
                 "Assign": false,
                 "Condition": null,
@@ -423,7 +556,7 @@
                 "Op": "Assign",
                 "Input": "FinalText.Clean",
                 "Output": "Product.Line",
-                "Assign": false,
+                "Assign": true,
                 "Condition": null,
                 "Parameters": null
               }
@@ -580,7 +713,7 @@
                 "Assign": false,
                 "Condition": null,
                 "Parameters": {
-                  "Pattern": "\\((?\u003Csize\u003E[^)]\u002B)\\)",
+                  "Pattern": "\\((?\u003Csize\u003E[^)]+)\\)",
                   "Options": "first,remove"
                 }
               },
@@ -591,7 +724,7 @@
                 "Assign": true,
                 "Condition": "Parenthesis.Valid==true",
                 "Parameters": {
-                  "Pattern": "(?\u003Cnum\u003E\\d\u002B(?:\\.\\d\u002B)?)",
+                  "Pattern": "(?\u003Cnum\u003E\\d+(?:\\.\\d+)?)",
                   "Options": "first"
                 }
               },
@@ -639,7 +772,7 @@
               },
               {
                 "Op": "Find",
-                "Input": "Concentrations.Clean",
+                "Input": "Parenthesis.Clean",
                 "Output": "Genders",
                 "Assign": false,
                 "Condition": null,
@@ -846,7 +979,7 @@
                 "Assign": true,
                 "Condition": "Brands.Length == -1",
                 "Parameters": {
-                  "Pattern": "^\\s*(\\S\u002B)",
+                  "Pattern": "^\\s*(\\S+)(?=\\s|$)",
                   "Options": "first,ignorecase"
                 }
               },
@@ -1212,7 +1345,28 @@
       "lolita lompicka": "Lolita Lompicka",
       "nylaa": "Nylaa",
       "rasasi": "Rasasi",
-      "rave": "Rave"
+      "rave": "Rave",
+      "swiss arabian": "Swiss Arabian",
+      "michael kors": "Michael Kors",
+      "missoni": "Missoni",
+      "chloe": "Chloe",
+      "emper": "Emper",
+      "anfar": "Anfar",
+      "theirry mugler": "Theirry Mugler",
+      "nars": "Nars",
+      "clinique": "Clinique",
+      "marc jacobs": "Marc Jacobs",
+      "alfred sung": "Alfred Sung",
+      "green tea": "Green Tea",
+      "drakkar noir": "Drakkar Noir",
+      "paloma picasso": "Paloma Picasso",
+      "rochas": "Rochas",
+      "cartier": "Cartier",
+      "creed": "Creed",
+      "tiffany \u0026 co": "Tiffany \u0026 Co",
+      "tiffany": "Tiffany",
+      "elvis presley": "Elvis Presley",
+      "bond no 9": "Bond No 9"
     },
     "Type": {
       "deo stick": "Deodorant",
@@ -1222,6 +1376,7 @@
       "sets": "Set",
       "gift": "Set",
       "gift set": "Set",
+      "gift sets": "Set",
       "giftset": "Set",
       "gift-set": "Set",
       "giftbox": "Set",
@@ -1232,6 +1387,7 @@
       "tube": "Tube",
       "mini": "Mini",
       "mini set": "Mini",
+      "gift sets mini": "Mini",
       "sample": "Sample",
       "samples": "Sample",
       "sample size": "Sample",

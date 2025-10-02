@@ -31,27 +31,17 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    /// <summary>
-    /// Determines if this normalizer can handle the given file
-    /// </summary>
     public bool CanHandle(string fileName, IEnumerable<SacksAIPlatform.InfrastructuresLayer.FileProcessing.RowData> firstFewRows)
     {
-        // For now, use simple supplier name matching or file pattern detection
-        // This can be enhanced with more sophisticated detection logic
-        
         if (string.IsNullOrEmpty(fileName))
             return false;
 
-        // Check if filename contains supplier identifier
         var fileNameLower = Path.GetFileNameWithoutExtension(fileName).ToLowerInvariant();
         var supplierNameLower = _supplierConfiguration.Name.ToLowerInvariant();
         
         return fileNameLower.Contains(supplierNameLower);
     }
 
-    /// <summary>
-    /// Normalizes supplier data into ProductOffer objects
-    /// </summary>
     public async Task NormalizeAsync(ProcessingContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -60,7 +50,6 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
 
         _logger.LogInformation("Starting rule-based normalization for supplier: {SupplierName}", SupplierName);
 
-        // Initialize supplier offer if not exists
         if (context.ProcessingResult.SupplierOffer == null)
         {
             context.ProcessingResult.SupplierOffer = new Offer
@@ -76,21 +65,18 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
         var validOffers = 0;
         var skippedRows = 0;
 
-        // Process each data row
         foreach (var row in context.FileData.DataRows)
         {
             try
             {
                 processedRows++;
 
-                // Skip empty rows
                 if (!row.HasData)
                 {
                     skippedRows++;
                     continue;
                 }
 
-                // Skip subtitle rows
                 if (row.IsSubtitleRow)
                 {
                     _logger.LogDebug("Skipping subtitle row {RowIndex}", row.Index);
@@ -98,18 +84,17 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                     continue;
                 }
 
-                // Convert SacksDataLayer.RowData to ParsingEngine.RowData
                 var parsingEngineRow = new ParsingEngine.RowData(row.Cells);
 
-                // Parse row using ParsingEngine
                 var propertyBag = _parserEngine.Parse(parsingEngineRow);
 
-                // Validate PropertyBag
+                // Apply subtitle-derived defaults using config-driven assignments
+                ApplySubtitleAssignments(row, propertyBag);
+
                 if (IsValidPropertyBag(propertyBag))
                 {
-                // Convert to ProductOffer
-                var productOffer = ConvertToProductOfferAnnex(propertyBag, context);                   
-                 if (productOffer != null)
+                    var productOffer = ConvertToProductOfferAnnex(propertyBag, context);
+                    if (productOffer != null)
                     {
                         context.ProcessingResult.SupplierOffer.OfferProducts.Add(productOffer);
                         validOffers++;
@@ -137,7 +122,6 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
             }
         }
 
-        // Update statistics
         context.ProcessingResult.Statistics.TotalDataRows = processedRows;
         context.ProcessingResult.Statistics.OfferProductsCreated = validOffers;
         context.ProcessingResult.Statistics.ProductsSkipped = skippedRows;
@@ -145,20 +129,68 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
         _logger.LogInformation("Normalization completed. Processed: {ProcessedRows}, Valid offers: {ValidOffers}, Skipped: {SkippedRows}", 
             processedRows, validOffers, skippedRows);
 
-        // Satisfy async interface requirement
         await Task.CompletedTask;
     }
 
-    /// <summary>
-    /// Validates if PropertyBag contains sufficient data for creating a ProductOffer
-    /// </summary>
+    private void ApplySubtitleAssignments(SacksAIPlatform.InfrastructuresLayer.FileProcessing.RowData row, PropertyBag bag)
+    {
+        if (row?.SubtitleData == null || row.SubtitleData.Count == 0)
+            return;
+
+        var sh = _supplierConfiguration.SubtitleHandling;
+        var assignments = sh?.Assignments ?? new List<SubtitleAssignmentMapping>();
+        if (assignments.Count == 0)
+        {
+            return; // config has no assignments; nothing to apply
+        }
+
+        foreach (var map in assignments)
+        {
+            if (map == null) continue;
+            if (!row.SubtitleData.TryGetValue(map.SourceKey, out var srcObj))
+            {
+                // Try case-insensitive lookup
+                var kv = row.SubtitleData.FirstOrDefault(k => string.Equals(k.Key, map.SourceKey, StringComparison.OrdinalIgnoreCase));
+                srcObj = kv.Value;
+            }
+            var src = srcObj?.ToString();
+            if (string.IsNullOrWhiteSpace(src)) continue;
+
+            string valueToAssign = src;
+
+            // Optional lookup normalization
+            if (!string.IsNullOrWhiteSpace(map.LookupTable))
+            {
+                var lookups = _supplierConfiguration.ParserConfig?.Lookups ?? new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+                if (lookups.TryGetValue(map.LookupTable, out var table) && table != null)
+                {
+                    // case-insensitive match on key
+                    var match = table.FirstOrDefault(e => string.Equals(e.Key, src, StringComparison.OrdinalIgnoreCase));
+                    if (!string.IsNullOrEmpty(match.Key))
+                    {
+                        valueToAssign = match.Value ?? string.Empty;
+                    }
+                    else
+                    {
+                        // if lookup provided but no match, skip this assignment to avoid mis-assignments
+                        continue;
+                    }
+                }
+            }
+
+            // Apply to bag if allowed
+            if (map.Overwrite || !bag.Values.TryGetValue(map.TargetProperty, out var existing) || string.IsNullOrWhiteSpace(existing?.ToString()))
+            {
+                bag.Set(map.TargetProperty, valueToAssign, "Subtitle");
+            }
+        }
+    }
+
     private bool IsValidPropertyBag(PropertyBag propertyBag)
     {
-        // Basic validation - ensure we have some extracted properties
         if (propertyBag.Values.Count == 0)
             return false;
 
-        // EAN validation - must have non-empty EAN for product creation
         if (!propertyBag.Values.TryGetValue("Product.EAN", out var eanObj) || 
             eanObj is not string ean || 
             string.IsNullOrWhiteSpace(ean))
@@ -167,25 +199,15 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
             return false;
         }
 
-        // EAN format validation - must be numeric
         if (!System.Text.RegularExpressions.Regex.IsMatch(ean, @"^\d+$"))
         {
             _logger.LogDebug("Skipping row - invalid EAN format: {EAN}", ean);
             return false;
         }
 
-        // TODO: Add more sophisticated validation rules based on business requirements
-        // For example:
-        // - Must have Price or ProductName
-        // - Must have at least N non-empty properties
-        // - Specific required fields based on supplier configuration
-
         return true;
     }
 
-    /// <summary>
-    /// Converts PropertyBag to ProductOffer entity with proper property categorization
-    /// </summary>
     private ProductOffer? ConvertToProductOfferAnnex(PropertyBag propertyBag, ProcessingContext context)
     {
         try
@@ -195,7 +217,6 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                 Product = new Product()
             };
 
-            // Categorize properties from PropertyBag using key patterns
             foreach (var kvp in propertyBag.Values)
             {
                 var key = kvp.Key;
@@ -204,7 +225,6 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                 if (string.IsNullOrWhiteSpace(value?.ToString()))
                     continue;
 
-                // Parse key pattern: Category.PropertyName (e.g., "Offer.Price", "Product.EAN")
                 if (key.Contains('.'))
                 {
                     var parts = key.Split('.', 2);
@@ -237,7 +257,6 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                                 productOffer.Description = value.ToString();
                                 break;
                             default:
-                                // Unknown offer built-in property, treat as dynamic
                                 productOffer.SetOfferProperty(propertyName, value);
                                 break;
                         }
@@ -253,7 +272,6 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                                 productOffer.Product.Name = value.ToString() ?? string.Empty;
                                 break;
                             default:
-                                // Unknown product built-in property, treat as dynamic
                                 productOffer.Product.SetDynamicProperty(propertyName, value);
                                 break;
                         }
@@ -265,7 +283,6 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
 
                 }
 
-                // Serialize the offer properties (Product.DynamicPropertiesJson is computed automatically)
                 productOffer.SerializeOfferProperties();
             }
 
