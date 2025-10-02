@@ -17,10 +17,19 @@
             "Assign": true,
             "Condition": null,
             "Parameters": null
-          },
+          },          
           {
             "Op": "Find",
             "Input": "Text",
+            "Output": "TextNoBrand",
+            "Parameters": {
+              "PatternKey": "Product.Brand",
+              "Options": "first,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "TextNoBrand.Clean",
             "Output": "RemovedOz",
             "Assign": false,
             "Condition": null,
@@ -37,12 +46,12 @@
             "Condition": null,
             "Parameters": {
               "Pattern": "(?i)(?\u003Csize\u003E\\b\\d+(?:[.,]\\d+)?\\s*ml\\b)",
-              "Options": "first,ignorecase"
+              "Options": "first,ignorecase,remove"
             }
           },
           {
             "Op": "Find",
-            "Input": "Sizes[0]",
+            "Input": "Sizes",
             "Output": "Product.Size",
             "Assign": true,
             "Condition": "Sizes.Valid==true",
@@ -53,7 +62,7 @@
           },
           {
             "Op": "Find",
-            "Input": "Sizes[0]",
+            "Input": "Sizes",
             "Output": "UnitRaw",
             "Assign": false,
             "Condition": "Sizes.Valid==true",
@@ -71,7 +80,79 @@
             "Parameters": {
               "Table": "Unit"
             }
+          },
+          {
+            "Op": "Find",
+            "Input": "Sizes.Clean",
+            "Output": "Genders",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "(?i)\\((?\u003Cgender\u003E[^)]+)\\)",
+              "Options": "first,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Genders",
+            "Output": "Product.Gender",
+            "Assign": true,
+            "Condition": "Genders.Valid==true",
+            "Parameters": {
+              "Table": "Gender"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Genders.Clean",
+            "Output": "Concentrations",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Concentration",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Concentrations[0]",
+            "Output": "Product.Concentration",
+            "Assign": true,
+            "Condition": "Concentrations.Valid==true",
+            "Parameters": {
+              "Table": "Concentration"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Concentrations.Clean",
+            "Output": "Types",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Type",
+              "Options": "all,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Types[0]",
+            "Output": "Product.Type",
+            "Assign": true,
+            "Condition": "Types.Valid==true",
+            "Parameters": {
+              "Table": "Type"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "Types.Clean",
+            "Output": "Product.Line",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
           }
+
         ],
         "Trace": true
       },
@@ -165,7 +246,7 @@
         "SourceKey": "Type",
         "TargetProperty": "Product.Type",
         "LookupTable": "Type",
-        "Overwrite": false
+        "Overwrite": true
       }
     ]
   }

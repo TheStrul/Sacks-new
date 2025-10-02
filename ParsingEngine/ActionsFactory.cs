@@ -29,6 +29,7 @@ public static class ActionsFactory
                 break;
             case "find":
                 string pattern = patameter.ContainsKey("Pattern") ? patameter["Pattern"] : string.Empty;
+                string? patternKey = patameter.ContainsKey("PatternKey") ? patameter["PatternKey"] : null;
 
                 // Support special pattern: lookup:<tableName> - pass lookup table entries (preserve order)
                 List<KeyValuePair<string,string>>? lookupEntries = null;
@@ -44,7 +45,7 @@ public static class ActionsFactory
                 }
 
                 string[] options = patameter.ContainsKey("Options") ? patameter["Options"].Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries  |StringSplitOptions.TrimEntries) : Array.Empty<string>();
-                ret = new FindAction(input, output, pattern, options.ToList(), assign, condition, lookupEntries);
+                ret = new FindAction(input, output, pattern, options.ToList(), assign, condition, lookupEntries, patternKey);
                 break;
             case "split":
                 // delimiter parameter expected in Parameters["delimiter"], default to ':'

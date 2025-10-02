@@ -86,10 +86,9 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
 
                 var parsingEngineRow = new ParsingEngine.RowData(row.Cells);
 
-                var propertyBag = _parserEngine.Parse(parsingEngineRow);
-
-                // Apply subtitle-derived defaults using config-driven assignments
-                ApplySubtitleAssignments(row, propertyBag);
+                // Seed subtitle-derived assignments BEFORE parsing so they are available to rules
+                var initialAssignments = BuildInitialAssignments(row);
+                var propertyBag = _parserEngine.Parse(parsingEngineRow, initialAssignments);
 
                 if (IsValidPropertyBag(propertyBag))
                 {
@@ -132,24 +131,27 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
         await Task.CompletedTask;
     }
 
-    private void ApplySubtitleAssignments(SacksAIPlatform.InfrastructuresLayer.FileProcessing.RowData row, PropertyBag bag)
+    private IDictionary<string, object?>? BuildInitialAssignments(SacksAIPlatform.InfrastructuresLayer.FileProcessing.RowData row)
     {
         if (row?.SubtitleData == null || row.SubtitleData.Count == 0)
-            return;
+            return null;
 
         var sh = _supplierConfiguration.SubtitleHandling;
         var assignments = sh?.Assignments ?? new List<SubtitleAssignmentMapping>();
         if (assignments.Count == 0)
         {
-            return; // config has no assignments; nothing to apply
+            return null;
         }
 
+        var seed = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         foreach (var map in assignments)
         {
             if (map == null) continue;
-            if (!row.SubtitleData.TryGetValue(map.SourceKey, out var srcObj))
+
+            // Resolve source value from subtitle data (case-insensitive)
+            object? srcObj = null;
+            if (!row.SubtitleData.TryGetValue(map.SourceKey, out srcObj))
             {
-                // Try case-insensitive lookup
                 var kv = row.SubtitleData.FirstOrDefault(k => string.Equals(k.Key, map.SourceKey, StringComparison.OrdinalIgnoreCase));
                 srcObj = kv.Value;
             }
@@ -164,7 +166,6 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                 var lookups = _supplierConfiguration.ParserConfig?.Lookups ?? new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
                 if (lookups.TryGetValue(map.LookupTable, out var table) && table != null)
                 {
-                    // case-insensitive match on key
                     var match = table.FirstOrDefault(e => string.Equals(e.Key, src, StringComparison.OrdinalIgnoreCase));
                     if (!string.IsNullOrEmpty(match.Key))
                     {
@@ -178,12 +179,11 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                 }
             }
 
-            // Apply to bag if allowed
-            if (map.Overwrite || !bag.Values.TryGetValue(map.TargetProperty, out var existing) || string.IsNullOrWhiteSpace(existing?.ToString()))
-            {
-                bag.Set(map.TargetProperty, valueToAssign, "Subtitle");
-            }
+            // Pre-seed; ParserEngine will respect PreferFirstAssignment when true
+            seed[map.TargetProperty] = valueToAssign;
         }
+
+        return seed.Count == 0 ? null : seed;
     }
 
     private bool IsValidPropertyBag(PropertyBag propertyBag)

@@ -6,13 +6,15 @@ public sealed class FindAction : BaseAction
 {
     public override string Op => "find";
     private readonly string _pattern;
+    private readonly string? _patternKey;
     private readonly List<string> _options;
     private readonly List<KeyValuePair<string,string>>? _lookupEntries;
 
-    public FindAction(string fromKey, string toKey, string pattern, List<string> options, bool assign, string? condition, List<KeyValuePair<string,string>>? lookupEntries = null) :
+    public FindAction(string fromKey, string toKey, string pattern, List<string> options, bool assign, string? condition, List<KeyValuePair<string,string>>? lookupEntries = null, string? patternKey = null) :
         base(fromKey, toKey, assign, condition)
     {
         _pattern = pattern ?? string.Empty;
+        _patternKey = patternKey;
         _options = options ?? new List<string>();
         _lookupEntries = lookupEntries;
     }
@@ -24,13 +26,6 @@ public sealed class FindAction : BaseAction
         bag.TryGetValue(base.input, out var value);
         var input = value ?? string.Empty;
 
-        // If no pattern/lookup or empty input -> write empty results and return false
-        if (string.IsNullOrEmpty(_pattern) && (_lookupEntries == null || _lookupEntries.Count == 0) || string.IsNullOrEmpty(input))
-        {
-            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
-            return false;
-        }
-
         var remove = _options.Any(o => string.Equals(o, "remove", StringComparison.OrdinalIgnoreCase));
         var ignoreCase = _options.Any(o => string.Equals(o, "ignorecase", StringComparison.OrdinalIgnoreCase));
 
@@ -41,7 +36,7 @@ public sealed class FindAction : BaseAction
 
         try
         {
-            // If lookup entries were provided, perform ordered lookup-based matching
+            // Prefer lookup-based matching when provided
             if (_lookupEntries != null && _lookupEntries.Count > 0)
             {
                 return mode.ToLowerInvariant() switch
@@ -52,14 +47,52 @@ public sealed class FindAction : BaseAction
                 };
             }
 
+            // Dynamic pattern from bag/ambient PropertyBag via PatternKey
+            if (!string.IsNullOrWhiteSpace(_patternKey))
+            {
+                string? dyn = null;
+                if (!bag.TryGetValue(_patternKey!, out dyn) || string.IsNullOrWhiteSpace(dyn))
+                {
+                    // Try ambient PropertyBag values
+                    if (ctx.Ambient != null && ctx.Ambient.TryGetValue("PropertyBag", out var obj) && obj is PropertyBag pb)
+                    {
+                        pb.Values.TryGetValue(_patternKey!, out var dynObj);
+                        dyn = dynObj?.ToString();
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(dyn) || string.IsNullOrEmpty(input))
+                {
+                    ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+                    return false;
+                }
+
+                var pat = $"(?<!\\p{{L}})" + Regex.Escape(dyn!) + $"(?!\\p{{L}})";
+                var rx = new Regex(pat, ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None);
+
+                return mode.ToLowerInvariant() switch
+                {
+                    "all" => remove ? RemoveAll(bag, rx, input, base.assign) : FindAll(bag, rx, input, base.assign),
+                    "last" => remove ? RemoveLast(bag, rx, input, base.assign) : FindLast(bag, rx, input, base.assign),
+                    _ => remove ? RemoveFirst(bag, rx, input, base.assign) : FindFirst(bag, rx, input, base.assign),
+                };
+            }
+
+            // Static regex pattern
+            if (string.IsNullOrEmpty(_pattern) || string.IsNullOrEmpty(input))
+            {
+                ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+                return false;
+            }
+
             var rxOpts = ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
-            var rx = new Regex(_pattern, rxOpts);
+            var rxStatic = new Regex(_pattern, rxOpts);
 
             return mode.ToLowerInvariant() switch
             {
-                "all" => remove ? RemoveAll(bag, rx, input, base.assign) : FindAll(bag, rx, input, base.assign),
-                "last" => remove ? RemoveLast(bag, rx, input, base.assign) : FindLast(bag, rx, input, base.assign),
-                _ => remove ? RemoveFirst(bag, rx, input, base.assign) : FindFirst(bag, rx, input, base.assign),
+                "all" => remove ? RemoveAll(bag, rxStatic, input, base.assign) : FindAll(bag, rxStatic, input, base.assign),
+                "last" => remove ? RemoveLast(bag, rxStatic, input, base.assign) : FindLast(bag, rxStatic, input, base.assign),
+                _ => remove ? RemoveFirst(bag, rxStatic, input, base.assign) : FindFirst(bag, rxStatic, input, base.assign),
             };
         }
         catch
