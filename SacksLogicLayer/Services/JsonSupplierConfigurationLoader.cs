@@ -40,17 +40,6 @@ namespace SacksLogicLayer.Services
                          ?? throw new InvalidOperationException($"Failed to deserialize SuppliersConfiguration from {fileName}");
                 retval.FullPath = filePath;
 
-                var errors = retval.ValidateConfiguration();
-                if (errors != null && errors.Count > 0)
-                {
-                    foreach (var item in errors)
-                    {
-                        _logger!.LogError("Supplier configuration validation error: {Error}", item);
-                    }
-                }
-
-                _logger?.LogInformation("Loaded {Count} suppliers and {LookupCount} lookup tables from main file",
-                    retval.Suppliers.Count, retval.Lookups?.Count ?? 0);
             }
             catch (Exception ex)
             {
@@ -82,6 +71,8 @@ namespace SacksLogicLayer.Services
                 {
                     var name = Path.GetFileName(file);
                     if (string.Equals(name, mainFileName, StringComparison.OrdinalIgnoreCase))
+                        continue; // skip the main file
+                    if (string.Equals(name, "appsettings.json", StringComparison.OrdinalIgnoreCase))
                         continue; // skip the main file
 
                     try

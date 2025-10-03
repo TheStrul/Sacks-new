@@ -58,11 +58,11 @@ namespace SacksApp
             viewLogsButton.Font = new Font("Segoe UI", 12F);
             viewLogsButton.ForeColor = Color.FromArgb(30, 30, 30);
             viewLogsButton.ImageAlign = ContentAlignment.MiddleLeft;
-            viewLogsButton.Location = new Point(443, 235);
+            viewLogsButton.Location = new Point(443, 227);
             viewLogsButton.Margin = new Padding(15);
             viewLogsButton.Name = "viewLogsButton";
             viewLogsButton.Padding = new Padding(24, 12, 12, 12);
-            viewLogsButton.Size = new Size(399, 80);
+            viewLogsButton.Size = new Size(399, 78);
             viewLogsButton.TabIndex = 12;
             viewLogsButton.Text = "View Logs";
             viewLogsButton.TextImageRelation = TextImageRelation.ImageBeforeText;
@@ -79,11 +79,11 @@ namespace SacksApp
             sqlQueryButton.Font = new Font("Segoe UI", 12F);
             sqlQueryButton.ForeColor = Color.FromArgb(30, 30, 30);
             sqlQueryButton.ImageAlign = ContentAlignment.MiddleLeft;
-            sqlQueryButton.Location = new Point(15, 235);
+            sqlQueryButton.Location = new Point(15, 227);
             sqlQueryButton.Margin = new Padding(15);
             sqlQueryButton.Name = "sqlQueryButton";
             sqlQueryButton.Padding = new Padding(24, 12, 12, 12);
-            sqlQueryButton.Size = new Size(398, 80);
+            sqlQueryButton.Size = new Size(398, 78);
             sqlQueryButton.TabIndex = 11;
             sqlQueryButton.Text = "SQL Query Tool";
             sqlQueryButton.TextImageRelation = TextImageRelation.ImageBeforeText;
@@ -100,11 +100,11 @@ namespace SacksApp
             testConfigurationButton.Font = new Font("Segoe UI", 12F);
             testConfigurationButton.ForeColor = Color.FromArgb(30, 30, 30);
             testConfigurationButton.ImageAlign = ContentAlignment.MiddleLeft;
-            testConfigurationButton.Location = new Point(443, 125);
+            testConfigurationButton.Location = new Point(443, 121);
             testConfigurationButton.Margin = new Padding(15);
             testConfigurationButton.Name = "testConfigurationButton";
             testConfigurationButton.Padding = new Padding(24, 12, 12, 12);
-            testConfigurationButton.Size = new Size(399, 80);
+            testConfigurationButton.Size = new Size(399, 76);
             testConfigurationButton.TabIndex = 10;
             testConfigurationButton.Text = "Test Configuration";
             testConfigurationButton.TextImageRelation = TextImageRelation.ImageBeforeText;
@@ -121,11 +121,11 @@ namespace SacksApp
             showStatisticsButton.Font = new Font("Segoe UI", 12F);
             showStatisticsButton.ForeColor = Color.FromArgb(30, 30, 30);
             showStatisticsButton.ImageAlign = ContentAlignment.MiddleLeft;
-            showStatisticsButton.Location = new Point(15, 125);
+            showStatisticsButton.Location = new Point(15, 121);
             showStatisticsButton.Margin = new Padding(15);
             showStatisticsButton.Name = "showStatisticsButton";
             showStatisticsButton.Padding = new Padding(24, 12, 12, 12);
-            showStatisticsButton.Size = new Size(398, 80);
+            showStatisticsButton.Size = new Size(398, 76);
             showStatisticsButton.TabIndex = 9;
             showStatisticsButton.Text = "Show Statistics";
             showStatisticsButton.TextImageRelation = TextImageRelation.ImageBeforeText;
@@ -146,7 +146,7 @@ namespace SacksApp
             processFilesButton.Margin = new Padding(15);
             processFilesButton.Name = "processFilesButton";
             processFilesButton.Padding = new Padding(24, 12, 12, 12);
-            processFilesButton.Size = new Size(398, 80);
+            processFilesButton.Size = new Size(398, 76);
             processFilesButton.TabIndex = 7;
             processFilesButton.Text = "Process Excel Files";
             processFilesButton.TextImageRelation = TextImageRelation.ImageBeforeText;
@@ -167,7 +167,7 @@ namespace SacksApp
             clearDatabaseButton.Margin = new Padding(15);
             clearDatabaseButton.Name = "clearDatabaseButton";
             clearDatabaseButton.Padding = new Padding(24, 12, 12, 12);
-            clearDatabaseButton.Size = new Size(399, 80);
+            clearDatabaseButton.Size = new Size(399, 76);
             clearDatabaseButton.TabIndex = 8;
             clearDatabaseButton.Text = "Clear Database";
             clearDatabaseButton.TextImageRelation = TextImageRelation.ImageBeforeText;
@@ -206,7 +206,7 @@ namespace SacksApp
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
             tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
-            tableLayoutPanel1.Size = new Size(857, 330);
+            tableLayoutPanel1.Size = new Size(857, 320);
             tableLayoutPanel1.TabIndex = 14;
             // 
             // DashBoard
@@ -214,7 +214,7 @@ namespace SacksApp
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(250, 250, 252);
-            ClientSize = new Size(881, 404);
+            ClientSize = new Size(881, 394);
             Controls.Add(tableLayoutPanel1);
             Controls.Add(titleLabel);
             Name = "DashBoard";

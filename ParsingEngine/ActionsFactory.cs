@@ -59,6 +59,11 @@ public static class ActionsFactory
                 var mapDict = lookups[tableName];
                 ret = new MappingAction(input, output, assign, mapDict,condition);
                 break;
+            case "case":
+                var mode = patameter.ContainsKey("Mode") ? patameter["Mode"] : "title";
+                var culture = patameter.ContainsKey("Culture") ? patameter["Culture"] : null;
+                ret = new CaseAction(input, output, assign, condition, mode, culture);
+                break;
             default:
                 ret = new NoOpChainAction(input, output);
                 break;

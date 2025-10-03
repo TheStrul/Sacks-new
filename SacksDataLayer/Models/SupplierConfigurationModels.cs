@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Encodings.Web;
 using System.Text.Json.Serialization;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -12,7 +13,11 @@ namespace SacksDataLayer.FileProcessing.Configuration
     /// </summary>
     public sealed class SuppliersConfiguration : ISuppliersConfiguration
     {
-        private static readonly JsonSerializerOptions s_jsonOptions = new JsonSerializerOptions { WriteIndented = true };
+        private static readonly JsonSerializerOptions s_jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
 
         public string Version { get; set; } = "2.1";
 

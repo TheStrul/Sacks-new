@@ -1,0 +1,210 @@
+{
+  "Name": "Ace",
+  "Currency": "USD",
+  "ParserConfig": {
+    "Settings": {
+      "StopOnFirstMatchPerColumn": false,
+      "DefaultCulture": "en-US",
+      "PreferFirstAssignment": true
+    },
+    "ColumnRules": {
+      "A": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.EAN",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "B": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Ref",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "C": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.Brand",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "D": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Description",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          },
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "Parences",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Options": "all,remove",
+              "Pattern": "\\((?<Ccontent>[^)]*)\\)"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "Parences[0]",
+            "Output": "Product.Line",
+            "Assign": true,
+            "Condition": "Parences.Valid==true"
+          },
+          {
+            "Op": "Find",
+            "Input": "Parences[0]",
+            "Output": "SizeAndUnits",
+            "Assign": false,
+            "Condition": "Parences.Valid==true",
+            "Parameters": {
+              "Options": "all,ignorecase",
+              "Pattern": "(?:(?<Ccount>\\d\u002B)\\s*[x\u00D7]\\s*)?(?<Csize>\\d\u002B(?:[.,]\\d\u002B)?\\s*(?:ml|oz|fl\\s*oz))"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "SizeTokens",
+            "Assign": false,
+            "Parameters": {
+              "Pattern": "(?i)(?<size>\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\soz))",
+              "Options": "all,ignorecase"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "SizeTokens[0]",
+            "Output": "SizeAmount",
+            "Assign": true,
+            "Parameters": {
+              "Pattern": "(?i)(?<size>\\d+(?:[.,]\\d+)?)",
+              "Options": "first"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "SizeTokens[0]",
+            "Output": "UnitRaw",
+            "Assign": false,
+            "Parameters": {
+              "Pattern": "(?i)(?<unit>ml|oz|fl\\soz)",
+              "Options": "first,ignorecase"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "UnitRaw",
+            "Output": "Product.Units",
+            "Assign": true,
+            "Parameters": { "Table": "Unit" }
+          }
+        ],
+        "Trace": false
+      },
+      
+
+      "E": {
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.Concentration",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": {
+              "Table": "Concentration"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.Type",
+            "Assign": true,
+            "Condition": "Product.Concentration==null",
+            "Parameters": {
+              "Table": "Type"
+            }
+          }
+        ],
+        "Trace": false
+      },
+      "F": {
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.COO",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": {
+              "Table": "COO"
+            }
+          }
+        ],
+        "Trace": false
+      },
+      "G": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Quantity",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "H": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Price",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      }
+    }
+  },
+  "FileStructure": {
+    "DataStartRowIndex": 8,
+    "ExpectedColumnCount": 5,
+    "HeaderRowIndex": 1,
+    "Detection": {
+      "FileNamePatterns": [
+        "Ace*.xls*"
+      ]
+    }
+  },
+  "SubtitleHandling": null
+}

@@ -220,33 +220,11 @@
 
         private void TestConfigurationButton_Click(object sender, EventArgs e)
         {
-            try
-            {
-                var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
-                var loggingSettings = configuration.GetSection("LoggingSettings").Get<LoggingSettings>() ?? new LoggingSettings();
-                
-                var currentSetting = loggingSettings.DeleteLogFilesOnStartup ? "Enabled" : "Disabled";
-                var logPaths = loggingSettings.LogFilePaths?.Length > 0 
-                    ? string.Join(", ", loggingSettings.LogFilePaths) 
-                    : "None configured";
-
-                var message = $"Configuration Test Results:\n\n" +
-                             $"✓ Database: Connected\n" +
-                             $"✓ Configuration: Loaded\n" +
-                             $"✓ Services: Registered\n\n" +
-                             $"Log File Cleanup on Startup: {currentSetting}\n" +
-                             $"Log Paths: {logPaths}\n\n" +
-                             $"Note: To change log cleanup setting, edit appsettings.json\n" +
-                             $"LoggingSettings > DeleteLogFilesOnStartup";
-
-                MessageBox.Show(message, "Configuration Test", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during configuration test");
-                MessageBox.Show($"Configuration test failed:\n{ex.Message}",
-                    "Configuration Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            // Non-modal forms are not owned by a using scope; suppress CA2000 as WinForms disposes the form when closed
+#pragma warning disable CA2000 // Dispose objects before losing scope
+            var t = new TestPattern();
+#pragma warning restore CA2000
+            t.ShowDialog(this);
         }
 
         private void SqlQueryButton_Click(object sender, EventArgs e)
