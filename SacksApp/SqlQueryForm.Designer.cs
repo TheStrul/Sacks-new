@@ -52,16 +52,15 @@ namespace SacksApp
             filtersListBox = new CheckedListBox();
             buttonHideFilters = new Button();
             buttonShowFilter = new Button();
-            // new edit controls
-            editControlsPanel = new FlowLayoutPanel();
-            editModeCheckBox = new CheckBox();
-            saveChangesButton = new Button();
-            cancelAllButton = new Button();
             resultsGrid = new DataGridView();
             contextMenuStrip1 = new ContextMenuStrip(components);
             addToLookupToolStripMenuItem = new ToolStripMenuItem();
             showHideCoulmnsToolStripMenuItem = new ToolStripMenuItem();
             groupByProductToolStripMenuItem = new ToolStripMenuItem();
+            editControlsPanel = new FlowLayoutPanel();
+            editModeCheckBox = new CheckBox();
+            saveChangesButton = new Button();
+            cancelAllButton = new Button();
             runQueryButton = new Button();
             statusStrip = new StatusStrip();
             statusLabel = new ToolStripStatusLabel();
@@ -71,9 +70,9 @@ namespace SacksApp
             mainSplitContainer.Panel2.SuspendLayout();
             mainSplitContainer.SuspendLayout();
             tableLayoutFilters.SuspendLayout();
-            editControlsPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)resultsGrid).BeginInit();
             contextMenuStrip1.SuspendLayout();
+            editControlsPanel.SuspendLayout();
             statusStrip.SuspendLayout();
             SuspendLayout();
             // 
@@ -210,51 +209,14 @@ namespace SacksApp
             buttonShowFilter.Text = "Show filters";
             buttonShowFilter.Click += ButtonShowFilter_Click;
             // 
-            // editControlsPanel
-            // 
-            editControlsPanel.AutoSize = true;
-            editControlsPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            editControlsPanel.Dock = DockStyle.Top;
-            editControlsPanel.FlowDirection = FlowDirection.LeftToRight;
-            editControlsPanel.Padding = new Padding(6, 6, 6, 6);
-            editControlsPanel.Controls.Add(editModeCheckBox);
-            editControlsPanel.Controls.Add(saveChangesButton);
-            editControlsPanel.Controls.Add(cancelAllButton);
-            editControlsPanel.Name = "editControlsPanel";
-            editControlsPanel.TabIndex = 18;
-            // 
-            // editModeCheckBox
-            // 
-            editModeCheckBox.AutoSize = true;
-            editModeCheckBox.Text = "Edit mode";
-            editModeCheckBox.Margin = new Padding(3, 8, 12, 3);
-            editModeCheckBox.CheckedChanged += EditModeCheckBox_CheckedChanged;
-            // 
-            // saveChangesButton
-            // 
-            saveChangesButton.Text = "Save changes";
-            saveChangesButton.AutoSize = true;
-            saveChangesButton.Enabled = false;
-            saveChangesButton.Click += SaveChangesButton_Click;
-            // 
-            // cancelAllButton
-            // 
-            cancelAllButton.Text = "Cancel All";
-            cancelAllButton.AutoSize = true;
-            cancelAllButton.Enabled = false;
-            cancelAllButton.Margin = new Padding(6, 3, 3, 3);
-            cancelAllButton.Click += CancelAllButton_Click;
-            // 
             // resultsGrid
             // 
             resultsGrid.AllowUserToAddRows = false;
             resultsGrid.AllowUserToDeleteRows = false;
             resultsGrid.AllowUserToOrderColumns = true;
             resultsGrid.AllowUserToResizeRows = false;
-            resultsGrid.AllowUserToResizeColumns = true;
             dataGridViewCellStyle1.BackColor = Color.FromArgb(224, 224, 224);
             resultsGrid.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
-            resultsGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
             resultsGrid.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.DisplayedCells;
             resultsGrid.BackgroundColor = SystemColors.Window;
             resultsGrid.BorderStyle = BorderStyle.Fixed3D;
@@ -263,12 +225,12 @@ namespace SacksApp
             resultsGrid.ContextMenuStrip = contextMenuStrip1;
             resultsGrid.Dock = DockStyle.Fill;
             resultsGrid.EditMode = DataGridViewEditMode.EditOnEnter;
-            resultsGrid.Location = new Point(0, 35);
+            resultsGrid.Location = new Point(0, 43);
             resultsGrid.MultiSelect = false;
             resultsGrid.Name = "resultsGrid";
             resultsGrid.SelectionMode = DataGridViewSelectionMode.CellSelect;
             resultsGrid.ShowEditingIcon = false;
-            resultsGrid.Size = new Size(1194, 584);
+            resultsGrid.Size = new Size(1194, 576);
             resultsGrid.TabIndex = 0;
             resultsGrid.CellEndEdit += ResultsGrid_CellEndEdit;
             resultsGrid.CellMouseUp += ResultsGrid_CellMouseUp;
@@ -300,6 +262,54 @@ namespace SacksApp
             groupByProductToolStripMenuItem.Name = "groupByProductToolStripMenuItem";
             groupByProductToolStripMenuItem.Size = new Size(190, 22);
             groupByProductToolStripMenuItem.Text = "Group by Product";
+            // 
+            // editControlsPanel
+            // 
+            editControlsPanel.AutoSize = true;
+            editControlsPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            editControlsPanel.Controls.Add(editModeCheckBox);
+            editControlsPanel.Controls.Add(saveChangesButton);
+            editControlsPanel.Controls.Add(cancelAllButton);
+            editControlsPanel.Dock = DockStyle.Top;
+            editControlsPanel.Location = new Point(0, 0);
+            editControlsPanel.Name = "editControlsPanel";
+            editControlsPanel.Padding = new Padding(6);
+            editControlsPanel.Size = new Size(1194, 43);
+            editControlsPanel.TabIndex = 18;
+            // 
+            // editModeCheckBox
+            // 
+            editModeCheckBox.AutoSize = true;
+            editModeCheckBox.Location = new Point(9, 14);
+            editModeCheckBox.Margin = new Padding(3, 8, 12, 3);
+            editModeCheckBox.Name = "editModeCheckBox";
+            editModeCheckBox.Size = new Size(80, 19);
+            editModeCheckBox.TabIndex = 0;
+            editModeCheckBox.Text = "Edit mode";
+            editModeCheckBox.CheckedChanged += EditModeCheckBox_CheckedChanged;
+            // 
+            // saveChangesButton
+            // 
+            saveChangesButton.AutoSize = true;
+            saveChangesButton.Enabled = false;
+            saveChangesButton.Location = new Point(104, 9);
+            saveChangesButton.Name = "saveChangesButton";
+            saveChangesButton.Size = new Size(88, 25);
+            saveChangesButton.TabIndex = 1;
+            saveChangesButton.Text = "Save changes";
+            saveChangesButton.Click += SaveChangesButton_Click;
+            // 
+            // cancelAllButton
+            // 
+            cancelAllButton.AutoSize = true;
+            cancelAllButton.Enabled = false;
+            cancelAllButton.Location = new Point(201, 9);
+            cancelAllButton.Margin = new Padding(6, 3, 3, 3);
+            cancelAllButton.Name = "cancelAllButton";
+            cancelAllButton.Size = new Size(75, 25);
+            cancelAllButton.TabIndex = 2;
+            cancelAllButton.Text = "Cancel All";
+            cancelAllButton.Click += CancelAllButton_Click;
             // 
             // runQueryButton
             // 
@@ -353,10 +363,10 @@ namespace SacksApp
             mainSplitContainer.ResumeLayout(false);
             tableLayoutFilters.ResumeLayout(false);
             tableLayoutFilters.PerformLayout();
-            editControlsPanel.ResumeLayout(false);
-            editControlsPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)resultsGrid).EndInit();
             contextMenuStrip1.ResumeLayout(false);
+            editControlsPanel.ResumeLayout(false);
+            editControlsPanel.PerformLayout();
             statusStrip.ResumeLayout(false);
             statusStrip.PerformLayout();
             ResumeLayout(false);
