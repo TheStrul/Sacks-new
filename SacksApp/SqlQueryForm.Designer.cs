@@ -26,6 +26,12 @@ namespace SacksApp
         private System.Windows.Forms.Button buttonHideFilters;
         private System.Windows.Forms.Button buttonShowFilter;
 
+        // New edit controls
+        private System.Windows.Forms.FlowLayoutPanel editControlsPanel;
+        private System.Windows.Forms.CheckBox editModeCheckBox;
+        private System.Windows.Forms.Button saveChangesButton;
+        private System.Windows.Forms.Button cancelAllButton;
+
         #region Windows Form Designer generated code
 
         /// <summary>
@@ -46,6 +52,11 @@ namespace SacksApp
             filtersListBox = new CheckedListBox();
             buttonHideFilters = new Button();
             buttonShowFilter = new Button();
+            // new edit controls
+            editControlsPanel = new FlowLayoutPanel();
+            editModeCheckBox = new CheckBox();
+            saveChangesButton = new Button();
+            cancelAllButton = new Button();
             resultsGrid = new DataGridView();
             contextMenuStrip1 = new ContextMenuStrip(components);
             addToLookupToolStripMenuItem = new ToolStripMenuItem();
@@ -60,6 +71,7 @@ namespace SacksApp
             mainSplitContainer.Panel2.SuspendLayout();
             mainSplitContainer.SuspendLayout();
             tableLayoutFilters.SuspendLayout();
+            editControlsPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)resultsGrid).BeginInit();
             contextMenuStrip1.SuspendLayout();
             statusStrip.SuspendLayout();
@@ -85,6 +97,7 @@ namespace SacksApp
             // mainSplitContainer.Panel2
             // 
             mainSplitContainer.Panel2.Controls.Add(resultsGrid);
+            mainSplitContainer.Panel2.Controls.Add(editControlsPanel);
             mainSplitContainer.Panel2.Controls.Add(runQueryButton);
             mainSplitContainer.Panel2.Controls.Add(statusStrip);
             mainSplitContainer.Size = new Size(1194, 773);
@@ -197,6 +210,41 @@ namespace SacksApp
             buttonShowFilter.Text = "Show filters";
             buttonShowFilter.Click += ButtonShowFilter_Click;
             // 
+            // editControlsPanel
+            // 
+            editControlsPanel.AutoSize = true;
+            editControlsPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            editControlsPanel.Dock = DockStyle.Top;
+            editControlsPanel.FlowDirection = FlowDirection.LeftToRight;
+            editControlsPanel.Padding = new Padding(6, 6, 6, 6);
+            editControlsPanel.Controls.Add(editModeCheckBox);
+            editControlsPanel.Controls.Add(saveChangesButton);
+            editControlsPanel.Controls.Add(cancelAllButton);
+            editControlsPanel.Name = "editControlsPanel";
+            editControlsPanel.TabIndex = 18;
+            // 
+            // editModeCheckBox
+            // 
+            editModeCheckBox.AutoSize = true;
+            editModeCheckBox.Text = "Edit mode";
+            editModeCheckBox.Margin = new Padding(3, 8, 12, 3);
+            editModeCheckBox.CheckedChanged += EditModeCheckBox_CheckedChanged;
+            // 
+            // saveChangesButton
+            // 
+            saveChangesButton.Text = "Save changes";
+            saveChangesButton.AutoSize = true;
+            saveChangesButton.Enabled = false;
+            saveChangesButton.Click += SaveChangesButton_Click;
+            // 
+            // cancelAllButton
+            // 
+            cancelAllButton.Text = "Cancel All";
+            cancelAllButton.AutoSize = true;
+            cancelAllButton.Enabled = false;
+            cancelAllButton.Margin = new Padding(6, 3, 3, 3);
+            cancelAllButton.Click += CancelAllButton_Click;
+            // 
             // resultsGrid
             // 
             resultsGrid.AllowUserToAddRows = false;
@@ -215,12 +263,12 @@ namespace SacksApp
             resultsGrid.ContextMenuStrip = contextMenuStrip1;
             resultsGrid.Dock = DockStyle.Fill;
             resultsGrid.EditMode = DataGridViewEditMode.EditOnEnter;
-            resultsGrid.Location = new Point(0, 0);
+            resultsGrid.Location = new Point(0, 35);
             resultsGrid.MultiSelect = false;
             resultsGrid.Name = "resultsGrid";
             resultsGrid.SelectionMode = DataGridViewSelectionMode.CellSelect;
             resultsGrid.ShowEditingIcon = false;
-            resultsGrid.Size = new Size(1194, 619);
+            resultsGrid.Size = new Size(1194, 584);
             resultsGrid.TabIndex = 0;
             resultsGrid.CellEndEdit += ResultsGrid_CellEndEdit;
             resultsGrid.CellMouseUp += ResultsGrid_CellMouseUp;
@@ -305,6 +353,8 @@ namespace SacksApp
             mainSplitContainer.ResumeLayout(false);
             tableLayoutFilters.ResumeLayout(false);
             tableLayoutFilters.PerformLayout();
+            editControlsPanel.ResumeLayout(false);
+            editControlsPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)resultsGrid).EndInit();
             contextMenuStrip1.ResumeLayout(false);
             statusStrip.ResumeLayout(false);

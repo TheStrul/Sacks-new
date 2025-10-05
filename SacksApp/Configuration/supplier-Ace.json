@@ -71,7 +71,7 @@
           {
             "Op": "Assign",
             "Input": "Parences[0]",
-            "Output": "Product.Line",
+            "Output": "Offer.Line",
             "Assign": true,
             "Condition": "Parences.Valid==true"
           },
@@ -83,7 +83,7 @@
             "Condition": "Parences.Valid==true",
             "Parameters": {
               "Options": "all,ignorecase",
-              "Pattern": "(?:(?<Ccount>\\d\u002B)\\s*[x\u00D7]\\s*)?(?<Csize>\\d\u002B(?:[.,]\\d\u002B)?\\s*(?:ml|oz|fl\\s*oz))"
+              "Pattern": "(?:(?<Ccount>\\d+ )\\s*[x×]\\s*)?(?<Csize>\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\s*oz))"
             }
           },
           {
@@ -92,7 +92,7 @@
             "Output": "SizeTokens",
             "Assign": false,
             "Parameters": {
-              "Pattern": "(?i)(?<size>\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\soz))",
+              "Pattern": "(?i)(?<size>\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\s*oz))",
               "Options": "all,ignorecase"
             }
           },
@@ -112,7 +112,7 @@
             "Output": "UnitRaw",
             "Assign": false,
             "Parameters": {
-              "Pattern": "(?i)(?<unit>ml|oz|fl\\soz)",
+              "Pattern": "(?i)(?<unit>ml|oz|fl\\s*oz)",
               "Options": "first,ignorecase"
             }
           },

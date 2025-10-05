@@ -45,7 +45,7 @@
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)(?\u003Csize\u003E\\b\\d+(?:[.,]\\d+)?\\s*ml\\b)",
+              "Pattern": "(?i)(?<size>\\b\\d+(?:[.,]\\d+)?\\s*ml\\b)",
               "Options": "first,ignorecase,remove"
             }
           },
@@ -56,7 +56,7 @@
             "Assign": true,
             "Condition": "Sizes.Valid==true",
             "Parameters": {
-              "Pattern": "(?i)(?\u003Cnum\u003E\\d+(?:[.,]\\d+)?)(?=\\s*ml\\b)",
+              "Pattern": "(?i)(?<num>\\d+(?:[.,]\\d+)?)(?=\\s*ml\\b)",
               "Options": "first"
             }
           },
@@ -67,7 +67,7 @@
             "Assign": false,
             "Condition": "Sizes.Valid==true",
             "Parameters": {
-              "Pattern": "(?i)\\b(?\u003Cunit\u003Eml)\\b",
+              "Pattern": "(?i)\\b(?<unit>ml)\\b",
               "Options": "first"
             }
           },
@@ -88,7 +88,7 @@
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)\\((?\u003Cgender\u003E[^)]+)\\)",
+              "Pattern": "(?i)\\((?<gender>[^)]+)\\)",
               "Options": "first,ignorecase,remove"
             }
           },
@@ -147,7 +147,7 @@
           {
             "Op": "Assign",
             "Input": "Types.Clean",
-            "Output": "Product.Line",
+            "Output": "Offer.Line",
             "Assign": true,
             "Condition": null,
             "Parameters": null

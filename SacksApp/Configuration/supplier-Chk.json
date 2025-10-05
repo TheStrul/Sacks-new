@@ -141,7 +141,7 @@
           {
             "Op": "Assign",
             "Input": "Brands.Clean",
-            "Output": "Product.Line",
+            "Output": "Offer.Line",
             "Assign": true,
             "Condition": null,
             "Parameters": null

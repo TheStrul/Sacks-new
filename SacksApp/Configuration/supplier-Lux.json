@@ -38,7 +38,7 @@
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)(?\u003Csize\u003E\\b\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\s*oz|g|gram)\\b)",
+              "Pattern": "(?i)(?<size>\\b\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\s*oz|g|gram)\\b)",
               "Options": "all,ignorecase,remove"
             }
           },
@@ -49,7 +49,7 @@
             "Assign": true,
             "Condition": "Sizes.Valid==true",
             "Parameters": {
-              "Pattern": "(?i)(?\u003Cnum\u003E\\d+(?:[.,]\\d+)?)(?=\\s*(?:ml|oz|fl\\soz|g|gram)\\b)",
+              "Pattern": "(?i)(?<num>\\d+(?:[.,]\\d+)?)(?=\\s*(?:ml|oz|fl\\s*oz|g|gram)\\b)",
               "Options": "first"
             }
           },
@@ -60,7 +60,7 @@
             "Assign": false,
             "Condition": "Sizes.Valid==true",
             "Parameters": {
-              "Pattern": "(?i)\\b(?\u003Cunit\u003Eml|oz|fl\\soz|g|gram)\\b",
+              "Pattern": "(?i)\\b(?<unit>ml|oz|fl\\s*oz|g|gram)\\b",
               "Options": "first"
             }
           },
@@ -144,7 +144,7 @@
             "Assign": false,
             "Condition": "Brands.Valid==false",
             "Parameters": {
-              "Pattern": "^\\s*(\\S+)(?=\\s|$)",
+              "Pattern": "^\\s*(\\\S+)(?=\\s|$)",
               "Options": "first,ignorecase"
             }
           },
@@ -182,7 +182,7 @@
           {
             "Op": "Assign",
             "Input": "Types.Clean",
-            "Output": "Product.Line",
+            "Output": "Offer.Line",
             "Assign": true,
             "Condition": null,
             "Parameters": null
@@ -199,7 +199,7 @@
             "Assign": true,
             "Condition": null,
             "Parameters": {
-              "Pattern": "^\\s*(?\u003Cnum\u003E\\d+)\\s*\\\\u002B?\\s*$",
+              "Pattern": "^\\s*(?<num>\\d+)\\s*\\+?\\s*$",
               "Options": "first"
             }
           }
