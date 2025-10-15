@@ -1,53 +1,46 @@
-﻿namespace SacksApp
+﻿using System;
+using System.Data;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Windows.Forms;
+using System.Drawing;
+
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
+using QMobileDeviceServiceMenu;
+
+using SacksDataLayer.Configuration;
+using SacksDataLayer.Services.Interfaces;
+
+using SacksLogicLayer.Services.Interfaces;
+
+namespace SacksApp
 {
-    using System;
-    using System.Data;
-    using System.IO;
-    using System.Linq;
-    using System.Windows.Forms;
-
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Logging;
-
-    using QMobileDeviceServiceMenu;
-
-    using SacksDataLayer.Configuration;
-    using SacksDataLayer.Services.Interfaces;
-
-    using SacksLogicLayer.Services.Interfaces;
-
     public partial class DashBoard : Form
     {
         IServiceProvider _serviceProvider;
         ILogger _logger;
+
+        // Designer-friendly ctor: lets the WinForms designer instantiate the form and see themed buttons
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA1801:Review unused parameters", Justification = "Design-time only")]
+        public DashBoard()
+        {
+            InitializeComponent();
+            _serviceProvider = new ServiceCollection().BuildServiceProvider();
+            _logger = NullLogger.Instance;
+        }
+
         public DashBoard(IServiceProvider serviceProvider)
         {
             InitializeComponent();
             this._serviceProvider = serviceProvider;
             this._logger = serviceProvider.GetRequiredService<ILogger<DashBoard>>();
 
-            // Apply modern colorful theme/icons
-            try { ApplyModernTheme(); } catch { }
-
-        }
-
-        private void ApplyModernTheme()
-        {
-            // Designer now contains static styling; keep only runtime icons via UITheme
-            try
-            {
-                UITheme.ApplyButtonStyle(processFilesButton, Color.FromArgb(76, 175, 80), "📁");
-                UITheme.ApplyButtonStyle(showStatisticsButton, Color.FromArgb(33, 150, 243), "📈");
-                UITheme.ApplyButtonStyle(testConfigurationButton, Color.FromArgb(255, 193, 7), "⚙️");
-                UITheme.ApplyButtonStyle(sqlQueryButton, Color.FromArgb(156, 39, 176), "🔍");
-                UITheme.ApplyButtonStyle(viewLogsButton, Color.FromArgb(0, 150, 136), "📝");
-                UITheme.ApplyButtonStyle(clearDatabaseButton, Color.FromArgb(244, 67, 54), "🧹");
-            }
-            catch (Exception ex)
-            {
-                try { _logger?.LogDebug(ex, "Failed to create dashboard icons"); } catch { }
-            }
+            // CustomButton styling is now handled directly in the designer - no need for ApplyModernTheme
         }
 
         private async void ProcessFilesButton_Click(object sender, EventArgs e)
@@ -105,7 +98,7 @@
         private string GetInputDirectoryFromConfiguration(IConfiguration configuration)
         {
             var configuredPath = configuration["FileProcessingSettings:InputDirectory"];
-            
+
             if (string.IsNullOrWhiteSpace(configuredPath))
             {
                 throw new InvalidOperationException("FileProcessingSettings:InputDirectory is not configured in appsettings.json");
@@ -123,7 +116,7 @@
                 var solutionRoot = FindSolutionRoot();
                 resolvedPath = Path.GetFullPath(Path.Combine(solutionRoot, configuredPath));
             }
-            
+
             // Create directory if it doesn't exist
             if (!Directory.Exists(resolvedPath))
             {
@@ -137,7 +130,7 @@
                     throw new DirectoryNotFoundException($"Cannot create input directory at {resolvedPath}: {ex.Message}", ex);
                 }
             }
-            
+
             _logger.LogDebug("Using configured input directory: {InputPath}", resolvedPath);
             return resolvedPath;
         }
@@ -281,6 +274,23 @@
             }
 
             throw new DirectoryNotFoundException("Solution root directory not found - no .sln file found in directory hierarchy");
+        }
+
+        private void ButtonEditMaps_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Open the general Lookup editor. Initial selection is empty -> form will pick first available lookup.
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                var editor = new LookupEditorForm(_serviceProvider, string.Empty);
+#pragma warning restore CA2000
+                editor.ShowDialog(this);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening Lookup Editor");
+                MessageBox.Show($"Error opening Lookup Editor: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

@@ -37,14 +37,15 @@ namespace SacksApp
         [System.Diagnostics.DebuggerStepThrough]
         private void InitializeComponent()
         {
-            viewLogsButton = new Button();
-            sqlQueryButton = new Button();
-            testConfigurationButton = new Button();
-            showStatisticsButton = new Button();
-            processFilesButton = new Button();
-            clearDatabaseButton = new Button();
+            viewLogsButton = new CustomButton();
+            sqlQueryButton = new CustomButton();
+            testConfigurationButton = new CustomButton();
+            showStatisticsButton = new CustomButton();
+            processFilesButton = new CustomButton();
+            clearDatabaseButton = new CustomButton();
             titleLabel = new Label();
             tableLayoutPanel1 = new TableLayoutPanel();
+            buttonEditMaps = new CustomButton();
             tableLayoutPanel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -52,54 +53,53 @@ namespace SacksApp
             // 
             viewLogsButton.AutoSize = true;
             viewLogsButton.BackColor = Color.White;
+            viewLogsButton.BadgeColor = Color.FromArgb(0, 150, 136);
+            viewLogsButton.BadgeDiameter = 28;
+            viewLogsButton.CornerRadius = 12;
             viewLogsButton.Dock = DockStyle.Fill;
-            viewLogsButton.FlatAppearance.BorderSize = 0;
-            viewLogsButton.FlatStyle = FlatStyle.Flat;
             viewLogsButton.Font = new Font("Segoe UI", 12F);
             viewLogsButton.ForeColor = Color.FromArgb(30, 30, 30);
-            viewLogsButton.ImageAlign = ContentAlignment.MiddleLeft;
+            viewLogsButton.Glyph = "\uE8A5";
             viewLogsButton.Location = new Point(443, 227);
             viewLogsButton.Margin = new Padding(15);
             viewLogsButton.Name = "viewLogsButton";
             viewLogsButton.Padding = new Padding(24, 12, 12, 12);
-            viewLogsButton.Size = new Size(399, 78);
+            viewLogsButton.Size = new Size(399, 76);
             viewLogsButton.TabIndex = 12;
             viewLogsButton.Text = "View Logs";
-            viewLogsButton.TextImageRelation = TextImageRelation.ImageBeforeText;
-            viewLogsButton.UseVisualStyleBackColor = false;
             viewLogsButton.Click += ViewLogsButton_Click;
             // 
             // sqlQueryButton
             // 
             sqlQueryButton.AutoSize = true;
             sqlQueryButton.BackColor = Color.White;
+            sqlQueryButton.BadgeColor = Color.FromArgb(156, 39, 176);
+            sqlQueryButton.BadgeDiameter = 28;
+            sqlQueryButton.CornerRadius = 12;
             sqlQueryButton.Dock = DockStyle.Fill;
-            sqlQueryButton.FlatAppearance.BorderSize = 0;
-            sqlQueryButton.FlatStyle = FlatStyle.Flat;
             sqlQueryButton.Font = new Font("Segoe UI", 12F);
             sqlQueryButton.ForeColor = Color.FromArgb(30, 30, 30);
-            sqlQueryButton.ImageAlign = ContentAlignment.MiddleLeft;
+            sqlQueryButton.Glyph = "\uE721";
             sqlQueryButton.Location = new Point(15, 227);
             sqlQueryButton.Margin = new Padding(15);
             sqlQueryButton.Name = "sqlQueryButton";
             sqlQueryButton.Padding = new Padding(24, 12, 12, 12);
-            sqlQueryButton.Size = new Size(398, 78);
+            sqlQueryButton.Size = new Size(398, 76);
             sqlQueryButton.TabIndex = 11;
             sqlQueryButton.Text = "SQL Query Tool";
-            sqlQueryButton.TextImageRelation = TextImageRelation.ImageBeforeText;
-            sqlQueryButton.UseVisualStyleBackColor = false;
             sqlQueryButton.Click += SqlQueryButton_Click;
             // 
             // testConfigurationButton
             // 
             testConfigurationButton.AutoSize = true;
             testConfigurationButton.BackColor = Color.White;
+            testConfigurationButton.BadgeColor = Color.FromArgb(255, 193, 7);
+            testConfigurationButton.BadgeDiameter = 28;
+            testConfigurationButton.CornerRadius = 12;
             testConfigurationButton.Dock = DockStyle.Fill;
-            testConfigurationButton.FlatAppearance.BorderSize = 0;
-            testConfigurationButton.FlatStyle = FlatStyle.Flat;
             testConfigurationButton.Font = new Font("Segoe UI", 12F);
             testConfigurationButton.ForeColor = Color.FromArgb(30, 30, 30);
-            testConfigurationButton.ImageAlign = ContentAlignment.MiddleLeft;
+            testConfigurationButton.Glyph = "\uE115";
             testConfigurationButton.Location = new Point(443, 121);
             testConfigurationButton.Margin = new Padding(15);
             testConfigurationButton.Name = "testConfigurationButton";
@@ -107,20 +107,19 @@ namespace SacksApp
             testConfigurationButton.Size = new Size(399, 76);
             testConfigurationButton.TabIndex = 10;
             testConfigurationButton.Text = "Test Configuration";
-            testConfigurationButton.TextImageRelation = TextImageRelation.ImageBeforeText;
-            testConfigurationButton.UseVisualStyleBackColor = false;
             testConfigurationButton.Click += TestConfigurationButton_Click;
             // 
             // showStatisticsButton
             // 
             showStatisticsButton.AutoSize = true;
             showStatisticsButton.BackColor = Color.White;
+            showStatisticsButton.BadgeColor = Color.FromArgb(33, 150, 243);
+            showStatisticsButton.BadgeDiameter = 28;
+            showStatisticsButton.CornerRadius = 12;
             showStatisticsButton.Dock = DockStyle.Fill;
-            showStatisticsButton.FlatAppearance.BorderSize = 0;
-            showStatisticsButton.FlatStyle = FlatStyle.Flat;
             showStatisticsButton.Font = new Font("Segoe UI", 12F);
             showStatisticsButton.ForeColor = Color.FromArgb(30, 30, 30);
-            showStatisticsButton.ImageAlign = ContentAlignment.MiddleLeft;
+            showStatisticsButton.Glyph = "\uE8BC";
             showStatisticsButton.Location = new Point(15, 121);
             showStatisticsButton.Margin = new Padding(15);
             showStatisticsButton.Name = "showStatisticsButton";
@@ -128,20 +127,19 @@ namespace SacksApp
             showStatisticsButton.Size = new Size(398, 76);
             showStatisticsButton.TabIndex = 9;
             showStatisticsButton.Text = "Show Statistics";
-            showStatisticsButton.TextImageRelation = TextImageRelation.ImageBeforeText;
-            showStatisticsButton.UseVisualStyleBackColor = false;
             showStatisticsButton.Click += ShowStatisticsButton_Click;
             // 
             // processFilesButton
             // 
             processFilesButton.AutoSize = true;
             processFilesButton.BackColor = Color.White;
+            processFilesButton.BadgeColor = Color.FromArgb(76, 175, 80);
+            processFilesButton.BadgeDiameter = 28;
+            processFilesButton.CornerRadius = 12;
             processFilesButton.Dock = DockStyle.Fill;
-            processFilesButton.FlatAppearance.BorderSize = 0;
-            processFilesButton.FlatStyle = FlatStyle.Flat;
             processFilesButton.Font = new Font("Segoe UI", 12F);
             processFilesButton.ForeColor = Color.FromArgb(30, 30, 30);
-            processFilesButton.ImageAlign = ContentAlignment.MiddleLeft;
+            processFilesButton.Glyph = "\uE8B7";
             processFilesButton.Location = new Point(15, 15);
             processFilesButton.Margin = new Padding(15);
             processFilesButton.Name = "processFilesButton";
@@ -149,20 +147,19 @@ namespace SacksApp
             processFilesButton.Size = new Size(398, 76);
             processFilesButton.TabIndex = 7;
             processFilesButton.Text = "Process Excel Files";
-            processFilesButton.TextImageRelation = TextImageRelation.ImageBeforeText;
-            processFilesButton.UseVisualStyleBackColor = false;
             processFilesButton.Click += ProcessFilesButton_Click;
             // 
             // clearDatabaseButton
             // 
             clearDatabaseButton.AutoSize = true;
             clearDatabaseButton.BackColor = Color.White;
+            clearDatabaseButton.BadgeColor = Color.FromArgb(244, 67, 54);
+            clearDatabaseButton.BadgeDiameter = 28;
+            clearDatabaseButton.CornerRadius = 12;
             clearDatabaseButton.Dock = DockStyle.Fill;
-            clearDatabaseButton.FlatAppearance.BorderSize = 0;
-            clearDatabaseButton.FlatStyle = FlatStyle.Flat;
             clearDatabaseButton.Font = new Font("Segoe UI", 12F);
             clearDatabaseButton.ForeColor = Color.FromArgb(30, 30, 30);
-            clearDatabaseButton.ImageAlign = ContentAlignment.MiddleLeft;
+            clearDatabaseButton.Glyph = "\uE74D";
             clearDatabaseButton.Location = new Point(443, 15);
             clearDatabaseButton.Margin = new Padding(15);
             clearDatabaseButton.Name = "clearDatabaseButton";
@@ -170,8 +167,6 @@ namespace SacksApp
             clearDatabaseButton.Size = new Size(399, 76);
             clearDatabaseButton.TabIndex = 8;
             clearDatabaseButton.Text = "Clear Database";
-            clearDatabaseButton.TextImageRelation = TextImageRelation.ImageBeforeText;
-            clearDatabaseButton.UseVisualStyleBackColor = false;
             clearDatabaseButton.Click += ClearDatabaseButton_Click;
             // 
             // titleLabel
@@ -193,6 +188,7 @@ namespace SacksApp
             tableLayoutPanel1.ColumnCount = 2;
             tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel1.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            tableLayoutPanel1.Controls.Add(buttonEditMaps, 0, 3);
             tableLayoutPanel1.Controls.Add(processFilesButton, 0, 0);
             tableLayoutPanel1.Controls.Add(showStatisticsButton, 0, 1);
             tableLayoutPanel1.Controls.Add(viewLogsButton, 1, 2);
@@ -202,19 +198,40 @@ namespace SacksApp
             tableLayoutPanel1.Dock = DockStyle.Fill;
             tableLayoutPanel1.Location = new Point(12, 62);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
-            tableLayoutPanel1.RowCount = 3;
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
-            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
-            tableLayoutPanel1.Size = new Size(857, 320);
+            tableLayoutPanel1.RowCount = 4;
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+            tableLayoutPanel1.RowStyles.Add(new RowStyle(SizeType.Percent, 25F));
+            tableLayoutPanel1.Size = new Size(857, 427);
             tableLayoutPanel1.TabIndex = 14;
+            // 
+            // buttonEditMaps
+            // 
+            buttonEditMaps.AutoSize = true;
+            buttonEditMaps.BackColor = Color.White;
+            buttonEditMaps.BadgeColor = Color.FromArgb(96, 125, 139);
+            buttonEditMaps.BadgeDiameter = 28;
+            buttonEditMaps.CornerRadius = 12;
+            buttonEditMaps.Dock = DockStyle.Fill;
+            buttonEditMaps.Font = new Font("Segoe UI", 12F);
+            buttonEditMaps.ForeColor = Color.FromArgb(30, 30, 30);
+            buttonEditMaps.Glyph = "\uE81E";
+            buttonEditMaps.Location = new Point(15, 333);
+            buttonEditMaps.Margin = new Padding(15);
+            buttonEditMaps.Name = "buttonEditMaps";
+            buttonEditMaps.Padding = new Padding(24, 12, 12, 12);
+            buttonEditMaps.Size = new Size(398, 79);
+            buttonEditMaps.TabIndex = 13;
+            buttonEditMaps.Text = "Handle Fix Names";
+            buttonEditMaps.Click += ButtonEditMaps_Click;
             // 
             // DashBoard
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(250, 250, 252);
-            ClientSize = new Size(881, 394);
+            ClientSize = new Size(881, 501);
             Controls.Add(tableLayoutPanel1);
             Controls.Add(titleLabel);
             Name = "DashBoard";
@@ -228,13 +245,14 @@ namespace SacksApp
 
         #endregion
 
-        private Button viewLogsButton;
-        private Button sqlQueryButton;
-        private Button testConfigurationButton;
-        private Button showStatisticsButton;
-        private Button processFilesButton;
-        private Button clearDatabaseButton;
+        private CustomButton viewLogsButton;
+        private CustomButton sqlQueryButton;
+        private CustomButton testConfigurationButton;
+        private CustomButton showStatisticsButton;
+        private CustomButton processFilesButton;
+        private CustomButton clearDatabaseButton;
         private Label titleLabel;
         private TableLayoutPanel tableLayoutPanel1;
+        private CustomButton buttonEditMaps;
     }
 }

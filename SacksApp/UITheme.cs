@@ -1,64 +1,61 @@
+using System;
 using System.Drawing;
-using System.Drawing.Text;
 using System.Windows.Forms;
 
 namespace SacksApp
 {
-    internal static class UITheme
+    public static class UITheme
     {
-        public static Image CreateIconBitmap(Color bg, string glyph, int size = 40)
+        /// <summary>
+        /// Creates a CustomButton with modern styling (rounded corners, badge, hover effects).
+        /// </summary>
+        public static CustomButton CreateBadgeButton(string text, Color badgeColor, string glyph, int badgeDiameter = 28, int cornerRadius = 12)
         {
-            var bmp = new Bitmap(size, size);
-            using (var g = Graphics.FromImage(bmp))
+            return new CustomButton
             {
-                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                g.Clear(Color.Transparent);
-
-                using (var brush = new SolidBrush(bg))
-                {
-                    g.FillEllipse(brush, 0, 0, size - 1, size - 1);
-                }
-
-                try
-                {
-                    using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
-                    using (var font = new Font("Segoe UI Emoji", size * 3 / 5, FontStyle.Regular, GraphicsUnit.Pixel))
-                    using (var fore = new SolidBrush(Color.White))
-                    {
-                        g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
-                        g.DrawString(glyph, font, fore, new RectangleF(0, 0, size, size), sf);
-                    }
-                }
-                catch
-                {
-                    using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
-                    using (var font = new Font("Segoe UI", size * 3 / 5, FontStyle.Bold, GraphicsUnit.Pixel))
-                    using (var fore = new SolidBrush(Color.White))
-                    {
-                        g.DrawString("•", font, fore, new RectangleF(0, 0, size, size), sf);
-                    }
-                }
-            }
-
-            return bmp;
+                Text = text,
+                BadgeColor = badgeColor,
+                Glyph = glyph,
+                BadgeDiameter = badgeDiameter,
+                CornerRadius = cornerRadius,
+                AutoSize = true,
+                BackColor = Color.White,
+                ForeColor = Color.FromArgb(30, 30, 30),
+                Font = new Font("Segoe UI", 12F),
+                Padding = new Padding(24, 12, 12, 12)
+            };
         }
 
-        public static void ApplyButtonStyle(Button b, Color? bgColor = null, string? glyph = null)
+        /// <summary>
+        /// Applies modern badge styling to CustomButton instances.
+        /// For regular Button instances, this is a no-op - replace with CustomButton instead.
+        /// </summary>
+        public static void ApplyBadgeStyle(Button btn, Color badgeColor, string glyph, int badgeDiameter = 28, int cornerRadius = 12)
         {
-            if (b == null) return;
-            b.FlatStyle = FlatStyle.Flat;
-            b.FlatAppearance.BorderSize = 0;
-            b.BackColor = Color.White;
-            b.ForeColor = Color.FromArgb(30, 30, 30);
-            b.TextImageRelation = TextImageRelation.ImageBeforeText;
-            b.ImageAlign = ContentAlignment.MiddleLeft;
-            b.Padding = new Padding(24, 12, 12, 12);
-            b.Font = new Font("Segoe UI", 12F, FontStyle.Regular);
-            if (glyph != null)
+            if (btn is CustomButton customBtn)
             {
-                var color = bgColor ?? Color.FromArgb(33, 150, 243);
-                try { b.Image = CreateIconBitmap(color, glyph); } catch { }
+                customBtn.BadgeColor = badgeColor;
+                customBtn.Glyph = glyph;
+                customBtn.BadgeDiameter = badgeDiameter;
+                customBtn.CornerRadius = cornerRadius;
             }
+            // For regular buttons, do nothing - users should replace with CustomButton
+        }
+
+        /// <summary>
+        /// Legacy lightweight button styling (no custom drawing).
+        /// </summary>
+        public static void ApplyButtonStyle(Button btn, Color accentColor, string glyph)
+        {
+            if (btn is null) return;
+            var original = btn.Text ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(glyph) && !original.StartsWith(glyph, StringComparison.Ordinal))
+            {
+                btn.Text = string.IsNullOrWhiteSpace(original) ? glyph : ($"{glyph}  {original}");
+            }
+            btn.UseVisualStyleBackColor = true;
+            btn.FlatStyle = FlatStyle.System;
+            btn.Padding = new Padding(Math.Max(6, btn.Padding.Left), Math.Max(4, btn.Padding.Top), Math.Max(6, btn.Padding.Right), Math.Max(4, btn.Padding.Bottom));
         }
     }
 }

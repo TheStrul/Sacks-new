@@ -1,6 +1,1215 @@
 {
   "Version": "2.1",
-  "FullPath": "C:\\Users\\avist\\source\\repos\\GitHubLocal\\Customers\\Sacks-New\\SacksApp\\Configuration/supplier-formats.json",
+  "FullPath": "C:\\Users\\avist\\source\\repos\\GitHubLocal\\Customers\\Sacks-New\\SacksApp\\Configuration\\supplier-formats.json",
+  "Suppliers": [
+    {
+      "Name": "Ace",
+      "Currency": "USD",
+      "ParserConfig": {
+        "Settings": {
+          "StopOnFirstMatchPerColumn": false,
+          "DefaultCulture": "en-US",
+          "PreferFirstAssignment": true
+        },
+        "ColumnRules": {
+          "A": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.EAN",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "B": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Ref",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "C": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.Brand",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "D": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Description",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "Parences",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Options": "all,remove",
+                  "Pattern": "\\((?<Ccontent>[^)]*)\\)"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "Parences[0]",
+                "Output": "Offer.Line",
+                "Assign": true,
+                "Condition": "Parences.Valid==true",
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Parences[0]",
+                "Output": "SizeAndUnits",
+                "Assign": false,
+                "Condition": "Parences.Valid==true",
+                "Parameters": {
+                  "Options": "all,ignorecase",
+                  "Pattern": "(?:(?<Ccount>\\d+ )\\s*[x×]\\s*)?(?<Csize>\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\s*oz))"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "SizeTokens",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)(?<size>\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\s*oz))",
+                  "Options": "all,ignorecase"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "SizeTokens[0]",
+                "Output": "SizeAmount",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)(?<size>\\d+(?:[.,]\\d+)?)",
+                  "Options": "first"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "SizeTokens[0]",
+                "Output": "UnitRaw",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)(?<unit>ml|oz|fl\\s*oz)",
+                  "Options": "first,ignorecase"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "UnitRaw",
+                "Output": "Product.Units",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Unit"
+                }
+              }
+            ],
+            "Trace": false
+          },
+          "E": {
+            "Actions": [
+              {
+                "Op": "Map",
+                "Input": "Text",
+                "Output": "Product.Concentration",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Concentration"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Text",
+                "Output": "Product.Type",
+                "Assign": true,
+                "Condition": "Product.Concentration==null",
+                "Parameters": {
+                  "Table": "Type"
+                }
+              }
+            ],
+            "Trace": false
+          },
+          "F": {
+            "Actions": [
+              {
+                "Op": "Map",
+                "Input": "Text",
+                "Output": "Product.COO",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "COO"
+                }
+              }
+            ],
+            "Trace": false
+          },
+          "G": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Quantity",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "H": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Price",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          }
+        }
+      },
+      "FileStructure": {
+        "DataStartRowIndex": 8,
+        "ExpectedColumnCount": 5,
+        "HeaderRowIndex": 1,
+        "Detection": {
+          "FileNamePatterns": [
+            "Ace*.xls*"
+          ]
+        }
+      },
+      "SubtitleHandling": null
+    },
+    {
+      "Name": "Chk",
+      "Currency": "USD",
+      "ParserConfig": {
+        "Settings": {
+          "StopOnFirstMatchPerColumn": false,
+          "DefaultCulture": "en-US",
+          "PreferFirstAssignment": true
+        },
+        "ColumnRules": {
+          "A": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.EAN",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "B": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Ref",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "C": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Description",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "Concentrations",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Concentration",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Concentrations[0]",
+                "Output": "Product.Concentration",
+                "Assign": true,
+                "Condition": "Concentrations.Valid==true",
+                "Parameters": {
+                  "Table": "Concentration"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Concentrations.Clean",
+                "Output": "Genders",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Gender",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Genders[0]",
+                "Output": "Product.Gender",
+                "Assign": true,
+                "Condition": "Genders.Valid==true",
+                "Parameters": {
+                  "Table": "Gender"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Genders.Clean",
+                "Output": "Types",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Type",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Types[0]",
+                "Output": "Product.Type",
+                "Assign": true,
+                "Condition": "Types.Valid==true",
+                "Parameters": {
+                  "Table": "Type"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Types.Clean",
+                "Output": "Brands",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Brand",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Brands[0]",
+                "Output": "Product.Brand",
+                "Assign": true,
+                "Condition": "Brands.Valid==true",
+                "Parameters": {
+                  "Table": "Brand"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Types.Clean",
+                "Output": "BrandsDefault",
+                "Assign": true,
+                "Condition": "Brands.Length == -1",
+                "Parameters": {
+                  "Pattern": "^\\s*(\\S+)(?=\\s|$)",
+                  "Options": "first,ignorecase"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "Brands.Clean",
+                "Output": "Offer.Line",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "E": {
+            "Actions": [
+              {
+                "Op": "Map",
+                "Input": "Text",
+                "Output": "Product.Gender",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Gender"
+                }
+              }
+            ],
+            "Trace": false
+          },
+          "F": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.Size",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "G": {
+            "Actions": [
+              {
+                "Op": "Map",
+                "Input": "Text",
+                "Output": "Product.Units",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Unit"
+                }
+              }
+            ],
+            "Trace": false
+          },
+          "I": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Price",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "J": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Quantity",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "K": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Incomming",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "L": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.COO",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          }
+        }
+      },
+      "FileStructure": {
+        "DataStartRowIndex": 2,
+        "ExpectedColumnCount": 7,
+        "HeaderRowIndex": 1,
+        "Detection": {
+          "FileNamePatterns": [
+            "chk*.xls*"
+          ]
+        }
+      },
+      "SubtitleHandling": null
+    },
+    {
+      "Name": "HAND",
+      "Currency": "USD",
+      "ParserConfig": {
+        "Settings": {
+          "StopOnFirstMatchPerColumn": false,
+          "DefaultCulture": "en-US",
+          "PreferFirstAssignment": true
+        },
+        "ColumnRules": {
+          "A": {
+            "Actions": [
+              {
+                "Op": "Split",
+                "Input": "Text",
+                "Output": "SplitText",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Delimiter": ":"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "SplitText[0]",
+                "Output": "Product.Type",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": {
+                  "Table": "Type"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "SplitText[1]",
+                "Output": "Product.Brand",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": {
+                  "Table": "Brand"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "SplitText[2]",
+                "Output": "Offer.Ref",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "B": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Ref",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "C": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.EAN",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "E": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Description",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "Parenthesis",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "\\((?<size>[^)]+)\\)",
+                  "Options": "first,remove"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Parenthesis",
+                "Output": "Product.Size",
+                "Assign": true,
+                "Condition": "Parenthesis.Valid==true",
+                "Parameters": {
+                  "Pattern": "(?<num>\\d+(?:\\.\\d+)?)",
+                  "Options": "first"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Parenthesis",
+                "Output": "UnitRaw",
+                "Assign": false,
+                "Condition": "Parenthesis.Valid==true",
+                "Parameters": {
+                  "Pattern": "(?i)(?<unit>ml|oz|fl\\s*oz)",
+                  "Options": "first,ignorecase"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "UnitRaw",
+                "Output": "Product.Units",
+                "Assign": true,
+                "Condition": "UnitRaw.Valid==true",
+                "Parameters": {
+                  "Table": "Unit"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Parenthesis.Clean",
+                "Output": "Concentrations",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Concentration",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Concentrations[0]",
+                "Output": "Product.Concentration",
+                "Assign": true,
+                "Condition": "Concentrations.Valid==true",
+                "Parameters": {
+                  "Table": "Concentration"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Parenthesis.Clean",
+                "Output": "Genders",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Gender",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Genders[0]",
+                "Output": "Product.Gender",
+                "Assign": true,
+                "Condition": "Genders.Valid==true",
+                "Parameters": {
+                  "Table": "Gender"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "Genders.Clean",
+                "Output": "Offer.Line",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": true
+          },
+          "F": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Quantity",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "G": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Price",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          }
+        }
+      },
+      "FileStructure": {
+        "DataStartRowIndex": 2,
+        "ExpectedColumnCount": 7,
+        "HeaderRowIndex": 1,
+        "Detection": {
+          "FileNamePatterns": [
+            "hand*.xls*"
+          ]
+        }
+      },
+      "SubtitleHandling": null
+    },
+    {
+      "Name": "MB",
+      "Currency": "USD",
+      "ParserConfig": {
+        "Settings": {
+          "StopOnFirstMatchPerColumn": false,
+          "DefaultCulture": "en-US",
+          "PreferFirstAssignment": true
+        },
+        "ColumnRules": {
+          "A": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Description",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "TextNoBrand",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "PatternKey": "Product.Brand",
+                  "Options": "first,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "TextNoBrand.Clean",
+                "Output": "RemovedOz",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)\\b\\d+(?:[.,]\\d+)?\\s*oz\\s*/\\s*",
+                  "Options": "first,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "RemovedOz.Clean",
+                "Output": "Sizes",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)(?<size>\\b\\d+(?:[.,]\\d+)?\\s*ml\\b)",
+                  "Options": "first,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Sizes",
+                "Output": "Product.Size",
+                "Assign": true,
+                "Condition": "Sizes.Valid==true",
+                "Parameters": {
+                  "Pattern": "(?i)(?<num>\\d+(?:[.,]\\d+)?)(?=\\s*ml\\b)",
+                  "Options": "first"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Sizes",
+                "Output": "UnitRaw",
+                "Assign": false,
+                "Condition": "Sizes.Valid==true",
+                "Parameters": {
+                  "Pattern": "(?i)\\b(?<unit>ml)\\b",
+                  "Options": "first"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "UnitRaw",
+                "Output": "Product.Units",
+                "Assign": true,
+                "Condition": "UnitRaw.Valid==true",
+                "Parameters": {
+                  "Table": "Unit"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Sizes.Clean",
+                "Output": "Genders",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)\\((?<gender>[^)]+)\\)",
+                  "Options": "first,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Genders",
+                "Output": "Product.Gender",
+                "Assign": true,
+                "Condition": "Genders.Valid==true",
+                "Parameters": {
+                  "Table": "Gender"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Genders.Clean",
+                "Output": "Concentrations",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Concentration",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Concentrations[0]",
+                "Output": "Product.Concentration",
+                "Assign": true,
+                "Condition": "Concentrations.Valid==true",
+                "Parameters": {
+                  "Table": "Concentration"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Concentrations.Clean",
+                "Output": "Types",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Type",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Types[0]",
+                "Output": "Product.Type",
+                "Assign": true,
+                "Condition": "Types.Valid==true",
+                "Parameters": {
+                  "Table": "Type"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "Types.Clean",
+                "Output": "Offer.Line",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": true
+          },
+          "B": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Price",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "C": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Quantity",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "D": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.EAN",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          }
+        }
+      },
+      "FileStructure": {
+        "DataStartRowIndex": 5,
+        "ExpectedColumnCount": 4,
+        "HeaderRowIndex": 1,
+        "Detection": {
+          "FileNamePatterns": [
+            "MB*.xls*"
+          ]
+        }
+      },
+      "SubtitleHandling": {
+        "Enabled": true,
+        "Action": "parse",
+        "DetectionRules": [
+          {
+            "Name": "Brand",
+            "Description": "Rows with only a single non-empty cell (column A) denote a brand header or type header",
+            "DetectionMethod": "columnCount",
+            "ExpectedColumnCount": 1,
+            "ApplyToSubsequentRows": true,
+            "ValidationPatterns": []
+          }
+        ],
+        "FallbackAction": "skip",
+        "Assignments": [
+          {
+            "SourceKey": "Brand",
+            "TargetProperty": "Product.Brand",
+            "LookupTable": "Brand",
+            "Overwrite": true
+          },
+          {
+            "SourceKey": "Type",
+            "TargetProperty": "Product.Type",
+            "LookupTable": "Type",
+            "Overwrite": true
+          }
+        ],
+        "Transforms": [
+          {
+            "SourceKey": "Brand",
+            "Mode": "ignoreEquals",
+            "Pattern": "COSMETICS",
+            "Replacement": "",
+            "IgnoreCase": true
+          },
+          {
+            "SourceKey": "Brand",
+            "Mode": "removePrefix",
+            "Pattern": "COSMETICS",
+            "Replacement": "",
+            "IgnoreCase": true
+          }
+        ]
+      }
+    },
+    {
+      "Name": "POL",
+      "Currency": "USD",
+      "ParserConfig": {
+        "Settings": {
+          "StopOnFirstMatchPerColumn": false,
+          "DefaultCulture": "en-US",
+          "PreferFirstAssignment": true
+        },
+        "ColumnRules": {
+          "A": {
+            "Actions": [
+              {
+                "Op": "Split",
+                "Input": "Text",
+                "Output": "SplitText",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Delimiter": ":"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "SplitText[0]",
+                "Output": "Product.Brand",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": null
+              },
+              {
+                "Op": "Map",
+                "Input": "SplitText[1]",
+                "Output": "Product.Gender",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": {
+                  "Table": "Gender"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "SplitText[1]",
+                "Output": "Product.Type",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": {
+                  "Table": "Type"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "SplitText[2]",
+                "Output": "Offer.Ref",
+                "Assign": true,
+                "Condition": "SplitText.Length == 3",
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "B": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Description",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Text",
+                "Output": "Sizes",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)(?<size>\\d+(?:\\.\\d+)?\\s*(?:ml|oz|fl\\s*oz))",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "Sizes[0]",
+                "Output": "Product.Size",
+                "Assign": true,
+                "Condition": "Sizes.Valid == true",
+                "Parameters": null
+              },
+              {
+                "Op": "Find",
+                "Input": "Sizes[0]",
+                "Output": "UnitRaw",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "(?i)(?<unit>ml|oz|fl\\s*oz)",
+                  "Options": "first,ignorecase"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "UnitRaw",
+                "Output": "Product.Units",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Unit"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Sizes.Clean",
+                "Output": "Concentrations",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Concentration",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Concentrations[0]",
+                "Output": "Product.Concentration",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Concentration"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Concentrations.Clean",
+                "Output": "Genders",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Gender",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Genders[0]",
+                "Output": "Product.Gender",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Gender"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Concentrations.Clean",
+                "Output": "Types",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "lookup:Type",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Map",
+                "Input": "Types[0]",
+                "Output": "Product.Type",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": {
+                  "Table": "Type"
+                }
+              },
+              {
+                "Op": "Find",
+                "Input": "Types.Clean",
+                "Output": "FinalText",
+                "Assign": false,
+                "Condition": null,
+                "Parameters": {
+                  "Pattern": "[/-]*",
+                  "Options": "all,ignorecase,remove"
+                }
+              },
+              {
+                "Op": "Assign",
+                "Input": "FinalText.Clean",
+                "Output": "Offer.Line",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "C": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Product.EAN",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "D": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Quantity",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          },
+          "E": {
+            "Actions": [
+              {
+                "Op": "Assign",
+                "Input": "Text",
+                "Output": "Offer.Price",
+                "Assign": true,
+                "Condition": null,
+                "Parameters": null
+              }
+            ],
+            "Trace": false
+          }
+        }
+      },
+      "FileStructure": {
+        "DataStartRowIndex": 8,
+        "ExpectedColumnCount": 5,
+        "HeaderRowIndex": 1,
+        "Detection": {
+          "FileNamePatterns": [
+            "pol*.xls*",
+            "POL*.xls*"
+          ]
+        }
+      },
+      "SubtitleHandling": null
+    }
+  ],
   "Lookups": {
     "Gender": {
       "bella": "W",
@@ -48,25 +1257,25 @@
       "g": "g"
     },
     "Currency": {
-      "\u20AC": "\u20AC",
-      "eur": "\u20AC",
-      "euro": "\u20AC",
-      "euros": "\u20AC",
+      "€": "€",
+      "eur": "€",
+      "euro": "€",
+      "euros": "€",
       "$": "$",
       "usd": "$",
       "dollar": "$",
       "dollars": "$",
-      "\u00A3": "\u00A3",
-      "gbp": "\u00A3",
-      "pound": "\u00A3",
-      "pounds": "\u00A3",
+      "£": "£",
+      "gbp": "£",
+      "pound": "£",
+      "pounds": "£",
       "chf": "CHF",
       "franc": "CHF",
       "francs": "CHF",
-      "z\u0142": "PLN",
+      "zł": "PLN",
       "pln": "PLN",
       "zloty": "PLN",
-      "k\u010D": "CZK",
+      "kč": "CZK",
       "czk": "CZK",
       "koruna": "CZK",
       "ft": "HUF",
@@ -74,7 +1283,7 @@
       "forint": "HUF",
       "lei": "RON",
       "ron": "RON",
-      "\u043B\u0432": "BGN",
+      "лв": "BGN",
       "bgn": "BGN",
       "lev": "BGN",
       "kn": "HRK",
@@ -139,135 +1348,140 @@
       "no": "Norway"
     },
     "Brand": {
-      "l\u0027occitane": "L\u0027Occitane",
-      "l occitane": "L\u0027Occitane",
-      "l\u0027occitane en provence": "L\u0027Occitane",
-      "l occitane en provence": "L\u0027Occitane",
-      "bvlgari": "Bvlgari",
-      "bvlgar": "Bvlgari",
-      "bvl": "Bvlgari",
-      "adidas": "Adidas",
-      "calvin klein": "Calvin Klein",
-      "ck": "Calvin Klein",
-      "dolce \u0026 gabbana": "Dolce \u0026 Gabbana",
-      "dolce and gabbana": "Dolce \u0026 Gabbana",
-      "d\u0026g": "Dolce \u0026 Gabbana",
-      "d and g": "Dolce \u0026 Gabbana",
-      "dkny": "DONNA KARAN",
-      "giorgio armani": "Giorgio Armani",
-      "armani": "Giorgio Armani",
-      "paco rabanne": "Paco Rabanne",
-      "jean paul gaultier": "Jean Paul Gaultier",
-      "jpg": "Jean Paul Gaultier",
-      "ralph lauren": "Ralph Lauren",
-      "ralph": "Ralph Lauren",
-      "tom ford": "Tom Ford",
-      "ford": "Tom Ford",
-      "versace": "Versace",
-      "givenchy": "Givenchy",
-      "chanel": "Chanel",
-      "dior": "Dior",
-      "christian dior": "Dior",
-      "hermes": "Herm\u00E8s",
-      "herm\u00E8s": "Herm\u00E8s",
-      "gucci": "Gucci",
-      "burberry": "Burberry",
-      "montblanc": "Montblanc",
-      "mont blanc": "Montblanc",
-      "lancome": "Lanc\u00F4me",
-      "lanc\u00F4me": "Lanc\u00F4me",
-      "valentino": "Valentino",
-      "victor\u0026rolf": "Victor \u0026 Rolf",
-      "victor \u0026 rolf": "Victor \u0026 Rolf",
-      "victor": "Victor \u0026 Rolf",
-      "coach": "Coach",
-      "ysl": "Yves Saint Laurent",
-      "yves saint laurent": "Yves Saint Laurent",
-      "j.p.": "J.P.",
-      "cacharel": "Cacharel",
-      "aramis": "Aramis",
-      "estee lauder": "Estee Lauder",
-      "e.arden": "E.Arden",
-      "kenzo": "Kenzo",
-      "guerlain": "Guerlain",
-      "azzaro": "Azzaro",
-      "guy laroche": "Guy Laroche",
-      "paloma": "Paloma",
-      "jimmy choo": "Jimmy Choo",
-      "lanvin": "Lanvin",
-      "karl lagerfeld": "Karl Lagerfeld",
-      "lacoste": "Lacoste",
-      "joop": "Joop",
-      "narciso rodriguez": "Narciso Rodriguez",
-      "issey miyake": "Issey Miyake",
-      "thierry mugler": "Thierry Mugler",
-      "lalique": "Lalique",
-      "davidoff": "Davidoff",
-      "hugo boss": "Hugo Boss",
-      "prada": "Prada",
-      "lattafa": "Lattafa",
-      "christina aguilera": "Christina Aguilera",
-      "a. banderas": "Antonio Banderas",
-      "carolina herrera": "Carolina Herrera",
-      "antonio": "Antonio Banderas",
-      "loewe": "Loewe",
-      "gaultier": "Gaultier",
-      "m kors": "M Kors",
-      "n rodriguez": "Narciso Rodriguez",
-      "l lempicka": "Lolita Lempicka",
-      "n rodr": "Narciso Rodriguez",
-      "moschino": "Moschino",
       "4711": "4711",
+      "a. banderas": "Antonio Banderas",
       "acqua colonia": "Acqua Colonia",
       "acqua de parma": "Acqua Di Parma",
+      "adidas": "Adidas",
       "afnan": "Afnan",
       "al hambra": "Al Hambra",
+      "alfred sung": "Alfred Sung",
+      "anfar": "Anfar",
+      "antonio": "Antonio Banderas",
+      "aramis": "Aramis",
       "ard al zaafaran": "Ard Al Zaafaran",
+      "ard al zaafran": "Ard Al Zaafaran",
       "armaf": "Armaf",
+      "armani": "Giorgio Armani",
+      "aroma": "Aroma",
       "asdaaf": "Asdaaf",
       "atralia": "Atralia",
-      "ard al zaafran": "Ard Al Zaafaran",
-      "aroma": "Aroma",
+      "auraa": "Auraa",
       "auraa desire": "Auraa Desire",
+      "azzaro": "Azzaro",
+      "bond no 9": "Bond No 9",
+      "burberry": "Burberry",
+      "bvl": "Bvlgari",
+      "bvlgar": "Bvlgari",
+      "bvlgari": "Bvlgari",
+      "cacharel": "Cacharel",
+      "calvin klein": "Calvin Klein",
+      "carolina herrera": "Carolina Herrera",
+      "cartier": "Cartier",
+      "chanel": "Chanel",
+      "chloe": "Chloe",
+      "christian dior": "Dior",
+      "christina aguilera": "Christina Aguilera",
+      "ck": "Calvin Klein",
+      "clinique": "Clinique",
+      "coach": "Coach",
+      "creed": "Creed",
+      "d and g": "Dolce & Gabbana",
+      "d&g": "Dolce & Gabbana",
+      "davidoff": "Davidoff",
+      "dior": "Dior",
+      "dkny": "DONNA KARAN",
+      "dolce & gabbana": "Dolce & Gabbana",
+      "dolce and gabbana": "Dolce & Gabbana",
+      "drakkar noir": "Drakkar Noir",
+      "e.arden": "E.Arden",
       "elizabeth arden": "Elizabeth Arden",
+      "elvis presley": "Elvis Presley",
+      "emper": "Emper",
       "emper le chameau": "Emper Le Chameau",
+      "estee lauder": "Estee Lauder",
       "ferrari": "Ferrari",
       "flavia": "Flavia",
-      "khadlaj": "Khadlaj",
-      "latafa": "Lattafa",
+      "ford": "Tom Ford",
+      "gaultier": "Gaultier",
+      "giorgio armani": "Giorgio Armani",
+      "givenchy": "Givenchy",
+      "green tea": "Green Tea",
+      "gucci": "Gucci",
+      "guerlain": "Guerlain",
+      "guy laroche": "Guy Laroche",
+      "hermes": "Hermès",
+      "hermès": "Hermès",
       "hollister": "Hollister",
-      "viktor \u0026 rolf": "Viktor \u0026 Rolf",
-      "auraa": "Auraa",
-      "vurv": "Vurv",
+      "hugo boss": "Hugo Boss",
+      "i miyake": "Issey Miyake",
+      "issey miyake": "Issey Miyake",
+      "j.p.": "J.P.",
+      "jean paul gaultier": "Jean Paul Gaultier",
+      "jimmy choo": "Jimmy Choo",
+      "joop": "Joop",
+      "jpg": "Jean Paul Gaultier",
+      "karl lagerfeld": "Karl Lagerfeld",
+      "kenzo": "Kenzo",
+      "khadlaj": "Khadlaj",
+      "l lempicka": "Lolita Lempicka",
+      "l occitane": "L'Occitane",
+      "l occitane en provence": "L'Occitane",
+      "l'occitane": "L'Occitane",
+      "l'occitane en provence": "L'Occitane",
+      "lacoste": "Lacoste",
+      "lalique": "Lalique",
+      "lancome": "Lancôme",
+      "lancôme": "Lancôme",
+      "lanvin": "Lanvin",
+      "latafa": "Lattafa",
+      "lattafa": "Lattafa",
+      "loewe": "Loewe",
+      "lolita lempicka": "Lolita Lempicka",
       "lolita lompicka": "Lolita Lompicka",
-      "nylaa": "Nylaa",
-      "rasasi": "Rasasi",
-      "rave": "Rave",
-      "swiss arabian": "Swiss Arabian",
+      "m kors": "M Kors",
+      "marc jacobs": "Marc Jacobs",
       "michael kors": "Michael Kors",
       "missoni": "Missoni",
-      "chloe": "Chloe",
-      "emper": "Emper",
-      "anfar": "Anfar",
-      "theirry mugler": "Theirry Mugler",
+      "mont blanc": "Montblanc",
+      "montblanc": "Montblanc",
+      "moschino": "Moschino",
+      "n rodr": "Narciso Rodriguez",
+      "n rodriguez": "Narciso Rodriguez",
+      "narciso rodriguez": "Narciso Rodriguez",
       "nars": "Nars",
-      "clinique": "Clinique",
-      "marc jacobs": "Marc Jacobs",
-      "alfred sung": "Alfred Sung",
-      "green tea": "Green Tea",
-      "drakkar noir": "Drakkar Noir",
+      "nylaa": "Nylaa",
+      "paco rabanne": "Paco Rabanne",
+      "paloma": "Paloma",
       "paloma picasso": "Paloma Picasso",
+      "prada": "Prada",
+      "ralph": "Ralph Lauren",
+      "ralph lauren": "Ralph Lauren",
+      "rasasi": "Rasasi",
+      "rave": "Rave",
       "rochas": "Rochas",
-      "cartier": "Cartier",
-      "creed": "Creed",
-      "tiffany \u0026 co": "Tiffany \u0026 Co",
+      "swiss arabian": "Swiss Arabian",
+      "t mugler": "T Mugler",
+      "theirry mugler": "Theirry Mugler",
+      "thierry mugler": "Thierry Mugler",
       "tiffany": "Tiffany",
-      "elvis presley": "Elvis Presley",
-      "bond no 9": "Bond No 9"
+      "tiffany & co": "Tiffany & Co",
+      "tom ford": "Tom Ford",
+      "valentino": "Valentino",
+      "versace": "Versace",
+      "victor": "Victor & Rolf",
+      "victor & rolf": "Victor & Rolf",
+      "victor&rolf": "Victor & Rolf",
+      "viktor & rolf": "Viktor & Rolf",
+      "vurv": "Vurv",
+      "ysl": "Yves Saint Laurent",
+      "yves saint laurent": "Yves Saint Laurent",
+      "aaa": "AAA"
     },
     "Type": {
       "deo stick": "Deodorant",
       "deo spray": "Deodorant",
+      "deo": "Deodorant",
       "set": "Set",
       "spray": "Spray",
       "sets": "Set",
