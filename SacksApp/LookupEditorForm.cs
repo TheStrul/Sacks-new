@@ -25,6 +25,10 @@ namespace SacksApp
         private CancellationTokenSource? _cts;
         private bool _suppressLookupComboEvents; // prevent re-entrant SelectedIndexChanged loops
 
+        // Sorting state
+        private string? _currentSortColumn;
+        private ListSortDirection _currentSortDirection = ListSortDirection.Ascending;
+
         private sealed class LookupEntry
         {
             public string Key { get; set; } = string.Empty;
@@ -76,9 +80,11 @@ namespace SacksApp
 
             // Bind grid
             _grid.DataSource = _entries;
+            ConfigureGridForProgrammaticSort();
 
             // Wire events
             _grid.KeyDown += Grid_KeyDown;
+            _grid.ColumnHeaderMouseClick += Grid_ColumnHeaderMouseClick;
             _addButton.Click += (_, __) => AddRow();
             _removeButton.Click += (_, __) => RemoveSelectedRows();
             _reloadButton.Click += async (_, __) => await LoadAsync(CancellationToken.None);
@@ -88,6 +94,92 @@ namespace SacksApp
 
             Shown += async (_, __) => await LoadAsync(CancellationToken.None);
             FormClosing += LookupEditorForm_FormClosing;
+        }
+
+        private void ConfigureGridForProgrammaticSort()
+        {
+            try
+            {
+                foreach (DataGridViewColumn col in _grid.Columns)
+                {
+                    col.SortMode = DataGridViewColumnSortMode.Programmatic;
+                }
+            }
+            catch { }
+        }
+
+        private void Grid_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Left) return;
+            if (e.ColumnIndex < 0 || e.ColumnIndex >= _grid.Columns.Count) return;
+
+            // Finish editing before sorting
+            if (_grid.IsCurrentCellInEditMode) _grid.EndEdit();
+
+            var col = _grid.Columns[e.ColumnIndex];
+            var prop = string.IsNullOrWhiteSpace(col.DataPropertyName) ? col.Name : col.DataPropertyName;
+            if (string.IsNullOrWhiteSpace(prop)) return;
+
+            // Toggle direction if clicking same column
+            if (string.Equals(_currentSortColumn, prop, StringComparison.OrdinalIgnoreCase))
+            {
+                _currentSortDirection = _currentSortDirection == ListSortDirection.Ascending
+                    ? ListSortDirection.Descending
+                    : ListSortDirection.Ascending;
+            }
+            else
+            {
+                _currentSortColumn = prop;
+                _currentSortDirection = ListSortDirection.Ascending;
+            }
+
+            SortEntries(_currentSortColumn!, _currentSortDirection);
+            ApplySortGlyphs(_currentSortColumn!, _currentSortDirection);
+        }
+
+        private void ApplySortGlyphs(string columnProperty, ListSortDirection dir)
+        {
+            try
+            {
+                foreach (DataGridViewColumn c in _grid.Columns)
+                {
+                    var prop = string.IsNullOrWhiteSpace(c.DataPropertyName) ? c.Name : c.DataPropertyName;
+                    c.HeaderCell.SortGlyphDirection = string.Equals(prop, columnProperty, StringComparison.OrdinalIgnoreCase)
+                        ? (dir == ListSortDirection.Ascending ? SortOrder.Ascending : SortOrder.Descending)
+                        : SortOrder.None;
+                }
+            }
+            catch { }
+        }
+
+        private void SortEntries(string property, ListSortDirection direction)
+        {
+            IEnumerable<LookupEntry> ordered = _entries;
+            var cmp = StringComparer.OrdinalIgnoreCase;
+
+            if (string.Equals(property, nameof(LookupEntry.Key), StringComparison.OrdinalIgnoreCase))
+            {
+                ordered = direction == ListSortDirection.Ascending
+                    ? _entries.OrderBy(x => x.Key ?? string.Empty, cmp)
+                    : _entries.OrderByDescending(x => x.Key ?? string.Empty, cmp);
+            }
+            else if (string.Equals(property, nameof(LookupEntry.Value), StringComparison.OrdinalIgnoreCase))
+            {
+                ordered = direction == ListSortDirection.Ascending
+                    ? _entries.OrderBy(x => x.Value ?? string.Empty, cmp)
+                    : _entries.OrderByDescending(x => x.Value ?? string.Empty, cmp);
+            }
+            else
+            {
+                return;
+            }
+
+            var list = ordered.ToList();
+            _entries.RaiseListChangedEvents = false;
+            _entries.Clear();
+            foreach (var it in list) _entries.Add(it);
+            _entries.RaiseListChangedEvents = true;
+            _entries.ResetBindings();
         }
 
         private void LookupCombo_SelectedIndexChanged(object? sender, EventArgs e)
@@ -279,6 +371,8 @@ namespace SacksApp
 
                 _entries.RaiseListChangedEvents = true;
                 _entries.ResetBindings();
+                ConfigureGridForProgrammaticSort();
+                ApplySortGlyphs(_currentSortColumn ?? nameof(LookupEntry.Key), _currentSortDirection);
 
                 UpdateStatus($"Loaded {_entries.Count} entr{(_entries.Count == 1 ? "y" : "ies")} for '{_lookupName}'");
             }
@@ -317,7 +411,7 @@ namespace SacksApp
                 }
                 else if (_lookupCombo.Items.Count > 0)
                 {
-                    if (_lookupCombo.Items[0] is string s && !string.Equals(s, CreateNewItemText, StringComparison.Ordinal))
+                    if (_lookupCombo.Items[0] is string s and not null && !string.Equals(s, CreateNewItemText, StringComparison.Ordinal))
                     {
                         _lookupCombo.SelectedIndex = 0;
                     }

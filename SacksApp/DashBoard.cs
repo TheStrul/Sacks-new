@@ -17,6 +17,7 @@ using SacksDataLayer.Configuration;
 using SacksDataLayer.Services.Interfaces;
 
 using SacksLogicLayer.Services.Interfaces;
+using SacksLogicLayer.Services.Implementations;
 
 namespace SacksApp
 {
@@ -290,6 +291,60 @@ namespace SacksApp
             {
                 _logger.LogError(ex, "Error opening Lookup Editor");
                 MessageBox.Show($"Error opening Lookup Editor: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Gets products directory from configuration or uses default
+        /// </summary>
+        private string GetProductsDirectoryFromConfiguration(IConfiguration configuration)
+        {
+            var configuredPath = configuration["OpenBeautyFactsSettings:InputDirectory"];
+
+            // Default to AllInputs/db if not configured
+            if (string.IsNullOrWhiteSpace(configuredPath))
+            {
+                var solutionRoot = FindSolutionRoot();
+                configuredPath = Path.Combine(solutionRoot, "AllInputs", "db");
+            }
+            else if (!Path.IsPathRooted(configuredPath))
+            {
+                // Handle relative paths
+                var solutionRoot = FindSolutionRoot();
+                configuredPath = Path.GetFullPath(Path.Combine(solutionRoot, configuredPath));
+            }
+
+            // Create directory if it doesn't exist
+            if (!Directory.Exists(configuredPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(configuredPath);
+                    _logger.LogDebug("Created products directory: {ProductsPath}", configuredPath);
+                }
+                catch (Exception ex)
+                {
+                    throw new DirectoryNotFoundException($"Cannot create products directory at {configuredPath}: {ex.Message}", ex);
+                }
+            }
+
+            _logger.LogDebug("Using products directory: {ProductsPath}", configuredPath);
+            return configuredPath;
+        }
+
+        private void HandleOffersButton_Click(object sender, EventArgs e)
+        {
+            try
+            {
+#pragma warning disable CA2000 // Dispose objects before losing scope
+                var form = new OffersForm(_serviceProvider);
+#pragma warning restore CA2000
+                form.Show();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening Offers manager");
+                MessageBox.Show($"Error opening Offers manager: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }

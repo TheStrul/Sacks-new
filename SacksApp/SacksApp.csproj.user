@@ -16,6 +16,9 @@
     <Compile Update="LookupEditorForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="OffersForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="SqlQueryForm.cs">
       <SubType>Form</SubType>
     </Compile>

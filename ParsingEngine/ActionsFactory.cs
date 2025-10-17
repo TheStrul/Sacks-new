@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace ParsingEngine;
@@ -44,7 +45,7 @@ public static class ActionsFactory
                     }
                 }
 
-                string[] options = patameter.ContainsKey("Options") ? patameter["Options"].Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries  |StringSplitOptions.TrimEntries) : Array.Empty<string>();
+                string[] options = patameter.ContainsKey("Options") ? patameter["Options"].Split(new[]{','}, StringSplitOptions.RemoveEmptyEntries  |StringSplitOptions.TrimEntries) : Array.Empty<string>();
                 ret = new FindAction(input, output, pattern, options.ToList(), assign, condition, lookupEntries, patternKey);
                 break;
             case "split":
@@ -57,7 +58,30 @@ public static class ActionsFactory
                 string tableName = patameter["Table"];
                 // Resolve lookup table
                 var mapDict = lookups[tableName];
-                ret = new MappingAction(input, output, assign, mapDict,condition);
+                var addIfNotFound = false;
+                if (patameter.TryGetValue("AddIfNotFound", out var addStr))
+                {
+                    addIfNotFound = string.Equals(addStr, "true", StringComparison.OrdinalIgnoreCase);
+                }
+                ret = new MappingAction(input, output, assign, mapDict, condition, addIfNotFound);
+                break;
+            case "convert":
+                // Parameters: FromUnit, ToUnit, Factor, UnitKey, Round, SetUnit
+                patameter.TryGetValue("FromUnit", out var fromUnit);
+                patameter.TryGetValue("ToUnit", out var toUnit);
+                patameter.TryGetValue("UnitKey", out var unitKey);
+                patameter.TryGetValue("Round", out var roundMode);
+                var setUnit = true;
+                if (patameter.TryGetValue("SetUnit", out var setUnitStr))
+                {
+                    setUnit = string.Equals(setUnitStr, "true", StringComparison.OrdinalIgnoreCase);
+                }
+                double factor = 1d;
+                if (patameter.TryGetValue("Factor", out var factorStr))
+                {
+                    double.TryParse(factorStr, NumberStyles.Float, CultureInfo.InvariantCulture, out factor);
+                }
+                ret = new ConvertAction(input, output, assign, condition, fromUnit, toUnit, factor, unitKey, roundMode, setUnit);
                 break;
             case "case":
                 var mode = patameter.ContainsKey("Mode") ? patameter["Mode"] : "title";

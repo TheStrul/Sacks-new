@@ -5,16 +5,19 @@ namespace ParsingEngine;
 /// Parameters (via ActionConfig.Parameters):
 /// - table: lookup table name (required)
 /// - casemode: "exact" (default), "upper", "lower"
-/// - assign: "true" to write to assign:{Output} instead of Output
+/// - AddIfNotFound: "true" to add missing key (as lower-case) with value in Title Case
 /// </summary>
 public sealed class MappingAction : BaseAction
 {
     public override string Op => "map";
     private readonly Dictionary<string, string> _lookup;
+    private readonly bool _addIfNotFound;
 
-    public MappingAction(string fromKey, string toKey, bool assign, Dictionary<string, string> lookup, string? condition = null) : base(fromKey, toKey,assign,condition)
+    public MappingAction(string fromKey, string toKey, bool assign, Dictionary<string, string> lookup, string? condition = null, bool addIfNotFound = false)
+        : base(fromKey, toKey, assign, condition)
     {
-        _lookup = lookup;
+        _lookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
+        _addIfNotFound = addIfNotFound;
     }
 
     public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
@@ -23,9 +26,9 @@ public sealed class MappingAction : BaseAction
 
         bag.TryGetValue(base.input, out var raw);
         var input = raw ?? string.Empty;
-        if (string.IsNullOrEmpty(input)) return false;
+        if (string.IsNullOrWhiteSpace(input)) return false;
 
-
+        // Try to find in lookup (case-insensitive)
         foreach (var kv in _lookup)
         {
             if (string.Equals(kv.Key, input, StringComparison.OrdinalIgnoreCase))
@@ -38,7 +41,26 @@ public sealed class MappingAction : BaseAction
             }
         }
 
-        // not found
+        // Not found - optionally add
+        if (_addIfNotFound)
+        {
+            // Key: lower-case trimmed, Value: Title Case based on current context culture
+            var key = (input ?? string.Empty).Trim().ToLowerInvariant();
+            var culture = ctx.Culture ?? System.Globalization.CultureInfo.InvariantCulture;
+            var titleValue = culture.TextInfo.ToTitleCase((input ?? string.Empty).Trim().ToLower(culture));
+
+            // Add or overwrite existing (dictionary is case-insensitive per config merging)
+            _lookup[key] = titleValue;
+
+            if (base.assign)
+                bag[$"assign:{base.output}"] = titleValue;
+            else
+                bag[base.output] = titleValue;
+
+            return true;
+        }
+
+        // not found and not added
         return false;
     }
 }

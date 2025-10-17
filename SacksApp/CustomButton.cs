@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
+using SacksApp.Theming;
 
 namespace SacksApp;
 
@@ -24,14 +25,40 @@ public class CustomButton : Button
     private bool _isHovered;
     private bool _isPressed;
 
+    private int _focusBorderWidth = 1;
+    private Color _focusBorderColorOverride = Color.Empty;
+
+    private bool _useTheme = true;
+
     public CustomButton()
     {
         FlatStyle = FlatStyle.Flat;
-        FlatAppearance.BorderSize = 0;  // Must be 0 when using UserPaint + Region
+        FlatAppearance.BorderSize = 0;
         TextImageRelation = TextImageRelation.ImageBeforeText;
         ImageAlign = ContentAlignment.MiddleLeft;
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-        UpdateColors();
+
+        try
+        {
+            ButtonThemeProvider.Initialize();
+            ButtonThemeProvider.ThemeChanged += (_, __) => ApplyThemeAndRefresh();
+            ApplyThemeAndRefresh();
+        }
+        catch
+        {
+            UpdateColors();
+        }
+    }
+
+    /// <summary>
+    /// When true (default), applies values from button-theme.json; when false, uses local properties only.
+    /// </summary>
+    [Category("Appearance")]
+    [DefaultValue(true)]
+    public bool UseTheme
+    {
+        get => _useTheme;
+        set { _useTheme = value; ApplyThemeAndRefresh(); }
     }
 
     /// <summary>
@@ -43,14 +70,7 @@ public class CustomButton : Button
     public Color BadgeColor
     {
         get => _badgeColor;
-        set
-        {
-            if (_badgeColor != value)
-            {
-                _badgeColor = value;
-                RecreateBadge();
-            }
-        }
+        set { if (_badgeColor != value) { _badgeColor = value; RecreateBadge(); } }
     }
 
     /// <summary>
@@ -63,14 +83,7 @@ public class CustomButton : Button
     public string Glyph
     {
         get => _glyph;
-        set
-        {
-            if (_glyph != value)
-            {
-                _glyph = value ?? string.Empty;
-                RecreateBadge();
-            }
-        }
+        set { if (_glyph != value) { _glyph = value ?? string.Empty; RecreateBadge(); } }
     }
 
     /// <summary>
@@ -82,14 +95,7 @@ public class CustomButton : Button
     public int BadgeDiameter
     {
         get => _badgeDiameter;
-        set
-        {
-            if (_badgeDiameter != value)
-            {
-                _badgeDiameter = Math.Max(12, value);
-                RecreateBadge();
-            }
-        }
+        set { if (_badgeDiameter != value) { _badgeDiameter = Math.Max(12, value); RecreateBadge(); } }
     }
 
     /// <summary>
@@ -101,15 +107,30 @@ public class CustomButton : Button
     public int CornerRadius
     {
         get => _cornerRadius;
-        set
-        {
-            if (_cornerRadius != value)
-            {
-                _cornerRadius = Math.Max(0, value);
-                UpdateRegion();
-                Invalidate();
-            }
-        }
+        set { if (_cornerRadius != value) { _cornerRadius = Math.Max(0, value); UpdateRegion(); Invalidate(); } }
+    }
+
+    /// <summary>
+    /// Focus border width in pixels (from theme or override).
+    /// </summary>
+    [Category("Appearance")]
+    [DefaultValue(1)]
+    public int FocusBorderWidth
+    {
+        get => _focusBorderWidth;
+        set { _focusBorderWidth = Math.Max(0, value); Invalidate(); }
+    }
+
+    /// <summary>
+    /// Optional custom focus border color; set to Color.Empty to use theme/system highlight.
+    /// Hidden from designer serialization to satisfy WFO1000.
+    /// </summary>
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public Color FocusBorderColorOverride
+    {
+        get => _focusBorderColorOverride;
+        set { _focusBorderColorOverride = value; Invalidate(); }
     }
 
     protected override void OnBackColorChanged(EventArgs e)
@@ -141,115 +162,73 @@ public class CustomButton : Button
     protected override void OnMouseEnter(EventArgs e)
     {
         base.OnMouseEnter(e);
-        if (!_isHovered)
-        {
-            _isHovered = true;
-            Invalidate();
-        }
+        if (!_isHovered) { _isHovered = true; Invalidate(); }
     }
 
     protected override void OnMouseLeave(EventArgs e)
     {
         base.OnMouseLeave(e);
-        if (_isHovered || _isPressed)
-        {
-            _isHovered = false;
-            _isPressed = false;
-            Invalidate();
-        }
+        if (_isHovered || _isPressed) { _isHovered = false; _isPressed = false; Invalidate(); }
     }
 
     protected override void OnMouseDown(MouseEventArgs mevent)
     {
-        if (mevent is null)
-        {
-            throw new ArgumentNullException(nameof(mevent));
-        }
-
+        if (mevent is null) throw new ArgumentNullException(nameof(mevent));
         base.OnMouseDown(mevent);
-        if (mevent.Button == MouseButtons.Left)
-        {
-            _isPressed = true;
-            Invalidate();
-        }
+        if (mevent.Button == MouseButtons.Left) { _isPressed = true; Invalidate(); }
     }
 
     protected override void OnMouseUp(MouseEventArgs mevent)
     {
         base.OnMouseUp(mevent);
-        if (_isPressed)
-        {
-            _isPressed = false;
-            Invalidate();
-        }
+        if (_isPressed) { _isPressed = false; Invalidate(); }
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
-        if (e is null)
-        {
-            throw new ArgumentNullException(nameof(e));
-        }
-
+        if (e is null) throw new ArgumentNullException(nameof(e));
         var g = e.Graphics;
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-        // Determine background color based on state
-        Color backColor = _isPressed ? _pressedBackColor : _isHovered ? _hoverBackColor : _normalBackColor;
+        var theme = _useTheme ? ButtonThemeProvider.Current : null;
+        if (theme?.Rendering.AntiAlias == true) g.SmoothingMode = SmoothingMode.AntiAlias; else g.SmoothingMode = SmoothingMode.None;
+        if (theme?.Rendering.HighQualityPixelOffset == true) g.PixelOffsetMode = PixelOffsetMode.HighQuality; else g.PixelOffsetMode = PixelOffsetMode.Default;
+        if (theme?.Rendering.ClearTypeText == true) g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit; else g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SystemDefault;
 
-        // Border width for focused state - changed to 1 pixel
-        const int borderWidth = 1;
-        const float halfBorder = 0.5f;
+        Color backColor = GetStateBackColor(theme);
 
-        // Always expand background slightly to cover anti-aliased edge pixels
-        var bgRect = new RectangleF(-0.5f, -0.5f, Width + 1, Height + 1);
-        var borderRect = new RectangleF(halfBorder, halfBorder, Width - borderWidth, Height - borderWidth);
+        int borderWidth = Math.Max(0, _focusBorderWidth);
+        float expansion = (float)(theme?.Rendering.BackgroundExpansion ?? 0.5);
+        float expand = Math.Max(0, expansion);
+        var bgRect = new RectangleF(-expand, -expand, Width + expand * 2, Height + expand * 2);
+        var borderRect = new RectangleF(borderWidth * 0.5f, borderWidth * 0.5f, Width - borderWidth, Height - borderWidth);
 
-        // Draw background with rounded corners (always full size)
         using (var backBrush = new SolidBrush(backColor))
         {
-            if (_cornerRadius > 0)
-            {
-                using var bgPath = CreateRoundRectPath(bgRect, _cornerRadius);
-                g.FillPath(backBrush, bgPath);
-            }
-            else
-            {
-                g.FillRectangle(backBrush, bgRect);
-            }
+            if (_cornerRadius > 0) { using var bgPath = CreateRoundRectPath(bgRect, _cornerRadius); g.FillPath(backBrush, bgPath); }
+            else { g.FillRectangle(backBrush, bgRect); }
         }
 
-        // Draw border ONLY when focused - on top of the background
-        if (Focused)
+        if (Focused && borderWidth > 0)
         {
-            var borderColor = SystemColors.Highlight;
-            using (var borderPen = new Pen(borderColor, borderWidth))
-            {
-                borderPen.Alignment = PenAlignment.Inset;
-                if (_cornerRadius > 0)
-                {
-                    using var borderPath = CreateRoundRectPath(borderRect, _cornerRadius);
-                    g.DrawPath(borderPen, borderPath);
-                }
-                else
-                {
-                    g.DrawRectangle(borderPen, halfBorder, halfBorder, Width - borderWidth, Height - borderWidth);
-                }
-            }
+            var borderColor = (_focusBorderColorOverride != Color.Empty)
+                ? _focusBorderColorOverride
+                : (theme?.Colors.FocusBorder.UseSystemHighlight != false
+                    ? SystemColors.Highlight
+                    : theme?.Colors.FocusBorder.CustomColor?.ToColor() ?? SystemColors.Highlight);
+
+            using var borderPen = new Pen(borderColor, borderWidth) { Alignment = PenAlignment.Inset };
+            if (_cornerRadius > 0) { using var borderPath = CreateRoundRectPath(borderRect, _cornerRadius); g.DrawPath(borderPen, borderPath); }
+            else { g.DrawRectangle(borderPen, borderRect.X, borderRect.Y, borderRect.Width, borderRect.Height); }
         }
 
-        // Draw badge image - position it INSIDE the safe area (past the rounded corner)
         if (_badgeImage != null)
         {
-            // Position badge further from edge to avoid corner clipping
-            int imgX = _cornerRadius + 4; // Start after the corner radius + small margin
+            int leftOffset = theme?.Spacing.BadgeLeftOffset ?? 4;
+            int imgX = Math.Max(_cornerRadius + leftOffset, leftOffset);
             int imgY = (ClientSize.Height - _badgeImage.Height) / 2;
             g.DrawImageUnscaled(_badgeImage, imgX, imgY);
         }
 
-        // Draw text
         if (!string.IsNullOrEmpty(Text))
         {
             TextRenderer.DrawText(g, Text, Font, ClientRectangle, ForeColor,
@@ -259,32 +238,124 @@ public class CustomButton : Button
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
-        {
-            _badgeImage?.Dispose();
-            _badgeImage = null;
-        }
+        if (disposing) { _badgeImage?.Dispose(); _badgeImage = null; }
         base.Dispose(disposing);
+    }
+
+    private void ApplyThemeAndRefresh()
+    {
+        try
+        {
+            if (!_useTheme) { UpdateColors(); return; }
+            var theme = ButtonThemeProvider.Current;
+
+            _cornerRadius = theme.Defaults.CornerRadius;
+            _badgeDiameter = theme.Defaults.BadgeDiameter;
+            _focusBorderWidth = theme.Defaults.FocusBorderWidth;
+
+            if (theme.Colors.BackColor is not null)
+            {
+                BackColor = theme.Colors.BackColor.ToColor();
+            }
+
+            // Typography
+            var t = theme.Typography;
+            if (t != null)
+            {
+                try
+                {
+                    var family = string.IsNullOrWhiteSpace(t.TextFontFamily) ? this.Font.FontFamily.Name : t.TextFontFamily;
+                    var size = t.TextFontSize ?? this.Font.Size;
+                    var style = ParseFontStyleOrDefault(t.TextFontStyle, this.Font.Style);
+                    var newFont = new Font(family!, size, style, GraphicsUnit.Point);
+                    this.Font = newFont;
+                }
+                catch { /* ignore font issues */ }
+
+                if (t.TextColor is not null)
+                {
+                    this.ForeColor = t.TextColor.ToColor();
+                }
+            }
+
+            var defaultPadding = theme.Spacing.DefaultPadding?.ToPadding() ?? new Padding(12);
+            int leftExtra = theme.Spacing.BadgeLeftPaddingExtra;
+            Padding = !string.IsNullOrEmpty(_glyph)
+                ? new Padding(defaultPadding.Left + leftExtra, defaultPadding.Top, defaultPadding.Right, defaultPadding.Bottom)
+                : defaultPadding;
+
+            UpdateColors();
+            RecreateBadge();
+            UpdateRegion();
+            Invalidate();
+        }
+        catch { UpdateColors(); }
+    }
+
+    private static FontStyle ParseFontStyleOrDefault(string? style, FontStyle fallback)
+    {
+        if (string.IsNullOrWhiteSpace(style)) return fallback;
+        var s = style.Trim();
+        return s.ToLowerInvariant() switch
+        {
+            "regular" => FontStyle.Regular,
+            "bold" => FontStyle.Bold,
+            "italic" => FontStyle.Italic,
+            "bolditalic" => FontStyle.Bold | FontStyle.Italic,
+            "underline" => FontStyle.Underline,
+            "strikeout" => FontStyle.Strikeout,
+            _ => fallback
+        };
+    }
+
+    private static Color BlendOpacity(Color baseColor, double? opacity)
+    {
+        var a = (int)Math.Round((opacity ?? 1.0) * 255.0);
+        a = Math.Clamp(a, 0, 255);
+        return Color.FromArgb(a, baseColor);
+    }
+
+    private Color GetStateBackColor(ButtonTheme? theme)
+    {
+        // Explicit state colors win
+        if (theme != null)
+        {
+            var colors = theme.Colors;
+            if (_isPressed && colors.PressedColor?.Color is not null)
+                return BlendOpacity(colors.PressedColor.Color.ToColor(), colors.PressedColor.Opacity);
+            if (_isHovered && colors.HoverColor?.Color is not null)
+                return BlendOpacity(colors.HoverColor.Color.ToColor(), colors.HoverColor.Opacity);
+
+            // Active/inactive based on Enabled
+            var state = Enabled ? colors.Active : colors.Inactive;
+            if (state?.Color is not null)
+                return BlendOpacity(state.Color.ToColor(), state.Opacity);
+        }
+
+        // Fallback to derived colors
+        var normal = (theme != null && theme.Colors.BackColor is not null) ? theme.Colors.BackColor.ToColor() : _normalBackColor;
+        if (_isPressed) return ControlPaint.Dark(normal, 0.10f);
+        if (_isHovered) return ControlPaint.Light(normal, 0.20f);
+        return normal;
     }
 
     private void UpdateColors()
     {
         _normalBackColor = BackColor;
-        
-        // For white or very light backgrounds, darken slightly on hover instead of lightening
-        // For darker backgrounds, lighten on hover
-        if (_normalBackColor.GetBrightness() > 0.9f)
+
+        var theme = _useTheme ? ButtonThemeProvider.Current : null;
+        if (theme == null)
         {
-            // Light background (like white) - darken slightly for hover
-            _hoverBackColor = ControlPaint.Dark(_normalBackColor, 0.05f);
+            _hoverBackColor = (_normalBackColor.GetBrightness() > 0.9f)
+                ? ControlPaint.Dark(_normalBackColor, 0.05f)
+                : ControlPaint.Light(_normalBackColor, 0.2f);
+            _pressedBackColor = ControlPaint.Dark(_normalBackColor, 0.1f);
+            return;
         }
-        else
-        {
-            // Darker background - lighten for hover
-            _hoverBackColor = ControlPaint.Light(_normalBackColor, 0.2f);
-        }
-        
-        _pressedBackColor = ControlPaint.Dark(_normalBackColor, 0.1f);
+
+        var baseColor = theme.Colors.BackColor?.ToColor() ?? _normalBackColor;
+        _hoverBackColor = ControlPaint.Light(baseColor, 0.2f);
+        _pressedBackColor = ControlPaint.Dark(baseColor, 0.1f);
     }
 
     private void RecreateBadge()
@@ -292,24 +363,25 @@ public class CustomButton : Button
         _badgeImage?.Dispose();
         _badgeImage = null;
 
+        var theme = _useTheme ? ButtonThemeProvider.Current : null;
+
         if (string.IsNullOrEmpty(_glyph))
         {
-            // Reset padding if no badge
-            Padding = new Padding(12, 12, 12, 12);
+            var fallback = theme?.Spacing.DefaultPadding?.ToPadding() ?? new Padding(12, 12, 12, 12);
+            Padding = fallback;
             Invalidate();
             return;
         }
 
-        // Calculate badge size
-        int target = (int)Math.Round(ClientSize.Height * 0.55);
-        int diameter = Math.Clamp(target, Math.Max(20, _badgeDiameter), 44);
+        double heightRatio = theme?.Defaults.BadgeHeightRatio ?? 0.55;
+        int target = (int)Math.Round(ClientSize.Height * heightRatio);
+        int diameter = Math.Clamp(target, Math.Max(20, _badgeDiameter), 64);
 
-        // Update padding for text to not overlap badge
-        // Add extra padding to account for border width and corner radius
-        int leftPad = diameter + 22; // increased from 18 to account for rounded corner
-        Padding = new Padding(leftPad, 12, 12, 12);
+        int leftPadExtra = theme?.Spacing.BadgeLeftPaddingExtra ?? 22;
+        int leftPad = diameter + leftPadExtra;
+        var basePad = theme?.Spacing.DefaultPadding?.ToPadding() ?? new Padding(12);
+        Padding = new Padding(basePad.Left + leftPad, basePad.Top, basePad.Right, basePad.Bottom);
 
-        // Create badge bitmap
         float scale = DeviceDpi / 96f;
         int d = Math.Max(12, (int)Math.Round(diameter * scale));
         var bmp = new Bitmap(d, d);
@@ -317,20 +389,16 @@ public class CustomButton : Button
 
         using (var g = Graphics.FromImage(bmp))
         using (var brush = new SolidBrush(_badgeColor))
-        using (var glyphBrush = new SolidBrush(Color.White))
+        using (var glyphBrush = new SolidBrush((theme?.Badge.GlyphColor ?? new ButtonTheme.RgbColor()).ToColor()))
         using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
             g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
             g.Clear(Color.Transparent);
-
-            // Draw circle
             g.FillEllipse(brush, 0, 0, d, d);
-
-            // Draw glyph
-            float fontSize = d * 0.50f;
-            using var font = GetMdl2Font(fontSize);
+            float fontSize = d * (float)(theme?.Defaults.BadgeIconSizeRatio ?? 0.50);
+            using var font = GetMdl2Font(fontSize, theme?.Badge.FontFamily, theme?.Badge.FallbackToSystemFont ?? true);
             g.DrawString(_glyph, font, glyphBrush, new RectangleF(0, 0, d, d), sf);
         }
 
@@ -340,55 +408,42 @@ public class CustomButton : Button
 
     private void UpdateRegion()
     {
-        // Use Region clipping to create rounded corners
-        if (_cornerRadius <= 0)
-        {
-            Region = null;
-            return;
-        }
+        if (_cornerRadius <= 0) { Region = null; return; }
         var rect = new Rectangle(0, 0, Width, Height);
         using var path = CreateRoundRectPath(rect, _cornerRadius);
         Region = new Region(path);
     }
 
-    private static GraphicsPath CreateRoundRectPath(Rectangle bounds, int radius)
-    {
-        return CreateRoundRectPath(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), radius);
-    }
+    private static GraphicsPath CreateRoundRectPath(Rectangle bounds, int radius) => CreateRoundRectPath(new RectangleF(bounds.X, bounds.Y, bounds.Width, bounds.Height), radius);
 
     private static GraphicsPath CreateRoundRectPath(RectangleF bounds, float radius)
     {
         float d = radius * 2f;
         var path = new GraphicsPath();
-        
-        if (radius < 0.1f)
-        {
-            path.AddRectangle(bounds);
-            return path;
-        }
-
-        // Top-left arc
+        if (radius < 0.1f) { path.AddRectangle(bounds); return path; }
         path.AddArc(bounds.X, bounds.Y, d, d, 180, 90);
-        // Top-right arc
         path.AddArc(bounds.Right - d, bounds.Y, d, d, 270, 90);
-        // Bottom-right arc
         path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0, 90);
-        // Bottom-left arc
         path.AddArc(bounds.X, bounds.Bottom - d, d, d, 90, 90);
-        
         path.CloseFigure();
         return path;
     }
 
-    private static Font GetMdl2Font(float size)
+    private static Font GetMdl2Font(float size, string? familyOverride = null, bool fallbackToSystem = true)
     {
         try
         {
-            return new Font("Segoe MDL2 Assets", size, FontStyle.Regular, GraphicsUnit.Pixel);
+            return !string.IsNullOrWhiteSpace(familyOverride)
+                ? new Font(familyOverride, size, FontStyle.Regular, GraphicsUnit.Pixel)
+                : new Font("Segoe MDL2 Assets", size, FontStyle.Regular, GraphicsUnit.Pixel);
         }
         catch
         {
-            return new Font(SystemFonts.DefaultFont.FontFamily, size, FontStyle.Regular, GraphicsUnit.Pixel);
+            if (fallbackToSystem)
+            {
+                return new Font(SystemFonts.DefaultFont.FontFamily, size, FontStyle.Regular, GraphicsUnit.Pixel);
+            }
+            throw;
         }
     }
 }

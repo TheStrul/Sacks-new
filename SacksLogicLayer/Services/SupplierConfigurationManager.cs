@@ -2,7 +2,8 @@ namespace SacksLogicLayer.Services
 {
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
-
+    using System.Text.Json;
+    using System.Threading.Channels;
     using SacksDataLayer.FileProcessing.Configuration;
     using SacksDataLayer.Configuration;
     using System.Threading.Tasks;
@@ -13,9 +14,19 @@ namespace SacksLogicLayer.Services
     public class SupplierConfigurationManager
     {
         private IConfiguration _configuration;
-        private ISuppliersConfiguration? _suppliersConfiguration = null;
+        private SuppliersConfiguration? _suppliersConfiguration = null;
         private readonly ILogger<SupplierConfigurationManager> _logger;
         private readonly JsonSupplierConfigurationLoader loader;
+
+        private FileSystemWatcher? _watcher;
+        private readonly object _sync = new();
+        private DateTime _lastReload = DateTime.MinValue;
+        private string? _mainConfigFullPath;
+
+        /// <summary>
+        /// Raised when configuration is reloaded from disk.
+        /// </summary>
+        public event EventHandler? ConfigurationReloaded;
 
         /// <summary>
         /// Creates a new instance using JsonSupplierConfigurationLoader to build SuppliersConfiguration
@@ -148,7 +159,95 @@ namespace SacksLogicLayer.Services
             }
 
             // Load configuration from loader (supports file or directory)
-            _suppliersConfiguration = await loader.LoadAllFromFolderAsync(foundPath);
+            var loaded = await loader.LoadAllFromFolderAsync(foundPath);
+            _suppliersConfiguration = loaded;
+            _mainConfigFullPath = foundPath;
+            TryStartWatcher(foundPath);
+        }
+
+        private void TryStartWatcher(string mainFilePath)
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(mainFilePath)!;
+                var mainFile = Path.GetFileName(mainFilePath);
+                _watcher = new FileSystemWatcher(dir, "*.json")
+                {
+                    IncludeSubdirectories = false,
+                    EnableRaisingEvents = true,
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.Size
+                };
+
+                _watcher.Changed += OnJsonChanged;
+                _watcher.Created += OnJsonChanged;
+                _watcher.Deleted += OnJsonChanged;
+                _watcher.Renamed += OnJsonRenamed;
+
+                _logger.LogInformation("Supplier configuration watcher started on {Dir}", dir);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to start configuration file watcher");
+            }
+        }
+
+        private void OnJsonRenamed(object sender, RenamedEventArgs e)
+        {
+            DebouncedReload(e.FullPath);
+        }
+
+        private void OnJsonChanged(object sender, FileSystemEventArgs e)
+        {
+            DebouncedReload(e.FullPath);
+        }
+
+        private void DebouncedReload(string changedPath)
+        {
+            // debounce bursts
+            lock (_sync)
+            {
+                var now = DateTime.UtcNow;
+                if ((now - _lastReload).TotalMilliseconds < 250)
+                {
+                    return;
+                }
+                _lastReload = now;
+            }
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    // wait a little so writers close the file
+                    await Task.Delay(300);
+                    if (_mainConfigFullPath == null) return;
+
+                    var newConfig = await loader.LoadAllFromFolderAsync(_mainConfigFullPath);
+
+                    lock (_sync)
+                    {
+                        if (_suppliersConfiguration == null)
+                        {
+                            _suppliersConfiguration = newConfig;
+                        }
+                        else
+                        {
+                            _suppliersConfiguration.ApplyFrom(newConfig);
+                        }
+                    }
+
+                    _logger.LogInformation("Supplier configuration reloaded from disk due to change: {Path}", changedPath);
+                    ConfigurationReloaded?.Invoke(this, EventArgs.Empty);
+                }
+                catch (JsonException jex)
+                {
+                    _logger.LogError(jex, "Invalid JSON while reloading supplier configuration. Keeping previous version.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to reload supplier configuration. Keeping previous version.");
+                }
+            });
         }
     }
 }

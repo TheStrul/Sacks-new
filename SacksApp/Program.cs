@@ -14,6 +14,9 @@ using SacksLogicLayer.Services.Interfaces;
 using SacksLogicLayer.Services.Implementations;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
 using SacksLogicLayer.Services;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Sacks.Tests")]
 
 namespace SacksApp
 {
@@ -21,6 +24,66 @@ namespace SacksApp
     {
         private static ServiceProvider? _serviceProvider;
         private static ILogger<Form>? _logger;
+
+        /// <summary>
+        /// Splits a file into multiple files based on the specified lines per file.
+        /// </summary>
+        /// <param name="fullPath">The full path to the file to split.</param>
+        /// <param name="linesPerFile">The number of lines per output file.</param>
+        /// <exception cref="ArgumentException">Thrown when fullPath is null or empty, or linesPerFile is less than 1.</exception>
+        /// <exception cref="FileNotFoundException">Thrown when the source file does not exist.</exception>
+        public static void SplitFile(string fullPath, int linesPerFile)
+        {
+            if (string.IsNullOrWhiteSpace(fullPath))
+            {
+                throw new ArgumentException("File path cannot be null or empty.", nameof(fullPath));
+            }
+
+            if (linesPerFile < 1)
+            {
+                throw new ArgumentException("Lines per file must be at least 1.", nameof(linesPerFile));
+            }
+
+            if (!File.Exists(fullPath))
+            {
+                throw new FileNotFoundException("Source file not found.", fullPath);
+            }
+
+            var directory = Path.GetDirectoryName(fullPath) ?? throw new InvalidOperationException("Could not determine directory from path.");
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fullPath);
+            var extension = Path.GetExtension(fullPath);
+
+            var lines = File.ReadAllLines(fullPath);
+            var fileNumber = 1;
+            var currentLineCount = 0;
+            StreamWriter? writer = null;
+
+            try
+            {
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (currentLineCount == 0)
+                    {
+                        writer?.Dispose();
+                        var outputPath = Path.Combine(directory, $"{fileNameWithoutExtension}_part{fileNumber}{extension}");
+                        writer = new StreamWriter(outputPath);
+                        fileNumber++;
+                    }
+
+                    writer?.WriteLine(lines[i]);
+                    currentLineCount++;
+
+                    if (currentLineCount >= linesPerFile)
+                    {
+                        currentLineCount = 0;
+                    }
+                }
+            }
+            finally
+            {
+                writer?.Dispose();
+            }
+        }
 
         /// <summary>
         ///  The main entry point for the application.
@@ -241,8 +304,6 @@ namespace SacksApp
             services.AddScoped<IDatabaseManagementService, DatabaseManagementService>();
             services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
             services.AddScoped<IFileProcessingDatabaseService, FileProcessingDatabaseService>();
-
-            // Add file processing services
             services.AddScoped<IFileDataReader, FileDataReader>();
             services.AddScoped<SubtitleRowProcessor>();
             services.AddScoped<SupplierConfigurationManager>();

@@ -20,7 +20,7 @@ namespace SacksApp
         private System.Windows.Forms.TableLayoutPanel tableLayoutFilters;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.ComponentModel.IContainer components;
-        private System.Windows.Forms.ToolStripMenuItem addToLookupToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem OpenLookupsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem showHideCoulmnsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem groupByProductToolStripMenuItem;
         private System.Windows.Forms.Button buttonHideFilters;
@@ -54,7 +54,7 @@ namespace SacksApp
             buttonShowFilter = new Button();
             resultsGrid = new DataGridView();
             contextMenuStrip1 = new ContextMenuStrip(components);
-            addToLookupToolStripMenuItem = new ToolStripMenuItem();
+            OpenLookupsToolStripMenuItem = new ToolStripMenuItem();
             showHideCoulmnsToolStripMenuItem = new ToolStripMenuItem();
             groupByProductToolStripMenuItem = new ToolStripMenuItem();
             editControlsPanel = new FlowLayoutPanel();
@@ -238,16 +238,16 @@ namespace SacksApp
             // 
             // contextMenuStrip1
             // 
-            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { addToLookupToolStripMenuItem, showHideCoulmnsToolStripMenuItem, groupByProductToolStripMenuItem });
+            contextMenuStrip1.Items.AddRange(new ToolStripItem[] { OpenLookupsToolStripMenuItem, showHideCoulmnsToolStripMenuItem, groupByProductToolStripMenuItem });
             contextMenuStrip1.Name = "contextMenuStrip1";
             contextMenuStrip1.Size = new Size(191, 70);
             // 
-            // addToLookupToolStripMenuItem
+            // OpenLookupsToolStripMenuItem
             // 
-            addToLookupToolStripMenuItem.Name = "addToLookupToolStripMenuItem";
-            addToLookupToolStripMenuItem.Size = new Size(190, 22);
-            addToLookupToolStripMenuItem.Text = "Add New Brand...";
-            addToLookupToolStripMenuItem.Click += AddToBrandLookupToolStripMenuItem_Click;
+            OpenLookupsToolStripMenuItem.Name = "OpenLookupsToolStripMenuItem";
+            OpenLookupsToolStripMenuItem.Size = new Size(190, 22);
+            OpenLookupsToolStripMenuItem.Text = "Open Dictionaries...";
+            OpenLookupsToolStripMenuItem.Click += OpenLookupsToolStripMenuItem_Click;
             // 
             // showHideCoulmnsToolStripMenuItem
             // 

@@ -1,31 +1,73 @@
 # Copilot Instructions (Repo Defaults)
 
-You are assisting on a .NET 8/9 solution that includes **SacksDataLayer** (EF Core + SQL Server).
-Act as a senior C#/.NET reviewer & implementer.
+
+You are assisting on a multi-project .NET solution containing:
+- ParsingEngine (C# 13, may target .NET 9)
+- SacksDataLayer (EF Core + SQL Server; targets .NET 8/9 per csproj)
+- SacksLogicLayer
+- SacksApp (WinForms)
+- Sacks.Tests
+
+Act as a senior C#/.NET reviewer & implementer. Keep edits minimal and incremental.
 
 ## Global rules
-- Prefer **unified diffs** over prose.
-- Keep answers **concise**; if output would exceed limits, stop with: `READY FOR CONTINUE`.
-- Target **.NET 8** unless `.csproj` explicitly pins .NET 9 with the **isolated** Azure Functions worker.
-- Enforce **nullability** and analyzers; treat warnings as errors when proposing .csproj changes.
-- Require **CancellationToken** on I/O APIs; use `async` and `await` correctly.
-- Avoid leaking EF types (`DbSet<T>`, `IQueryable<T>`) outside the data layer; prefer DTOs/projections.
+- Prefer unified diffs over prose. Keep answers concise (<=150 lines). Use `READY FOR CONTINUE` for long outputs.
+- Default target: .NET 8. If a project explicitly pins .NET 9, follow it. C# 13 features are allowed where the project supports them.
+- Enable nullable reference types and analyzers; treat warnings as errors when proposing `.csproj` changes.
+- I/O must be async, pass through `CancellationToken`, and use `ConfigureAwait(false)` inside libraries.
 - Security: parameterized SQL only; no secrets in code; never compose raw SQL with string concatenation.
-- Time/Money: use `DateTime.UtcNow` (or `Instant` if NodaTime), and `decimal` with explicit precision/scale for currency.
+- Time/Money: use `DateTime.UtcNow` (or `Instant` if NodaTime), `decimal` for money with explicit precision/scale.
 - Logging: use structured `ILogger<T>`; avoid string concatenation in hot paths.
-- No backward compatibility required — we are on "dec mode".
-- Do not assume anything — if unsure, ask the user first.
-- Do not create tests unless explicitly requested.
-- Prefer single, incremental changes — do one step at a time.
+- NO BACKWARD COMPATIBILITY IS EVER NEEDED. Prefer breaking-change simplifications over shims.
+
+## EF Core rules (SacksDataLayer)
+- Do not leak `DbSet<T>`/`IQueryable<T>` outside the data layer; prefer DTOs/projections.
+- Use `AsNoTracking()` for read-only queries; `AsSplitQuery()` for wide graphs.
+- Prevent N+1 queries; batch where possible.
+- Pagination for large queries; project only required columns.
+- Transactions: a single transaction for multi-entity writes; avoid `SaveChanges` in loops; add concurrency tokens if needed.
+
+## Configuration domain rules (SuppliersConfiguration / ParserConfig)
+Reflect current code semantics in `SacksDataLayer.Models.SupplierConfigurationModels` and `ParsingEngine`:
+- Lookups are nested dictionaries that MUST be case-insensitive (both outer and inner). Preserve/convert to `StringComparer.OrdinalIgnoreCase` when creating or merging.
+- Update configuration in-place to preserve object identity and existing references:
+  - `SuppliersConfiguration.ApplyFrom`: update version/path; in-place-merge top-level `Lookups`; upsert `Suppliers` by `Name` (case-insensitive); set `ParentConfiguration`; call `ParserConfig.DoMergeLoookUpTables` for new/updated items; remove suppliers not present in source.
+  - `SupplierConfiguration.UpdateFrom`: keep `Name` as identity; copy simple props; `FileStructure.ApplyFrom`; `SubtitleRowHandlingConfiguration.ApplyFrom`; `ParserConfig.ApplyFrom` then re-merge parser lookups.
+  - `FileStructureConfiguration.ApplyFrom` and `DetectionConfiguration.ApplyFrom`: copy scalars and replace list contents without swapping instances.
+  - `ParserConfigExtensions.ApplyFrom`: copy `Settings`; in-place-merge `Lookups`; upsert `ColumnRules` by key, removing missing; deep-clone/replace `RuleConfig.Actions`.
+- Always call `ParserConfig.DoMergeLoookUpTables` after updating Lookups so parser sees merged tables.
+- Validation rules (keep consistent with `ValidateConfiguration`):
+  - Require non-empty `Version` and at least one supplier.
+  - `FileStructure`: `DataStartRowIndex|HeaderRowIndex|ExpectedColumnCount` must be >= 1; if `Detection` exists, `FileNamePatterns` must be non-empty.
+  - `SubtitleRowHandlingConfiguration`: `Action` in {`parse`,`skip`}; detection rules support `columnCount|pattern|hybrid`; transforms validate regex when `Mode == regexReplace` and require `Pattern`.
+  - `ActionConfig` ops and parameters:
+    - `assign`: no parameters allowed.
+    - `find`: requires `Pattern` (regex or `Lookup:TableName`); only `Pattern|Options|PatternKey` allowed.
+    - `split|splitByDelimiter`: only `Delimiter|ExpectedParts|Strict` allowed.
+    - `map|mapping`: requires existing `Table` name in merged lookups; only `Table|CaseMode|AddIfNotFound` allowed.
+
+## Serialization
+- Prefer `System.Text.Json`. For supplier export, match current behavior: `UnsafeRelaxedJsonEscaping` and `WriteIndented=true`.
+- Avoid Newtonsoft.Json unless explicitly required.
+
+## WinForms (SacksApp)
+- Keep UI thread safety. Offload I/O and CPU-bound work to background tasks with proper cancellation.
+- Do not block the UI thread; use `await` with progress reporting.
+
+## API design
+- New public APIs that perform I/O must accept `CancellationToken` (defaulted where appropriate).
+- Ensure null-safety input validation (CA1062), disposal correctness (CA2000), and token forwarding (CA2016).
 
 ## Output policy
-- Use **<= 150 lines** per message. For longer changes, chunk and wait for `continue`.
-- For “fix” requests: output **diffs only** unless asked for explanation.
-- For “plan/assessment”: return a **tight table** or bullet list with file:line references.
+- For “fix” requests: output diffs only unless asked for explanation.
+- For “plan/assessment”: return a tight bullet list with file:line references.
 
-## Typical checks in SacksDataLayer
-- Nullability (CS8602/CS8618), disposing (CA2000), CA1062 parameter validation, CA2016 token forwarding.
-- EF Core perf: N+1, unbounded queries, missing `AsNoTracking()` for read-only, `AsSplitQuery()` on wide graphs.
-- Transactions: single transaction across multi-entity writes; avoid `SaveChanges` in loops; consider concurrency tokens.
-- Pagination and projections for large queries.
-- Consistent UTC and decimal precision for money.
+## PR checklist (apply before finishing changes)
+- Builds succeed with warnings-as-errors in modified projects.
+- Nullability: avoid `!` suppression; prefer proper checks.
+- Async: pass cancellation tokens end-to-end and use `ConfigureAwait(false)` in libraries.
+- Dictionaries intended for case-insensitive keys use `StringComparer.OrdinalIgnoreCase`.
+- Configuration merges update in-place and do not break existing references.
+- Logging is structured and parameterized; no PII in logs.
+
+- Always address user as "Struly-Dear".

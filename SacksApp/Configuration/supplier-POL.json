@@ -41,11 +41,11 @@
           {
             "Op": "Map",
             "Input": "SplitText[1]",
-            "Output": "Product.Type",
+            "Output": "Product.Type 1",
             "Assign": true,
             "Condition": "SplitText.Length == 3",
             "Parameters": {
-              "Table": "Type"
+              "Table": "Type 1"
             }
           },
           {
@@ -158,18 +158,18 @@
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "lookup:Type",
+              "Pattern": "lookup:Type 1",
               "Options": "all,ignorecase,remove"
             }
           },
           {
             "Op": "Map",
             "Input": "Types[0]",
-            "Output": "Product.Type",
+            "Output": "Product.Type 1",
             "Assign": true,
             "Condition": null,
             "Parameters": {
-              "Table": "Type"
+              "Table": "Type 1"
             }
           },
           {
@@ -179,14 +179,14 @@
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "[/-]*",
+              "Pattern": "[\/-]*",
               "Options": "all,ignorecase,remove"
             }
           },
           {
             "Op": "Assign",
             "Input": "FinalText.Clean",
-            "Output": "Offer.Line",
+            "Output": "Product.Name",
             "Assign": true,
             "Condition": null,
             "Parameters": null

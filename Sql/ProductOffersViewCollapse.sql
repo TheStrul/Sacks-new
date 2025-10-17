@@ -16,11 +16,11 @@ SELECT
     CASE WHEN v.[OfferRank] = 1 THEN v.[Name]         END AS [Name],
     CASE WHEN v.[OfferRank] = 1 THEN v.[Category]     END AS [Category],
     CASE WHEN v.[OfferRank] = 1 THEN v.[Brand]        END AS [Brand],
-    CASE WHEN v.[OfferRank] = 1 THEN v.[Line]         END AS [Line],
     CASE WHEN v.[OfferRank] = 1 THEN v.[Gender]       END AS [Gender],
     CASE WHEN v.[OfferRank] = 1 THEN v.[Concentration]END AS [Concentration],
     CASE WHEN v.[OfferRank] = 1 THEN v.[Size]         END AS [Size],
-    CASE WHEN v.[OfferRank] = 1 THEN v.[Type]         END AS [Type],
+    CASE WHEN v.[OfferRank] = 1 THEN v.[Type 1]       END AS [Type 1],
+    CASE WHEN v.[OfferRank] = 1 THEN v.[Type 2]       END AS [Type 2],
     CASE WHEN v.[OfferRank] = 1 THEN v.[Decoded]      END AS [Decoded],
     CASE WHEN v.[OfferRank] = 1 THEN v.[COO]          END AS [COO],
     CASE WHEN v.[OfferRank] = 1 THEN v.[Units]        END AS [Units],
@@ -36,4 +36,4 @@ SELECT
     v.[TotalOffers]
 FROM [dbo].[ProductOffersView] v
 WHERE v.[TotalOffers] > 1;
-GO
+GOGO

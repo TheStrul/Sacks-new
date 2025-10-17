@@ -1,0 +1,54 @@
+{
+  "$schema": "./button-theme-schema.json",
+  "version": "1.0",
+  "description": "CustomButton appearance configuration - modern light defaults with simple state colors and typography",
+
+  "defaults": {
+    "cornerRadius": 12,
+    "badgeDiameter": 28,
+    "focusBorderWidth": 1,
+    "badgeIconSizeRatio": 0.50,
+    "badgeHeightRatio": 0.55
+  },
+
+  "colors": {
+    "backColor": { "r": 255, "g": 255, "b": 255 },
+
+    "active":   { "color": { "r": 255, "g": 255, "b": 255 }, "opacity": 1.0 },
+    "inactive": { "color": { "r": 255, "g": 255, "b": 255 }, "opacity": 0.60 },
+    "hoverColor":   { "color": { "r": 243, "g": 244, "b": 246 }, "opacity": 1.0 },
+    "pressedColor": { "color": { "r": 229, "g": 231, "b": 235 }, "opacity": 1.0 },
+
+    "focusBorder": {
+      "useSystemHighlight": true,
+      "customColor": null
+    }
+  },
+
+  "typography": {
+    "textFontFamily": "Segoe UI",
+    "textFontSize": 10.0,
+    "textFontStyle": "Regular",
+    "textColor": { "r": 33, "g": 37, "b": 41 }
+  },
+
+  "spacing": {
+    "badgeLeftOffset": 4,
+    "badgeLeftPaddingExtra": 22,
+    "defaultPadding": { "left": 12, "top": 12, "right": 12, "bottom": 12 }
+  },
+
+  "rendering": {
+    "antiAlias": true,
+    "highQualityPixelOffset": true,
+    "clearTypeText": true,
+    "backgroundExpansion": 0.5,
+    "doubleBuffer": true
+  },
+
+  "badge": {
+    "fontFamily": "Segoe MDL2 Assets",
+    "fallbackToSystemFont": true,
+    "glyphColor": { "r": 255, "g": 255, "b": 255 }
+  }
+}

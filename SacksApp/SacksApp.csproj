@@ -65,9 +65,6 @@
     <None Update="Configuration\appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Configuration\supplier-Ace.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
     <None Update="Configuration\supplier-Chk.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
@@ -75,9 +72,6 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="Configuration\supplier-HAND.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="Configuration\supplier-Lux.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="Configuration\supplier-MB.json">
@@ -91,6 +85,10 @@
   <ItemGroup>
     <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
     <PackageReference Update="Roslynator.Analyzers" Version="4.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Inputs\" />
   </ItemGroup>
 
   <!-- Ensure solution root logs directory exists at build time -->

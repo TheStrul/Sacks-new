@@ -13,11 +13,11 @@ namespace SacksDataLayer.Entities
 
         public string? Category { get; set; }
         public string? Brand { get; set; }
-        public string? Line { get; set; }
         public string? Gender { get; set; }
         public string? Concentration { get; set; }
         public string? Size { get; set; }
-        public string? Type { get; set; }
+        public string? Type_1 { get; set; }
+        public string? Type_2 { get; set; }
         public string? Decoded { get; set; }
         public string? COO { get; set; }
         public string? Units { get; set; }

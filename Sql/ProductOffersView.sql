@@ -14,13 +14,12 @@ SELECT
     -- Product dynamic properties (from Product.DynamicProperties JSON)
     JSON_VALUE(p.DynamicProperties, '$.Category')      AS Category,
     JSON_VALUE(p.DynamicProperties, '$.Brand')         AS Brand,
-    -- Moved Line to offer-level properties
-    JSON_VALUE(op.OfferProperties, '$.Line')           AS Line,
     JSON_VALUE(p.DynamicProperties, '$.Gender')        AS Gender,
     JSON_VALUE(p.DynamicProperties, '$.Concentration') AS Concentration,
     JSON_VALUE(p.DynamicProperties, '$.Size')          AS Size,
     JSON_VALUE(p.DynamicProperties, '$.Units')         AS Units,
-    JSON_VALUE(p.DynamicProperties, '$.Type')          AS [Type],
+    JSON_VALUE(p.DynamicProperties, '$."Type 1"')     AS [Type 1],
+    JSON_VALUE(p.DynamicProperties, '$."Type 2"')     AS [Type 2],
     JSON_VALUE(p.DynamicProperties, '$.Decoded')       AS Decoded,
     JSON_VALUE(p.DynamicProperties, '$.COO')           AS COO,
 

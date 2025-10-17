@@ -1,5 +1,5 @@
 {
-  "Name": "Lux",
+  "Name": "PCA",
   "Currency": "USD",
   "ParserConfig": {
     "Settings": {
@@ -9,6 +9,45 @@
     },
     "ColumnRules": {
       "A": {
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.Gender",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": { "Table": "Gender" }
+          }
+        ],
+        "Trace": false
+      },
+      "B": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Decoded",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "C": {
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.Brand",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": { "Table": "Brand", "AddIfNotFound": "true" }
+          }
+        ],
+        "Trace": false
+      },
+      "D": {
         "Actions": [
           {
             "Op": "Assign",
@@ -21,7 +60,33 @@
         ],
         "Trace": false
       },
-      "B": {
+      "E": {
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.COO",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": { "Table": "COO" }
+          }
+        ],
+        "Trace": false
+      },
+      "F": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Ref",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "G": {
         "Actions": [
           {
             "Op": "Assign",
@@ -70,9 +135,7 @@
             "Output": "Product.Units",
             "Assign": true,
             "Condition": "UnitRaw.Valid==true",
-            "Parameters": {
-              "Table": "Unit"
-            }
+            "Parameters": { "Table": "Unit" }
           },
           {
             "Op": "Find",
@@ -91,9 +154,7 @@
             "Output": "Product.Concentration",
             "Assign": true,
             "Condition": "Concentrations.Valid==true",
-            "Parameters": {
-              "Table": "Concentration"
-            }
+            "Parameters": { "Table": "Concentration" }
           },
           {
             "Op": "Find",
@@ -112,9 +173,7 @@
             "Output": "Product.Gender",
             "Assign": true,
             "Condition": "Genders.Valid==true",
-            "Parameters": {
-              "Table": "Gender"
-            }
+            "Parameters": { "Table": "Gender" }
           },
           {
             "Op": "Find",
@@ -133,64 +192,46 @@
             "Output": "Product.Brand",
             "Assign": true,
             "Condition": "Brands.Valid==true",
-            "Parameters": {
-              "Table": "Brand"
-            }
-          },
-          {
-            "Op": "Find",
-            "Input": "Brands.Clean",
-            "Output": "BrandsDefault",
-            "Assign": false,
-            "Condition": "Brands.Valid==false",
-            "Parameters": {
-              "Pattern": "^\\s*(\\\S+)(?=\\s|$)",
-              "Options": "first,ignorecase"
-            }
-          },
-          {
-            "Op": "Map",
-            "Input": "BrandsDefault",
-            "Output": "Product.Brand",
-            "Assign": true,
-            "Condition": "Brands.Valid==false",
-            "Parameters": {
-              "Table": "Brand"
-            }
-          },
-          {
-            "Op": "Find",
-            "Input": "Brands.Clean",
-            "Output": "Types",
-            "Assign": false,
-            "Condition": null,
-            "Parameters": {
-              "Pattern": "lookup:Type",
-              "Options": "all,ignorecase,remove"
-            }
-          },
-          {
-            "Op": "Map",
-            "Input": "Types[0]",
-            "Output": "Product.Type",
-            "Assign": true,
-            "Condition": "Types.Valid==true",
-            "Parameters": {
-              "Table": "Type"
-            }
+            "Parameters": { "Table": "Brand", "AddIfNotFound": "true" }
           },
           {
             "Op": "Assign",
-            "Input": "Types.Clean",
-            "Output": "Offer.Line",
+            "Input": "Brands.Clean",
+            "Output": "Product.Name",
             "Assign": true,
             "Condition": null,
             "Parameters": null
           }
         ],
-        "Trace": true
+        "Trace": false
       },
-      "C": {
+      "H": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.case pack",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "I": {
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Price",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ],
+        "Trace": false
+      },
+      "J": {
         "Actions": [
           {
             "Op": "Find",
@@ -205,31 +246,14 @@
           }
         ],
         "Trace": false
-      },
-      "D": {
-        "Actions": [
-          {
-            "Op": "Assign",
-            "Input": "Text",
-            "Output": "Offer.Price",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": null
-          }
-        ],
-        "Trace": false
       }
     }
   },
   "FileStructure": {
-    "DataStartRowIndex": 5,
-    "ExpectedColumnCount": 4,
+    "DataStartRowIndex": 2,
+    "ExpectedColumnCount": 10,
     "HeaderRowIndex": 1,
-    "Detection": {
-      "FileNamePatterns": [
-        "lux*.xls*"
-      ]
-    }
+    "Detection": { "FileNamePatterns": [ "PCA*.xls*" ] }
   },
   "SubtitleHandling": null
 }

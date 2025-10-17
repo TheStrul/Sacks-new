@@ -130,24 +130,24 @@
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "lookup:Type",
+              "Pattern": "lookup:Type 1",
               "Options": "all,ignorecase,remove"
             }
           },
           {
             "Op": "Map",
             "Input": "Types[0]",
-            "Output": "Product.Type",
+            "Output": "Product.Type 1",
             "Assign": true,
             "Condition": "Types.Valid==true",
             "Parameters": {
-              "Table": "Type"
+              "Table": "Type 1"
             }
           },
           {
             "Op": "Assign",
             "Input": "Types.Clean",
-            "Output": "Offer.Line",
+            "Output": "Product.Name",
             "Assign": true,
             "Condition": null,
             "Parameters": null
@@ -244,8 +244,8 @@
       },
       {
         "SourceKey": "Type",
-        "TargetProperty": "Product.Type",
-        "LookupTable": "Type",
+        "TargetProperty": "Product.Type 1",
+        "LookupTable": "Type 1",
         "Overwrite": true
       }
     ]
