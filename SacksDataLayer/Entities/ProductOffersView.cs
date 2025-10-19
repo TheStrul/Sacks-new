@@ -15,7 +15,7 @@ namespace SacksDataLayer.Entities
         public string? Brand { get; set; }
         public string? Gender { get; set; }
         public string? Concentration { get; set; }
-        public string? Size { get; set; }
+        public decimal? Size { get; set; }
         public string? Type_1 { get; set; }
         public string? Type_2 { get; set; }
         public string? Decoded { get; set; }

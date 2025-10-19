@@ -36,4 +36,4 @@ SELECT
     v.[TotalOffers]
 FROM [dbo].[ProductOffersView] v
 WHERE v.[TotalOffers] > 1;
-GOGO
+GO

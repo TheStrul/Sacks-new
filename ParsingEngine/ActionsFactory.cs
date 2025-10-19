@@ -66,27 +66,66 @@ public static class ActionsFactory
                 ret = new MappingAction(input, output, assign, mapDict, condition, addIfNotFound);
                 break;
             case "convert":
-                // Parameters: FromUnit, ToUnit, Factor, UnitKey, Round, SetUnit
+                // Parameters: Preset, FromUnit, ToUnit, UnitKey, SetUnit
                 patameter.TryGetValue("FromUnit", out var fromUnit);
                 patameter.TryGetValue("ToUnit", out var toUnit);
                 patameter.TryGetValue("UnitKey", out var unitKey);
-                patameter.TryGetValue("Round", out var roundMode);
                 var setUnit = true;
                 if (patameter.TryGetValue("SetUnit", out var setUnitStr))
                 {
                     setUnit = string.Equals(setUnitStr, "true", StringComparison.OrdinalIgnoreCase);
                 }
-                double factor = 1d;
-                if (patameter.TryGetValue("Factor", out var factorStr))
+
+                // Preset-based constants (kept in code, not JSON)
+                patameter.TryGetValue("Preset", out var preset);
+                double factor;
+                string? roundMode;
+                if (!string.IsNullOrWhiteSpace(preset) && preset.Equals("OzToMl", StringComparison.OrdinalIgnoreCase))
                 {
-                    double.TryParse(factorStr, NumberStyles.Float, CultureInfo.InvariantCulture, out factor);
+                    // 1 oz = 29.5735 ml; snap handled in action
+                    factor = 29.5735d;
+                    roundMode = null; // snapping overrides rounding
+                    fromUnit ??= "oz";
+                    toUnit ??= "ml";
+                }
+                else
+                {
+                    // Fallback defaults if no preset: identity/no rounding
+                    factor = 1d;
+                    roundMode = null;
                 }
                 ret = new ConvertAction(input, output, assign, condition, fromUnit, toUnit, factor, unitKey, roundMode, setUnit);
                 break;
             case "case":
+            case "switch":
+                // Parameters: Default, IgnoreCase, and any When:<text>=<value>
+                var ignoreCase = false;
+                if (patameter.TryGetValue("IgnoreCase", out var icStr))
+                    ignoreCase = string.Equals(icStr, "true", StringComparison.OrdinalIgnoreCase);
+                patameter.TryGetValue("Default", out var defVal);
+                var cases = new Dictionary<string, string>(ignoreCase ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+                foreach (var kv in patameter)
+                {
+                    if (kv.Key.StartsWith("When:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var k = kv.Key[5..];
+                        cases[k] = kv.Value;
+                    }
+                }
+                ret = new SwitchAction(input, output, assign, condition, cases, defVal, ignoreCase);
+                break;
+            case "caseformat":
                 var mode = patameter.ContainsKey("Mode") ? patameter["Mode"] : "title";
                 var culture = patameter.ContainsKey("Culture") ? patameter["Culture"] : null;
                 ret = new CaseAction(input, output, assign, condition, mode, culture);
+                break;
+            case "concat":
+                var keys = patameter.ContainsKey("Keys") ? patameter["Keys"].Split(new[]{','}, StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries) : Array.Empty<string>();
+                patameter.TryGetValue("Separator", out var sep);
+                ret = new ConcatAction(input, output, assign, condition, keys, sep);
+                break;
+            case "clear":
+                ret = new ClearAction(input, output, assign, condition);
                 break;
             default:
                 ret = new NoOpChainAction(input, output);

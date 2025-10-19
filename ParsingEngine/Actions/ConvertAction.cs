@@ -3,17 +3,16 @@ using System.Globalization;
 namespace ParsingEngine;
 
 /// <summary>
-/// Converts a numeric input value using a scale factor when a unit key matches a specific unit.
+/// Converts a numeric value from one unit to another using a multiplicative factor.
+/// Typical use: convert Product.Size from OZ to ML with Factor=29.5735.
 /// Parameters:
-/// - FromUnit: source unit name to check (case-insensitive)
-/// - ToUnit: target unit name to set when conversion happens
-/// - Factor: double scale to multiply the input by
-/// - UnitKey: name of the key in bag holding the unit (optional). If omitted, conversion is unconditional.
-/// - Round: none | int (round to nearest integer, AwayFromZero)
-/// - SetUnit: true|false (default true) to set the UnitKey to ToUnit after conversion
+/// - FromUnit: optional; when provided, conversion runs only if current unit (read from UnitKey) matches.
+/// - ToUnit: optional; if provided and SetUnit=true, the unit stored at UnitKey will be updated to this value.
+/// - UnitKey: optional; bag key that contains the current unit (e.g., "Product.Units" or "Units").
+/// - SetUnit: optional; default true; when true and ToUnit provided and UnitKey present, writes converted unit.
 ///
-/// Input: numeric key to read; Output: numeric key to write.
-/// Reads from both 'key' and 'assign:key' for convenience.
+/// Notes:
+/// - For FromUnit='oz' and ToUnit='ml', snaps common fragrance sizes to canonical ml (e.g., 3.4oz -> 100ml, 2.0oz -> 60ml) using a small tolerance.
 /// </summary>
 public sealed class ConvertAction : BaseAction
 {
@@ -23,19 +22,27 @@ public sealed class ConvertAction : BaseAction
     private readonly string? _toUnit;
     private readonly double _factor;
     private readonly string? _unitKey;
-    private readonly string _roundMode;
+    private readonly int? _roundDecimals; // null => none
     private readonly bool _setUnit;
 
-    public ConvertAction(string fromKey, string toKey, bool assign, string? condition,
-                         string? fromUnit, string? toUnit, double factor,
-                         string? unitKey, string? roundMode, bool setUnit)
+    public ConvertAction(
+        string fromKey,
+        string toKey,
+        bool assign,
+        string? condition,
+        string? fromUnit,
+        string? toUnit,
+        double factor,
+        string? unitKey,
+        string? round,
+        bool setUnit)
         : base(fromKey, toKey, assign, condition)
     {
         _fromUnit = string.IsNullOrWhiteSpace(fromUnit) ? null : fromUnit.Trim();
         _toUnit = string.IsNullOrWhiteSpace(toUnit) ? null : toUnit.Trim();
-        _factor = factor;
+        _factor = factor == 0d ? 1d : factor;
         _unitKey = string.IsNullOrWhiteSpace(unitKey) ? null : unitKey.Trim();
-        _roundMode = string.IsNullOrWhiteSpace(roundMode) ? "none" : roundMode.Trim().ToLowerInvariant();
+        _roundDecimals = ParseRound(round);
         _setUnit = setUnit;
     }
 
@@ -43,71 +50,100 @@ public sealed class ConvertAction : BaseAction
     {
         if (!base.Execute(bag, ctx)) return false;
 
-        // Resolve numeric input: prefer exact key, then assign: prefix
-        if (!TryGetValue(bag, base.input, out var raw)) return false;
-        if (!double.TryParse(raw, NumberStyles.Float, ctx.Culture ?? CultureInfo.InvariantCulture, out var n)) return false;
+        // Read numeric value from input (supports assigned or plain)
+        if (!TryRead(bag, input, out var raw) || string.IsNullOrWhiteSpace(raw))
+            return false;
 
-        // Check unit match if UnitKey provided
-        bool shouldConvert = true;
-        string? unitKeyActual = null;
-        if (!string.IsNullOrWhiteSpace(_unitKey))
+        if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
+            return false;
+
+        // Check unit condition if specified (supports assigned or plain)
+        if (!string.IsNullOrWhiteSpace(_fromUnit) && !string.IsNullOrWhiteSpace(_unitKey))
         {
-            unitKeyActual = ResolveKey(bag, _unitKey!);
-            if (!TryGetValue(bag, unitKeyActual, out var unitVal)) return false;
-            if (!string.IsNullOrWhiteSpace(_fromUnit))
+            if (!TryRead(bag, _unitKey!, out var currentUnit) ||
+                !string.Equals((currentUnit ?? string.Empty).Trim(), _fromUnit, StringComparison.OrdinalIgnoreCase))
             {
-                shouldConvert = string.Equals(unitVal?.Trim(), _fromUnit, StringComparison.OrdinalIgnoreCase);
+                // Requested a specific FromUnit but current unit doesn't match -> no-op
+                return false;
             }
         }
 
-        if (!shouldConvert) return false;
+        var converted = value * _factor;
 
-        var converted = n * _factor;
-        if (_roundMode == "int")
+        // Snap canonical fragrance sizes for oz -> ml
+        if (IsOzToMl())
         {
-            converted = Math.Round(converted, 0, MidpointRounding.AwayFromZero);
+            converted = SnapOzToMl(value, converted);
+        }
+        else if (_roundDecimals.HasValue)
+        {
+            converted = Math.Round(converted, _roundDecimals.Value, MidpointRounding.AwayFromZero);
         }
 
-        var outStr = FormatNumber(converted, ctx.Culture);
+        var convertedStr = converted.ToString("0.########", CultureInfo.InvariantCulture);
 
-        // Write numeric result
-        if (base.assign)
-            bag[$"assign:{base.output}"] = outStr;
-        else
-            bag[base.output] = outStr;
-
-        // Set unit if requested
-        if (_setUnit && !string.IsNullOrWhiteSpace(_toUnit) && !string.IsNullOrWhiteSpace(unitKeyActual))
+        if (assign)
         {
-            bag[$"assign:{unitKeyActual}"] = _toUnit!;
+            bag[$"assign:{output}"] = convertedStr;
+        }
+        else
+        {
+            bag[output] = convertedStr;
+        }
+
+        // Optionally update unit (write to assigned form)
+        if (_setUnit && !string.IsNullOrWhiteSpace(_toUnit) && !string.IsNullOrWhiteSpace(_unitKey))
+        {
+            bag[$"assign:{_unitKey}"] = _toUnit!;
         }
 
         return true;
     }
 
-    private static string FormatNumber(double value, CultureInfo? culture)
+    private static bool TryRead(IDictionary<string, string> bag, string key, out string? value)
     {
-        // Use invariant rounded format, but with culture if provided for decimal separator
-        culture ??= CultureInfo.InvariantCulture;
-        // If it's integer, format without decimals
-        if (Math.Abs(value % 1d) < 1e-9)
+        if (bag.TryGetValue($"assign:{key}", out var a)) { value = a; return true; }
+        if (bag.TryGetValue(key, out var v)) { value = v; return true; }
+        value = null; return false;
+    }
+
+    private bool IsOzToMl()
+        => !string.IsNullOrWhiteSpace(_fromUnit) && !string.IsNullOrWhiteSpace(_toUnit)
+           && string.Equals(_fromUnit, "oz", StringComparison.OrdinalIgnoreCase)
+           && string.Equals(_toUnit, "ml", StringComparison.OrdinalIgnoreCase);
+
+    private static double SnapOzToMl(double oz, double ml)
+    {
+        var pairs = new (double oz, int ml)[]
         {
-            return ((long)value).ToString(culture);
+            (0.5, 15),
+            (1.0, 30),
+            (1.7, 50),
+            (1.69, 50),
+            (2.0, 60),
+            (2.5, 75),
+            (3.3, 100),
+            (3.4, 100),
+            (6.7, 200)
+        };
+
+        const double tol = 0.06; // ~ ±0.06 oz tolerance (~1.77 ml)
+        foreach (var p in pairs)
+        {
+            if (Math.Abs(oz - p.oz) <= tol)
+                return p.ml;
         }
-        return value.ToString("0.##", culture);
+
+        // Otherwise round to nearest ml normally
+        return Math.Round(ml, 0, MidpointRounding.AwayFromZero);
     }
 
-    private static bool TryGetValue(IDictionary<string, string> bag, string key, out string s)
+    private static int? ParseRound(string? round)
     {
-        if (bag.TryGetValue(key, out s!)) return true;
-        var alt = $"assign:{key}";
-        if (bag.TryGetValue(alt, out s!)) return true;
-        s = string.Empty; return false;
-    }
-
-    private static string ResolveKey(IDictionary<string, string> bag, string key)
-    {
-        // If exact exists, use it; otherwise return key (caller will try assign: too)
-        return bag.ContainsKey(key) ? key : key;
+        if (string.IsNullOrWhiteSpace(round)) return null; // no rounding by default
+        if (string.Equals(round, "none", StringComparison.OrdinalIgnoreCase)) return null;
+        if (int.TryParse(round, NumberStyles.Integer, CultureInfo.InvariantCulture, out var d) && d >= 0)
+            return d;
+        return null;
     }
 }

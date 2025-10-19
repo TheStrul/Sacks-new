@@ -301,11 +301,14 @@ namespace SacksDataLayer.FileProcessing.Configuration
                     if (parameters.Count > 0) AddErr($"unused Parameters: {string.Join(',', parameters.Keys)} (assign expects no parameters)");
                     break;
                 case "find":
-                    if (!parameters.TryGetValue("Pattern", out var pattern) || string.IsNullOrWhiteSpace(pattern))
+                    parameters.TryGetValue("Pattern", out var pattern);
+                    parameters.TryGetValue("PatternKey", out var patternKey);
+
+                    if (string.IsNullOrWhiteSpace(pattern) && string.IsNullOrWhiteSpace(patternKey))
                     {
-                        AddErr("missing Parameters['Pattern'] or Pattern is empty");
+                        AddErr("missing Parameters['Pattern'] or PatternKey");
                     }
-                    else
+                    else if (!string.IsNullOrWhiteSpace(pattern))
                     {
                         if (pattern.StartsWith("Lookup:", StringComparison.OrdinalIgnoreCase))
                         {
@@ -342,6 +345,28 @@ namespace SacksDataLayer.FileProcessing.Configuration
                     var allowedMap = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Table", "CaseMode", "AddIfNotFound" };
                     var unusedMap = parameters.Keys.Where(k => !allowedMap.Contains(k)).ToList();
                     if (unusedMap.Count > 0) AddErr($"unused Parameters: {string.Join(',', unusedMap)}");
+                    break;
+                case "convert":
+                    // Validate convert with code-side constants (Preset-driven). Allow optional FromUnit/ToUnit overrides
+                    var allowedConv = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Preset", "FromUnit", "ToUnit", "UnitKey", "SetUnit" };
+                    var unusedConv = parameters.Keys.Where(k => !allowedConv.Contains(k)).ToList();
+                    if (unusedConv.Count > 0) AddErr($"unused Parameters: {string.Join(',', unusedConv)}");
+                    if (!parameters.ContainsKey("Preset") && !parameters.ContainsKey("FromUnit"))
+                    {
+                        AddErr("convert requires either Preset or FromUnit/ToUnit pair");
+                    }
+                    break;
+                case "concat":
+                    var allowedConcat = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Keys", "Separator" };
+                    var unusedConcat = parameters.Keys.Where(k => !allowedConcat.Contains(k)).ToList();
+                    if (unusedConcat.Count > 0) AddErr($"unused Parameters: {string.Join(',', unusedConcat)}");
+                    if (!parameters.TryGetValue("Keys", out var keys) || string.IsNullOrWhiteSpace(keys))
+                    {
+                        AddErr("concat requires non-empty Parameters['Keys']");
+                    }
+                    break;
+                case "clear":
+                    if (parameters.Count > 0) AddErr($"unused Parameters: {string.Join(',', parameters.Keys)} (clear expects no parameters)");
                     break;
                 default:
                     if (parameters.Count > 0) AddErr($"unknown Op '{op}' - cannot validate parameters but found: {string.Join(',', parameters.Keys)}");
