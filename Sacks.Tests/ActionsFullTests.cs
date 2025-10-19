@@ -22,7 +22,7 @@ namespace ParsingEngine.Tests
             var ok = act.Execute(bag, new CellContext("A", input, CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
             Assert.True(ok);
             Assert.True(bag.ContainsKey("Dst[0]"));
-            Assert.Equal(expected, bag["Dst[0]"]); // result stored starting at index 3
+            Assert.Equal(expected, bag["Dst[0]"]); // result stored starting at index 0
             Assert.Equal("1", bag["Dst.Length"]); // length
             Assert.Equal("true", bag["Dst.Valid"]); // valid
         }
@@ -41,7 +41,7 @@ namespace ParsingEngine.Tests
             if (expectedCount == 0)
             {
                 Assert.False(ok);
-                Assert.Equal("0", bag["Parts.Lengtrh"]);
+                Assert.Equal("0", bag["Parts.Length"]);
                 Assert.Equal("false", bag["Parts.Valid"]);
             }
             else
@@ -51,7 +51,7 @@ namespace ParsingEngine.Tests
                 Assert.Equal("true", bag["Parts.Valid"]);
                 for (int i = 0; i < expectedCount; i++)
                 {
-                    Assert.Equal(parts[i], bag[$"Parts[{i}"]);
+                    Assert.Equal(parts[i], bag[$"Parts[{i}]"]);
                 }
             }
         }
@@ -70,7 +70,7 @@ namespace ParsingEngine.Tests
             Assert.True(ok);
             // cleaned value is at Parts.Clean
             Assert.Equal("abcdef", bag["Parts.Clean"]);
-            // removed matches are at Parts[3], Parts[4]
+            // removed matches are at Parts[0], Parts[1]
             Assert.Equal("123", bag["Parts[0]"]);
             Assert.Equal("45", bag["Parts[1]"]);
             // length should be 2
@@ -106,16 +106,14 @@ namespace ParsingEngine.Tests
             {
                 for (int i = 0; i < expectedRemoved.Length; i++)
                 {
-                    var key = $"Parts[{i + 3}]";
+                    var key = $"Parts[{i}]";
                     Assert.True(bag.ContainsKey(key));
                     Assert.Equal(expectedRemoved[i], bag[key]);
                 }
-                Assert.Equal((expectedRemoved.Length).ToString(CultureInfo.InvariantCulture), bag["Parts[1]"]);
+                Assert.Equal(expectedRemoved.Length.ToString(CultureInfo.InvariantCulture), bag["Parts.Length"]);
                 Assert.Equal("true", bag["Parts.Valid"]); // valid true
             }
         }
-
-       
 
         [Fact]
         public void MappingAction_Performs_Lookup_With_CaseModes_And_AssignFlag()
@@ -216,15 +214,15 @@ namespace ParsingEngine.Tests
             Assert.Equal("cleaned", bag["X.Clean"]);
             Assert.Equal("2", bag["X.Length"]);
             Assert.Equal("true", bag["X.Valid"]);
-            Assert.Equal("one", bag["X[0]"]);
-            Assert.Equal("two", bag["X[1]"]);
+            Assert.Equal("one", bag["assign:X[0]"]);
+            Assert.Equal("two", bag["assign:X[1]"]);
 
             // empty results
             var bag2 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            ActionHelpers.WriteListOutput(bag2, "Y", string.Empty, null,false,false);
+            ActionHelpers.WriteListOutput(bag2, "Y", string.Empty, null, false, false);
             Assert.Equal(string.Empty, bag2["Y.Clean"]);
             Assert.Equal("0", bag2["Y.Length"]);
-            Assert.Equal("false", bag2["Y.Vaild"]);
+            Assert.Equal("false", bag2["Y.Valid"]);
         }
     }
 }

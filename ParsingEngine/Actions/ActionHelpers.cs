@@ -12,37 +12,25 @@ internal static class ActionHelpers
         // Always set .Clean
         bag[$"{baseKey}.Clean"] = cleaned ?? string.Empty;
 
-        var count = results?.Count ?? -1;
-        var valid = results != null ? "true" : "false";
+        var count = results?.Count ?? 0;
+        var valid = results != null && results.Count > 0;
+        
         // Length should reflect only the real results count (not the appended clean element)
         bag[$"{baseKey}.Length"] = count.ToString(CultureInfo.InvariantCulture);
-        bag[$"{baseKey}.Valid"] = valid;
+        bag[$"{baseKey}.Valid"] = valid ? "true" : "false";
 
         if (results != null && results.Count > 0)
         {
             for (int i = 0; i < results.Count; i++)
             {
+                var key = isSingle ? baseKey : $"{baseKey}[{i}]";
                 if (assign)
                 {
-                    if (!isSingle)
-                    {
-                        bag[$"assign:{baseKey}[{i}]"] = results[i] ?? string.Empty;
-                    }
-                    else
-                    {
-                        bag[$"assign:{baseKey}"] = results[i] ?? string.Empty;
-                    }
+                    bag[$"assign:{key}"] = results[i] ?? string.Empty;
                 }
                 else
                 {
-                    if (!isSingle)
-                    {
-                        bag[$"{baseKey}[{i}]"] = results[i] ?? string.Empty;
-                    }
-                    else
-                    {
-                        bag[$"{baseKey}"] = results[i] ?? string.Empty;
-                    }
+                    bag[key] = results[i] ?? string.Empty;
                 }
             }
         }       

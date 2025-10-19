@@ -41,15 +41,18 @@ namespace SacksLogicLayer.Services.Implementations
         // Performance constants
         private const int MAX_FILE_SIZE_MB = 500;
         private const int MAX_ROWS_PER_FILE = 1_000_000;
-        private const int MEMORY_CHECK_INTERVAL = 1000; // rows
+        private const int MEMORY_CHECK_INTERVAL_ROWS = 1000;
         private const long MAX_MEMORY_THRESHOLD_MB = 2048;
+        private const int FILE_LOCK_RETRY_MAX_ATTEMPTS = 3;
+        private const int FILE_LOCK_RETRY_INITIAL_DELAY_MS = 250;
+        private const int MIN_PROCESSING_TIME_TO_LOG_MS = 5000;
 
         #endregion
 
         #region Constructor & Validation
 
         public FileProcessingService(
-            IFileDataReader _fileDataReader,
+            IFileDataReader fileDataReader,
             ISupplierConfigurationService supplierConfigurationService,
             IFileProcessingDatabaseService databaseService,
             IUnitOfWork unitOfWork,
@@ -57,8 +60,8 @@ namespace SacksLogicLayer.Services.Implementations
             ILoggerFactory loggerFactory)
         {
             // Comprehensive null validation with detailed messages
-            this._fileDataReader = _fileDataReader ?? 
-                throw new ArgumentNullException(nameof(_fileDataReader), "File data reader is required for file operations");
+            _fileDataReader = fileDataReader ?? 
+                throw new ArgumentNullException(nameof(fileDataReader), "File data reader is required for file operations");
             _supplierConfigurationService = supplierConfigurationService ?? 
                 throw new ArgumentNullException(nameof(supplierConfigurationService), "Supplier configuration service is required for auto-detection");
             _databaseService = databaseService ?? 
@@ -145,7 +148,7 @@ namespace SacksLogicLayer.Services.Implementations
                     fileData
                     .DataRows
                     .Skip((supplierConfig.FileStructure?.DataStartRowIndex ?? 1) - 1) // Convert to 0-based index
-                    .Where(r => r.HasData) // Fixed: was !r.HasData
+                    .Where(r => r.HasData)
                     .ToList(); // Materialize the query
                 context.ProcessingResult.Statistics.TotalEmptyRows = context.ProcessingResult.Statistics.TotalRowsInFile - validRows.Count - context.ProcessingResult.Statistics.TotalTitlesRows;
 
@@ -260,11 +263,10 @@ namespace SacksLogicLayer.Services.Implementations
 
                 // Check file accessibility with a lock-aware retry loop. This gives a clearer
                 // message when another process temporarily holds the file and reduces race conditions.
-                const int maxAttempts = 3;
-                var delayMs = 250;
+                var delayMs = FILE_LOCK_RETRY_INITIAL_DELAY_MS;
                 var lastException = (Exception?)null;
 
-                for (int attempt = 1; attempt <= maxAttempts; attempt++)
+                for (int attempt = 1; attempt <= FILE_LOCK_RETRY_MAX_ATTEMPTS; attempt++)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -286,9 +288,9 @@ namespace SacksLogicLayer.Services.Implementations
                     {
                         // Keep the last exception and retry if attempts remain
                         lastException = ioEx;
-                        _logger.LogWarning(ioEx, "File appears locked (attempt {Attempt}/{MaxAttempts}): {FilePath}", attempt, maxAttempts, filePath);
+                        _logger.LogWarning(ioEx, "File appears locked (attempt {Attempt}/{MaxAttempts}): {FilePath}", attempt, FILE_LOCK_RETRY_MAX_ATTEMPTS, filePath);
 
-                        if (attempt == maxAttempts)
+                        if (attempt == FILE_LOCK_RETRY_MAX_ATTEMPTS)
                         {
                             // Final attempt failed — surface a clear IOException with inner exception
                             throw new IOException($"File is locked or in use: {filePath}", ioEx);
@@ -368,11 +370,11 @@ namespace SacksLogicLayer.Services.Implementations
                     var subtitleProcessor = new SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services.SubtitleRowProcessor();
                     subtitleProcessor.ProcessSubtitleRows(context.FileData, context.SupplierConfiguration, cancellationToken);
                 }
-                int befor = context.FileData.DataRows.Count;
+                int before = context.FileData.DataRows.Count;
                 // remove all rows that are subtitle rows 
                 context.FileData.DataRows.RemoveAll(r => r.IsSubtitleRow);
                 int after = context.FileData.DataRows.Count;
-                int subtitleRows = befor - after;
+                int subtitleRows = before - after;
                 context.ProcessingResult.Statistics.TotalTitlesRows += subtitleRows;
             }
             catch (Exception ex)
@@ -451,7 +453,7 @@ namespace SacksLogicLayer.Services.Implementations
                         _logger.LogWarning("Warnings: {Warnings}", string.Join("; ", context.ProcessingResult.Warnings));
                     }
                     
-                    if (stopwatch.ElapsedMilliseconds > 5000) // Only show if > 5 seconds
+                    if (stopwatch.ElapsedMilliseconds > MIN_PROCESSING_TIME_TO_LOG_MS)
                     {
                         _logger.LogInformation("Time: {ProcessingTime:F1}s", stopwatch.ElapsedMilliseconds / 1000.0);
                     }
@@ -539,10 +541,6 @@ namespace SacksLogicLayer.Services.Implementations
                 return 0;
             }
         }
-
-        /// <summary>
-        /// 🔍 VALIDATION: Validate dataStartRowIndex configuration
-        /// </summary>
 
         #endregion
 
