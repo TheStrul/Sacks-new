@@ -356,6 +356,32 @@ namespace SacksDataLayer.FileProcessing.Configuration
                         AddErr("convert requires either Preset or FromUnit/ToUnit pair");
                     }
                     break;
+                case "switch":
+                case "case":
+                    // Parameters: Default (optional), IgnoreCase (optional), When:<key>=<value> (multiple)
+                    var allowedSwitch = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Default", "IgnoreCase" };
+                    var whenParams = parameters.Keys.Where(k => k.StartsWith("When:", StringComparison.OrdinalIgnoreCase)).ToList();
+                    var unusedSwitch = parameters.Keys.Where(k => !allowedSwitch.Contains(k) && !k.StartsWith("When:", StringComparison.OrdinalIgnoreCase)).ToList();
+                    if (unusedSwitch.Count > 0) AddErr($"unused Parameters: {string.Join(',', unusedSwitch)}");
+                    if (whenParams.Count == 0 && !parameters.ContainsKey("Default"))
+                    {
+                        AddErr("switch requires at least one When:<key>=<value> parameter or a Default value");
+                    }
+                    break;
+                case "caseformat":
+                    // Parameters: Mode (title|upper|lower), Culture (optional)
+                    var allowedCase = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Mode", "Culture" };
+                    var unusedCase = parameters.Keys.Where(k => !allowedCase.Contains(k)).ToList();
+                    if (unusedCase.Count > 0) AddErr($"unused Parameters: {string.Join(',', unusedCase)}");
+                    if (parameters.TryGetValue("Mode", out var mode))
+                    {
+                        var validModes = new[] { "title", "upper", "lower" };
+                        if (!validModes.Contains(mode.ToLowerInvariant()))
+                        {
+                            AddErr($"invalid Mode '{mode}' (allowed: title, upper, lower)");
+                        }
+                    }
+                    break;
                 case "concat":
                     var allowedConcat = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Keys", "Separator" };
                     var unusedConcat = parameters.Keys.Where(k => !allowedConcat.Contains(k)).ToList();
