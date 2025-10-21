@@ -73,6 +73,13 @@
             "Assign": true,
             "Condition": null,
             "Parameters": { "Table": "COO" }
+          },
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.Category",
+            "Assign": true,
+            "Condition": null
           }
         ],
         "Trace": false
@@ -224,28 +231,17 @@
           {
             "Op": "Find",
             "Input": "Product.Type 1.Clean",
-            "Output": "ParensOnly",
+            "Output": "CleanedName",
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "\\(.*?\\)",
+              "Pattern": "\\(.*?\\)|[®™©]|-",
               "Options": "all,ignorecase,remove"
             }
           },
           {
-            "Op": "Find",
-            "Input": "ParensOnly.Clean",
-            "Output": "Symbols",
-            "Assign": false,
-            "Condition": null,
-            "Parameters": {
-              "Pattern": "[®™©]",
-              "Options": "all,remove"
-            }
-          },
-          {
             "Op": "Assign",
-            "Input": "Symbols.Clean",
+            "Input": "CleanedName.Clean",
             "Output": "Product.Name",
             "Assign": true,
             "Condition": null,

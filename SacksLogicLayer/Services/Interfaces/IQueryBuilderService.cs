@@ -28,6 +28,15 @@ namespace SacksLogicLayer.Services.Interfaces
         public string? Value { get; init; }
         public Type PropertyType { get; init; } = typeof(string);
         public bool Enabled { get; set; } = true;
+
+        public override string ToString()
+        {
+            if (Operator is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty)
+            {
+                return $"{PropertyName} {Operator}";
+            }
+            return $"{PropertyName} {Operator} {Value}";
+        }
     }
 
     /// <summary>

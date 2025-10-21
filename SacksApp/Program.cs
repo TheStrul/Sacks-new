@@ -310,6 +310,12 @@ namespace SacksApp
             services.AddScoped<ISupplierConfigurationService, SupplierConfigurationService>();
             services.AddScoped<IFileProcessingService, FileProcessingService>();
 
+            // Add query and data management services
+            services.AddScoped<IQueryBuilderService, QueryBuilderService>();
+            services.AddScoped<IProductOffersQueryService, ProductOffersQueryService>();
+            services.AddScoped<IOfferProductDataService, OfferProductDataService>();
+            services.AddScoped<IGridStateManagementService, GridStateManagementService>();
+
             return services;
         }
     }
