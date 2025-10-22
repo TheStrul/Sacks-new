@@ -7,8 +7,49 @@
       "DefaultCulture": "en-GB",
       "PreferFirstAssignment": true
     },
-    "ColumnRules": {
-      "A": {
+    "ColumnRules": [
+      {
+        "Column": "I",
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.Brand",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": {
+              "Table": "Brand",
+              "AddIfNotFound": "true"
+            }
+          }
+        ]
+      },
+      {
+        "Column": "H",
+        "Actions": [
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "TypeInfo",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "^\\d+\\.\\s*(?<type>.*)$",
+              "Options": "first"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "TypeInfo",
+            "Output": "Product.Type 2",
+            "Assign": true,
+            "Condition": "TypeInfo.Valid == true",
+            "Parameters": null
+          }
+        ]
+      },
+      {
+        "Column": "B",
         "Actions": [
           {
             "Op": "Assign",
@@ -21,113 +62,149 @@
           {
             "Op": "Find",
             "Input": "Text",
-            "Output": "Sizes",
+            "Output": "BrandRemoval",
             "Assign": false,
-            "Condition": null,
+            "Condition": "Product.Brand != null",
             "Parameters": {
-              "Pattern": "(?i)(?\u003Csize\u003E\\b\\d+(?:[.,]\\d+)?\\s*(?:ml|oz|fl\\s*oz)\\b)",
+              "Pattern": "^\\s*{Product.Brand}\\s*",
               "Options": "first,ignorecase,remove"
             }
           },
           {
             "Op": "Find",
-            "Input": "Sizes.",
-            "Output": "Product.Size",
-            "Assign": true,
-            "Condition": "Sizes.Valid==true",
-            "Parameters": {
-              "Pattern": "(?i)(?\u003Cnum\u003E\\d+(?:[.,]\\d+)?)(?=\\s*(?:ml|oz|fl\\s*oz)\\b)",
-              "Options": "first"
-            }
-          },
-          {
-            "Op": "Find",
-            "Input": "Sizes",
-            "Output": "UnitRaw",
-            "Assign": false,
-            "Condition": "Sizes.Valid==true",
-            "Parameters": {
-              "Pattern": "(?i)(?\u003Cunit\u003Eml|oz|fl\\s*oz)",
-              "Options": "first,ignorecase"
-            }
-          },
-          {
-            "Op": "Map",
-            "Input": "UnitRaw",
-            "Output": "Product.Units",
-            "Assign": true,
-            "Condition": "UnitRaw.Valid==true",
-            "Parameters": {
-              "Table": "Unit"
-            }
-          },
-          {
-            "Op": "Find",
-            "Input": "Sizes.Clean",
-            "Output": "Concentrations",
+            "Input": "BrandRemoval.Clean",
+            "Output": "OriginMatch",
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "lookup:Concentration",
-              "Options": "all,ignorecase,remove"
+              "Pattern": "(?i)-\\s*(?<origin>[A-Za-z]+)\\s*$",
+              "Options": "first,ignorecase,remove"
             }
           },
           {
             "Op": "Map",
-            "Input": "Concentrations[0]",
+            "Input": "OriginMatch",
+            "Output": "Product.COO",
+            "Assign": true,
+            "Condition": "OriginMatch.Valid == true",
+            "Parameters": {
+              "Table": "COO",
+              "AddIfNotFound": "false"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "OriginMatch.Clean",
+            "Output": "ProductCodeMatch",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "\\((?<code>\\d+)\\)",
+              "Options": "first,remove"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "ProductCodeMatch",
+            "Output": "Offer.Ref",
+            "Assign": true,
+            "Condition": "ProductCodeMatch.Valid == true",
+            "Parameters": null
+          },
+          {
+            "Op": "Find",
+            "Input": "ProductCodeMatch.Clean",
+            "Output": "GenderMatch",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "\\b(?<gender>[UML])\\b",
+              "Options": "first,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "GenderMatch",
+            "Output": "Product.Gender",
+            "Assign": true,
+            "Condition": "GenderMatch.Valid == true",
+            "Parameters": {
+              "Table": "Gender",
+              "AddIfNotFound": "false"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "GenderMatch.Clean",
+            "Output": "ConcentrationMatch",
+            "Assign": false,
+            "Condition": "Product.Type 2 != 'Set' && Product.Type 2 != 'Mini Set'",
+            "Parameters": {
+              "Pattern": "lookup:Concentration",
+              "Options": "first,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "ConcentrationMatch",
             "Output": "Product.Concentration",
             "Assign": true,
-            "Condition": "Concentrations.Valid==true",
+            "Condition": "ConcentrationMatch.Valid == true",
             "Parameters": {
               "Table": "Concentration"
             }
           },
           {
             "Op": "Find",
-            "Input": "Concentrations.Clean",
-            "Output": "Types",
+            "Input": "ConcentrationMatch.Clean",
+            "Output": "SizeMatch",
             "Assign": false,
-            "Condition": null,
+            "Condition": "Product.Type 2 != 'Set' && Product.Type 2 != 'Mini Set'",
             "Parameters": {
-              "Pattern": "lookup:Type 1",
-              "Options": "all,ignorecase,remove"
+              "Pattern": "(?<size>\\d+[.,]\\d+)",
+              "Options": "first,remove"
             }
           },
           {
-            "Op": "Map",
-            "Input": "Types[0]",
-            "Output": "Product.Type 1",
-            "Assign": true,
-            "Condition": "Types.Valid==true",
+            "Op": "Convert",
+            "Input": "SizeMatch",
+            "Output": "SizeInMl",
+            "Assign": false,
+            "Condition": "SizeMatch.Valid == true",
             "Parameters": {
-              "Table": "Type 1"
+              "Preset": "OzToMl"
             }
           },
           {
             "Op": "Assign",
-            "Input": "Types.Clean",
+            "Input": "SizeInMl",
+            "Output": "Product.Size",
+            "Assign": true,
+            "Condition": "SizeMatch.Valid == true",
+            "Parameters": null
+          },
+          {
+            "Op": "Convert",
+            "Input": "SizeMatch.Clean",
+            "Output": "NameCleaned",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Preset": "TrimWhitespace"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "NameCleaned",
             "Output": "Product.Name",
             "Assign": true,
             "Condition": null,
             "Parameters": null
           }
-        ],
-        "Trace": true
+        ]
       },
-      "B": {
-        "Actions": [
-          {
-            "Op": "Assign",
-            "Input": "Text",
-            "Output": "Offer.Price",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": null
-          }
-        ],
-        "Trace": false
-      },
-      "C": {
+      {
+        "Column": "C",
         "Actions": [
           {
             "Op": "Assign",
@@ -137,10 +214,23 @@
             "Condition": null,
             "Parameters": null
           }
-        ],
-        "Trace": false
+        ]
       },
-      "D": {
+      {
+        "Column": "D",
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Price",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ]
+      },
+      {
+        "Column": "E",
         "Actions": [
           {
             "Op": "Assign",
@@ -150,14 +240,13 @@
             "Condition": null,
             "Parameters": null
           }
-        ],
-        "Trace": false
+        ]
       }
-    }
+    ]
   },
   "FileStructure": {
     "DataStartRowIndex": 2,
-    "ExpectedColumnCount": 5,
+    "ExpectedColumnCount": 10,
     "HeaderRowIndex": 1,
     "Detection": {
       "FileNamePatterns": [

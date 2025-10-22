@@ -7,7 +7,7 @@ public sealed class ParserConfig
     public Settings Settings { get; set; } = new();
     [JsonIgnore]
     public Dictionary<string, Dictionary<string, string>> Lookups { get; set; } = new();
-    public Dictionary<string, RuleConfig> ColumnRules { get; set; } = new();
+    public List<RuleConfig> ColumnRules { get; set; } = new();
 
     public void DoMergeLoookUpTables(Dictionary<string, Dictionary<string, string>> lookups)
     {
@@ -64,7 +64,7 @@ public sealed class ParserConfig
 public sealed class Settings
 {
     public bool StopOnFirstMatchPerColumn { get; set; } = false;
-    public string? DefaultCulture { get; set; } = "en-US";
+    public string DefaultCulture { get; set; } = "en-US";
     public bool PreferFirstAssignment { get; set; } = false;
 }
 
@@ -81,16 +81,12 @@ public class ActionConfig
 
     public string? Condition { get; set; } = null;
 
-    public Dictionary<string,string>? Parameters { get; set; }
+    public Dictionary<string, string>? Parameters { get; set; }
 }
 
 public sealed class RuleConfig
 {
-    [JsonIgnore]
-    public Dictionary<string, string> Assign { get;} = new Dictionary<string, string>();
+    public required string Column { get; set; }
 
     required public List<ActionConfig> Actions { get; set; }
-
-    // When true, emit per-step trace lines (input/output) during execution
-    public bool Trace { get; set; }
 }

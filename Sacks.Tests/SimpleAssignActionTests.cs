@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+
 using Xunit;
 
 namespace ParsingEngine.Tests
@@ -22,14 +23,15 @@ namespace ParsingEngine.Tests
         public void Assign_Copies_Value(string dataFile, string expected)
         {
             var input = LoadData(dataFile);
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["Src"] = input };
+            var pb = new PropertyBag();
+            pb.SetVariable("Src", input);
             var act = new SimpleAssignAction("Src", "Dst");
-            var ok = act.Execute(bag, new CellContext("A", input, CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
+            var ok = act.Execute(new CellContext("A", input, CultureInfo.InvariantCulture, pb));
             Assert.True(ok);
-            Assert.True(bag.ContainsKey("Dst[0]"));
-            Assert.Equal(expected, bag["Dst[0]"]);
-            Assert.Equal("1", bag["Dst.Length"]);
-            Assert.Equal("true", bag["Dst.Valid"]);
+            Assert.True(pb.Variables.ContainsKey("Dst[0]"));
+            Assert.Equal(expected, pb.Variables["Dst[0]"]);
+            Assert.Equal("1", pb.Variables["Dst.Length"]);
+            Assert.Equal("true", pb.Variables["Dst.Valid"]);
         }
     }
 }

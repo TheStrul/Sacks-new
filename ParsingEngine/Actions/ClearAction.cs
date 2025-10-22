@@ -13,13 +13,13 @@ public sealed class ClearAction : BaseAction
     {
     }
 
-    public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    public override bool Execute(CellContext ctx)
     {
-        if (!base.Execute(bag, ctx)) return false;
+        if (!base.Execute(ctx)) return false;
         if (assign)
-            bag[$"assign:{output}"] = string.Empty;
+            ctx.PropertyBag.SetAssign(output, string.Empty);
         else
-            bag[output] = string.Empty;
+            ctx.PropertyBag.SetVariable(output, string.Empty);
         return true;
     }
 }

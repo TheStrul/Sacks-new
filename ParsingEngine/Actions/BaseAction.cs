@@ -12,8 +12,6 @@ public abstract class BaseAction : IChainAction
     protected readonly string output;
     protected readonly bool assign;
     protected readonly string? condition;
-    
-
 
     protected BaseAction(string input, string output, bool assign = false, string? condition = null)
     {
@@ -25,18 +23,19 @@ public abstract class BaseAction : IChainAction
 
     // Derived types must provide Op and Execute
     public abstract string Op { get; }
-    public virtual bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    
+    public virtual bool Execute(CellContext ctx)
     {
         if (string.IsNullOrEmpty(condition) == false)
         {
-            bool cond = EvaluateCondition(bag);
+            bool cond = EvaluateCondition(ctx);
             if (!cond)
                 return false;
         }
         return true;
     }
 
-    private bool EvaluateCondition(IDictionary<string, string> bag)
+    private bool EvaluateCondition(CellContext ctx)
     {
         if (string.IsNullOrWhiteSpace(condition)) return false;
         var s = condition.Trim();
@@ -47,8 +46,8 @@ public abstract class BaseAction : IChainAction
         {
             var left = s[..eqIdx].Trim();
             var right = s[(eqIdx + 2)..].Trim();
-            var lv = ResolveToken(left, bag);
-            var rv = ResolveToken(right, bag);
+            var lv = ResolveToken(left, ctx);
+            var rv = ResolveToken(right, ctx);
             return string.Equals(lv, rv, StringComparison.Ordinal);
         }
 
@@ -57,8 +56,8 @@ public abstract class BaseAction : IChainAction
         {
             var left = s[..neqIdx].Trim();
             var right = s[(neqIdx + 2)..].Trim();
-            var lv = ResolveToken(left, bag);
-            var rv = ResolveToken(right, bag);
+            var lv = ResolveToken(left, ctx);
+            var rv = ResolveToken(right, ctx);
             return !string.Equals(lv, rv, StringComparison.Ordinal);
         }
 
@@ -66,8 +65,10 @@ public abstract class BaseAction : IChainAction
         return false;
     }
 
-    private static string ResolveToken(string token, IDictionary<string, string> bag)
+    private static string ResolveToken(string token, CellContext ctx)
     {
+        var bag = ctx.PropertyBag.Variables;
+        
         switch (token.ToLower())
         {
             case "true":
@@ -105,6 +106,11 @@ public abstract class BaseAction : IChainAction
 
         // direct lookup
         if (bag.TryGetValue(token, out var val)) return val ?? string.Empty;
+        
+        // Try Assignes for cross-column access
+        if (ctx.PropertyBag.Assignes.TryGetValue(token, out var valObj)) 
+            return valObj?.ToString() ?? string.Empty;
+        
         return string.Empty;
     }
 }

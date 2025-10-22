@@ -21,11 +21,11 @@ public sealed class CaseAction : BaseAction
         _cultureName = string.IsNullOrWhiteSpace(cultureName) ? null : cultureName.Trim();
     }
 
-    public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    public override bool Execute(CellContext ctx)
     {
-        if (!base.Execute(bag, ctx)) return false;
+        if (!base.Execute(ctx)) return false;
 
-        if (!bag.TryGetValue(input, out var value) || value is null)
+        if (!ctx.PropertyBag.Variables.TryGetValue(input, out var value) || value is null)
         {
             return false;
         }
@@ -53,11 +53,11 @@ public sealed class CaseAction : BaseAction
 
         if (assign)
         {
-            bag[$"assign:{output}"] = result ?? string.Empty;
+            ctx.PropertyBag.SetAssign(output, result ?? string.Empty);
         }
         else
         {
-            bag[output] = result ?? string.Empty;
+            ctx.PropertyBag.SetVariable(output, result ?? string.Empty);
         }
 
         return true;

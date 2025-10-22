@@ -19,21 +19,21 @@ public static class ActionsFactory
         var op = (s.Op ?? string.Empty).ToLowerInvariant();
         var input = s.Input ?? string.Empty;
         var output = s.Output ?? string.Empty;
-        var patameter = s.Parameters ?? new Dictionary<string,string>();
+        var patameter = s.Parameters ?? new Dictionary<string, string>();
         var assign = s.Assign;
         var condition = s.Condition;
         IChainAction? ret;
         switch (op)
         {
             case "assign":
-                ret = new SimpleAssignAction(input, output,assign,condition);
+                ret = new SimpleAssignAction(input, output, assign, condition);
                 break;
             case "find":
                 string pattern = patameter.ContainsKey("Pattern") ? patameter["Pattern"] : string.Empty;
                 string? patternKey = patameter.ContainsKey("PatternKey") ? patameter["PatternKey"] : null;
 
                 // Support special pattern: lookup:<tableName> - pass lookup table entries (preserve order)
-                List<KeyValuePair<string,string>>? lookupEntries = null;
+                List<KeyValuePair<string, string>>? lookupEntries = null;
                 if (!string.IsNullOrEmpty(pattern) && pattern.StartsWith("lookup:", StringComparison.OrdinalIgnoreCase))
                 {
                     var tblName = pattern[("lookup:").Length..].Trim();
@@ -45,7 +45,7 @@ public static class ActionsFactory
                     }
                 }
 
-                string[] options = patameter.ContainsKey("Options") ? patameter["Options"].Split(new[]{','}, StringSplitOptions.RemoveEmptyEntries  |StringSplitOptions.TrimEntries) : Array.Empty<string>();
+                string[] options = patameter.ContainsKey("Options") ? patameter["Options"].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) : Array.Empty<string>();
                 ret = new FindAction(input, output, pattern, options.ToList(), assign, condition, lookupEntries, patternKey);
                 break;
             case "split":
@@ -120,7 +120,7 @@ public static class ActionsFactory
                 ret = new CaseAction(input, output, assign, condition, mode, culture);
                 break;
             case "concat":
-                var keys = patameter.ContainsKey("Keys") ? patameter["Keys"].Split(new[]{','}, StringSplitOptions.RemoveEmptyEntries|StringSplitOptions.TrimEntries) : Array.Empty<string>();
+                var keys = patameter.ContainsKey("Keys") ? patameter["Keys"].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) : Array.Empty<string>();
                 patameter.TryGetValue("Separator", out var sep);
                 ret = new ConcatAction(input, output, assign, condition, keys, sep);
                 break;
@@ -128,29 +128,11 @@ public static class ActionsFactory
                 ret = new ClearAction(input, output, assign, condition);
                 break;
             default:
-                ret = new NoOpChainAction(input, output);
+                ret = null;
                 break;
         }
 
         return ret!;
     }
 
-    private sealed class NoOpChainAction : IChainAction
-    {
-        private readonly string _from;
-        private readonly string _to;
-        public NoOpChainAction(string from, string to)
-        {
-            _from = from;
-            _to = to;
-        }
-        public string Op => "noop";
-        public bool Execute(IDictionary<string, string> bag, CellContext ctx)
-        {
-            if (bag == null) throw new ArgumentNullException(nameof(bag));
-            bag.TryGetValue(_from, out var value);
-            bag[_to] = value ?? string.Empty;
-            return true;
-        }
-    }
 }

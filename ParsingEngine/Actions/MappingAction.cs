@@ -20,11 +20,11 @@ public sealed class MappingAction : BaseAction
         _addIfNotFound = addIfNotFound;
     }
 
-    public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    public override bool Execute(CellContext ctx)
     {
-        if (base.Execute(bag, ctx) == false) return false; // basic checks
+        if (base.Execute(ctx) == false) return false;
 
-        bag.TryGetValue(base.input, out var raw);
+        ctx.PropertyBag.Variables.TryGetValue(base.input, out var raw);
         var input = raw ?? string.Empty;
         if (string.IsNullOrWhiteSpace(input)) return false;
 
@@ -34,9 +34,9 @@ public sealed class MappingAction : BaseAction
             if (string.Equals(kv.Key, input, StringComparison.OrdinalIgnoreCase))
             {
                 if (base.assign)
-                    bag[$"assign:{base.output}"] = kv.Value;
+                    ctx.PropertyBag.SetAssign(base.output, kv.Value);
                 else
-                    bag[base.output] = kv.Value;
+                    ctx.PropertyBag.SetVariable(base.output, kv.Value);
                 return true;
             }
         }
@@ -53,9 +53,9 @@ public sealed class MappingAction : BaseAction
             _lookup[key] = titleValue;
 
             if (base.assign)
-                bag[$"assign:{base.output}"] = titleValue;
+                ctx.PropertyBag.SetAssign(base.output, titleValue);
             else
-                bag[base.output] = titleValue;
+                ctx.PropertyBag.SetVariable(base.output, titleValue);
 
             return true;
         }

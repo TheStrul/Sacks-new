@@ -197,12 +197,6 @@
             {
                 sb.AppendLine($"{kv.Key} = '{kv.Value}'");
             }
-            if (result.Trace.Count > 0)
-            {
-                sb.AppendLine();
-                sb.AppendLine("Trace:");
-                foreach (var t in result.Trace) sb.AppendLine("  " + t);
-            }
             textBoxResults.Text = sb.ToString();
             textBoxActionJson.Text = result.JsonAction;
 

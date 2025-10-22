@@ -368,7 +368,7 @@ namespace SacksDataLayer.Services.Implementations
                         }
                     }
 
-                    // Set offer relationship
+                    // SetAssign offer relationship
                     src.OfferId = trackedOffer.Id;
                     src.Offer = trackedOffer;
 

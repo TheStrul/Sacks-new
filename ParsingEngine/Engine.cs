@@ -5,17 +5,11 @@ namespace ParsingEngine;
 public sealed class ParserEngine
 {
     private readonly ParserConfig _config;
-    private readonly Dictionary<string, List<IRule>> _rulesByColumn;
 
     public ParserEngine(ParserConfig config)
     {
         ArgumentNullException.ThrowIfNull(config);
         _config = config;
-    _rulesByColumn = config.ColumnRules
-            .ToDictionary(
-                c => c.Key,
-        c => EngineHelpers.BuildRulesForColumn(c.Value, _config),
-                StringComparer.OrdinalIgnoreCase);
     }
 
     public PropertyBag Parse(RowData row)
@@ -30,7 +24,7 @@ public sealed class ParserEngine
     public PropertyBag Parse(RowData row, IDictionary<string, object?>? initialAssignments)
     {
         ArgumentNullException.ThrowIfNull(row);
-        var bag = new PropertyBag { PreferFirstAssignment = _config.Settings.PreferFirstAssignment };
+        var bag = new PropertyBag ();
 
         // Pre-seed initial assignments (appear as first-writer if PreferFirstAssignment is true)
         if (initialAssignments != null)
@@ -38,26 +32,24 @@ public sealed class ParserEngine
             foreach (var kv in initialAssignments)
             {
                 if (string.IsNullOrWhiteSpace(kv.Key)) continue;
-                bag.Set(kv.Key, kv.Value, "Seed");
+                bag.SetAssign(kv.Key, kv.Value);
             }
         }
 
-        foreach (var (column, raw) in row.Cells)
+        // Iterate through rules in defined order, not cells
+        foreach (var ruleConfig in _config.ColumnRules)
         {
-            if (!_rulesByColumn.TryGetValue(column, out var rules)) continue;
-            var ambient = new Dictionary<string, object?>();
-            ambient["PropertyBag"] = bag; // allow rules/steps to append trace
-            var ctx = new CellContext(column, raw, new CultureInfo(_config.Settings.DefaultCulture ?? "en-US"), ambient);
+            var column = ruleConfig.Column;
 
-            foreach (var rule in rules)
-            {
-                var result = rule.Execute(ctx);
-                foreach (var a in result.Assignments)
-                    bag.Set(a.Property, a.Value, a.Source);
+            // Look up the cell value for this rule's column
+            if (!row.Cells.TryGetValue(column, out var raw))
+                continue; // Skip if column not present in row
 
-                if (_config.Settings.StopOnFirstMatchPerColumn && result.Matched)
-                    break;
-            }
+            var ctx = new CellContext(column, raw, new CultureInfo(_config.Settings.DefaultCulture), bag);
+
+            var exe = new ChainExecuter(ruleConfig, _config);
+            
+            exe.Execute(ctx);
         }
         return bag;
     }

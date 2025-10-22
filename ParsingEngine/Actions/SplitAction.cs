@@ -17,27 +17,27 @@ public sealed class SplitAction : BaseAction
         _delimiter = delimiter;
     }
 
-    public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    public override bool Execute(CellContext ctx)
     {
-        if (base.Execute(bag, ctx) == false) return false; // already processed
-        if (bag.TryGetValue(input, out var value))
+        if (base.Execute(ctx) == false) return false;
+        
+        if (ctx.PropertyBag.Variables.TryGetValue(input, out var value))
         {
             var parts = value.Split(new[] { _delimiter }, StringSplitOptions.None)
                              .Select(p => p.Trim())
                              .ToArray();
 
-            ActionHelpers.WriteListOutput(bag, output, value, parts, false, false);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, output, value, parts, false, false);
             return true;
         }
         else
         {
             if (string.IsNullOrEmpty(input))
             {
-                ActionHelpers.WriteListOutput(bag, input, input, null, false, false);
+                ActionHelpers.WriteListOutput(ctx.PropertyBag, input, input, null, false, false);
                 return false;
             }
         }
         return false;
-
     }
 }

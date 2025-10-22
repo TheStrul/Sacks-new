@@ -17,7 +17,7 @@ namespace QMobileDeviceServiceMenu
         private readonly LogViewerModel _model;
         private readonly LogViewerController _controller;
     // When true the form will use BeginInvoke (async) for cross-thread marshaling
-    // Set to false to use synchronous Invoke if deterministic ordering is required
+    // SetAssign to false to use synchronous Invoke if deterministic ordering is required
     private readonly bool _useBeginInvoke = true;
 
         /// <summary>
@@ -141,13 +141,13 @@ namespace QMobileDeviceServiceMenu
 
         private void InitializeControls()
         {
-            // Set form title
+            // SetAssign form title
             this.Text = $"Service Log Viewer - {_model.LogFileName}";
 
             // Initialize checkboxes based on current model state
             UpdateCheckboxStates();
 
-            // Set initial status
+            // SetAssign initial status
             statusLabel.Text = $"Monitoring: {_model.LogFileName}";
         }
 
@@ -399,7 +399,7 @@ namespace QMobileDeviceServiceMenu
 
                 rtf.Append("}");
 
-                // Set RTF content in one operation (much faster than individual appends)
+                // SetAssign RTF content in one operation (much faster than individual appends)
                 logTextBox.Rtf = rtf.ToString();
 
                 // Restore scroll position

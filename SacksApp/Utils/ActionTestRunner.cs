@@ -17,11 +17,10 @@ namespace SacksApp.Utils
             public bool Success { get; init; }
             public Dictionary<string, string> Bag { get; init; } = new(StringComparer.OrdinalIgnoreCase);
             public string JsonAction { get; init; } = string.Empty;
-            public List<string> Trace { get; init; } = new();
         }
 
         /// <summary>
-        /// Executes a single action with the provided inputs and returns the bag and JSON action snippet.
+        /// Executes a single action with the provided inputs and returns the Variables dictionary and JSON action snippet.
         /// </summary>
         public static Result Run(
             string op,
@@ -52,21 +51,15 @@ namespace SacksApp.Utils
 
             var action = ActionsFactory.Create(cfg, lookups);
 
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                [inputKey] = inputText
-            };
+            var pb = new PropertyBag();
+            pb.SetVariable(inputKey, inputText);
 
             if (!string.IsNullOrWhiteSpace(seedKey))
             {
-                bag[seedKey!] = seedValue ?? string.Empty;
+                pb.SetVariable(seedKey!, seedValue ?? string.Empty);
             }
 
-            var ambient = new Dictionary<string, object?>();
-            var pb = new PropertyBag();
-            ambient["PropertyBag"] = pb;
-
-            var ok = action.Execute(bag, new CellContext("A", inputText, System.Globalization.CultureInfo.InvariantCulture, ambient));
+            var ok = action.Execute(new CellContext("A", inputText, System.Globalization.CultureInfo.InvariantCulture, pb));
 
             // Build JSON output matching config schema casing
             var jsonParams = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
@@ -88,9 +81,8 @@ namespace SacksApp.Utils
             return new Result
             {
                 Success = ok,
-                Bag = bag,
-                JsonAction = json,
-                Trace = pb.Trace
+                Bag = pb.Variables,
+                JsonAction = json
             };
         }
 

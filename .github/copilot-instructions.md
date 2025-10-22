@@ -71,3 +71,20 @@ Reflect current code semantics in `SacksDataLayer.Models.SupplierConfigurationMo
 - Logging is structured and parameterized; no PII in logs.
 
 - Always address user as "Struly-Dear".
+
+## Parser Configuration Best Practices (`supplier-PCA.json` example)
+When parsing a complex, unstructured field like a product description, follow the "waterfall" or "chain-of-responsibility" pattern demonstrated in `supplier-PCA.json` under column `G`. This approach creates a robust, multi-stage parsing pipeline.
+
+The key principles are:
+1.  **Sequential Extraction & Cleaning**: Start with the full text. In each step, find a specific piece of information (e.g., Brand, Size, Gender), extract it, and *remove it* from the text.
+2.  **Use Intermediate Variables**: Store the progressively cleaned text in intermediate variables (e.g., `TextNoBrand`, `SizesAndUnits.Clean`). The `Find` operation's `remove` option automatically creates a `.Clean` property on the output variable.
+3.  **Process of Elimination**: Handle the most specific or easily identifiable tokens first. For example, remove the brand name before trying to identify more generic types or the product name itself.
+4.  **Final Assignment**: After all known attributes have been extracted, the remaining text is often the core product name. Assign this cleaned-up remainder to `Product.Name`.
+5.  **Example Flow from `supplier-PCA.json`**:
+    - Start with `Offer.Description`.
+    - Remove `Brand` -> `TextNoBrand`.
+    - From `TextNoBrand.Clean`, remove `Type 2`.
+    - From `Product.Type 2.Clean`, remove `Gender`.
+    - From `Product.Gender.Clean`, remove sizes/units (`SizesAndUnits`).
+    - ...and so on, for `Concentration` and `Type 1`.
+    - The final cleaned string is assigned to `Product.Name`.

@@ -85,7 +85,7 @@ namespace SacksLogicLayer.Services
                                 _logger?.LogDebug("Matched supplier '{SupplierName}' with pattern '{Pattern}' (as '{PatternLower}') for file '{FileName}'",
                                     supplier.Name, pattern, patternLowerCase, fileName);
 
-                                // Set parent reference before returning
+                                // SetAssign parent reference before returning
                                 supplier.ParentConfiguration = _suppliersConfiguration;
                                 return supplier;
                             }

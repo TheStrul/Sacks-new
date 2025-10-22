@@ -313,7 +313,7 @@
             // 
             comboBoxOp.DropDownStyle = ComboBoxStyle.DropDownList;
             comboBoxOp.FormattingEnabled = true;
-            comboBoxOp.Items.AddRange(new object[] { "Find", "Assign", "Case", "Map", "Split" });
+            comboBoxOp.Items.AddRange(new object[] { "Find", "SetAssign", "Case", "Map", "Split" });
             comboBoxOp.Location = new Point(3, 119);
             comboBoxOp.Name = "comboBoxOp";
             comboBoxOp.Size = new Size(121, 23);

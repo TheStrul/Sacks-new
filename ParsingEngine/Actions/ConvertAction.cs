@@ -46,9 +46,11 @@ public sealed class ConvertAction : BaseAction
         _setUnit = setUnit;
     }
 
-    public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    public override bool Execute(CellContext ctx)
     {
-        if (!base.Execute(bag, ctx)) return false;
+        if (!base.Execute(ctx)) return false;
+
+        var bag = ctx.PropertyBag.Variables;
 
         // Read numeric value from input (supports assigned or plain)
         if (!TryRead(bag, input, out var raw) || string.IsNullOrWhiteSpace(raw))
@@ -84,17 +86,17 @@ public sealed class ConvertAction : BaseAction
 
         if (assign)
         {
-            bag[$"assign:{output}"] = convertedStr;
+            ctx.PropertyBag.SetAssign(output, convertedStr);
         }
         else
         {
-            bag[output] = convertedStr;
+            ctx.PropertyBag.SetVariable(output, convertedStr);
         }
 
         // Optionally update unit (write to assigned form)
         if (_setUnit && !string.IsNullOrWhiteSpace(_toUnit) && !string.IsNullOrWhiteSpace(_unitKey))
         {
-            bag[$"assign:{_unitKey}"] = _toUnit!;
+            ctx.PropertyBag.SetAssign(_unitKey, _toUnit!);
         }
 
         return true;

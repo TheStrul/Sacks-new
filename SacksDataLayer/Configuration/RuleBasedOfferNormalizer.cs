@@ -99,7 +99,7 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                         validOffers++;
 
                         _logger.LogDebug("Created ProductOffer from row {RowIndex}: {PropertyCount} properties",
-                            row.Index, propertyBag.Values.Count);
+                            row.Index, propertyBag.Assignes.Count);
                     }
                     else
                     {
@@ -188,10 +188,10 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
 
     private bool IsValidPropertyBag(PropertyBag propertyBag)
     {
-        if (propertyBag.Values.Count == 0)
+        if (propertyBag.Assignes.Count == 0)
             return false;
 
-        if (!propertyBag.Values.TryGetValue("Product.EAN", out var eanObj) || 
+        if (!propertyBag.Assignes.TryGetValue("Product.EAN", out var eanObj) || 
             eanObj is not string ean || 
             string.IsNullOrWhiteSpace(ean))
         {
@@ -217,7 +217,7 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                 Product = new Product()
             };
 
-            foreach (var kvp in propertyBag.Values)
+            foreach (var kvp in propertyBag.Assignes)
             {
                 var key = kvp.Key;
                 var value = kvp.Value;

@@ -19,11 +19,11 @@ public sealed class FindAction : BaseAction
         _lookupEntries = lookupEntries;
     }
 
-    public override bool Execute(IDictionary<string, string> bag, CellContext ctx)
+    public override bool Execute(CellContext ctx)
     {
-        if (base.Execute(bag, ctx) == false) return false; // basic checks
+        if (base.Execute(ctx) == false) return false; // basic checks
 
-        bag.TryGetValue(base.input, out var value);
+        ctx.PropertyBag.Variables.TryGetValue(base.input, out var value);
         var input = value ?? string.Empty;
 
         var remove = _options.Any(o => string.Equals(o, "remove", StringComparison.OrdinalIgnoreCase));
@@ -41,29 +41,26 @@ public sealed class FindAction : BaseAction
             {
                 return mode.ToLowerInvariant() switch
                 {
-                    "all" => HandleAllLookup(bag, ctx, input, ignoreCase, remove, base.assign),
-                    "last" => HandleLastLookup(bag, ctx, input, ignoreCase, remove, base.assign),
-                    _ => HandleFirstLookup(bag, ctx, input, ignoreCase, remove, base.assign),
+                    "all" => HandleAllLookup(ctx, input, ignoreCase, remove, base.assign),
+                    "last" => HandleLastLookup(ctx, input, ignoreCase, remove, base.assign),
+                    _ => HandleFirstLookup(ctx, input, ignoreCase, remove, base.assign),
                 };
             }
 
-            // Dynamic pattern from bag/ambient PropertyBag via PatternKey
+            // Dynamic pattern from bag/PropertyBag via PatternKey
             if (!string.IsNullOrWhiteSpace(_patternKey))
             {
                 string? dyn = null;
-                if (!bag.TryGetValue(_patternKey!, out dyn) || string.IsNullOrWhiteSpace(dyn))
+                if (!ctx.PropertyBag.Variables.TryGetValue(_patternKey!, out dyn) || string.IsNullOrWhiteSpace(dyn))
                 {
-                    // Try ambient PropertyBag values
-                    if (ctx.Ambient != null && ctx.Ambient.TryGetValue("PropertyBag", out var obj) && obj is PropertyBag pb)
-                    {
-                        pb.Values.TryGetValue(_patternKey!, out var dynObj);
-                        dyn = dynObj?.ToString();
-                    }
+                    // Try PropertyBag values
+                    ctx.PropertyBag.Assignes.TryGetValue(_patternKey!, out var dynObj);
+                    dyn = dynObj?.ToString();
                 }
 
                 if (string.IsNullOrWhiteSpace(dyn) || string.IsNullOrEmpty(input))
                 {
-                    ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+                    ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, null, false, true);
                     return false;
                 }
 
@@ -72,16 +69,16 @@ public sealed class FindAction : BaseAction
 
                 return mode.ToLowerInvariant() switch
                 {
-                    "all" => remove ? RemoveAll(bag, rx, input, base.assign) : FindAll(bag, rx, input, base.assign),
-                    "last" => remove ? RemoveLast(bag, rx, input, base.assign) : FindLast(bag, rx, input, base.assign),
-                    _ => remove ? RemoveFirst(bag, rx, input, base.assign) : FindFirst(bag, rx, input, base.assign),
+                    "all" => remove ? RemoveAll(ctx, rx, input, base.assign) : FindAll(ctx, rx, input, base.assign),
+                    "last" => remove ? RemoveLast(ctx, rx, input, base.assign) : FindLast(ctx, rx, input, base.assign),
+                    _ => remove ? RemoveFirst(ctx, rx, input, base.assign) : FindFirst(ctx, rx, input, base.assign),
                 };
             }
 
             // Static regex pattern
             if (string.IsNullOrEmpty(_pattern) || string.IsNullOrEmpty(input))
             {
-                ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+                ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, null, false, true);
                 return false;
             }
 
@@ -90,40 +87,30 @@ public sealed class FindAction : BaseAction
 
             return mode.ToLowerInvariant() switch
             {
-                "all" => remove ? RemoveAll(bag, rxStatic, input, base.assign) : FindAll(bag, rxStatic, input, base.assign),
-                "last" => remove ? RemoveLast(bag, rxStatic, input, base.assign) : FindLast(bag, rxStatic, input, base.assign),
-                _ => remove ? RemoveFirst(bag, rxStatic, input, base.assign) : FindFirst(bag, rxStatic, input, base.assign),
+                "all" => remove ? RemoveAll(ctx, rxStatic, input, base.assign) : FindAll(ctx, rxStatic, input, base.assign),
+                "last" => remove ? RemoveLast(ctx, rxStatic, input, base.assign) : FindLast(ctx, rxStatic, input, base.assign),
+                _ => remove ? RemoveFirst(ctx, rxStatic, input, base.assign) : FindFirst(ctx, rxStatic, input, base.assign),
             };
         }
         catch
         {
-            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, null, false, true);
             return false;
         }
     }
 
     private void AddTrace(CellContext ctx, string text)
     {
-        try
-        {
-            if (ctx.Ambient != null && ctx.Ambient.TryGetValue("PropertyBag", out var obj) && obj is PropertyBag pb)
-            {
-                pb.Trace.Add(text);
-            }
-        }
-        catch
-        {
-            // ignore tracing failures
-        }
+        // Tracing removed - no-op
     }
 
     // Publicly requested small methods (private) delegating to core handlers
-    private bool FindAll(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag) => HandleAll(bag, rx, input, assignFlag, remove: false);
-    private bool RemoveAll(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag) => HandleAll(bag, rx, input, assignFlag, remove: true);
-    private bool FindLast(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag) => HandleLast(bag, rx, input, assignFlag, remove: false);
-    private bool RemoveLast(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag) => HandleLast(bag, rx, input, assignFlag, remove: true);
-    private bool FindFirst(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag) => HandleFirst(bag, rx, input, assignFlag, remove: false);
-    private bool RemoveFirst(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag) => HandleFirst(bag, rx, input, assignFlag, remove: true);
+    private bool FindAll(CellContext ctx, Regex rx, string input, bool assignFlag) => HandleAll(ctx, rx, input, assignFlag, remove: false);
+    private bool RemoveAll(CellContext ctx, Regex rx, string input, bool assignFlag) => HandleAll(ctx, rx, input, assignFlag, remove: true);
+    private bool FindLast(CellContext ctx, Regex rx, string input, bool assignFlag) => HandleLast(ctx, rx, input, assignFlag, remove: false);
+    private bool RemoveLast(CellContext ctx, Regex rx, string input, bool assignFlag) => HandleLast(ctx, rx, input, assignFlag, remove: true);
+    private bool FindFirst(CellContext ctx, Regex rx, string input, bool assignFlag) => HandleFirst(ctx, rx, input, assignFlag, remove: false);
+    private bool RemoveFirst(CellContext ctx, Regex rx, string input, bool assignFlag) => HandleFirst(ctx, rx, input, assignFlag, remove: true);
 
     private static string GetMatchResult(Match m, Regex rx)
     {
@@ -150,7 +137,7 @@ public sealed class FindAction : BaseAction
             .OrderByDescending(kv => (kv.Key?.Length) ?? 0);
     }
 
-    private bool HandleAllLookup(IDictionary<string, string> bag, CellContext ctx, string input, bool ignoreCase, bool remove, bool assignFlag)
+    private bool HandleAllLookup(CellContext ctx, string input, bool ignoreCase, bool remove, bool assignFlag)
     {
         // trace lookup order
         AddTrace(ctx, $"FindAction ordered lookup keys: {string.Join(',', OrderedLookupEntries(ignoreCase).Select(kv => kv.Key))}");
@@ -178,7 +165,7 @@ public sealed class FindAction : BaseAction
 
         if (results.Count == 0)
         {
-            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, null, false, true);
             return false;
         }
 
@@ -197,17 +184,17 @@ public sealed class FindAction : BaseAction
                 catch { }
             }
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, base.output, cleaned, results, assignFlag, false);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, results, assignFlag, false);
         }
         else
         {
-            ActionHelpers.WriteListOutput(bag, base.output, input, results, assignFlag, false);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, results, assignFlag, false);
         }
 
         return true;
     }
 
-    private bool HandleFirstLookup(IDictionary<string, string> bag, CellContext ctx, string input, bool ignoreCase, bool remove, bool assignFlag)
+    private bool HandleFirstLookup(CellContext ctx, string input, bool ignoreCase, bool remove, bool assignFlag)
     {
         AddTrace(ctx, $"FindAction ordered lookup keys: {string.Join(',', OrderedLookupEntries(ignoreCase).Select(kv => kv.Key))}");
 
@@ -228,22 +215,22 @@ public sealed class FindAction : BaseAction
                     {
                         var cleaned = input.Remove(match.Index, match.Length);
                         cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-                        ActionHelpers.WriteListOutput(bag, base.output, cleaned, new List<string> { mapped }, assignFlag, true);
+                        ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, new List<string> { mapped }, assignFlag, true);
                         return true;
                     }
 
-                    ActionHelpers.WriteListOutput(bag, base.output, input, new List<string> { mapped }, assignFlag, true);
+                    ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, new List<string> { mapped }, assignFlag, true);
                     return true;
                 }
             }
             catch { }
         }
 
-        ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+        ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, null, false, true);
         return false;
     }
 
-    private bool HandleLastLookup(IDictionary<string, string> bag, CellContext ctx, string input, bool ignoreCase, bool remove, bool assignFlag)
+    private bool HandleLastLookup(CellContext ctx, string input, bool ignoreCase, bool remove, bool assignFlag)
     {
         AddTrace(ctx, $"FindAction ordered lookup keys: {string.Join(',', OrderedLookupEntries(ignoreCase).Select(kv => kv.Key))}");
 
@@ -272,7 +259,7 @@ public sealed class FindAction : BaseAction
 
         if (lastMatch == null)
         {
-            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, null, false, true);
             return false;
         }
 
@@ -280,15 +267,15 @@ public sealed class FindAction : BaseAction
         {
             var cleaned = input.Remove(lastMatch.Index, lastMatch.Length);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, base.output, cleaned, new List<string> { lastMapped! }, assignFlag, true);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, new List<string> { lastMapped! }, assignFlag, true);
             return true;
         }
 
-        ActionHelpers.WriteListOutput(bag, base.output, input, new List<string> { lastMapped! }, assignFlag, true);
+        ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, new List<string> { lastMapped! }, assignFlag, true);
         return true;
     }
 
-    private bool HandleAll(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag, bool remove)
+    private bool HandleAll(CellContext ctx, Regex rx, string input, bool assignFlag, bool remove)
     {
         // Try primary regex first, but if it yields no matches and pattern contains \b try a Unicode-letter based boundary fallback
         Regex effectiveRx = rx;
@@ -315,7 +302,7 @@ public sealed class FindAction : BaseAction
 
         if (matches.Length == 0)
         {
-            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, null, false, true);
             return false;
         }
 
@@ -327,17 +314,17 @@ public sealed class FindAction : BaseAction
         {
             var cleaned = effectiveRx.Replace(input, string.Empty);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, base.output, cleaned, results, assignFlag, false);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, results, assignFlag, false);
         }
         else
         {
-            ActionHelpers.WriteListOutput(bag, base.output, input, results, assignFlag, false);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, results, assignFlag, false);
         }
 
         return true;
     }
 
-    private bool HandleLast(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag, bool remove)
+    private bool HandleLast(CellContext ctx, Regex rx, string input, bool assignFlag, bool remove)
     {
         Regex effectiveRx = rx;
         var matches = effectiveRx.Matches(input).Cast<Match>().ToArray();
@@ -362,7 +349,7 @@ public sealed class FindAction : BaseAction
 
         if (matches.Length == 0)
         {
-            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, null, false, true);
             return false;
         }
 
@@ -372,17 +359,17 @@ public sealed class FindAction : BaseAction
         {
             var cleaned = input.Remove(m.Index, m.Length);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, base.output, cleaned, new List<string> { result }, assignFlag, true);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, new List<string> { result }, assignFlag, true);
             return true;
         }
 
-        ActionHelpers.WriteListOutput(bag, base.output, input, new List<string> { result }, assignFlag, true);
+        ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, new List<string> { result }, assignFlag, true);
 
 
         return true;
     }
 
-    private bool HandleFirst(IDictionary<string, string> bag, Regex rx, string input, bool assignFlag, bool remove)
+    private bool HandleFirst(CellContext ctx, Regex rx, string input, bool assignFlag, bool remove)
     {
         Regex effectiveRx = rx;
         var match = effectiveRx.Match(input);
@@ -406,7 +393,7 @@ public sealed class FindAction : BaseAction
 
         if (!match.Success)
         {
-            ActionHelpers.WriteListOutput(bag, base.output, input, null, false, true);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, null, false, true);
             return false;
         }
 
@@ -415,11 +402,11 @@ public sealed class FindAction : BaseAction
         {
             var cleaned = input.Remove(match.Index, match.Length);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
-            ActionHelpers.WriteListOutput(bag, base.output, cleaned, new List<string> { result },  assignFlag, true);
+            ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, new List<string> { result },  assignFlag, true);
             return true;
         }
 
-        ActionHelpers.WriteListOutput(bag, base.output, input, new List<string> { result }, assignFlag, true);
+        ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, input, new List<string> { result }, assignFlag, true);
 
         return true;
     }

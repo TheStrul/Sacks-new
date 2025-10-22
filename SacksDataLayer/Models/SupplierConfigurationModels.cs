@@ -259,13 +259,12 @@ namespace SacksDataLayer.FileProcessing.Configuration
                         else
                         {
                             int index = 0;
-                            foreach (KeyValuePair<string,RuleConfig> keyVal in s.ParserConfig.ColumnRules)
+                            foreach (var ruleCfg in s.ParserConfig.ColumnRules)
                             {
                                 index++;
-                                var columnName = keyVal.Key;
-                                var ruleCfg = keyVal.Value;
+                                var columnName = ruleCfg.Column;
                                 if (string.IsNullOrEmpty(columnName)) errors.Add($"Supplier '{s.Name}' parserConfig contains a column with empty 'column' field at index {index}");
-                                if (ruleCfg== null) errors.Add($"Supplier '{s.Name}' parserConfig column '{columnName}' missing rule");
+                                if (ruleCfg == null) errors.Add($"Supplier '{s.Name}' parserConfig column '{columnName}' missing rule");
                                 else if (ruleCfg.Actions == null || ruleCfg.Actions.Count == 0) errors.Add($"Supplier '{s.Name}' parserConfig column '{columnName}' rule contains no actions");
                                 else
                                 {
@@ -624,22 +623,12 @@ namespace ParsingEngine
             dst.Lookups ??= new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
             InPlaceMerge(dst.Lookups, src.Lookups ?? new(StringComparer.OrdinalIgnoreCase));
 
-            // ColumnRules: update in-place to keep RuleConfig instance identities where possible
-            dst.ColumnRules ??= new Dictionary<string, RuleConfig>(StringComparer.OrdinalIgnoreCase);
-            // Remove missing
-            var toRemove = dst.ColumnRules.Keys.Where(k => !src.ColumnRules.ContainsKey(k)).ToList();
-            foreach (var k in toRemove) dst.ColumnRules.Remove(k);
-            // Upsert
-            foreach (var kv in src.ColumnRules)
+            // ColumnRules: replace list content completely
+            dst.ColumnRules ??= new List<RuleConfig>();
+            dst.ColumnRules.Clear();
+            foreach (var rule in src.ColumnRules ?? new())
             {
-                if (!dst.ColumnRules.TryGetValue(kv.Key, out var existing))
-                {
-                    dst.ColumnRules[kv.Key] = CloneRuleConfig(kv.Value);
-                }
-                else
-                {
-                    ApplyToRuleConfig(existing, kv.Value);
-                }
+                dst.ColumnRules.Add(CloneRuleConfig(rule));
             }
         }
 
@@ -683,16 +672,10 @@ namespace ParsingEngine
         {
             var rc = new RuleConfig
             {
-                Trace = src.Trace,
+                Column = src.Column,
                 Actions = src.Actions?.Select(CloneAction).ToList() ?? new()
             };
             return rc;
-        }
-
-        private static void ApplyToRuleConfig(RuleConfig dst, RuleConfig src)
-        {
-            dst.Trace = src.Trace;
-            dst.Actions = src.Actions?.Select(CloneAction).ToList() ?? new();
         }
 
         private static ActionConfig CloneAction(ActionConfig a)

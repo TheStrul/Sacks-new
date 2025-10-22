@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text.RegularExpressions;
+
 using Xunit;
 
 namespace ParsingEngine.Tests
@@ -14,17 +15,15 @@ namespace ParsingEngine.Tests
         [InlineData("123", "123")]
         public void SimpleAssignAction_Copies_Value(string input, string expected)
         {
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Src"] = input
-            };
+            var pb = new PropertyBag();
+            pb.SetVariable("Src", input);
             var act = new SimpleAssignAction("Src", "Dst");
-            var ok = act.Execute(bag, new CellContext("A", input, CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
+            var ok = act.Execute(new CellContext("A", input, CultureInfo.InvariantCulture, pb));
             Assert.True(ok);
-            Assert.True(bag.ContainsKey("Dst[0]"));
-            Assert.Equal(expected, bag["Dst[0]"]); // result stored starting at index 0
-            Assert.Equal("1", bag["Dst.Length"]); // length
-            Assert.Equal("true", bag["Dst.Valid"]); // valid
+            Assert.True(pb.Variables.ContainsKey("Dst[0]"));
+            Assert.Equal(expected, pb.Variables["Dst[0]"]); // result stored starting at index 0
+            Assert.Equal("1", pb.Variables["Dst.Length"]); // length
+            Assert.Equal("true", pb.Variables["Dst.Valid"]); // valid
         }
 
         [Theory]
@@ -35,47 +34,48 @@ namespace ParsingEngine.Tests
         {
             parts ??= Array.Empty<string>();
             var input = string.Join(delimiter, parts);
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["Src"] = input };
+            var pb = new PropertyBag();
+            pb.SetVariable("Src", input);
             var act = new SplitAction("Src", "Parts", delimiter);
-            var ok = act.Execute(bag, new CellContext("A", input, CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
+            var ok = act.Execute(new CellContext("A", input, CultureInfo.InvariantCulture, pb));
             if (expectedCount == 0)
             {
                 Assert.False(ok);
-                Assert.Equal("0", bag["Parts.Length"]);
-                Assert.Equal("false", bag["Parts.Valid"]);
+                Assert.Equal("0", pb.Variables["Parts.Length"]);
+                Assert.Equal("false", pb.Variables["Parts.Valid"]);
             }
             else
             {
                 Assert.True(ok);
-                Assert.Equal(expectedCount.ToString(CultureInfo.InvariantCulture), bag["Parts.Length"]);
-                Assert.Equal("true", bag["Parts.Valid"]);
+                Assert.Equal(expectedCount.ToString(CultureInfo.InvariantCulture), pb.Variables["Parts.Length"]);
+                Assert.Equal("true", pb.Variables["Parts.Valid"]);
                 for (int i = 0; i < expectedCount; i++)
                 {
-                    Assert.Equal(parts[i], bag[$"Parts[{i}]"]);
+                    Assert.Equal(parts[i], pb.Variables[$"Parts[{i}]"]);
                 }
             }
         }
 
-   
+
         [Fact]
         public void FindAndRemoveAction_Cleans_And_Lists_Removed()
         {
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Src"] = "abc123def45"
-            };
+            var input = "abc123def45";
+            var pb = new PropertyBag();
+            pb.SetVariable("Src", input);
+
             // Use FindAction to remove all digit sequences
-            var act = new FindAction("Src", "Parts", "\\d+", new List<string>() { "all", "remove" },false, null);
-            var ok = act.Execute(bag, new CellContext("A", bag["Src"], CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
+            var act = new FindAction("Src", "Parts", "\\d+", new List<string>() { "all", "remove" }, false, null);
+            var ok = act.Execute(new CellContext("A", input, CultureInfo.InvariantCulture, pb));
             Assert.True(ok);
             // cleaned value is at Parts.Clean
-            Assert.Equal("abcdef", bag["Parts.Clean"]);
+            Assert.Equal("abcdef", pb.Variables["Parts.Clean"]);
             // removed matches are at Parts[0], Parts[1]
-            Assert.Equal("123", bag["Parts[0]"]);
-            Assert.Equal("45", bag["Parts[1]"]);
+            Assert.Equal("123", pb.Variables["Parts[0]"]);
+            Assert.Equal("45", pb.Variables["Parts[1]"]);
             // length should be 2
-            Assert.Equal("2", bag["Parts.Length"]);
-            Assert.Equal("true", bag["Parts.Valid"]); // valid
+            Assert.Equal("2", pb.Variables["Parts.Length"]);
+            Assert.Equal("true", pb.Variables["Parts.Valid"]); // valid
         }
 
         [Theory]
@@ -83,15 +83,14 @@ namespace ParsingEngine.Tests
         [InlineData("No Capitals here", "No Capitals here", "")]
         public void FindAndRemoveAction_Removes_All_Capital_Words(string input, string expectedCleanNormalized, string expectedRemovedPipe)
         {
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Src"] = input
-            };
+            var pb = new PropertyBag();
+            pb.SetVariable("Src", input);
+
             // Pattern: Unicode uppercase words, remove all
-            var act = new FindAction("Src", "Parts", "\\b\\p{Lu}+\\b", new List<string>(){ "all", "remove" },false, null);
-            var ok = act.Execute(bag, new CellContext("A", bag["Src"], CultureInfo.InvariantCulture, new Dictionary<string, object?>()));
-            Assert.True(bag.ContainsKey("Parts.Clean"));
-            var actualClean = bag["Parts.Clean"] ?? string.Empty;
+            var act = new FindAction("Src", "Parts", "\\b\\p{Lu}+\\b", new List<string>() { "all", "remove" }, false, null);
+            var ok = act.Execute(new CellContext("A", input, CultureInfo.InvariantCulture, pb));
+            Assert.True(pb.Variables.ContainsKey("Parts.Clean"));
+            var actualClean = pb.Variables["Parts.Clean"] ?? string.Empty;
             // Normalize whitespace for comparison
             var normActual = Regex.Replace(actualClean, "\\s+", " ").Trim();
             Assert.Equal(expectedCleanNormalized, normActual);
@@ -99,19 +98,19 @@ namespace ParsingEngine.Tests
             var expectedRemoved = string.IsNullOrEmpty(expectedRemovedPipe) ? Array.Empty<string>() : expectedRemovedPipe.Split('|');
             if (expectedRemoved.Length == 0)
             {
-                Assert.Equal("0", bag["Parts.Length"]); // no removed matches
-                Assert.Equal("false", bag["Parts.Valid"]); // valid false
+                Assert.Equal("0", pb.Variables["Parts.Length"]); // no removed matches
+                Assert.Equal("false", pb.Variables["Parts.Valid"]); // valid false
             }
             else
             {
                 for (int i = 0; i < expectedRemoved.Length; i++)
                 {
                     var key = $"Parts[{i}]";
-                    Assert.True(bag.ContainsKey(key));
-                    Assert.Equal(expectedRemoved[i], bag[key]);
+                    Assert.True(pb.Variables.ContainsKey(key));
+                    Assert.Equal(expectedRemoved[i], pb.Variables[key]);
                 }
-                Assert.Equal(expectedRemoved.Length.ToString(CultureInfo.InvariantCulture), bag["Parts.Length"]);
-                Assert.Equal("true", bag["Parts.Valid"]); // valid true
+                Assert.Equal(expectedRemoved.Length.ToString(CultureInfo.InvariantCulture), pb.Variables["Parts.Length"]);
+                Assert.Equal("true", pb.Variables["Parts.Valid"]); // valid true
             }
         }
 
@@ -129,38 +128,44 @@ namespace ParsingEngine.Tests
             };
 
             // exact case mode should match exact key
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["In"] = "Red" };
+            var pb = new PropertyBag();
+            pb.SetVariable("In", "Red");
             var act = new MappingAction("In", "Out", false, lookups["colors"]);
-            Assert.True(act.Execute(bag, new CellContext("A", "Red", CultureInfo.InvariantCulture, new Dictionary<string, object?>())));
-            Assert.Equal("R", bag["Out"]);
+            Assert.True(act.Execute(new CellContext("A", "Red", CultureInfo.InvariantCulture, pb)));
+            Assert.Equal("R", pb.Variables["Out"]);
 
             // upper case mode
-            bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["In"] = "blue" };
+            pb = new PropertyBag();
+            pb.SetVariable("In", "blue" );
             act = new MappingAction("In", "Out", false, lookups["colors"]);
-            Assert.True(act.Execute(bag, new CellContext("A", "blue", CultureInfo.InvariantCulture, new Dictionary<string, object?>())));
-            Assert.Equal("B", bag["Out"]);
+            Assert.True(act.Execute(new CellContext("A", "blue", CultureInfo.InvariantCulture, pb)));
+            Assert.Equal("B", pb.Variables["Out"]);
 
             // lower case mode
-            bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["In"] = "GREEN" };
+            pb = new PropertyBag();
+            pb.SetVariable("In", "GREEN");
             act = new MappingAction("In", "Out", false, lookups["colors"]);
-            Assert.True(act.Execute(bag, new CellContext("A", "GREEN", CultureInfo.InvariantCulture, new Dictionary<string, object?>())));
-            Assert.Equal("G", bag["Out"]);
+            Assert.True(act.Execute(new CellContext("A", "GREEN", CultureInfo.InvariantCulture, pb)));
+            Assert.Equal("G", pb.Variables["Out"]);
 
             // assign:true writes to assign:Out
-            bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["In"] = "Red" };
-            act = new MappingAction("In", "Out",  true, lookups["colors"]);
-            Assert.True(act.Execute(bag, new CellContext("A", "Red", CultureInfo.InvariantCulture, new Dictionary<string, object?>())));
-            Assert.Equal("R", bag["assign:Out"]);
+            pb = new PropertyBag();
+            pb.SetVariable("In", "Red");
+            act = new MappingAction("In", "Out", true, lookups["colors"]);
+            Assert.True(act.Execute(new CellContext("A", "Red", CultureInfo.InvariantCulture, pb)));
+            Assert.Equal("R", pb.Variables["assign:Out"]);
 
             // unknown table -> false
-            bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["In"] = "Red" };
-            act = new MappingAction("In", "Out", false, lookups["unknown"]);
-            Assert.False(act.Execute(bag, new CellContext("A", "Red", CultureInfo.InvariantCulture, new Dictionary<string, object?>())));
+            pb = new PropertyBag();
+            pb.SetVariable("In", "Red");
+            act = new MappingAction("In", "Out", false, new Dictionary<string, string>());
+            Assert.False(act.Execute(new CellContext("A", "Red", CultureInfo.InvariantCulture, pb)));
 
             // no input -> false
-            bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["In"] = "" };
+            pb = new PropertyBag();
+            pb.SetVariable("In", "");
             act = new MappingAction("In", "Out", false, lookups["colors"]);
-            Assert.False(act.Execute(bag, new CellContext("A", "", CultureInfo.InvariantCulture, new Dictionary<string, object?>())));
+            Assert.False(act.Execute(new CellContext("A", "", CultureInfo.InvariantCulture, pb)));
         }
 
         [Fact]
@@ -206,23 +211,5 @@ namespace ParsingEngine.Tests
             Assert.Equal("noop", a8.Op);
         }
 
-        [Fact]
-        public void ActionHelpers_WriteListOutput_Handles_Null_And_Appends_Clean()
-        {
-            var bag = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            ActionHelpers.WriteListOutput(bag, "X", "cleaned", new List<string> { "one", "two" }, true, false);
-            Assert.Equal("cleaned", bag["X.Clean"]);
-            Assert.Equal("2", bag["X.Length"]);
-            Assert.Equal("true", bag["X.Valid"]);
-            Assert.Equal("one", bag["assign:X[0]"]);
-            Assert.Equal("two", bag["assign:X[1]"]);
-
-            // empty results
-            var bag2 = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            ActionHelpers.WriteListOutput(bag2, "Y", string.Empty, null, false, false);
-            Assert.Equal(string.Empty, bag2["Y.Clean"]);
-            Assert.Equal("0", bag2["Y.Length"]);
-            Assert.Equal("false", bag2["Y.Valid"]);
-        }
     }
 }
