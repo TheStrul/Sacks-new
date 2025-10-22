@@ -1,15 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SacksLogicLayer.Services.Interfaces;
 using SacksDataLayer.FileProcessing.Configuration;
-using System.Drawing;
 
 namespace SacksApp
 {
@@ -21,7 +14,7 @@ namespace SacksApp
         private ISupplierConfigurationService? _svc;
         private ISuppliersConfiguration? _suppliersConfig;
 
-        private readonly BindingList<LookupEntry> _entries = new();
+        private readonly BindingList<LookupEntryViewModel> _entries = new();
         private CancellationTokenSource? _cts;
         private bool _suppressLookupComboEvents; // prevent re-entrant SelectedIndexChanged loops
 
@@ -29,10 +22,13 @@ namespace SacksApp
         private string? _currentSortColumn;
         private ListSortDirection _currentSortDirection = ListSortDirection.Ascending;
 
-        private sealed class LookupEntry
+        /// <summary>
+        /// View model for editing lookup entries in Canonical + Aliases format
+        /// </summary>
+        private sealed class LookupEntryViewModel
         {
-            public string Key { get; set; } = string.Empty;
-            public string Value { get; set; } = string.Empty;
+            public string Canonical { get; set; } = string.Empty;
+            public string Aliases { get; set; } = string.Empty; // Comma-separated
         }
 
         private const string CreateNewItemText = "<Create new...>";
@@ -154,20 +150,20 @@ namespace SacksApp
 
         private void SortEntries(string property, ListSortDirection direction)
         {
-            IEnumerable<LookupEntry> ordered = _entries;
+            IEnumerable<LookupEntryViewModel> ordered = _entries;
             var cmp = StringComparer.OrdinalIgnoreCase;
 
-            if (string.Equals(property, nameof(LookupEntry.Key), StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(property, nameof(LookupEntryViewModel.Canonical), StringComparison.OrdinalIgnoreCase))
             {
                 ordered = direction == ListSortDirection.Ascending
-                    ? _entries.OrderBy(x => x.Key ?? string.Empty, cmp)
-                    : _entries.OrderByDescending(x => x.Key ?? string.Empty, cmp);
+                    ? _entries.OrderBy(x => x.Canonical ?? string.Empty, cmp)
+                    : _entries.OrderByDescending(x => x.Canonical ?? string.Empty, cmp);
             }
-            else if (string.Equals(property, nameof(LookupEntry.Value), StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(property, nameof(LookupEntryViewModel.Aliases), StringComparison.OrdinalIgnoreCase))
             {
                 ordered = direction == ListSortDirection.Ascending
-                    ? _entries.OrderBy(x => x.Value ?? string.Empty, cmp)
-                    : _entries.OrderByDescending(x => x.Value ?? string.Empty, cmp);
+                    ? _entries.OrderBy(x => x.Aliases ?? string.Empty, cmp)
+                    : _entries.OrderByDescending(x => x.Aliases ?? string.Empty, cmp);
             }
             else
             {
@@ -300,7 +296,7 @@ namespace SacksApp
 
         private void AddRow()
         {
-            _entries.Add(new LookupEntry { Key = string.Empty, Value = string.Empty });
+            _entries.Add(new LookupEntryViewModel { Canonical = string.Empty, Aliases = string.Empty });
             if (_entries.Count > 0)
             {
                 var idx = _entries.Count - 1;
@@ -313,8 +309,8 @@ namespace SacksApp
         {
             var toRemove = _grid.SelectedRows
                 .Cast<DataGridViewRow>()
-                .Where(r => r.DataBoundItem is LookupEntry)
-                .Select(r => (LookupEntry)r.DataBoundItem!)
+                .Where(r => r.DataBoundItem is LookupEntryViewModel)
+                .Select(r => (LookupEntryViewModel)r.DataBoundItem!)
                 .ToList();
 
             foreach (var item in toRemove)
@@ -357,24 +353,31 @@ namespace SacksApp
                     UpdateTitles();
                 }
 
-                // Load entries for current lookup
+                // Load entries for current lookup - group by canonical value
                 _entries.RaiseListChangedEvents = false;
                 _entries.Clear();
 
                 if (_suppliersConfig != null && _suppliersConfig.Lookups.TryGetValue(_lookupName, out var dict) && dict != null)
                 {
-                    foreach (var kv in dict.OrderBy(k => k.Key, StringComparer.OrdinalIgnoreCase))
+                    // Group aliases by canonical value
+                    var grouped = dict
+                        .GroupBy(kv => kv.Value, StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var group in grouped)
                     {
-                        _entries.Add(new LookupEntry { Key = kv.Key, Value = kv.Value });
+                        var canonical = group.Key;
+                        var aliases = string.Join(", ", group.Select(kv => kv.Key).OrderBy(k => k, StringComparer.OrdinalIgnoreCase));
+                        _entries.Add(new LookupEntryViewModel { Canonical = canonical, Aliases = aliases });
                     }
                 }
 
                 _entries.RaiseListChangedEvents = true;
                 _entries.ResetBindings();
                 ConfigureGridForProgrammaticSort();
-                ApplySortGlyphs(_currentSortColumn ?? nameof(LookupEntry.Key), _currentSortDirection);
+                ApplySortGlyphs(_currentSortColumn ?? nameof(LookupEntryViewModel.Canonical), _currentSortDirection);
 
-                UpdateStatus($"Loaded {_entries.Count} entr{(_entries.Count == 1 ? "y" : "ies")} for '{_lookupName}'");
+                UpdateStatus($"Loaded {_entries.Count} canonical value{(_entries.Count == 1 ? "" : "s")} for '{_lookupName}'");
             }
             catch (OperationCanceledException)
             {
@@ -441,23 +444,62 @@ namespace SacksApp
                     errors.Add("Lookup name is required.");
                 }
 
-                // No empty keys and unique keys
-                if (_entries.Any(e => string.IsNullOrWhiteSpace(e.Key)))
+                // No empty canonical values
+                if (_entries.Any(e => string.IsNullOrWhiteSpace(e.Canonical)))
                 {
-                    errors.Add("Keys cannot be empty.");
+                    errors.Add("Canonical values cannot be empty.");
                 }
-                var dupGroups = _entries.GroupBy(e => e.Key ?? string.Empty, comparer)
-                                        .Where(g => g.Count() > 1)
-                                        .ToList();
-                if (dupGroups.Count > 0)
+
+                // Unique canonical values
+                var dupCanonical = _entries
+                    .GroupBy(e => e.Canonical ?? string.Empty, comparer)
+                    .Where(g => g.Count() > 1)
+                    .ToList();
+                if (dupCanonical.Count > 0)
                 {
-                    errors.Add("Duplicate keys found: " + string.Join(", ", dupGroups.Select(g => g.Key)));
+                    errors.Add("Duplicate canonical values found: " + string.Join(", ", dupCanonical.Select(g => g.Key)));
+                }
+
+                // Validate aliases
+                var warnings = new List<string>();
+                foreach (var entry in _entries)
+                {
+                    if (string.IsNullOrWhiteSpace(entry.Aliases))
+                    {
+                        warnings.Add($"Canonical '{entry.Canonical}' has no aliases - will be self-referencing only.");
+                    }
+                    else
+                    {
+                        var aliases = entry.Aliases.Split(',').Select(a => a.Trim()).Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
+                        if (!aliases.Any())
+                        {
+                            warnings.Add($"Canonical '{entry.Canonical}' has no valid aliases.");
+                        }
+                        else if (!aliases.Contains(entry.Canonical, comparer))
+                        {
+                            warnings.Add($"Canonical '{entry.Canonical}' should be included in its own aliases.");
+                        }
+                    }
                 }
 
                 if (errors.Count > 0)
                 {
-                    MessageBox.Show(this, string.Join(Environment.NewLine, errors), "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show(this, string.Join(Environment.NewLine, errors), "Validation Errors", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
+                }
+
+                if (warnings.Count > 0)
+                {
+                    var result = MessageBox.Show(
+                        this,
+                        string.Join(Environment.NewLine, warnings) + Environment.NewLine + Environment.NewLine + "Continue saving?",
+                        "Validation Warnings",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Warning);
+                    if (result != DialogResult.Yes)
+                    {
+                        return;
+                    }
                 }
 
                 _svc ??= _serviceProvider.GetService<ISupplierConfigurationService>();
@@ -484,13 +526,34 @@ namespace SacksApp
                     dict.Clear();
                 }
 
-                foreach (var e in _entries)
+                // Flatten canonical + aliases back to key-value dictionary
+                int totalAliases = 0;
+                foreach (var entry in _entries)
                 {
-                    dict[e.Key.Trim()] = e.Value?.Trim() ?? string.Empty;
+                    var canonical = entry.Canonical.Trim();
+                    var aliases = entry.Aliases
+                        .Split(',')
+                        .Select(a => a.Trim())
+                        .Where(a => !string.IsNullOrWhiteSpace(a))
+                        .Distinct(comparer)
+                        .ToList();
+
+                    // If no aliases, add canonical as self-referencing
+                    if (aliases.Count == 0)
+                    {
+                        aliases.Add(canonical);
+                    }
+
+                    // Map all aliases to canonical value
+                    foreach (var alias in aliases)
+                    {
+                        dict[alias] = canonical;
+                        totalAliases++;
+                    }
                 }
 
                 await _suppliersConfig.Save();
-                UpdateStatus($"Saved {dict.Count} entr{(dict.Count == 1 ? "y" : "ies")} for '{_lookupName}'");
+                UpdateStatus($"Saved {_entries.Count} canonical value{(_entries.Count == 1 ? "" : "s")} ({totalAliases} total alias{(totalAliases == 1 ? "" : "es")}) for '{_lookupName}'");
 
                 // Refresh combo to include possibly new lookup
                 PopulateLookupCombo();

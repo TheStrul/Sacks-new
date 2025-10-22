@@ -1,6 +1,6 @@
 {
   "Name": "WW",
-  "Currency": "GBP",
+  "Currency": "USD",
   "ParserConfig": {
     "Settings": {
       "StopOnFirstMatchPerColumn": false,
@@ -66,37 +66,26 @@
             "Assign": false,
             "Condition": "Product.Brand != null",
             "Parameters": {
-              "Pattern": "^\\s*{Product.Brand}\\s*",
+              "PatternKey": "Product.Brand",
               "Options": "first,ignorecase,remove"
             }
           },
           {
             "Op": "Find",
             "Input": "BrandRemoval.Clean",
-            "Output": "OriginMatch",
-            "Assign": false,
+            "Output": "Product.COO",
+            "Assign": true,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)-\\s*(?<origin>[A-Za-z]+)\\s*$",
+              "Pattern": "lookup:COO",
               "Options": "first,ignorecase,remove"
             }
           },
           {
-            "Op": "Map",
-            "Input": "OriginMatch",
-            "Output": "Product.COO",
-            "Assign": true,
-            "Condition": "OriginMatch.Valid == true",
-            "Parameters": {
-              "Table": "COO",
-              "AddIfNotFound": "false"
-            }
-          },
-          {
             "Op": "Find",
-            "Input": "OriginMatch.Clean",
-            "Output": "ProductCodeMatch",
-            "Assign": false,
+            "Input": "Product.COO.Clean",
+            "Output": "Offer.Ref",
+            "Assign": true,
             "Condition": null,
             "Parameters": {
               "Pattern": "\\((?<code>\\d+)\\)",
@@ -104,40 +93,21 @@
             }
           },
           {
-            "Op": "Assign",
-            "Input": "ProductCodeMatch",
-            "Output": "Offer.Ref",
-            "Assign": true,
-            "Condition": "ProductCodeMatch.Valid == true",
-            "Parameters": null
-          },
-          {
             "Op": "Find",
-            "Input": "ProductCodeMatch.Clean",
-            "Output": "GenderMatch",
-            "Assign": false,
-            "Condition": null,
-            "Parameters": {
-              "Pattern": "\\b(?<gender>[UML])\\b",
-              "Options": "first,remove"
-            }
-          },
-          {
-            "Op": "Map",
-            "Input": "GenderMatch",
+            "Input": "Offer.Ref.Clean",
             "Output": "Product.Gender",
             "Assign": true,
-            "Condition": "GenderMatch.Valid == true",
+            "Condition": null,
             "Parameters": {
-              "Table": "Gender",
-              "AddIfNotFound": "false"
+              "Pattern": "lookup:Gender",
+              "Options": "first,ignorecase,remove"
             }
           },
           {
             "Op": "Find",
-            "Input": "GenderMatch.Clean",
-            "Output": "ConcentrationMatch",
-            "Assign": false,
+            "Input": "Product.Gender.Clean",
+            "Output": "Product.Concentration",
+            "Assign": true,
             "Condition": "Product.Type 2 != 'Set' && Product.Type 2 != 'Mini Set'",
             "Parameters": {
               "Pattern": "lookup:Concentration",
@@ -145,60 +115,62 @@
             }
           },
           {
-            "Op": "Map",
-            "Input": "ConcentrationMatch",
-            "Output": "Product.Concentration",
+            "Op": "Find",
+            "Input": "Product.Concentration.Clean",
+            "Output": "Product.Size",
             "Assign": true,
-            "Condition": "ConcentrationMatch.Valid == true",
+            "Condition": "Product.Type 2 != 'Set' && Product.Type 2 != 'Mini Set'",
             "Parameters": {
-              "Table": "Concentration"
+              "Pattern": "lookup:Size",
+              "Options": "first,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Switch",
+            "Input": "Ignored",
+            "Output": "Product.Units",
+            "Assign": true,
+            "Condition": "Product.Size != 0",
+            "Parameters": {
+              "Default": "ml"
             }
           },
           {
             "Op": "Find",
-            "Input": "ConcentrationMatch.Clean",
-            "Output": "SizeMatch",
-            "Assign": false,
-            "Condition": "Product.Type 2 != 'Set' && Product.Type 2 != 'Mini Set'",
-            "Parameters": {
-              "Pattern": "(?<size>\\d+[.,]\\d+)",
-              "Options": "first,remove"
-            }
-          },
-          {
-            "Op": "Convert",
-            "Input": "SizeMatch",
-            "Output": "SizeInMl",
-            "Assign": false,
-            "Condition": "SizeMatch.Valid == true",
-            "Parameters": {
-              "Preset": "OzToMl"
-            }
-          },
-          {
-            "Op": "Assign",
-            "Input": "SizeInMl",
-            "Output": "Product.Size",
-            "Assign": true,
-            "Condition": "SizeMatch.Valid == true",
-            "Parameters": null
-          },
-          {
-            "Op": "Convert",
-            "Input": "SizeMatch.Clean",
-            "Output": "NameCleaned",
+            "Input": "Product.Size.Clean",
+            "Output": "NameNoDash",
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Preset": "TrimWhitespace"
+              "Pattern": "-",
+              "Options": "all,remove"
             }
           },
           {
             "Op": "Assign",
-            "Input": "NameCleaned",
+            "Input": "NameNoDash.Clean",
             "Output": "Product.Name",
             "Assign": true,
             "Condition": null,
+            "Parameters": null
+          },
+          {
+            "Op": "Concat",
+            "Input": "Ignored",
+            "Output": "FallbackName",
+            "Assign": false,
+            "Condition": "Product.Name == null",
+            "Parameters": {
+              "Keys": "Product.Brand,Product.Gender",
+              "Separator": " "
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "FallbackName",
+            "Output": "Product.Name",
+            "Assign": true,
+            "Condition": "Product.Name == null",
             "Parameters": null
           }
         ]

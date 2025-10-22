@@ -2,302 +2,1220 @@
   "Version": "2.1",
   "FullPath": "C:\\Users\\avist\\source\\repos\\GitHubLocal\\Customers\\Sacks-New\\SacksApp\\Configuration\\supplier-formats.json",
   "Lookups": {
-    "Gender": {
-      "bella": "W",
-      "boy": "M",
-      "donna": "W",
-      "father": "M",
-      "female": "W",
-      "feminino": "W",
-      "femme": "W",
-      "for her": "W",
-      "for him": "M",
-      "her": "W",
-      "hero": "M",
-      "hombre": "M",
-      "homme": "M",
-      "m": "M",
-      "male": "M",
-      "man": "M",
-      "masculino": "M",
-      "men": "M",
-      "mixte": "U",
-      "mujer": "W",
-      "p/homme": "M",
-      "pour femme": "W",
-      "pour homme": "M",
-      "senorita": "W",
-      "son": "M",
-      "u": "U",
-      "unisex": "U",
-      "unisexe": "U",
-      "uomo": "M",
-      "w": "W",
-      "wom": "W",
-      "woman": "W",
-      "women": "W",
-      "l": "W"
-    },
-    "Unit": {
-      "ml": "ml",
-      "millilitre": "ml",
-      "oz": "oz",
-      "fl oz": "oz",
-      "floz": "oz",
-      "fluid ounce": "oz",
-      "gram": "g",
-      "g": "g"
-    },
-    "Currency": {
-      "€": "€",
-      "eur": "€",
-      "euro": "€",
-      "euros": "€",
-      "$": "$",
-      "usd": "$",
-      "dollar": "$",
-      "dollars": "$",
-      "£": "£",
-      "gbp": "£",
-      "pound": "£",
-      "pounds": "£",
-      "chf": "CHF",
-      "franc": "CHF",
-      "francs": "CHF",
-      "zł": "PLN",
-      "pln": "PLN",
-      "zloty": "PLN",
-      "kč": "CZK",
-      "czk": "CZK",
-      "koruna": "CZK",
-      "ft": "HUF",
-      "huf": "HUF",
-      "forint": "HUF",
-      "lei": "RON",
-      "ron": "RON",
-      "лв": "BGN",
-      "bgn": "BGN",
-      "lev": "BGN",
-      "kn": "HRK",
-      "hrk": "HRK",
-      "kr": "NOK"
-    },
-    "Concentration": {
-      "aftershave": "Aftershave",
-      "body mist": "Body Mist",
-      "cologne": "Cologne",
-      "deodorant spray": "Deo-Spray",
-      "deodorant stick": "Deo-St",
-      "eau de cologne": "EDC",
-      "eau de parfum": "EDP",
-      "eau de toilette": "EDT",
-      "edc": "EDC",
-      "edp": "EDP",
-      "edt": "EDT",
-      "parfum": "Parfume",
-      "perfume": "Parfume",
-      "a.s": "Aftershave"
-    },
-    "COO": {
-      "ae": "Emirates",
-      "at": "Austria",
-      "austria": "Austria",
-      "be": "Belgium",
-      "belgium": "Belgium",
-      "bg": "Bulgaria",
-      "bulgaria": "Bulgaria",
-      "ch": "Switzerland",
-      "cn": "China",
-      "croatia": "Croatia",
-      "cz": "Czech Republic",
-      "czech republic": "Czech Republic",
-      "de": "Germany",
-      "denmark": "Denmark",
-      "dk": "Denmark",
-      "es": "Spain",
-      "fr": "France",
-      "france": "France",
-      "gb": "United Kingdom",
-      "germany": "Germany",
-      "hr": "Croatia",
-      "hu": "Hungary",
-      "hungary": "Hungary",
-      "it": "Italy",
-      "italy": "Italy",
-      "mx": "Mexico",
-      "netherlands": "Netherlands",
-      "nl": "Netherlands",
-      "no": "Norway",
-      "norway": "Norway",
-      "pl": "Poland",
-      "po": "Portugal",
-      "poland": "Poland",
-      "ro": "Romania",
-      "romania": "Romania",
-      "sa": "South Africa",
-      "se": "Sweden",
-      "spain": "Spain",
-      "sweden": "Sweden",
-      "switzerland": "Switzerland",
-      "tr": "Turkey",
-      "uk": "United Kingdom",
-      "united kingdom": "United Kingdom",
-      "united states": "USA",
-      "us": "USA",
-      "usa": "USA",
-      "in": "India",
-      "eu": "Europe",
-      "ca": "Canada"
-    },
-    "Brand": {
-      "4711": "4711",
-      "a. banderas": "Antonio Banderas",
-      "acqua colonia": "Acqua Colonia",
-      "acqua de parma": "Acqua Di Parma",
-      "adidas": "Adidas",
-      "afnan": "Afnan",
-      "al hambra": "Al Hambra",
-      "alfred sung": "Alfred Sung",
-      "anfar": "Anfar",
-      "antonio": "Antonio Banderas",
-      "aramis": "Aramis",
-      "ard al zaafaran": "Ard Al Zaafaran",
-      "ard al zaafran": "Ard Al Zaafaran",
-      "armaf": "Armaf",
-      "armani": "Giorgio Armani",
-      "aroma": "Aroma",
-      "asdaaf": "Asdaaf",
-      "atralia": "Atralia",
-      "auraa": "Auraa",
-      "auraa desire": "Auraa Desire",
-      "azzaro": "Azzaro",
-      "bond no 9": "Bond No 9",
-      "burberry": "Burberry",
-      "bvl": "Bvlgari",
-      "bvlgar": "Bvlgari",
-      "bvlgari": "Bvlgari",
-      "cacharel": "Cacharel",
-      "calvin klein": "Calvin Klein",
-      "carolina herrera": "Carolina Herrera",
-      "cartier": "Cartier",
-      "chanel": "Chanel",
-      "chloe": "Chloe",
-      "christian dior": "Dior",
-      "christina aguilera": "Christina Aguilera",
-      "ck": "Calvin Klein",
-      "clinique": "Clinique",
-      "coach": "Coach",
-      "creed": "Creed",
-      "d and g": "Dolce & Gabbana",
-      "d&g": "Dolce & Gabbana",
-      "davidoff": "Davidoff",
-      "dior": "Dior",
-      "dkny": "DONNA KARAN",
-      "dolce & gabbana": "Dolce & Gabbana",
-      "dolce and gabbana": "Dolce & Gabbana",
-      "drakkar noir": "Drakkar Noir",
-      "e.arden": "E.Arden",
-      "elizabeth arden": "Elizabeth Arden",
-      "elvis presley": "Elvis Presley",
-      "emper": "Emper",
-      "emper le chameau": "Emper Le Chameau",
-      "estee lauder": "Estee Lauder",
-      "ferrari": "Ferrari",
-      "flavia": "Flavia",
-      "ford": "Tom Ford",
-      "gaultier": "Gaultier",
-      "giorgio armani": "Giorgio Armani",
-      "givenchy": "Givenchy",
-      "green tea": "Green Tea",
-      "gucci": "Gucci",
-      "guerlain": "Guerlain",
-      "guy laroche": "Guy Laroche",
-      "hermes": "Hermès",
-      "hermès": "Hermès",
-      "hollister": "Hollister",
-      "hugo boss": "Hugo Boss",
-      "i miyake": "Issey Miyake",
-      "issey miyake": "Issey Miyake",
-      "j.p.": "J.P.",
-      "jean paul gaultier": "Jean Paul Gaultier",
-      "jimmy choo": "Jimmy Choo",
-      "joop": "Joop",
-      "jpg": "Jean Paul Gaultier",
-      "karl lagerfeld": "Karl Lagerfeld",
-      "kenzo": "Kenzo",
-      "khadlaj": "Khadlaj",
-      "l lempicka": "Lolita Lempicka",
-      "l occitane": "L'Occitane",
-      "l occitane en provence": "L'Occitane",
-      "l'occitane": "L'Occitane",
-      "l'occitane en provence": "L'Occitane",
-      "lacoste": "Lacoste",
-      "lalique": "Lalique",
-      "lancome": "Lancôme",
-      "lancôme": "Lancôme",
-      "lanvin": "Lanvin",
-      "latafa": "Lattafa",
-      "lattafa": "Lattafa",
-      "loewe": "Loewe",
-      "lolita lempicka": "Lolita Lempicka",
-      "lolita lompicka": "Lolita Lompicka",
-      "m kors": "M Kors",
-      "marc jacobs": "Marc Jacobs",
-      "michael kors": "Michael Kors",
-      "missoni": "Missoni",
-      "mont blanc": "Montblanc",
-      "montblanc": "Montblanc",
-      "moschino": "Moschino",
-      "n rodr": "Narciso Rodriguez",
-      "n rodriguez": "Narciso Rodriguez",
-      "narciso rodriguez": "Narciso Rodriguez",
-      "nars": "Nars",
-      "nylaa": "Nylaa",
-      "paco rabanne": "Paco Rabanne",
-      "paloma": "Paloma",
-      "paloma picasso": "Paloma Picasso",
-      "prada": "Prada",
-      "ralph": "Ralph Lauren",
-      "ralph lauren": "Ralph Lauren",
-      "rasasi": "Rasasi",
-      "rave": "Rave",
-      "rochas": "Rochas",
-      "swiss arabian": "Swiss Arabian",
-      "t mugler": "T Mugler",
-      "theirry mugler": "Theirry Mugler",
-      "thierry mugler": "Thierry Mugler",
-      "tiffany": "Tiffany",
-      "tiffany & co": "Tiffany & Co",
-      "tom ford": "Tom Ford",
-      "valentino": "Valentino",
-      "versace": "Versace",
-      "victor": "Victor & Rolf",
-      "victor & rolf": "Victor & Rolf",
-      "victor&rolf": "Victor & Rolf",
-      "viktor & rolf": "Viktor & Rolf",
-      "vurv": "Vurv",
-      "ysl": "Yves Saint Laurent",
-      "yves saint laurent": "Yves Saint Laurent",
-      "aaa": "AAA"
-    },
-    "Type 1": {
-      "spray": "Sp",
-      "sp": "Sp",
-      "vapo": "Sp",
-      "flacon": "Fl",
-      "st.": "Stick",
-      "stk": "Stick"
-    },
-    "Type 2": {
-      "refill": "Refill",
-      "refilable": "Refilable",
-      "test": "Tester",
-      "tester": "Tester",
-      "vial": "Vial",
-      "mini": "Mini",
-      "tube": "Tube",
-      "mini set": "Mini Set",
-      "set": "Set"
-    }
+    "Gender": [
+      {
+        "Canonical": "M",
+        "Aliases": [
+          "boy",
+          "father",
+          "for him",
+          "hero",
+          "hombre",
+          "homme",
+          "m",
+          "male",
+          "man",
+          "masculino",
+          "men",
+          "p/homme",
+          "pour homme",
+          "son",
+          "uomo"
+        ]
+      },
+      {
+        "Canonical": "U",
+        "Aliases": [
+          "mixte",
+          "u",
+          "unisex",
+          "unisexe"
+        ]
+      },
+      {
+        "Canonical": "W",
+        "Aliases": [
+          "bella",
+          "donna",
+          "female",
+          "feminino",
+          "femme",
+          "for her",
+          "her",
+          "l",
+          "mujer",
+          "pour femme",
+          "senorita",
+          "w",
+          "wom",
+          "woman",
+          "women"
+        ]
+      }
+    ],
+    "Unit": [
+      {
+        "Canonical": "g",
+        "Aliases": [
+          "g",
+          "gram"
+        ]
+      },
+      {
+        "Canonical": "ml",
+        "Aliases": [
+          "millilitre",
+          "ml"
+        ]
+      },
+      {
+        "Canonical": "oz",
+        "Aliases": [
+          "fl oz",
+          "floz",
+          "fluid ounce",
+          "oz"
+        ]
+      }
+    ],
+    "Currency": [
+      {
+        "Canonical": "$",
+        "Aliases": [
+          "$",
+          "dollar",
+          "dollars",
+          "usd"
+        ]
+      },
+      {
+        "Canonical": "BGN",
+        "Aliases": [
+          "bgn",
+          "lev",
+          "лв"
+        ]
+      },
+      {
+        "Canonical": "CHF",
+        "Aliases": [
+          "chf",
+          "franc",
+          "francs"
+        ]
+      },
+      {
+        "Canonical": "CZK",
+        "Aliases": [
+          "czk",
+          "koruna",
+          "kč"
+        ]
+      },
+      {
+        "Canonical": "HRK",
+        "Aliases": [
+          "hrk",
+          "kn"
+        ]
+      },
+      {
+        "Canonical": "HUF",
+        "Aliases": [
+          "forint",
+          "ft",
+          "huf"
+        ]
+      },
+      {
+        "Canonical": "NOK",
+        "Aliases": [
+          "kr"
+        ]
+      },
+      {
+        "Canonical": "PLN",
+        "Aliases": [
+          "pln",
+          "zloty",
+          "zł"
+        ]
+      },
+      {
+        "Canonical": "RON",
+        "Aliases": [
+          "lei",
+          "ron"
+        ]
+      },
+      {
+        "Canonical": "£",
+        "Aliases": [
+          "gbp",
+          "pound",
+          "pounds",
+          "£"
+        ]
+      },
+      {
+        "Canonical": "€",
+        "Aliases": [
+          "eur",
+          "euro",
+          "euros",
+          "€"
+        ]
+      }
+    ],
+    "Concentration": [
+      {
+        "Canonical": "Aftershave",
+        "Aliases": [
+          "a.s",
+          "after shave",
+          "aftershave"
+        ]
+      },
+      {
+        "Canonical": "Body Mist",
+        "Aliases": [
+          "body mist"
+        ]
+      },
+      {
+        "Canonical": "Cologne",
+        "Aliases": [
+          "cologne"
+        ]
+      },
+      {
+        "Canonical": "Deo-Spray",
+        "Aliases": [
+          "deodorant spray"
+        ]
+      },
+      {
+        "Canonical": "Deo-St",
+        "Aliases": [
+          "deodorant stick"
+        ]
+      },
+      {
+        "Canonical": "EDC",
+        "Aliases": [
+          "eau de cologne",
+          "edc"
+        ]
+      },
+      {
+        "Canonical": "EDP",
+        "Aliases": [
+          "eau de parfum",
+          "edp"
+        ]
+      },
+      {
+        "Canonical": "EDT",
+        "Aliases": [
+          "eau de toilette",
+          "edt"
+        ]
+      },
+      {
+        "Canonical": "Parfume",
+        "Aliases": [
+          "parfum",
+          "perfume"
+        ]
+      }
+    ],
+    "COO": [
+      {
+        "Canonical": "Austria",
+        "Aliases": [
+          "at",
+          "austria"
+        ]
+      },
+      {
+        "Canonical": "Belgium",
+        "Aliases": [
+          "be",
+          "belgium"
+        ]
+      },
+      {
+        "Canonical": "Bulgaria",
+        "Aliases": [
+          "bg",
+          "bulgaria"
+        ]
+      },
+      {
+        "Canonical": "Canada",
+        "Aliases": [
+          "ca",
+          "canada"
+        ]
+      },
+      {
+        "Canonical": "China",
+        "Aliases": [
+          "china",
+          "cn"
+        ]
+      },
+      {
+        "Canonical": "Croatia",
+        "Aliases": [
+          "croatia",
+          "hr"
+        ]
+      },
+      {
+        "Canonical": "Czech Republic",
+        "Aliases": [
+          "cz",
+          "czech republic"
+        ]
+      },
+      {
+        "Canonical": "Denmark",
+        "Aliases": [
+          "denmark",
+          "dk"
+        ]
+      },
+      {
+        "Canonical": "Emirates",
+        "Aliases": [
+          "ae",
+          "emirates"
+        ]
+      },
+      {
+        "Canonical": "Europe",
+        "Aliases": [
+          "eu",
+          "europe"
+        ]
+      },
+      {
+        "Canonical": "France",
+        "Aliases": [
+          "fr",
+          "france"
+        ]
+      },
+      {
+        "Canonical": "Germany",
+        "Aliases": [
+          "de",
+          "germany"
+        ]
+      },
+      {
+        "Canonical": "Hungary",
+        "Aliases": [
+          "hu",
+          "hungary"
+        ]
+      },
+      {
+        "Canonical": "India",
+        "Aliases": [
+          "in",
+          "india"
+        ]
+      },
+      {
+        "Canonical": "Italy",
+        "Aliases": [
+          "it",
+          "italy"
+        ]
+      },
+      {
+        "Canonical": "Japan",
+        "Aliases": [
+          "japan",
+          "jp"
+        ]
+      },
+      {
+        "Canonical": "Mexico",
+        "Aliases": [
+          "mexico",
+          "mx"
+        ]
+      },
+      {
+        "Canonical": "Netherlands",
+        "Aliases": [
+          "netherlands",
+          "nl"
+        ]
+      },
+      {
+        "Canonical": "Norway",
+        "Aliases": [
+          "no",
+          "norway"
+        ]
+      },
+      {
+        "Canonical": "Poland",
+        "Aliases": [
+          "pl",
+          "poland"
+        ]
+      },
+      {
+        "Canonical": "Portugal",
+        "Aliases": [
+          "po",
+          "portugal"
+        ]
+      },
+      {
+        "Canonical": "Romania",
+        "Aliases": [
+          "ro",
+          "romania"
+        ]
+      },
+      {
+        "Canonical": "South Africa",
+        "Aliases": [
+          "sa",
+          "south africa"
+        ]
+      },
+      {
+        "Canonical": "Spain",
+        "Aliases": [
+          "es",
+          "spain"
+        ]
+      },
+      {
+        "Canonical": "Sweden",
+        "Aliases": [
+          "se",
+          "sweden"
+        ]
+      },
+      {
+        "Canonical": "Switzerland",
+        "Aliases": [
+          "ch",
+          "switzerland"
+        ]
+      },
+      {
+        "Canonical": "Turkey",
+        "Aliases": [
+          "tr",
+          "turkey"
+        ]
+      },
+      {
+        "Canonical": "United Kingdom",
+        "Aliases": [
+          "gb",
+          "uk",
+          "united kingdom"
+        ]
+      },
+      {
+        "Canonical": "USA",
+        "Aliases": [
+          "united states",
+          "us",
+          "usa"
+        ]
+      }
+    ],
+    "Brand": [
+      {
+        "Canonical": "4711",
+        "Aliases": [
+          "4711"
+        ]
+      },
+      {
+        "Canonical": "Acqua Colonia",
+        "Aliases": [
+          "acqua colonia"
+        ]
+      },
+      {
+        "Canonical": "Acqua Di Parma",
+        "Aliases": [
+          "acqua de parma"
+        ]
+      },
+      {
+        "Canonical": "Adidas",
+        "Aliases": [
+          "adidas"
+        ]
+      },
+      {
+        "Canonical": "Afnan",
+        "Aliases": [
+          "afnan"
+        ]
+      },
+      {
+        "Canonical": "Al Hambra",
+        "Aliases": [
+          "al hambra"
+        ]
+      },
+      {
+        "Canonical": "Alfred Sung",
+        "Aliases": [
+          "alfred sung"
+        ]
+      },
+      {
+        "Canonical": "Anfar",
+        "Aliases": [
+          "anfar"
+        ]
+      },
+      {
+        "Canonical": "Antonio Banderas",
+        "Aliases": [
+          "a. banderas",
+          "antonio",
+          "antonio banderas"
+        ]
+      },
+      {
+        "Canonical": "Aramis",
+        "Aliases": [
+          "aramis"
+        ]
+      },
+      {
+        "Canonical": "Ard Al Zaafaran",
+        "Aliases": [
+          "ard al zaafaran",
+          "ard al zaafran"
+        ]
+      },
+      {
+        "Canonical": "Armaf",
+        "Aliases": [
+          "armaf"
+        ]
+      },
+      {
+        "Canonical": "Aroma",
+        "Aliases": [
+          "aroma"
+        ]
+      },
+      {
+        "Canonical": "Asdaaf",
+        "Aliases": [
+          "asdaaf"
+        ]
+      },
+      {
+        "Canonical": "Atralia",
+        "Aliases": [
+          "atralia"
+        ]
+      },
+      {
+        "Canonical": "Auraa",
+        "Aliases": [
+          "auraa"
+        ]
+      },
+      {
+        "Canonical": "Auraa Desire",
+        "Aliases": [
+          "auraa desire"
+        ]
+      },
+      {
+        "Canonical": "Azzaro",
+        "Aliases": [
+          "azzaro"
+        ]
+      },
+      {
+        "Canonical": "Bond No 9",
+        "Aliases": [
+          "bond no 9"
+        ]
+      },
+      {
+        "Canonical": "Burberry",
+        "Aliases": [
+          "burberry"
+        ]
+      },
+      {
+        "Canonical": "Bvlgari",
+        "Aliases": [
+          "bvl",
+          "bvlgar",
+          "bvlgari"
+        ]
+      },
+      {
+        "Canonical": "Cacharel",
+        "Aliases": [
+          "cacharel"
+        ]
+      },
+      {
+        "Canonical": "Calvin Klein",
+        "Aliases": [
+          "calvin klein",
+          "ck"
+        ]
+      },
+      {
+        "Canonical": "Carolina Herrera",
+        "Aliases": [
+          "carolina herrera"
+        ]
+      },
+      {
+        "Canonical": "Cartier",
+        "Aliases": [
+          "cartier"
+        ]
+      },
+      {
+        "Canonical": "Chanel",
+        "Aliases": [
+          "chanel"
+        ]
+      },
+      {
+        "Canonical": "Chloe",
+        "Aliases": [
+          "chloe"
+        ]
+      },
+      {
+        "Canonical": "Christina Aguilera",
+        "Aliases": [
+          "christina aguilera"
+        ]
+      },
+      {
+        "Canonical": "Clinique",
+        "Aliases": [
+          "clinique"
+        ]
+      },
+      {
+        "Canonical": "Coach",
+        "Aliases": [
+          "coach"
+        ]
+      },
+      {
+        "Canonical": "Creed",
+        "Aliases": [
+          "creed"
+        ]
+      },
+      {
+        "Canonical": "Davidoff",
+        "Aliases": [
+          "davidoff"
+        ]
+      },
+      {
+        "Canonical": "Dior",
+        "Aliases": [
+          "christian dior",
+          "dior"
+        ]
+      },
+      {
+        "Canonical": "Dolce & Gabbana",
+        "Aliases": [
+          "d and g",
+          "d&g",
+          "dolce & gabbana",
+          "dolce and gabbana"
+        ]
+      },
+      {
+        "Canonical": "DONNA KARAN",
+        "Aliases": [
+          "dkny",
+          "donna karan"
+        ]
+      },
+      {
+        "Canonical": "Drakkar Noir",
+        "Aliases": [
+          "drakkar noir"
+        ]
+      },
+      {
+        "Canonical": "E.Arden",
+        "Aliases": [
+          "e.arden",
+          "elizabeth arden"
+        ]
+      },
+      {
+        "Canonical": "Elvis Presley",
+        "Aliases": [
+          "elvis presley"
+        ]
+      },
+      {
+        "Canonical": "Emper",
+        "Aliases": [
+          "emper"
+        ]
+      },
+      {
+        "Canonical": "Emper Le Chameau",
+        "Aliases": [
+          "emper le chameau"
+        ]
+      },
+      {
+        "Canonical": "Estee Lauder",
+        "Aliases": [
+          "estee lauder"
+        ]
+      },
+      {
+        "Canonical": "Ferrari",
+        "Aliases": [
+          "ferrari"
+        ]
+      },
+      {
+        "Canonical": "Flavia",
+        "Aliases": [
+          "flavia"
+        ]
+      },
+      {
+        "Canonical": "Gaultier",
+        "Aliases": [
+          "gaultier"
+        ]
+      },
+      {
+        "Canonical": "Giorgio Armani",
+        "Aliases": [
+          "armani",
+          "gio",
+          "giorgio armani"
+        ]
+      },
+      {
+        "Canonical": "Givenchy",
+        "Aliases": [
+          "givenchy"
+        ]
+      },
+      {
+        "Canonical": "Green Tea",
+        "Aliases": [
+          "green tea"
+        ]
+      },
+      {
+        "Canonical": "Gucci",
+        "Aliases": [
+          "gucci"
+        ]
+      },
+      {
+        "Canonical": "Guerlain",
+        "Aliases": [
+          "guerlain"
+        ]
+      },
+      {
+        "Canonical": "Guy Laroche",
+        "Aliases": [
+          "guy laroche"
+        ]
+      },
+      {
+        "Canonical": "Hermès",
+        "Aliases": [
+          "hermes",
+          "hermès"
+        ]
+      },
+      {
+        "Canonical": "Hollister",
+        "Aliases": [
+          "hollister"
+        ]
+      },
+      {
+        "Canonical": "Hugo Boss",
+        "Aliases": [
+          "hugo boss"
+        ]
+      },
+      {
+        "Canonical": "Issey Miyake",
+        "Aliases": [
+          "i miyake",
+          "issey miyake"
+        ]
+      },
+      {
+        "Canonical": "J.P.",
+        "Aliases": [
+          "j.p."
+        ]
+      },
+      {
+        "Canonical": "Jean Paul Gaultier",
+        "Aliases": [
+          "jean paul gaultier",
+          "jpg"
+        ]
+      },
+      {
+        "Canonical": "Jimmy Choo",
+        "Aliases": [
+          "jimmy choo"
+        ]
+      },
+      {
+        "Canonical": "Joop",
+        "Aliases": [
+          "joop"
+        ]
+      },
+      {
+        "Canonical": "Karl Lagerfeld",
+        "Aliases": [
+          "karl lagerfeld"
+        ]
+      },
+      {
+        "Canonical": "Kenzo",
+        "Aliases": [
+          "kenzo"
+        ]
+      },
+      {
+        "Canonical": "Khadlaj",
+        "Aliases": [
+          "khadlaj"
+        ]
+      },
+      {
+        "Canonical": "L'Occitane",
+        "Aliases": [
+          "l occitane",
+          "l occitane en provence",
+          "l'occitane",
+          "l'occitane en provence"
+        ]
+      },
+      {
+        "Canonical": "Lacoste",
+        "Aliases": [
+          "lacoste"
+        ]
+      },
+      {
+        "Canonical": "Lalique",
+        "Aliases": [
+          "lalique"
+        ]
+      },
+      {
+        "Canonical": "Lancôme",
+        "Aliases": [
+          "lancome",
+          "lancôme"
+        ]
+      },
+      {
+        "Canonical": "Lanvin",
+        "Aliases": [
+          "lanvin"
+        ]
+      },
+      {
+        "Canonical": "Lattafa",
+        "Aliases": [
+          "latafa",
+          "lattafa"
+        ]
+      },
+      {
+        "Canonical": "Loewe",
+        "Aliases": [
+          "loewe"
+        ]
+      },
+      {
+        "Canonical": "Lolita Lempicka",
+        "Aliases": [
+          "l lempicka",
+          "lolita lempicka"
+        ]
+      },
+      {
+        "Canonical": "Lolita Lompicka",
+        "Aliases": [
+          "lolita lompicka"
+        ]
+      },
+      {
+        "Canonical": "M Kors",
+        "Aliases": [
+          "m kors"
+        ]
+      },
+      {
+        "Canonical": "Marc Jacobs",
+        "Aliases": [
+          "marc jacobs"
+        ]
+      },
+      {
+        "Canonical": "Michael Kors",
+        "Aliases": [
+          "michael kors"
+        ]
+      },
+      {
+        "Canonical": "Missoni",
+        "Aliases": [
+          "missoni"
+        ]
+      },
+      {
+        "Canonical": "Montblanc",
+        "Aliases": [
+          "mont blanc",
+          "montblanc"
+        ]
+      },
+      {
+        "Canonical": "Moschino",
+        "Aliases": [
+          "moschino"
+        ]
+      },
+      {
+        "Canonical": "Narciso Rodriguez",
+        "Aliases": [
+          "n rodr",
+          "n rodriguez",
+          "narciso rodriguez"
+        ]
+      },
+      {
+        "Canonical": "Nars",
+        "Aliases": [
+          "nars"
+        ]
+      },
+      {
+        "Canonical": "Nylaa",
+        "Aliases": [
+          "nylaa"
+        ]
+      },
+      {
+        "Canonical": "Paco Rabanne",
+        "Aliases": [
+          "paco rabanne"
+        ]
+      },
+      {
+        "Canonical": "Paloma",
+        "Aliases": [
+          "paloma"
+        ]
+      },
+      {
+        "Canonical": "Paloma Picasso",
+        "Aliases": [
+          "paloma picasso"
+        ]
+      },
+      {
+        "Canonical": "Prada",
+        "Aliases": [
+          "prada"
+        ]
+      },
+      {
+        "Canonical": "Ralph Lauren",
+        "Aliases": [
+          "ralph",
+          "ralph lauren"
+        ]
+      },
+      {
+        "Canonical": "Rasasi",
+        "Aliases": [
+          "rasasi"
+        ]
+      },
+      {
+        "Canonical": "Rave",
+        "Aliases": [
+          "rave"
+        ]
+      },
+      {
+        "Canonical": "Rochas",
+        "Aliases": [
+          "rochas"
+        ]
+      },
+      {
+        "Canonical": "Swiss Arabian",
+        "Aliases": [
+          "swiss arabian"
+        ]
+      },
+      {
+        "Canonical": "T Mugler",
+        "Aliases": [
+          "t mugler"
+        ]
+      },
+      {
+        "Canonical": "Theirry Mugler",
+        "Aliases": [
+          "theirry mugler"
+        ]
+      },
+      {
+        "Canonical": "Thierry Mugler",
+        "Aliases": [
+          "thierry mugler"
+        ]
+      },
+      {
+        "Canonical": "Tiffany",
+        "Aliases": [
+          "tiffany"
+        ]
+      },
+      {
+        "Canonical": "Tiffany & Co",
+        "Aliases": [
+          "tiffany & co"
+        ]
+      },
+      {
+        "Canonical": "Tom Ford",
+        "Aliases": [
+          "ford",
+          "tom ford"
+        ]
+      },
+      {
+        "Canonical": "Valentino",
+        "Aliases": [
+          "valentino"
+        ]
+      },
+      {
+        "Canonical": "Versace",
+        "Aliases": [
+          "versace"
+        ]
+      },
+      {
+        "Canonical": "Victor & Rolf",
+        "Aliases": [
+          "victor",
+          "victor & rolf",
+          "victor&rolf"
+        ]
+      },
+      {
+        "Canonical": "Viktor & Rolf",
+        "Aliases": [
+          "viktor & rolf"
+        ]
+      },
+      {
+        "Canonical": "Vurv",
+        "Aliases": [
+          "vurv"
+        ]
+      },
+      {
+        "Canonical": "Yves Saint Laurent",
+        "Aliases": [
+          "ysl",
+          "yves saint laurent"
+        ]
+      }
+    ],
+    "Size": [
+      {
+        "Canonical": "100",
+        "Aliases": [
+          "3.3",
+          "3.4",
+          "3.7",
+          "3.8"
+        ]
+      },
+      {
+        "Canonical": "125",
+        "Aliases": [
+          "4.1",
+          "4.2",
+          "4.3"
+        ]
+      },
+      {
+        "Canonical": "150",
+        "Aliases": [
+          "5.0",
+          "5.1"
+        ]
+      },
+      {
+        "Canonical": "200",
+        "Aliases": [
+          "6.8"
+        ]
+      },
+      {
+        "Canonical": "30",
+        "Aliases": [
+          "1.0",
+          "1.1"
+        ]
+      },
+      {
+        "Canonical": "40",
+        "Aliases": [
+          "1.3",
+          "1.4"
+        ]
+      },
+      {
+        "Canonical": "50",
+        "Aliases": [
+          "1.5",
+          "1.6",
+          "1.7"
+        ]
+      },
+      {
+        "Canonical": "75",
+        "Aliases": [
+          "2.5",
+          "2.6"
+        ]
+      },
+      {
+        "Canonical": "80",
+        "Aliases": [
+          "2.7",
+          "2.8"
+        ]
+      },
+      {
+        "Canonical": "90",
+        "Aliases": [
+          "3.0"
+        ]
+      }
+    ],
+    "Type 1": [
+      {
+        "Canonical": "Fl",
+        "Aliases": [
+          "flacon"
+        ]
+      },
+      {
+        "Canonical": "Sp",
+        "Aliases": [
+          "sp",
+          "spray",
+          "vapo"
+        ]
+      },
+      {
+        "Canonical": "Stick",
+        "Aliases": [
+          "st.",
+          "stk"
+        ]
+      }
+    ],
+    "Type 2": [
+      {
+        "Canonical": "Mini",
+        "Aliases": [
+          "mini"
+        ]
+      },
+      {
+        "Canonical": "Mini Set",
+        "Aliases": [
+          "mini set"
+        ]
+      },
+      {
+        "Canonical": "Refilable",
+        "Aliases": [
+          "refilable"
+        ]
+      },
+      {
+        "Canonical": "Refill",
+        "Aliases": [
+          "refill"
+        ]
+      },
+      {
+        "Canonical": "Set",
+        "Aliases": [
+          "set"
+        ]
+      },
+      {
+        "Canonical": "Tester",
+        "Aliases": [
+          "test",
+          "tester"
+        ]
+      },
+      {
+        "Canonical": "Tube",
+        "Aliases": [
+          "tube"
+        ]
+      },
+      {
+        "Canonical": "Vial",
+        "Aliases": [
+          "vial"
+        ]
+      }
+    ]
   }
 }

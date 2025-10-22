@@ -1,10 +1,4 @@
-﻿using System;
-using System.Data;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Windows.Forms;
-using System.Drawing;
+﻿using System.Data;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,11 +7,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using QMobileDeviceServiceMenu;
 
-using SacksDataLayer.Configuration;
 using SacksDataLayer.Services.Interfaces;
 
 using SacksLogicLayer.Services.Interfaces;
-using SacksLogicLayer.Services.Implementations;
 
 namespace SacksApp
 {

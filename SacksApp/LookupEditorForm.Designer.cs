@@ -85,17 +85,17 @@ namespace SacksApp
             // 
             // colKey
             // 
-            colKey.HeaderText = "Key";
-            colKey.DataPropertyName = "Key";
+            colKey.HeaderText = "Canonical";
+            colKey.DataPropertyName = "Canonical";
             colKey.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            colKey.FillWeight = 45F;
+            colKey.FillWeight = 30F;
             // 
             // colVal
             // 
-            colVal.HeaderText = "Value";
-            colVal.DataPropertyName = "Value";
+            colVal.HeaderText = "Aliases (comma-separated)";
+            colVal.DataPropertyName = "Aliases";
             colVal.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            colVal.FillWeight = 55F;
+            colVal.FillWeight = 70F;
             // 
             // _addButton
             // 

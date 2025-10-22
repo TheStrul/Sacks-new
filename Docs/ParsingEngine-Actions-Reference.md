@@ -177,12 +177,21 @@
   - `last`: Return last match only
   - `all`: Return all matches
   - `ignorecase`: Case-insensitive matching
-  - `remove`: Remove matched text, store in `.Clean`
+  - `remove`: Remove matched text, store in `.Clean` (**Note**: matches are replaced with a space, then whitespace is normalized)
 - **Output Keys**:
   - `Output[0]`, `Output[1]`, ... : Matched values
   - `Output.Length`: Number of matches
-  - `Output.Clean`: Original text with matches removed (if `remove` option)
+  - `Output.Clean`: Original text with matches replaced by spaces and normalized (if `remove` option)
   - `Output.Valid`: `true` if any match found
+
+**Removal Behavior:**
+When using the `remove` option, matched text is replaced with a single space (not deleted entirely). This prevents words from accidentally merging together. After replacement, all consecutive whitespace is collapsed to a single space and trimmed.
+
+**Example:**
+- Input: `"Hello-World"`
+- Pattern: `"-"`
+- Options: `"remove"`
+- Result: `Output.Clean = "Hello World"` (space preserved, not `"HelloWorld"`)
 
 **Common Patterns:**
 ```json
@@ -195,6 +204,10 @@
 // Remove uppercase words
 "Pattern": "\\b\\p{Lu}+\\b",
 "Options": "all,remove"
+
+// Remove symbols and parentheses (space-preserved)
+"Pattern": "\\s*\\(.*?\\)\\s*|[®™©]|\\s*-\\s*",
+"Options": "all,ignorecase,remove"
 
 // Multi-pattern from lookup
 "Pattern": "Lookup:Sizes"

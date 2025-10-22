@@ -1,7 +1,4 @@
 namespace ParsingEngine;
-
-using System.IO;
-
 /// <summary>
 /// SplitAction: splits a source value by a delimiter and writes parts into a target collection
 /// as Target[0], Target[1], ... and sets Target.Length and Target.Valid flags.

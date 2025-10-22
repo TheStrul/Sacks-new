@@ -171,7 +171,7 @@ public sealed class FindAction : BaseAction
 
         if (remove)
         {
-            // remove all matches of each key in lookup order
+            // remove all matches of each key in lookup order, replacing with space
             var cleaned = input;
             foreach (var kv in OrderedLookupEntries(ignoreCase))
             {
@@ -179,7 +179,7 @@ public sealed class FindAction : BaseAction
                 try
                 {
                     var pat = $"(?<!\\p{{L}})" + Regex.Escape(key) + $"(?!\\p{{L}})";
-                    cleaned = Regex.Replace(cleaned, pat, string.Empty, ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None);
+                    cleaned = Regex.Replace(cleaned, pat, " ", ignoreCase ? RegexOptions.IgnoreCase : RegexOptions.None);
                 }
                 catch { }
             }
@@ -213,7 +213,7 @@ public sealed class FindAction : BaseAction
                     AddTrace(ctx, $"Matched key='{key}' -> value='{mapped}'");
                     if (remove)
                     {
-                        var cleaned = input.Remove(match.Index, match.Length);
+                        var cleaned = input.Substring(0, match.Index) + " " + input.Substring(match.Index + match.Length);
                         cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
                         ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, new List<string> { mapped }, assignFlag, true);
                         return true;
@@ -265,7 +265,7 @@ public sealed class FindAction : BaseAction
 
         if (remove)
         {
-            var cleaned = input.Remove(lastMatch.Index, lastMatch.Length);
+            var cleaned = input.Substring(0, lastMatch.Index) + " " + input.Substring(lastMatch.Index + lastMatch.Length);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
             ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, new List<string> { lastMapped! }, assignFlag, true);
             return true;
@@ -312,7 +312,7 @@ public sealed class FindAction : BaseAction
 
         if (remove)
         {
-            var cleaned = effectiveRx.Replace(input, string.Empty);
+            var cleaned = effectiveRx.Replace(input, " ");
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
             ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, results, assignFlag, false);
         }
@@ -357,7 +357,7 @@ public sealed class FindAction : BaseAction
         var result = GetMatchResult(m, effectiveRx);
         if (remove)
         {
-            var cleaned = input.Remove(m.Index, m.Length);
+            var cleaned = input.Substring(0, m.Index) + " " + input.Substring(m.Index + m.Length);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
             ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, new List<string> { result }, assignFlag, true);
             return true;
@@ -400,7 +400,7 @@ public sealed class FindAction : BaseAction
         var result = GetMatchResult(match, effectiveRx);
         if (remove)
         {
-            var cleaned = input.Remove(match.Index, match.Length);
+            var cleaned = input.Substring(0, match.Index) + " " + input.Substring(match.Index + match.Length);
             cleaned = Regex.Replace(cleaned, "\\s+", " ").Trim();
             ActionHelpers.WriteListOutput(ctx.PropertyBag, base.output, cleaned, new List<string> { result },  assignFlag, true);
             return true;

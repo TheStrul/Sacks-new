@@ -7,6 +7,156 @@ using ParsingEngine;
 namespace SacksDataLayer.FileProcessing.Configuration
 {
     /// <summary>
+    /// Custom converter that handles both legacy (flat dictionary) and new (LookupEntry array) formats
+    /// for lookup tables. Always deserializes to Dictionary for runtime backward compatibility.
+    /// </summary>
+    internal sealed class LookupTableConverter : JsonConverter<Dictionary<string, Dictionary<string, string>>>
+    {
+        public override Dictionary<string, Dictionary<string, string>> Read(
+            ref Utf8JsonReader reader,
+            Type typeToConvert,
+            JsonSerializerOptions options)
+        {
+            var result = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+
+            if (reader.TokenType != JsonTokenType.StartObject)
+            {
+                throw new JsonException("Expected StartObject for Lookups");
+            }
+
+            reader.Read(); // consume StartObject
+
+            while (reader.TokenType != JsonTokenType.EndObject)
+            {
+                if (reader.TokenType != JsonTokenType.PropertyName)
+                {
+                    throw new JsonException($"Expected PropertyName, got {reader.TokenType}");
+                }
+
+                var tableName = reader.GetString()!;
+                reader.Read(); // consume PropertyName
+
+                // Determine if this is legacy (object) or new (array) format
+                if (reader.TokenType == JsonTokenType.StartObject)
+                {
+                    // Legacy format: { "USA": "United States", "US": "United States" }
+                    result[tableName] = ReadLegacyFormat(ref reader);
+                }
+                else if (reader.TokenType == JsonTokenType.StartArray)
+                {
+                    // New format: [{ "Canonical": "United States", "Aliases": ["USA", "US"] }]
+                    result[tableName] = ReadNewFormat(ref reader, options);
+                }
+                else
+                {
+                    throw new JsonException($"Expected StartObject or StartArray for lookup table '{tableName}', got {reader.TokenType}");
+                }
+
+                reader.Read(); // move to next property or EndObject
+            }
+
+            return result;
+        }
+
+        private Dictionary<string, string> ReadLegacyFormat(ref Utf8JsonReader reader)
+        {
+            var table = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            reader.Read(); // consume StartObject
+
+            while (reader.TokenType != JsonTokenType.EndObject)
+            {
+                if (reader.TokenType != JsonTokenType.PropertyName)
+                {
+                    throw new JsonException($"Expected PropertyName in legacy lookup, got {reader.TokenType}");
+                }
+
+                var key = reader.GetString()!;
+                reader.Read(); // consume PropertyName
+
+                if (reader.TokenType != JsonTokenType.String)
+                {
+                    throw new JsonException($"Expected String value for key '{key}', got {reader.TokenType}");
+                }
+
+                var value = reader.GetString()!;
+                table[key] = value;
+
+                reader.Read(); // move to next property or EndObject
+            }
+
+            return table;
+        }
+
+        private Dictionary<string, string> ReadNewFormat(ref Utf8JsonReader reader, JsonSerializerOptions options)
+        {
+            var table = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            reader.Read(); // consume StartArray
+
+            while (reader.TokenType != JsonTokenType.EndArray)
+            {
+                if (reader.TokenType != JsonTokenType.StartObject)
+                {
+                    throw new JsonException($"Expected StartObject for LookupEntry, got {reader.TokenType}");
+                }
+
+                // Deserialize LookupEntry
+                var entry = JsonSerializer.Deserialize<LookupEntry>(ref reader, options);
+                if (entry == null)
+                {
+                    throw new JsonException("Failed to deserialize LookupEntry");
+                }
+
+                // Flatten: map all aliases to the canonical value
+                foreach (var alias in entry.Aliases)
+                {
+                    if (!string.IsNullOrWhiteSpace(alias))
+                    {
+                        table[alias] = entry.Canonical;
+                    }
+                }
+
+                reader.Read(); // move to next entry or EndArray
+            }
+
+            return table;
+        }
+
+        public override void Write(Utf8JsonWriter writer, Dictionary<string, Dictionary<string, string>> value, JsonSerializerOptions options)
+        {
+            // Convert flat dictionaries to new LookupEntry[] format
+            writer.WriteStartObject();
+
+            foreach (var table in value)
+            {
+                writer.WritePropertyName(table.Key);
+                
+                // Group aliases by canonical value
+                var grouped = table.Value
+                    .GroupBy(kv => kv.Value, StringComparer.OrdinalIgnoreCase)
+                    .Select(g => new LookupEntry
+                    {
+                        Canonical = g.Key,
+                        Aliases = g.Select(kv => kv.Key).OrderBy(a => a, StringComparer.OrdinalIgnoreCase).ToList()
+                    })
+                    .OrderBy(e => e.Canonical, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                // Write as array of LookupEntry objects
+                writer.WriteStartArray();
+                foreach (var entry in grouped)
+                {
+                    JsonSerializer.Serialize(writer, entry, options);
+                }
+                writer.WriteEndArray();
+            }
+
+            writer.WriteEndObject();
+        }
+    }
+
+    /// <summary>
     /// Root configuration containing all supplier configurations
     /// </summary>
     public sealed class SuppliersConfiguration : ISuppliersConfiguration
@@ -21,6 +171,8 @@ namespace SacksDataLayer.FileProcessing.Configuration
         public string FullPath { get; set; } = ".";
         [JsonIgnore]
         public List<SupplierConfiguration> Suppliers { get; set; } = new();
+        
+        [JsonConverter(typeof(LookupTableConverter))]
         public Dictionary<string, Dictionary<string, string>> Lookups { get; set; } = new();
 
         public async Task Save()
@@ -160,10 +312,37 @@ namespace SacksDataLayer.FileProcessing.Configuration
                 {
                     if (string.IsNullOrWhiteSpace(tbl.Key)) { errors.Add("Lookup table has empty name"); continue; }
                     if (tbl.Value == null) { errors.Add($"Lookup table '{tbl.Key}' has null entries dictionary"); continue; }
+                    
+                    // Validate individual entries
                     foreach (var kv in tbl.Value)
                     {
                         if (kv.Key == null) errors.Add($"Lookup '{tbl.Key}' contains a null key");
                         if (kv.Value == null) errors.Add($"Lookup '{tbl.Key}' contains a null value for key '{kv.Key}'");
+                    }
+
+                    // Phase 5: Enhanced validation for canonical + aliases structure
+                    // Group by canonical value to detect structural issues
+                    if (tbl.Value.Any())
+                    {
+                        // Validate: Each alias should only appear once across all canonical values
+                        var duplicateAliases = tbl.Value
+                            .GroupBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
+                            .Where(g => g.Count() > 1)
+                            .Select(g => new
+                            {
+                                Alias = g.Key,
+                                Canonicals = g.Select(x => x.Value).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                            })
+                            .Where(x => x.Canonicals.Count > 1) // Only flag if mapping to DIFFERENT canonical values
+                            .ToList();
+
+                        if (duplicateAliases.Any())
+                        {
+                            foreach (var dup in duplicateAliases)
+                            {
+                                errors.Add($"Lookup '{tbl.Key}': Alias '{dup.Alias}' maps to multiple canonical values: {string.Join(", ", dup.Canonicals)}");
+                            }
+                        }
                     }
                 }
             }
