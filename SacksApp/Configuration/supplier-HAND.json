@@ -7,8 +7,9 @@
       "DefaultCulture": "en-US",
       "PreferFirstAssignment": true
     },
-    "ColumnRules": {
-      "A": {
+    "ColumnRules": [
+      {
+        "Column": "A",
         "Actions": [
           {
             "Op": "Split",
@@ -51,7 +52,8 @@
         ],
         "Trace": false
       },
-      "B": {
+      {
+        "Column": "B",
         "Actions": [
           {
             "Op": "Assign",
@@ -64,7 +66,8 @@
         ],
         "Trace": false
       },
-      "C": {
+      {
+        "Column": "C",
         "Actions": [
           {
             "Op": "Assign",
@@ -77,7 +80,8 @@
         ],
         "Trace": false
       },
-      "E": {
+      {
+        "Column": "E",
         "Actions": [
           {
             "Op": "Assign",
@@ -183,7 +187,8 @@
         ],
         "Trace": true
       },
-      "F": {
+      {
+        "Column": "F",
         "Actions": [
           {
             "Op": "Assign",
@@ -196,7 +201,8 @@
         ],
         "Trace": false
       },
-      "G": {
+      {
+        "Column": "G",
         "Actions": [
           {
             "Op": "Assign",
@@ -209,7 +215,7 @@
         ],
         "Trace": false
       }
-    }
+    ]
   },
   "FileStructure": {
     "DataStartRowIndex": 2,

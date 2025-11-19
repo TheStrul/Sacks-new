@@ -7,8 +7,9 @@
       "DefaultCulture": "en-US",
       "PreferFirstAssignment": true
     },
-    "ColumnRules": {
-      "A": {
+    "ColumnRules": [
+      {
+        "Column": "A",
         "Actions": [
           {
             "Op": "Split",
@@ -59,7 +60,8 @@
         ],
         "Trace": false
       },
-      "B": {
+      {
+        "Column": "B",
         "Actions": [
           {
             "Op": "Assign",
@@ -76,7 +78,7 @@
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)(?\u003Csize\u003E\\d+(?:\\.\\d+)?\\s*(?:ml|oz|fl\\s*oz))",
+              "Pattern": "(?i)(?<size>\\d+(?:\\.\\d+)?\\s*(?:ml|oz|fl\\s*oz))",
               "Options": "all,ignorecase,remove"
             }
           },
@@ -95,7 +97,7 @@
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)(?\u003Cunit\u003Eml|oz|fl\\s*oz)",
+              "Pattern": "(?i)(?<unit>ml|oz|fl\\s*oz)",
               "Options": "first,ignorecase"
             }
           },
@@ -194,7 +196,8 @@
         ],
         "Trace": false
       },
-      "C": {
+      {
+        "Column": "C",
         "Actions": [
           {
             "Op": "Assign",
@@ -207,7 +210,8 @@
         ],
         "Trace": false
       },
-      "D": {
+      {
+        "Column": "D",
         "Actions": [
           {
             "Op": "Assign",
@@ -220,7 +224,8 @@
         ],
         "Trace": false
       },
-      "E": {
+      {
+        "Column": "E",
         "Actions": [
           {
             "Op": "Assign",
@@ -233,7 +238,7 @@
         ],
         "Trace": false
       }
-    }
+    ]
   },
   "FileStructure": {
     "DataStartRowIndex": 8,

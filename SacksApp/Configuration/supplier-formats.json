@@ -28,6 +28,7 @@
         "Aliases": [
           "mixte",
           "u",
+          "uni",
           "unisex",
           "unisexe"
         ]
@@ -43,6 +44,7 @@
           "for her",
           "her",
           "l",
+          "ladies",
           "mujer",
           "pour femme",
           "senorita",
@@ -1120,6 +1122,12 @@
           "1.5",
           "1.6",
           "1.7"
+        ]
+      },
+      {
+        "Canonical": "60",
+        "Aliases": [
+          "2.0"
         ]
       },
       {

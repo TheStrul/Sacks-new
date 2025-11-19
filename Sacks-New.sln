@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParsingEngine", "ParsingEng
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sacks.Tests", "Sacks.Tests\Sacks.Tests.csproj", "{8EAA84B5-C9D3-0BFC-C24C-14F2EDD0B601}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SacksMcp", "SacksMcp\SacksMcp.csproj", "{B563AB6D-A917-402F-B715-79B2E167FE83}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,6 +98,18 @@ Global
 		{8EAA84B5-C9D3-0BFC-C24C-14F2EDD0B601}.Release|x64.Build.0 = Release|Any CPU
 		{8EAA84B5-C9D3-0BFC-C24C-14F2EDD0B601}.Release|x86.ActiveCfg = Release|Any CPU
 		{8EAA84B5-C9D3-0BFC-C24C-14F2EDD0B601}.Release|x86.Build.0 = Release|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Debug|x64.Build.0 = Debug|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Debug|x86.Build.0 = Debug|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Release|x64.ActiveCfg = Release|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Release|x64.Build.0 = Release|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Release|x86.ActiveCfg = Release|Any CPU
+		{B563AB6D-A917-402F-B715-79B2E167FE83}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

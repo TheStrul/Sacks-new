@@ -7,8 +7,9 @@
       "DefaultCulture": "en-US",
       "PreferFirstAssignment": true
     },
-    "ColumnRules": {
-      "A": {
+    "ColumnRules": [
+      {
+        "Column": "A",
         "Actions": [
           {
             "Op": "Assign",
@@ -20,7 +21,8 @@
           }
         ]
       },
-      "B": {
+      {
+        "Column": "B",
         "Actions": [
           {
             "Op": "Assign",
@@ -30,10 +32,10 @@
             "Condition": null,
             "Parameters": null
           }
-        ],
-        "Trace": false
+        ]
       },
-      "C": {
+      {
+        "Column": "C",
         "Actions": [
           {
             "Op": "Assign",
@@ -149,7 +151,8 @@
         ],
         "Trace": false
       },
-      "E": {
+      {
+        "Column": "E",
         "Actions": [
           {
             "Op": "Map",
@@ -164,7 +167,8 @@
         ],
         "Trace": false
       },
-      "F": {
+      {
+        "Column": "F",
         "Actions": [
           {
             "Op": "Assign",
@@ -177,7 +181,8 @@
         ],
         "Trace": false
       },
-      "G": {
+      {
+        "Column": "G",
         "Actions": [
           {
             "Op": "Map",
@@ -192,7 +197,8 @@
         ],
         "Trace": false
       },
-      "I": {
+      {
+        "Column": "I",
         "Actions": [
           {
             "Op": "Assign",
@@ -205,7 +211,8 @@
         ],
         "Trace": false
       },
-      "J": {
+      {
+        "Column": "J",
         "Actions": [
           {
             "Op": "Assign",
@@ -218,7 +225,8 @@
         ],
         "Trace": false
       },
-      "K": {
+      {
+        "Column": "K",
         "Actions": [
           {
             "Op": "Assign",
@@ -231,7 +239,8 @@
         ],
         "Trace": false
       },
-      "L": {
+      {
+        "Column": "L",
         "Actions": [
           {
             "Op": "Assign",
@@ -244,7 +253,7 @@
         ],
         "Trace": false
       }
-    }
+    ]
   },
   "FileStructure": {
     "DataStartRowIndex": 2,
