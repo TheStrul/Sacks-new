@@ -38,6 +38,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sacks.Configuration", "Sack
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sacks.DataAccess", "Sacks.DataAccess\Sacks.DataAccess.csproj", "{DB777F60-B2DE-4521-B407-C51E69354299}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sacks.Core", "Sacks.Core\Sacks.Core.csproj", "{52864845-AB6B-4992-AFDE-E0BEC70CBB39}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -180,6 +182,18 @@ Global
 		{DB777F60-B2DE-4521-B407-C51E69354299}.Release|x64.Build.0 = Release|Any CPU
 		{DB777F60-B2DE-4521-B407-C51E69354299}.Release|x86.ActiveCfg = Release|Any CPU
 		{DB777F60-B2DE-4521-B407-C51E69354299}.Release|x86.Build.0 = Release|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Debug|x64.Build.0 = Debug|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Debug|x86.Build.0 = Debug|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Release|x64.ActiveCfg = Release|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Release|x64.Build.0 = Release|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Release|x86.ActiveCfg = Release|Any CPU
+		{52864845-AB6B-4992-AFDE-E0BEC70CBB39}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

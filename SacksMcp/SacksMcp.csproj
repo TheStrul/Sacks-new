@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -17,7 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\McpServer.Core\McpServer.Core.csproj" />
     <ProjectReference Include="..\McpServer.Database\McpServer.Database.csproj" />
-    <ProjectReference Include="..\SacksDataLayer\SacksDataLayer.csproj" />
+    <ProjectReference Include="..\Sacks.Core\Sacks.Core.csproj" />
     <ProjectReference Include="..\Sacks.DataAccess\Sacks.DataAccess.csproj" />
     <ProjectReference Include="..\Sacks.Configuration\Sacks.Configuration.csproj" />
   </ItemGroup>
