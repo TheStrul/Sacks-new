@@ -1,11 +1,10 @@
 using System.Data;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-using Sacks.DataAccess.Data;
 using Sacks.Core.Entities;
+using SacksLogicLayer.Services.Interfaces;
 
 namespace SacksApp
 {
@@ -13,7 +12,8 @@ namespace SacksApp
     {
         private readonly IServiceProvider _services;
         private readonly ILogger<OffersForm> _logger;
-        private readonly SacksDbContext _db;
+        private readonly ISuppliersService _suppliersService;
+        private readonly ISupplierOffersService _offersService;
 
         private readonly ComboBox _comboSuppliers = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 280 };
         private readonly Button _btnRefresh = new() { Text = "Refresh" };
@@ -27,7 +27,8 @@ namespace SacksApp
         {
             _services = services ?? throw new ArgumentNullException(nameof(services));
             _logger = _services.GetRequiredService<ILogger<OffersForm>>();
-            _db = _services.GetRequiredService<SacksDbContext>();
+            _suppliersService = _services.GetRequiredService<ISuppliersService>();
+            _offersService = _services.GetRequiredService<ISupplierOffersService>();
 
             Text = "Offers";
             Width = 900;
@@ -72,11 +73,11 @@ namespace SacksApp
         {
             try
             {
-                var list = await _db.Suppliers
-                    .AsNoTracking()
+                var (suppliers, _) = await _suppliersService.GetSuppliersAsync(pageNumber: 1, pageSize: 1000);
+                var list = suppliers
                     .OrderBy(s => s.Name)
                     .Select(s => new SupplierItem(s.Id, s.Name))
-                    .ToListAsync(ct);
+                    .ToList();
 
                 _comboSuppliers.Items.Clear();
                 foreach (var it in list) _comboSuppliers.Items.Add(it);
@@ -100,13 +101,8 @@ namespace SacksApp
                     return;
                 }
 
-                var offers = await _db.SupplierOffers
-                    .AsNoTracking()
-                    .Where(o => o.SupplierId == sel.Id)
-                    .OrderBy(o => o.OfferName)
-                    .ToListAsync(ct);
-
-                _bs.DataSource = offers;
+                var offers = await _offersService.GetOffersBySupplierAsync(sel.Id);
+                _bs.DataSource = offers.OrderBy(o => o.OfferName).ToList();
             }
             catch (Exception ex)
             {
@@ -143,8 +139,7 @@ namespace SacksApp
                     Currency = dlg.Currency,
                     Description = dlg.Description
                 };
-                _db.SupplierOffers.Add(entity);
-                await _db.SaveChangesAsync(ct);
+                await _offersService.CreateOfferAsync(entity, createdBy: Environment.UserName);
                 await ReloadOffersAsync(ct);
             }
             catch (Exception ex)
@@ -163,8 +158,8 @@ namespace SacksApp
                 return;
             }
 
-            // Re-read tracked entity
-            var entity = await _db.SupplierOffers.FirstOrDefaultAsync(o => o.Id == row.Id, ct);
+            // Re-read entity via service
+            var entity = await _offersService.GetOfferAsync(row.Id);
             if (entity == null)
             {
                 MessageBox.Show(this, "Offer not found.", "Offers", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -178,8 +173,7 @@ namespace SacksApp
             {
                 // OfferName/Currency are init-only; keep them unchanged during edit
                 entity.Description = dlg.Description;
-                entity.ModifiedAt = DateTime.UtcNow;
-                await _db.SaveChangesAsync(ct);
+                await _offersService.UpdateOfferAsync(entity, modifiedBy: Environment.UserName);
                 await ReloadOffersAsync(ct);
             }
             catch (Exception ex)
@@ -203,10 +197,7 @@ namespace SacksApp
 
             try
             {
-                var entity = await _db.SupplierOffers.FirstOrDefaultAsync(o => o.Id == row.Id, ct);
-                if (entity == null) return;
-                _db.SupplierOffers.Remove(entity);
-                await _db.SaveChangesAsync(ct);
+                await _offersService.DeleteOfferAsync(row.Id);
                 await ReloadOffersAsync(ct);
             }
             catch (Exception ex)
