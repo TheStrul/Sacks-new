@@ -1,4 +1,4 @@
-namespace SacksMcp.Tools;
+namespace McpServer.Core.Tools;
 
 /// <summary>
 /// NOTE: The ModelContextProtocol SDK uses automatic tool discovery via attributes.
@@ -12,7 +12,7 @@ namespace SacksMcp.Tools;
 /// <code>
 /// // In Program.cs:
 /// builder.Services.AddMcpServer()
-///     .WithStdioTransport()
+///     .WithStdioServerTransport()
 ///     .WithToolsFromAssembly();  // Automatically discovers all [McpServerTool] methods
 /// 
 /// // In your tool class:

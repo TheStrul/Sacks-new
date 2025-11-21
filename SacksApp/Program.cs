@@ -250,6 +250,7 @@ namespace SacksApp
             services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
             services.Configure<ConfigurationFileSettings>(configuration.GetSection("ConfigurationFiles"));
             services.Configure<LoggingSettings>(configuration.GetSection("LoggingSettings"));
+            services.Configure<McpClientOptions>(configuration.GetSection(McpClientOptions.SectionName));
 
             // Add Serilog logging
             services.AddLogging(builder =>
@@ -315,6 +316,12 @@ namespace SacksApp
             services.AddScoped<IProductOffersQueryService, ProductOffersQueryService>();
             services.AddScoped<IOfferProductDataService, OfferProductDataService>();
             services.AddScoped<IGridStateManagementService, GridStateManagementService>();
+
+            // Add MCP client service
+            services.AddSingleton<IMcpClientService, McpClientService>();
+
+            // Add LLM query router service (heuristic-based, can be replaced with LLM later)
+            services.AddSingleton<ILlmQueryRouterService, HeuristicQueryRouterService>();
 
             return services;
         }

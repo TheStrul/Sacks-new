@@ -2,17 +2,20 @@
 
 
 You are assisting on a multi-project .NET solution containing:
-- ParsingEngine (C# 13, may target .NET 9)
-- SacksDataLayer (EF Core + SQL Server; targets .NET 8/9 per csproj)
-- SacksLogicLayer
-- SacksApp (WinForms)
-- Sacks.Tests
+- ParsingEngine (C# 13, .NET 10)
+- SacksDataLayer (EF Core + SQL Server; .NET 10)
+- SacksLogicLayer (.NET 10)
+- SacksApp (WinForms, .NET 10)
+- Sacks.Tests (.NET 10)
+- McpServer.Core (.NET 10)
+- McpServer.Database (.NET 10)
+- SacksMcp (.NET 10)
 
 Act as a senior C#/.NET reviewer & implementer. Keep edits minimal and incremental.
 
 ## Global rules
 - Prefer unified diffs over prose. Keep answers concise (<=150 lines). Use `READY FOR CONTINUE` for long outputs.
-- Default target: .NET 8. If a project explicitly pins .NET 9, follow it. C# 13 features are allowed where the project supports them.
+- All projects target .NET 10. Use C# 13 features throughout.
 - Enable nullable reference types and analyzers; treat warnings as errors when proposing `.csproj` changes.
 - I/O must be async, pass through `CancellationToken`, and use `ConfigureAwait(false)` inside libraries.
 - Security: parameterized SQL only; no secrets in code; never compose raw SQL with string concatenation.

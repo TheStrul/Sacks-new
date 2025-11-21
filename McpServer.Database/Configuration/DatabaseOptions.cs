@@ -1,4 +1,4 @@
-namespace SacksMcp.Configuration;
+namespace McpServer.Database.Configuration;
 
 /// <summary>
 /// Database connection configuration. Supports multiple database types and connection strategies.
@@ -11,8 +11,8 @@ public class DatabaseOptions
     public const string SectionName = "Database";
 
     /// <summary>
-    /// SQL Server connection string. Can include integrated security or SQL authentication.
-    /// Example: "Server=localhost;Database=SacksDb;Integrated Security=true;"
+    /// Database connection string. Can include integrated security or SQL authentication.
+    /// Example: "Server=localhost;Database=MyDb;Integrated Security=true;"
     /// </summary>
     public string ConnectionString { get; set; } = string.Empty;
 

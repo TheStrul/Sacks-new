@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
-namespace SacksMcp.Tools;
+namespace McpServer.Core.Tools;
 
 /// <summary>
 /// Base class for MCP tool collections. This class provides common utilities and patterns
@@ -16,19 +16,19 @@ namespace SacksMcp.Tools;
 /// Example:
 /// <code>
 /// [McpServerToolType]
-/// public class ProductTools : BaseMcpToolCollection
+/// public class MyTools : BaseMcpToolCollection
 /// {
-///     private readonly SacksDbContext _db;
+///     private readonly MyDbContext _db;
 ///     
-///     public ProductTools(SacksDbContext db, ILogger&lt;ProductTools&gt; logger) 
+///     public MyTools(MyDbContext db, ILogger&lt;MyTools&gt; logger) 
 ///         : base(logger)
 ///     {
 ///         _db = db;
 ///     }
 ///     
 ///     [McpServerTool]
-///     [Description("Gets the most expensive product for a supplier")]
-///     public async Task&lt;string&gt; GetExpensiveProduct(string supplierName)
+///     [Description("Description of what this tool does")]
+///     public async Task&lt;string&gt; MyTool(string parameter)
 ///     {
 ///         // Your implementation here
 ///     }

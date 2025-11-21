@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
-using SacksMcp.Tools;
+using McpServer.Core.Tools;
 
 namespace SacksMcp.Examples;
 
@@ -53,6 +53,10 @@ public class ExampleTools : BaseMcpToolCollection
         [Description("Second number")] int number2,
         [Description("Operation to perform: add, subtract, multiply, divide")] string operation = "add")
     {
+        if (operation is null)
+        {
+            throw new ArgumentNullException(nameof(operation));
+        }
         ValidateRequired(operation, nameof(operation));
         
         Logger.LogInformation("Calculate tool called: {Number1} {Operation} {Number2}", 
@@ -94,6 +98,11 @@ public class ExampleTools : BaseMcpToolCollection
     public string ValidateEmail(
         [Description("Email address to validate")] string email)
     {
+        if (email is null)
+        {
+            throw new ArgumentNullException(nameof(email));
+        }
+        
         try
         {
             ValidateRequired(email, nameof(email));

@@ -22,4 +22,10 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\McpServer.Core\McpServer.Core.csproj" />
+    <ProjectReference Include="..\McpServer.Database\McpServer.Database.csproj" />
+    <ProjectReference Include="..\SacksDataLayer\SacksDataLayer.csproj" />
+  </ItemGroup>
+
 </Project>

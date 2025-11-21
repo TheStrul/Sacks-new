@@ -47,7 +47,17 @@ namespace SacksApp
             tableLayoutPanel1 = new TableLayoutPanel();
             handleOffersButton = new CustomButton();
             buttonEditMaps = new CustomButton();
+            aiQueryGroupBox = new GroupBox();
+            aiQueryTableLayout = new TableLayoutPanel();
+            aiQueryLabel = new Label();
+            aiQueryTextBox = new TextBox();
+            aiToolLabel = new Label();
+            aiToolsComboBox = new ComboBox();
+            executeAiQueryButton = new CustomButton();
+            aiResultsTextBox = new RichTextBox();
             tableLayoutPanel1.SuspendLayout();
+            aiQueryGroupBox.SuspendLayout();
+            aiQueryTableLayout.SuspendLayout();
             SuspendLayout();
             // 
             // viewLogsButton
@@ -64,7 +74,7 @@ namespace SacksApp
             viewLogsButton.Location = new Point(443, 227);
             viewLogsButton.Margin = new Padding(15);
             viewLogsButton.Name = "viewLogsButton";
-            viewLogsButton.Padding = new Padding(64, 12, 12, 12);
+            viewLogsButton.Padding = new Padding(76, 12, 12, 12);
             viewLogsButton.Size = new Size(399, 76);
             viewLogsButton.TabIndex = 12;
             viewLogsButton.Text = "View Logs";
@@ -86,7 +96,7 @@ namespace SacksApp
             sqlQueryButton.Location = new Point(15, 227);
             sqlQueryButton.Margin = new Padding(15);
             sqlQueryButton.Name = "sqlQueryButton";
-            sqlQueryButton.Padding = new Padding(64, 12, 12, 12);
+            sqlQueryButton.Padding = new Padding(76, 12, 12, 12);
             sqlQueryButton.Size = new Size(398, 76);
             sqlQueryButton.TabIndex = 11;
             sqlQueryButton.Text = "SQL Query Tool";
@@ -108,7 +118,7 @@ namespace SacksApp
             testConfigurationButton.Location = new Point(443, 121);
             testConfigurationButton.Margin = new Padding(15);
             testConfigurationButton.Name = "testConfigurationButton";
-            testConfigurationButton.Padding = new Padding(64, 12, 12, 12);
+            testConfigurationButton.Padding = new Padding(76, 12, 12, 12);
             testConfigurationButton.Size = new Size(399, 76);
             testConfigurationButton.TabIndex = 10;
             testConfigurationButton.Text = "Test Configuration";
@@ -130,7 +140,7 @@ namespace SacksApp
             showStatisticsButton.Location = new Point(15, 121);
             showStatisticsButton.Margin = new Padding(15);
             showStatisticsButton.Name = "showStatisticsButton";
-            showStatisticsButton.Padding = new Padding(64, 12, 12, 12);
+            showStatisticsButton.Padding = new Padding(76, 12, 12, 12);
             showStatisticsButton.Size = new Size(398, 76);
             showStatisticsButton.TabIndex = 9;
             showStatisticsButton.Text = "Show Statistics";
@@ -152,7 +162,7 @@ namespace SacksApp
             processFilesButton.Location = new Point(15, 15);
             processFilesButton.Margin = new Padding(15);
             processFilesButton.Name = "processFilesButton";
-            processFilesButton.Padding = new Padding(64, 12, 12, 12);
+            processFilesButton.Padding = new Padding(76, 12, 12, 12);
             processFilesButton.Size = new Size(398, 76);
             processFilesButton.TabIndex = 7;
             processFilesButton.Text = "Process Excel Files";
@@ -174,7 +184,7 @@ namespace SacksApp
             clearDatabaseButton.Location = new Point(443, 15);
             clearDatabaseButton.Margin = new Padding(15);
             clearDatabaseButton.Name = "clearDatabaseButton";
-            clearDatabaseButton.Padding = new Padding(64, 12, 12, 12);
+            clearDatabaseButton.Padding = new Padding(76, 12, 12, 12);
             clearDatabaseButton.Size = new Size(399, 76);
             clearDatabaseButton.TabIndex = 8;
             clearDatabaseButton.Text = "Clear Database";
@@ -209,7 +219,7 @@ namespace SacksApp
             tableLayoutPanel1.Controls.Add(sqlQueryButton, 0, 2);
             tableLayoutPanel1.Controls.Add(testConfigurationButton, 1, 1);
             tableLayoutPanel1.Controls.Add(clearDatabaseButton, 1, 0);
-            tableLayoutPanel1.Dock = DockStyle.Fill;
+            tableLayoutPanel1.Dock = DockStyle.Top;
             tableLayoutPanel1.Location = new Point(12, 62);
             tableLayoutPanel1.Name = "tableLayoutPanel1";
             tableLayoutPanel1.RowCount = 4;
@@ -234,7 +244,7 @@ namespace SacksApp
             handleOffersButton.Location = new Point(443, 333);
             handleOffersButton.Margin = new Padding(15);
             handleOffersButton.Name = "handleOffersButton";
-            handleOffersButton.Padding = new Padding(64, 12, 12, 12);
+            handleOffersButton.Padding = new Padding(77, 12, 12, 12);
             handleOffersButton.Size = new Size(399, 79);
             handleOffersButton.TabIndex = 14;
             handleOffersButton.Text = "Handle Offers";
@@ -256,7 +266,7 @@ namespace SacksApp
             buttonEditMaps.Location = new Point(15, 333);
             buttonEditMaps.Margin = new Padding(15);
             buttonEditMaps.Name = "buttonEditMaps";
-            buttonEditMaps.Padding = new Padding(65, 12, 12, 12);
+            buttonEditMaps.Padding = new Padding(77, 12, 12, 12);
             buttonEditMaps.Size = new Size(398, 79);
             buttonEditMaps.TabIndex = 13;
             buttonEditMaps.Text = "Handle Fix Names";
@@ -264,12 +274,126 @@ namespace SacksApp
             buttonEditMaps.UseVisualStyleBackColor = false;
             buttonEditMaps.Click += ButtonEditMaps_Click;
             // 
+            // aiQueryGroupBox
+            // 
+            aiQueryGroupBox.Controls.Add(aiQueryTableLayout);
+            aiQueryGroupBox.Dock = DockStyle.Fill;
+            aiQueryGroupBox.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            aiQueryGroupBox.ForeColor = Color.FromArgb(30, 30, 30);
+            aiQueryGroupBox.Location = new Point(12, 489);
+            aiQueryGroupBox.Name = "aiQueryGroupBox";
+            aiQueryGroupBox.Padding = new Padding(12);
+            aiQueryGroupBox.Size = new Size(857, 296);
+            aiQueryGroupBox.TabIndex = 15;
+            aiQueryGroupBox.TabStop = false;
+            aiQueryGroupBox.Text = "🤖 AI Query";
+            // 
+            // aiQueryTableLayout
+            // 
+            aiQueryTableLayout.ColumnCount = 2;
+            aiQueryTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
+            aiQueryTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            aiQueryTableLayout.Controls.Add(aiQueryLabel, 0, 0);
+            aiQueryTableLayout.Controls.Add(aiQueryTextBox, 1, 0);
+            aiQueryTableLayout.Controls.Add(aiToolLabel, 0, 1);
+            aiQueryTableLayout.Controls.Add(aiToolsComboBox, 1, 1);
+            aiQueryTableLayout.Controls.Add(executeAiQueryButton, 1, 2);
+            aiQueryTableLayout.Controls.Add(aiResultsTextBox, 0, 3);
+            aiQueryTableLayout.Dock = DockStyle.Fill;
+            aiQueryTableLayout.Location = new Point(12, 30);
+            aiQueryTableLayout.Name = "aiQueryTableLayout";
+            aiQueryTableLayout.RowCount = 4;
+            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
+            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
+            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
+            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            aiQueryTableLayout.Size = new Size(833, 254);
+            aiQueryTableLayout.TabIndex = 0;
+            // 
+            // aiQueryLabel
+            // 
+            aiQueryLabel.Anchor = AnchorStyles.Left;
+            aiQueryLabel.AutoSize = true;
+            aiQueryLabel.Font = new Font("Segoe UI", 10F);
+            aiQueryLabel.Location = new Point(3, 8);
+            aiQueryLabel.Name = "aiQueryLabel";
+            aiQueryLabel.Size = new Size(50, 19);
+            aiQueryLabel.TabIndex = 0;
+            aiQueryLabel.Text = "Query:";
+            // 
+            // aiQueryTextBox
+            // 
+            aiQueryTextBox.Dock = DockStyle.Fill;
+            aiQueryTextBox.Font = new Font("Segoe UI", 10F);
+            aiQueryTextBox.Location = new Point(123, 3);
+            aiQueryTextBox.Name = "aiQueryTextBox";
+            aiQueryTextBox.PlaceholderText = "Enter your query here (e.g., Show all suppliers)";
+            aiQueryTextBox.Size = new Size(707, 25);
+            aiQueryTextBox.TabIndex = 1;
+            // 
+            // aiToolLabel
+            // 
+            aiToolLabel.Anchor = AnchorStyles.Left;
+            aiToolLabel.AutoSize = true;
+            aiToolLabel.Font = new Font("Segoe UI", 10F);
+            aiToolLabel.Location = new Point(3, 44);
+            aiToolLabel.Name = "aiToolLabel";
+            aiToolLabel.Size = new Size(37, 19);
+            aiToolLabel.TabIndex = 2;
+            aiToolLabel.Text = "Tool:";
+            // 
+            // aiToolsComboBox
+            // 
+            aiToolsComboBox.Dock = DockStyle.Fill;
+            aiToolsComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            aiToolsComboBox.Font = new Font("Segoe UI", 10F);
+            aiToolsComboBox.FormattingEnabled = true;
+            aiToolsComboBox.Location = new Point(123, 39);
+            aiToolsComboBox.Name = "aiToolsComboBox";
+            aiToolsComboBox.Size = new Size(707, 25);
+            aiToolsComboBox.TabIndex = 3;
+            // 
+            // executeAiQueryButton
+            // 
+            executeAiQueryButton.AutoSize = true;
+            executeAiQueryButton.BackColor = Color.White;
+            executeAiQueryButton.BadgeColor = Color.FromArgb(103, 58, 183);
+            executeAiQueryButton.Dock = DockStyle.Right;
+            executeAiQueryButton.FlatStyle = FlatStyle.Flat;
+            executeAiQueryButton.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            executeAiQueryButton.ForeColor = Color.FromArgb(30, 30, 30);
+            executeAiQueryButton.Glyph = "▶";
+            executeAiQueryButton.ImageAlign = ContentAlignment.MiddleLeft;
+            executeAiQueryButton.Location = new Point(684, 75);
+            executeAiQueryButton.Name = "executeAiQueryButton";
+            executeAiQueryButton.Padding = new Padding(62, 12, 12, 12);
+            executeAiQueryButton.Size = new Size(146, 34);
+            executeAiQueryButton.TabIndex = 4;
+            executeAiQueryButton.Text = "Send";
+            executeAiQueryButton.TextImageRelation = TextImageRelation.ImageBeforeText;
+            executeAiQueryButton.UseVisualStyleBackColor = false;
+            executeAiQueryButton.Click += ExecuteAiQueryButton_Click;
+            // 
+            // aiResultsTextBox
+            // 
+            aiQueryTableLayout.SetColumnSpan(aiResultsTextBox, 2);
+            aiResultsTextBox.Dock = DockStyle.Fill;
+            aiResultsTextBox.Font = new Font("Consolas", 9F);
+            aiResultsTextBox.Location = new Point(3, 115);
+            aiResultsTextBox.Name = "aiResultsTextBox";
+            aiResultsTextBox.ReadOnly = true;
+            aiResultsTextBox.Size = new Size(827, 136);
+            aiResultsTextBox.TabIndex = 5;
+            aiResultsTextBox.Text = "";
+            aiResultsTextBox.WordWrap = false;
+            // 
             // DashBoard
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(250, 250, 252);
-            ClientSize = new Size(881, 501);
+            ClientSize = new Size(881, 797);
+            Controls.Add(aiQueryGroupBox);
             Controls.Add(tableLayoutPanel1);
             Controls.Add(titleLabel);
             Name = "DashBoard";
@@ -278,6 +402,9 @@ namespace SacksApp
             Text = "DashBoard";
             tableLayoutPanel1.ResumeLayout(false);
             tableLayoutPanel1.PerformLayout();
+            aiQueryGroupBox.ResumeLayout(false);
+            aiQueryTableLayout.ResumeLayout(false);
+            aiQueryTableLayout.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -293,5 +420,13 @@ namespace SacksApp
         private TableLayoutPanel tableLayoutPanel1;
         private CustomButton buttonEditMaps;
         private CustomButton handleOffersButton;
+        private GroupBox aiQueryGroupBox;
+        private TableLayoutPanel aiQueryTableLayout;
+        private Label aiQueryLabel;
+        private TextBox aiQueryTextBox;
+        private Label aiToolLabel;
+        private ComboBox aiToolsComboBox;
+        private CustomButton executeAiQueryButton;
+        private RichTextBox aiResultsTextBox;
     }
 }

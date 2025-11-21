@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SacksMcp.Configuration;
+using McpServer.Core.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace SacksMcp.Services;
+namespace McpServer.Core.Services;
 
 /// <summary>
 /// Base MCP server implementation using Microsoft's ModelContextProtocol SDK.
@@ -15,7 +15,7 @@ namespace SacksMcp.Services;
 /// 
 /// This base class provides:
 /// - IHostedService integration for background service hosting
-/// - Configuration support via CustomMcpServerOptions
+/// - Configuration support via McpServerExtendedOptions
 /// - Structured logging
 /// - Lifecycle management
 /// 
@@ -27,12 +27,12 @@ namespace SacksMcp.Services;
 public abstract class BaseMcpServer : IHostedService
 {
     protected readonly ILogger Logger;
-    protected readonly CustomMcpServerOptions Options;
+    protected readonly McpServerExtendedOptions Options;
     protected readonly IHostApplicationLifetime AppLifetime;
 
     protected BaseMcpServer(
         ILogger logger,
-        IOptions<CustomMcpServerOptions> options,
+        IOptions<McpServerExtendedOptions> options,
         IHostApplicationLifetime appLifetime)
     {
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));

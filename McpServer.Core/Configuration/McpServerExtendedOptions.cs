@@ -1,22 +1,22 @@
-namespace SacksMcp.Configuration;
+namespace McpServer.Core.Configuration;
 
 /// <summary>
-/// Custom configuration options for the MCP server. These settings control how the server operates
+/// Extended configuration options for MCP servers. These settings control server behavior
 /// and can be customized via appsettings.json for different environments.
-/// Note: This is separate from ModelContextProtocol.Server.McpServerOptions
+/// Note: This complements ModelContextProtocol.Server.McpServerOptions with application-specific settings.
 /// </summary>
-public class CustomMcpServerOptions
+public class McpServerExtendedOptions
 {
     /// <summary>
     /// The section name in appsettings.json where these options are stored.
     /// </summary>
-    public const string SectionName = "CustomMcpServer";
+    public const string SectionName = "McpServerExtended";
 
     /// <summary>
     /// The name of the MCP server. This appears in MCP client connections and logs.
-    /// Default: "SacksMcp"
+    /// Default: "McpServer"
     /// </summary>
-    public string ServerName { get; set; } = "SacksMcp";
+    public string ServerName { get; set; } = "McpServer";
 
     /// <summary>
     /// Version of the MCP server. Used for compatibility checking.

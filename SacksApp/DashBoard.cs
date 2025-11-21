@@ -15,6 +15,11 @@ namespace SacksApp
 {
     public partial class DashBoard : Form
     {
+        private static readonly System.Text.Json.JsonSerializerOptions s_jsonFormatOptions = new()
+        {
+            WriteIndented = true
+        };
+
         IServiceProvider _serviceProvider;
         ILogger _logger;
 
@@ -34,6 +39,9 @@ namespace SacksApp
             this._logger = serviceProvider.GetRequiredService<ILogger<DashBoard>>();
 
             // CustomButton styling is now handled directly in the designer - no need for ApplyModernTheme
+            
+            // Load available MCP tools asynchronously
+            _ = LoadAvailableToolsAsync();
         }
 
         private async void ProcessFilesButton_Click(object sender, EventArgs e)
@@ -338,6 +346,219 @@ namespace SacksApp
                 _logger.LogError(ex, "Error opening Offers manager");
                 MessageBox.Show($"Error opening Offers manager: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private async Task LoadAvailableToolsAsync()
+        {
+            try
+            {
+                var mcpClient = _serviceProvider.GetRequiredService<IMcpClientService>();
+                var tools = await mcpClient.ListToolsAsync(CancellationToken.None).ConfigureAwait(false);
+
+                // Update UI on UI thread
+                if (InvokeRequired)
+                {
+                    Invoke(() => PopulateToolsComboBox(tools));
+                }
+                else
+                {
+                    PopulateToolsComboBox(tools);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load MCP tools. Server may not be available.");
+                if (InvokeRequired)
+                {
+                    Invoke(() =>
+                    {
+                        aiToolsComboBox.Items.Add("(MCP Server unavailable)");
+                        aiToolsComboBox.Enabled = false;
+                        executeAiQueryButton.Enabled = false;
+                    });
+                }
+                else
+                {
+                    aiToolsComboBox.Items.Add("(MCP Server unavailable)");
+                    aiToolsComboBox.Enabled = false;
+                    executeAiQueryButton.Enabled = false;
+                }
+            }
+        }
+
+        private void PopulateToolsComboBox(IReadOnlyList<ToolInfo> tools)
+        {
+            aiToolsComboBox.Items.Clear();
+            aiToolsComboBox.Items.Add("-- Select a tool --");
+
+            foreach (var tool in tools)
+            {
+                aiToolsComboBox.Items.Add($"{tool.Name} - {tool.Description}");
+            }
+
+            aiToolsComboBox.SelectedIndex = 0;
+        }
+
+        private async void ExecuteAiQueryButton_Click(object sender, EventArgs e)
+        {
+            var query = aiQueryTextBox.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                MessageBox.Show("Please enter a query.", "Empty Query", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                executeAiQueryButton.Enabled = false;
+                aiResultsTextBox.Text = "⏳ Processing query...";
+
+                _logger.LogInformation("Processing query: {Query}", query);
+
+                // Check if user selected a specific tool or wants natural language routing
+                if (aiToolsComboBox.SelectedIndex <= 0)
+                {
+                    // Natural language mode - use LLM query routing
+                    await ProcessNaturalLanguageQueryAsync(query).ConfigureAwait(true);
+                }
+                else
+                {
+                    // Tool selection mode - use specific tool
+                    await ProcessToolSpecificQueryAsync(query).ConfigureAwait(true);
+                }
+
+                _logger.LogInformation("Query processed successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing query");
+                aiResultsTextBox.Text = $"❌ Error: {ex.Message}";
+                MessageBox.Show($"Error processing query: {ex.Message}", "Execution Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                executeAiQueryButton.Enabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Process natural language query by routing to LLM or heuristic tool selection
+        /// </summary>
+        private async Task ProcessNaturalLanguageQueryAsync(string query)
+        {
+            var routerService = _serviceProvider.GetRequiredService<ILlmQueryRouterService>();
+            
+            // Route the query to the most appropriate tool
+            var routingResult = await routerService.RouteQueryAsync(query, CancellationToken.None).ConfigureAwait(false);
+
+            // Format the response with routing information
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"🤖 Natural Language Query");
+            sb.AppendLine($"📝 Your question: {query}");
+            sb.AppendLine();
+            sb.AppendLine($"🎯 Routing Analysis:");
+            sb.AppendLine($"   Tool Selected: {routingResult.SelectedToolName}");
+            sb.AppendLine($"   Confidence: {routingResult.RoutingConfidence:P0}");
+            sb.AppendLine($"   Reason: {routingResult.RoutingReason}");
+            
+            if (!routingResult.IsSuccessful)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"❌ Error: {routingResult.ErrorMessage}");
+                var errorText = sb.ToString();
+                if (InvokeRequired)
+                {
+                    Invoke(() => aiResultsTextBox.Text = errorText);
+                }
+                else
+                {
+                    aiResultsTextBox.Text = errorText;
+                }
+                return;
+            }
+
+            sb.AppendLine();
+            sb.AppendLine($"📊 Tool Result:");
+            sb.AppendLine(new string('-', 80));
+            
+            // Try to format JSON nicely
+            try
+            {
+                var jsonDoc = System.Text.Json.JsonDocument.Parse(routingResult.ToolResult);
+                var formatted = System.Text.Json.JsonSerializer.Serialize(jsonDoc, s_jsonFormatOptions);
+                sb.AppendLine(formatted);
+            }
+            catch
+            {
+                sb.AppendLine(routingResult.ToolResult);
+            }
+            
+            var finalText = sb.ToString();
+            if (InvokeRequired)
+            {
+                Invoke(() => aiResultsTextBox.Text = finalText);
+            }
+            else
+            {
+                aiResultsTextBox.Text = finalText;
+            }
+        }
+
+        /// <summary>
+        /// Process query using a specific tool selected from the dropdown
+        /// </summary>
+        private async Task ProcessToolSpecificQueryAsync(string query)
+        {
+            var selectedTool = aiToolsComboBox.SelectedItem?.ToString() ?? string.Empty;
+            var toolName = selectedTool.Split(" - ")[0];
+
+            var mcpClient = _serviceProvider.GetRequiredService<IMcpClientService>();
+            
+            // Build parameters based on query text
+            var parameters = new Dictionary<string, object>();
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                parameters["query"] = query;
+            }
+
+            var result = await mcpClient.ExecuteToolAsync(toolName, parameters, CancellationToken.None).ConfigureAwait(false);
+
+            // Format and display result
+            var formattedResult = FormatResult(toolName, result);
+            if (InvokeRequired)
+            {
+                Invoke(() => aiResultsTextBox.Text = formattedResult);
+            }
+            else
+            {
+                aiResultsTextBox.Text = formattedResult;
+            }
+        }
+
+        private static string FormatResult(string toolName, string result)
+        {
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"✅ Tool: {toolName}");
+            sb.AppendLine($"⏱️  Executed at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine();
+            sb.AppendLine("📊 Result:");
+            sb.AppendLine(new string('-', 80));
+            
+            // Try to format JSON nicely
+            try
+            {
+                var jsonDoc = System.Text.Json.JsonDocument.Parse(result);
+                var formatted = System.Text.Json.JsonSerializer.Serialize(jsonDoc, s_jsonFormatOptions);
+                sb.AppendLine(formatted);
+            }
+            catch
+            {
+                // Not JSON or parsing failed, just show raw result
+                sb.AppendLine(result);
+            }
+            
+            return sb.ToString();
         }
     }
 }
