@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SacksDataLayer\SacksDataLayer.csproj" />
+    <ProjectReference Include="..\Sacks.Configuration\Sacks.Configuration.csproj" />
   </ItemGroup>
 
   <ItemGroup>

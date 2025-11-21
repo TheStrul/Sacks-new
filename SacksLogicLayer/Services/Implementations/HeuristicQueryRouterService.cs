@@ -23,7 +23,7 @@ public class HeuristicQueryRouterService : ILlmQueryRouterService
     private static readonly Dictionary<string, ToolPattern> ToolPatterns = new(StringComparer.OrdinalIgnoreCase)
     {
         {
-            "SearchProducts", new ToolPattern
+            "searchProducts", new ToolPattern
             {
                 Keywords = new[] { "product", "search", "find", "look", "show", "list", "query", "get", "retrieve", "item", "items", "thing" },
                 RegexPatterns = new[] 
@@ -37,7 +37,7 @@ public class HeuristicQueryRouterService : ILlmQueryRouterService
             }
         },
         {
-            "GetSupplierStats", new ToolPattern
+            "getSupplierStats", new ToolPattern
             {
                 Keywords = new[] { "supplier", "stats", "statistics", "summary", "report", "overview", "analyze", "vendor", "seller" },
                 RegexPatterns = new[] 
@@ -51,7 +51,7 @@ public class HeuristicQueryRouterService : ILlmQueryRouterService
             }
         },
         {
-            "GetOfferDetails", new ToolPattern
+            "getOfferDetails", new ToolPattern
             {
                 Keywords = new[] { "offer", "deals", "prices", "pricing", "cost", "price", "bid", "deal", "offer" },
                 RegexPatterns = new[] 
@@ -66,10 +66,37 @@ public class HeuristicQueryRouterService : ILlmQueryRouterService
         }
     };
 
+    private List<string>? _availableToolNames;
+
     public HeuristicQueryRouterService(ILogger<HeuristicQueryRouterService> logger, IMcpClientService mcpClient)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _mcpClient = mcpClient ?? throw new ArgumentNullException(nameof(mcpClient));
+    }
+
+    /// <summary>
+    /// Gets the actual tool names available from the MCP server and caches them.
+    /// </summary>
+    private async Task<List<string>> GetAvailableToolNamesAsync(CancellationToken cancellationToken)
+    {
+        if (_availableToolNames != null)
+        {
+            return _availableToolNames;
+        }
+
+        try
+        {
+            var tools = await _mcpClient.ListToolsAsync(cancellationToken).ConfigureAwait(false);
+            _availableToolNames = tools.Select(t => t.Name).ToList();
+            _logger.LogInformation("Cached {Count} available MCP tools: {Tools}", 
+                _availableToolNames.Count, string.Join(", ", _availableToolNames));
+            return _availableToolNames;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve available tool names from MCP server");
+            return new List<string>();
+        }
     }
 
     /// <inheritdoc/>
@@ -89,8 +116,20 @@ public class HeuristicQueryRouterService : ILlmQueryRouterService
         {
             _logger.LogDebug("Routing natural language query: {Query}", query);
 
+            // Get available tools from MCP server
+            var availableTools = await GetAvailableToolNamesAsync(cancellationToken).ConfigureAwait(false);
+            if (availableTools.Count == 0)
+            {
+                return new LlmRoutingResult
+                {
+                    IsSuccessful = false,
+                    ErrorMessage = "No MCP tools are available",
+                    RoutingConfidence = 0.0
+                };
+            }
+
             // Find best matching tool
-            var (bestTool, confidence, reason) = FindBestMatchingTool(query);
+            var (bestTool, confidence, reason) = FindBestMatchingTool(query, availableTools);
 
             if (bestTool == null)
             {
@@ -107,9 +146,8 @@ public class HeuristicQueryRouterService : ILlmQueryRouterService
             _logger.LogInformation("Routing query to tool: {ToolName} (Confidence: {Confidence})", bestTool, confidence);
 
             // Extract parameters from query
-            var parameters = ExtractParameters(query);
-            parameters["query"] = query; // Always include original query
-
+            var parameters = ExtractParameters(query, bestTool);
+            
             // Execute the tool
             var toolResult = await _mcpClient.ExecuteToolAsync(bestTool, parameters, cancellationToken).ConfigureAwait(false);
 
@@ -136,10 +174,10 @@ public class HeuristicQueryRouterService : ILlmQueryRouterService
     }
 
     /// <summary>
-    /// Finds the best matching tool for the given query using heuristics.
+    /// Uses keyword matching and regex patterns to find the most appropriate tool.
     /// </summary>
     /// <returns>Tuple of (toolName, confidence, reason)</returns>
-    private (string? toolName, double confidence, string reason) FindBestMatchingTool(string query)
+    private (string? toolName, double confidence, string reason) FindBestMatchingTool(string query, List<string> availableTools)
     {
         var queryLower = query.ToLowerInvariant();
         var scores = new Dictionary<string, (double score, string reason)>();
@@ -147,12 +185,32 @@ public class HeuristicQueryRouterService : ILlmQueryRouterService
         // Check for greeting/help queries first
         if (IsGreetingOrHelpQuery(queryLower, out var greetingReason))
         {
-            // Default to SearchProducts for general queries
-            return ("SearchProducts", 0.4, greetingReason);
+            // Find a product search tool from available tools (try various naming conventions)
+            var productSearchTool = availableTools.FirstOrDefault(t => 
+                t.Equals("SearchProducts", StringComparison.OrdinalIgnoreCase) ||
+                t.Equals("searchProducts", StringComparison.OrdinalIgnoreCase) ||
+                t.Contains("Product", StringComparison.OrdinalIgnoreCase));
+
+            if (productSearchTool != null)
+            {
+                return (productSearchTool, 0.4, greetingReason);
+            }
+
+            // Fallback to first available tool
+            return (availableTools.FirstOrDefault(), 0.4, greetingReason);
         }
 
-        foreach (var (toolName, pattern) in ToolPatterns)
+        foreach (var (patternToolName, pattern) in ToolPatterns)
         {
+            // Find matching tool from available tools (case-insensitive)
+            var matchingTool = availableTools.FirstOrDefault(t => 
+                t.Equals(patternToolName, StringComparison.OrdinalIgnoreCase));
+
+            if (matchingTool == null)
+            {
+                continue; // Skip if tool not available
+            }
+
             double score = 0.0;
             var reasons = new List<string>();
 
@@ -180,7 +238,7 @@ public class HeuristicQueryRouterService : ILlmQueryRouterService
 
             if (score >= pattern.MinConfidence)
             {
-                scores[toolName] = (score, string.Join("; ", reasons));
+                scores[matchingTool] = (score, string.Join(", ", reasons));
             }
         }
 
@@ -216,9 +274,27 @@ public class HeuristicQueryRouterService : ILlmQueryRouterService
     /// Extracts parameters from the natural language query.
     /// This is basic extraction; LLM would do this more intelligently.
     /// </summary>
-    private Dictionary<string, object> ExtractParameters(string query)
+    private Dictionary<string, object> ExtractParameters(string query, string toolName)
     {
         var parameters = new Dictionary<string, object>();
+
+        // Map tool-specific parameter names (case-insensitive matching)
+        var toolLower = toolName.ToLowerInvariant();
+        if (toolLower.Contains("product") || toolLower.Contains("offer") || toolLower.Contains("supplier"))
+        {
+            if (toolLower.Contains("search"))
+            {
+                parameters["searchTerm"] = query; // Search tools expect "searchTerm"
+            }
+            else
+            {
+                parameters["query"] = query; // Other tools use "query"
+            }
+        }
+        else
+        {
+            parameters["query"] = query; // Default fallback
+        }
 
         // Extract numeric values (prices, quantities, etc.)
         var numberMatches = Regex.Matches(query, @"\$?\d+(?:\.\d{2})?");

@@ -36,6 +36,13 @@ public abstract class BaseDatabaseToolCollection<TDbContext> : BaseMcpToolCollec
 {
     protected readonly TDbContext DbContext;
 
+    /// <summary>
+    /// Testing mode delay in seconds. When set to a value > 0, queries will be delayed 
+    /// to simulate slow operations for testing cancellation tokens.
+    /// Default is 0 (no delay).
+    /// </summary>
+    public static int TestingModeDelaySeconds { get; set; } = 0;
+
     protected BaseDatabaseToolCollection(TDbContext dbContext, ILogger logger) 
         : base(logger)
     {
@@ -44,6 +51,7 @@ public abstract class BaseDatabaseToolCollection<TDbContext> : BaseMcpToolCollec
 
     /// <summary>
     /// Helper method to execute a query with error handling and formatting.
+    /// Supports testing mode delay for cancellation token testing.
     /// </summary>
     protected async Task<string> ExecuteQueryAsync<T>(
         Func<Task<T>> query, 
@@ -59,10 +67,22 @@ public abstract class BaseDatabaseToolCollection<TDbContext> : BaseMcpToolCollec
         {
             Logger.LogInformation("Executing database query: {OperationName}", operationName);
             
+            // Apply testing delay if configured (for cancellation token testing)
+            if (TestingModeDelaySeconds > 0)
+            {
+                Logger.LogDebug("Testing mode: Delaying query by {Seconds} seconds", TestingModeDelaySeconds);
+                await Task.Delay(TimeSpan.FromSeconds(TestingModeDelaySeconds), cancellationToken).ConfigureAwait(false);
+            }
+            
             var result = await query().ConfigureAwait(false);
             
             Logger.LogInformation("Query completed successfully: {OperationName}", operationName);
             return FormatSuccess(result!);
+        }
+        catch (OperationCanceledException ex)
+        {
+            Logger.LogWarning(ex, "Query cancelled: {OperationName}", operationName);
+            throw; // Re-throw to allow tests to verify cancellation
         }
         catch (DbUpdateException ex)
         {

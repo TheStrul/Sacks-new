@@ -179,8 +179,10 @@ public class McpClientService : IMcpClientService, IDisposable
                 workingDir = FindSolutionRootOrUseAppBase();
             }
 
-            _logger.LogDebug("MCP server working directory: {WorkingDir}", workingDir);
-            _logger.LogDebug("MCP server arguments: {Arguments}", _options.ServerArguments);
+            _logger.LogInformation("MCP server working directory: {WorkingDir}", workingDir);
+            _logger.LogInformation("MCP server arguments: {Arguments}", _options.ServerArguments);
+            _logger.LogInformation("Full command: {Executable} {Arguments} (in {WorkingDir})", 
+                _options.ServerExecutablePath, _options.ServerArguments, workingDir);
 
             var startInfo = new ProcessStartInfo
             {

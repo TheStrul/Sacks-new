@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SacksDataLayer\SacksDataLayer.csproj" />
     <ProjectReference Include="..\SacksLogicLayer\SacksLogicLayer.csproj" />
+    <ProjectReference Include="..\Sacks.Configuration\Sacks.Configuration.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,6 +31,9 @@
 
   <!-- Copy configuration and input files to output and publish directories -->
   <ItemGroup>
+    <!-- appsettings.json is automatically copied from Sacks.Configuration project -->
+    
+    <!-- Legacy supplier configuration files -->
     <None Update="Configuration\*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
