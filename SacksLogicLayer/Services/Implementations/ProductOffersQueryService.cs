@@ -4,8 +4,8 @@ using System.Reflection;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using SacksDataLayer.Data;
-using SacksDataLayer.Entities;
+using Sacks.DataAccess.Data;
+using Sacks.Core.Entities;
 using SacksLogicLayer.Services.Interfaces;
 
 namespace SacksLogicLayer.Services.Implementations;

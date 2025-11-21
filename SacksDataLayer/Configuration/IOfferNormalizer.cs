@@ -1,6 +1,6 @@
-using SacksDataLayer.FileProcessing.Models;
+using Sacks.Core.FileProcessing.Models;
 
-namespace SacksDataLayer.FileProcessing.Interfaces
+namespace Sacks.Core.FileProcessing.Interfaces
 {
     /// <summary>
     /// Interface for normalizing supplier-specific data into Product for supplier offers

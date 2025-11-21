@@ -1,4 +1,4 @@
-namespace SacksDataLayer.FileProcessing.Configuration;
+namespace Sacks.Core.FileProcessing.Configuration;
 
 /// <summary>
 /// Represents a lookup table entry with a canonical value and multiple search aliases.

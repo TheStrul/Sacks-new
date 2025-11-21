@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
-using SacksDataLayer.Data;
+using Sacks.DataAccess.Data;
 
 namespace SacksMcp.Tests.Helpers;
 

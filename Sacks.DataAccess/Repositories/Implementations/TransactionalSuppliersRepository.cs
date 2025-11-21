@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using SacksDataLayer.Data;
-using SacksDataLayer.Repositories.Interfaces;
-using SacksDataLayer.Entities;
+using Sacks.DataAccess.Data;
+using Sacks.DataAccess.Repositories.Interfaces;
+using Sacks.Core.Entities;
 
-namespace SacksDataLayer.Repositories.Implementations
+namespace Sacks.DataAccess.Repositories.Implementations
 {
     /// <summary>
     /// Transaction-aware repository implementation for Suppliers

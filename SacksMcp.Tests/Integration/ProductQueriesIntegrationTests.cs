@@ -58,7 +58,7 @@ public class ProductQueriesIntegrationTests : IClassFixture<DatabaseFixture>
             .WithName("Real Database Product")
             .WithEan("9876543210123")
             .Build();
-        await _fixture.SeedTestDataAsync(products: new List<SacksDataLayer.Entities.Product> { product });
+        await _fixture.SeedTestDataAsync(products: new List<Sacks.Core.Entities.Product> { product });
 
         // Act
         var result = await _sut.GetProductByEan("9876543210123");

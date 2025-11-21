@@ -1,12 +1,10 @@
-﻿using System.Data;
+using System.Data;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 using QMobileDeviceServiceMenu;
-
-using SacksDataLayer.Services.Interfaces;
 
 using SacksLogicLayer.Services.Interfaces;
 

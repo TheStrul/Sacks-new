@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using System.Text.Json;
 using System.Globalization;
 using System.Reflection;
@@ -27,7 +27,7 @@ namespace SacksApp
         // Track single instance of modeless child form
         private LookupEditorForm? _lookupEditor;
 
-        private static readonly Type ViewType = typeof(SacksDataLayer.Entities.ProductOffersView);
+        private static readonly Type ViewType = typeof(Sacks.Core.Entities.ProductOffersView);
         private static readonly string[] EntityPropertyNames = ViewType
             .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
             .Select(p => p.Name)

@@ -2,8 +2,8 @@ namespace SacksLogicLayer.Services
 {
     using Microsoft.Extensions.Logging;
     using System.Text.Json;
-    using SacksDataLayer.FileProcessing.Configuration;
-    using SacksDataLayer.Configuration;
+    using Sacks.Core.FileProcessing.Configuration;
+    using Sacks.Core.Configuration;
     using System.Threading.Tasks;
     using Sacks.Configuration;
 

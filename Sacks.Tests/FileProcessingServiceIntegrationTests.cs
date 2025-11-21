@@ -1,13 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using SacksDataLayer.FileProcessing.Configuration;
+using Sacks.Core.FileProcessing.Configuration;
 
 using System.Collections.Generic;
 using System.Text.Json;
 using Xunit;
 
-namespace SacksDataLayer.Tests.Integration
+namespace Sacks.Tests.Integration
 {
     public class FileProcessingServiceIntegrationTests
     {
@@ -27,7 +27,7 @@ namespace SacksDataLayer.Tests.Integration
             var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 
             // Act
-            var logger = loggerFactory.CreateLogger<SacksDataLayer.Configuration.RuleBasedOfferNormalizer>();
+            var logger = loggerFactory.CreateLogger<Sacks.Core.Configuration.RuleBasedOfferNormalizer>();
 
             // Assert
             Assert.NotNull(logger);

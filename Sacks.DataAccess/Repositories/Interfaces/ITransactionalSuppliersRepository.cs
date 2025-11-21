@@ -1,6 +1,6 @@
-using SacksDataLayer.Entities;
+using Sacks.Core.Entities;
 
-namespace SacksDataLayer.Repositories.Interfaces
+namespace Sacks.DataAccess.Repositories.Interfaces
 {
     /// <summary>
     /// Transaction-aware repository interface for Suppliers

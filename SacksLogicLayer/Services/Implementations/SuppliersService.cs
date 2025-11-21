@@ -1,5 +1,5 @@
-﻿using SacksDataLayer.Entities;
-using SacksDataLayer.Repositories.Interfaces;
+using Sacks.Core.Entities;
+using Sacks.DataAccess.Repositories.Interfaces;
 using SacksLogicLayer.Services.Interfaces;
 
 namespace SacksLogicLayer.Services.Implementations

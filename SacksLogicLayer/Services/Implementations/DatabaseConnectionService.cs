@@ -1,8 +1,8 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Sacks.Configuration;
-using SacksDataLayer.Data;
+using Sacks.DataAccess.Data;
 using SacksLogicLayer.Services.Interfaces;
 
 namespace SacksLogicLayer.Services.Implementations

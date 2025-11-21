@@ -1,7 +1,7 @@
 using FluentAssertions;
 using SacksMcp.Tests.Helpers;
 using SacksMcp.Tools;
-using SacksDataLayer.Data;
+using Sacks.DataAccess.Data;
 using Xunit;
 
 namespace SacksMcp.Tests.Security;

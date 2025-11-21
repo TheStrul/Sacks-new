@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
-using SacksDataLayer.Entities;
+using Sacks.Core.Entities;
 
-namespace SacksDataLayer.Data
+namespace Sacks.DataAccess.Data
 {
     /// <summary>
     /// Main database context for the Sacks application
@@ -185,7 +185,7 @@ namespace SacksDataLayer.Data
             });
 
                   // Map ProductOffersView (database view) as a keyless entity so it can be queried via EF
-                  modelBuilder.Entity<Entities.ProductOffersView>(entity =>
+                  modelBuilder.Entity<ProductOffersView>(entity =>
                   {
                         entity.HasNoKey();
                         entity.ToView("ProductOffersView");

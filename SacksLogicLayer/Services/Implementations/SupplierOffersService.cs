@@ -1,8 +1,8 @@
-﻿using SacksDataLayer.Entities;
-using SacksDataLayer.Repositories.Interfaces;
-using SacksDataLayer.Services.Interfaces;
+using Sacks.Core.Entities;
+using Sacks.DataAccess.Repositories.Interfaces;
+using SacksLogicLayer.Services.Interfaces;
 
-namespace SacksDataLayer.Services.Implementations
+namespace SacksLogicLayer.Services.Implementations
 {
     /// <summary>
     /// Service implementation for managing supplier offers

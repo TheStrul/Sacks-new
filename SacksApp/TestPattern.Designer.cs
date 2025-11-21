@@ -1,4 +1,4 @@
-﻿namespace SacksApp
+namespace SacksApp
 {
     partial class TestPattern
     {

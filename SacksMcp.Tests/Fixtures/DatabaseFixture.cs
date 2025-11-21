@@ -2,8 +2,8 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
-using SacksDataLayer.Data;
-using SacksDataLayer.Entities;
+using Sacks.DataAccess.Data;
+using Sacks.Core.Entities;
 using Xunit;
 
 namespace SacksMcp.Tests.Fixtures;

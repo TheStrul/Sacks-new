@@ -1,5 +1,5 @@
 using Bogus;
-using SacksDataLayer.Entities;
+using Sacks.Core.Entities;
 
 namespace SacksMcp.Tests.Helpers;
 

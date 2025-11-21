@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 
-namespace SacksDataLayer.Entities;
+namespace Sacks.Core.Entities;
 
 /// <summary>
 /// Junction table linking offers to products with specific pricing and terms

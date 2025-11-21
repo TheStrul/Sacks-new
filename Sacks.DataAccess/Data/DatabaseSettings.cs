@@ -1,4 +1,4 @@
-namespace SacksDataLayer.Configuration
+namespace Sacks.Core.Configuration
 {
     /// <summary>
     /// Configuration settings for database connections and behavior

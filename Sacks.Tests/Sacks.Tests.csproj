@@ -24,6 +24,7 @@
     <ProjectReference Include="..\ParsingEngine\ParsingEngine.csproj" />
     <ProjectReference Include="..\SacksApp\SacksApp.csproj" />
     <ProjectReference Include="..\SacksDataLayer\SacksDataLayer.csproj" Condition="Exists('..\SacksDataLayer\SacksDataLayer.csproj')" />
+    <ProjectReference Include="..\Sacks.DataAccess\Sacks.DataAccess.csproj" />
     <ProjectReference Include="..\SacksLogicLayer\SacksLogicLayer.csproj" Condition="Exists('..\SacksLogicLayer\SacksLogicLayer.csproj')" />
   </ItemGroup>
 

@@ -1,8 +1,8 @@
 using FluentAssertions;
 using SacksMcp.Tests.Helpers;
 using SacksMcp.Tools;
-using SacksDataLayer.Data;
-using SacksDataLayer.Entities;
+using Sacks.DataAccess.Data;
+using Sacks.Core.Entities;
 using Xunit;
 
 namespace SacksMcp.Tests.Unit.Tools;

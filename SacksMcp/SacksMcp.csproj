@@ -18,6 +18,7 @@
     <ProjectReference Include="..\McpServer.Core\McpServer.Core.csproj" />
     <ProjectReference Include="..\McpServer.Database\McpServer.Database.csproj" />
     <ProjectReference Include="..\SacksDataLayer\SacksDataLayer.csproj" />
+    <ProjectReference Include="..\Sacks.DataAccess\Sacks.DataAccess.csproj" />
     <ProjectReference Include="..\Sacks.Configuration\Sacks.Configuration.csproj" />
   </ItemGroup>
 

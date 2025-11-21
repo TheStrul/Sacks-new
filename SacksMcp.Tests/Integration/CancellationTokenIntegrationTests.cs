@@ -27,8 +27,8 @@ public class CancellationTokenIntegrationTests : IClassFixture<DatabaseFixture>,
         _fixture = fixture;
         
         // Save original delay and set testing delay to 2 seconds
-        _originalDelay = BaseDatabaseToolCollection<SacksDataLayer.Data.SacksDbContext>.TestingModeDelaySeconds;
-        BaseDatabaseToolCollection<SacksDataLayer.Data.SacksDbContext>.TestingModeDelaySeconds = 2;
+        _originalDelay = BaseDatabaseToolCollection<Sacks.DataAccess.Data.SacksDbContext>.TestingModeDelaySeconds;
+        BaseDatabaseToolCollection<Sacks.DataAccess.Data.SacksDbContext>.TestingModeDelaySeconds = 2;
         
         var productLogger = new Mock<ILogger<ProductTools>>().Object;
         var offerLogger = new Mock<ILogger<OfferTools>>().Object;
@@ -42,7 +42,7 @@ public class CancellationTokenIntegrationTests : IClassFixture<DatabaseFixture>,
     public void Dispose()
     {
         // Restore original delay
-        BaseDatabaseToolCollection<SacksDataLayer.Data.SacksDbContext>.TestingModeDelaySeconds = _originalDelay;
+        BaseDatabaseToolCollection<Sacks.DataAccess.Data.SacksDbContext>.TestingModeDelaySeconds = _originalDelay;
     }
 
     [Fact]
@@ -92,8 +92,8 @@ public class CancellationTokenIntegrationTests : IClassFixture<DatabaseFixture>,
         var supplier = new TestSupplierBuilder().WithName("Test Supplier").Build();
         var product = new TestProductBuilder().WithName("Test Product").WithEan("1111111111111").Build();
         await _fixture.SeedTestDataAsync(
-            products: new List<SacksDataLayer.Entities.Product> { product },
-            suppliers: new List<SacksDataLayer.Entities.Supplier> { supplier }
+            products: new List<Sacks.Core.Entities.Product> { product },
+            suppliers: new List<Sacks.Core.Entities.Supplier> { supplier }
         );
         
         // Add offer after seeding to get proper IDs
@@ -101,7 +101,7 @@ public class CancellationTokenIntegrationTests : IClassFixture<DatabaseFixture>,
             .WithSupplierId(supplier.Id)
             .WithDescription("Test Offer")
             .Build();
-        await _fixture.SeedTestDataAsync(offers: new List<SacksDataLayer.Entities.Offer> { offer });
+        await _fixture.SeedTestDataAsync(offers: new List<Sacks.Core.Entities.Offer> { offer });
 
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromMilliseconds(500));
@@ -117,13 +117,13 @@ public class CancellationTokenIntegrationTests : IClassFixture<DatabaseFixture>,
         // Arrange
         await _fixture.ClearDatabaseAsync();
         var supplier = new TestSupplierBuilder().WithName("Test Supplier").Build();
-        await _fixture.SeedTestDataAsync(suppliers: new List<SacksDataLayer.Entities.Supplier> { supplier });
+        await _fixture.SeedTestDataAsync(suppliers: new List<Sacks.Core.Entities.Supplier> { supplier });
         
         var offer = new TestOfferBuilder()
             .WithSupplierId(supplier.Id)
             .WithDescription("Test Offer")
             .Build();
-        await _fixture.SeedTestDataAsync(offers: new List<SacksDataLayer.Entities.Offer> { offer });
+        await _fixture.SeedTestDataAsync(offers: new List<Sacks.Core.Entities.Offer> { offer });
 
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromMilliseconds(500));
@@ -179,7 +179,7 @@ public class CancellationTokenIntegrationTests : IClassFixture<DatabaseFixture>,
         // Arrange
         await _fixture.ClearDatabaseAsync();
         var supplier = new TestSupplierBuilder().WithName("Test Supplier").Build();
-        await _fixture.SeedTestDataAsync(suppliers: new List<SacksDataLayer.Entities.Supplier> { supplier });
+        await _fixture.SeedTestDataAsync(suppliers: new List<Sacks.Core.Entities.Supplier> { supplier });
 
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromMilliseconds(500));

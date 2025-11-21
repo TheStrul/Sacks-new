@@ -1,4 +1,4 @@
-﻿namespace SacksApp
+namespace SacksApp
 {
     using System;
     using System.Text;

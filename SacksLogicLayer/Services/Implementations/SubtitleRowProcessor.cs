@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 using Microsoft.Extensions.Logging;
 
-using SacksDataLayer.FileProcessing.Configuration;
+using Sacks.Core.FileProcessing.Configuration;
 
 namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services
 {

@@ -7,8 +7,7 @@ using Castle.Core.Resource;
 using DocumentFormat.OpenXml.Bibliography;
 using DocumentFormat.OpenXml.Spreadsheet;
 
-using SacksDataLayer.Entities;
-using SacksDataLayer.Tests;
+using Sacks.Core.Entities;
 
 using Xunit;
 

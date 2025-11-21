@@ -1,4 +1,4 @@
-﻿namespace SacksDataLayer.FileProcessing.Configuration
+namespace Sacks.Core.FileProcessing.Configuration
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;

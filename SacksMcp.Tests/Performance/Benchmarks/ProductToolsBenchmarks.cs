@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using SacksMcp.Tests.Helpers;
 using SacksMcp.Tools;
-using SacksDataLayer.Data;
+using Sacks.DataAccess.Data;
 
 namespace SacksMcp.Tests.Performance.Benchmarks;
 

@@ -2,15 +2,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data;
 
-using SacksDataLayer.Data;
-using SacksDataLayer.Entities;
-using SacksDataLayer.FileProcessing.Configuration;
-using SacksDataLayer.FileProcessing.Models;
-using SacksDataLayer.Services.Interfaces;
-
+using Sacks.DataAccess.Data;
+using Sacks.Core.Entities;
+using Sacks.Core.FileProcessing.Configuration;
+using Sacks.Core.FileProcessing.Models;
 using SacksLogicLayer.Services.Interfaces;
 
-namespace SacksDataLayer.Services.Implementations
+namespace SacksLogicLayer.Services.Implementations
 {
     /// <summary>
     /// Service implementation for database operations during file processing

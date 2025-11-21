@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 
-namespace SacksDataLayer.Entities
+namespace Sacks.Core.Entities
 {
     /// <summary>
     /// Product entity with support for unlimited dynamic properties

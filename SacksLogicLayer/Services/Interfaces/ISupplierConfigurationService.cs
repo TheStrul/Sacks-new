@@ -1,6 +1,6 @@
 namespace SacksLogicLayer.Services.Interfaces
 {
-    using SacksDataLayer.FileProcessing.Configuration;
+    using Sacks.Core.FileProcessing.Configuration;
 
     /// <summary>
     /// Service interface for supplier configuration management

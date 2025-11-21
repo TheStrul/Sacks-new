@@ -2,7 +2,7 @@ using System.Data;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using SacksDataLayer.Data;
+using Sacks.DataAccess.Data;
 using SacksLogicLayer.Services.Interfaces;
 
 namespace SacksLogicLayer.Services.Implementations;
@@ -282,7 +282,7 @@ public sealed class OfferProductDataService : IOfferProductDataService
                string.Equals(columnName, "EAN", StringComparison.OrdinalIgnoreCase);
     }
 
-    private bool ApplyChange(SacksDataLayer.Entities.ProductOffer offerProduct, string columnName, string newValue)
+    private bool ApplyChange(Sacks.Core.Entities.ProductOffer offerProduct, string columnName, string newValue)
     {
         try
         {

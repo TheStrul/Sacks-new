@@ -1,11 +1,11 @@
-﻿namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing
+namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing
 {
     using System.Threading.Tasks;
     using System.IO;
     using System.Text;
     using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
     using Microsoft.Extensions.Logging;
-    using SacksDataLayer.FileProcessing.Configuration;
+    using Sacks.Core.FileProcessing.Configuration;
     using ExcelDataReader;
 
     public class FileDataReader : IFileDataReader

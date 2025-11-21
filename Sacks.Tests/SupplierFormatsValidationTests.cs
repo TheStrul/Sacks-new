@@ -108,7 +108,7 @@ namespace Sacks.Tests.Configuration
 
             if (samplePath == null)
             {
-                // sample file not available — assert config columns are syntactically valid but skip file checks
+                // sample file not available ï¿½ assert config columns are syntactically valid but skip file checks
                 Assert.NotEmpty(columns);
                 return;
             }

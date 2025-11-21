@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
 
-namespace SacksDataLayer.Entities;
+namespace Sacks.Core.Entities;
 
 /// <summary>
 /// Represents a supplier's offer/catalog (like a price list or promotion)

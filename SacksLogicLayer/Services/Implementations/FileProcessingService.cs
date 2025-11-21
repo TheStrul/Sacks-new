@@ -1,13 +1,12 @@
-﻿using SacksLogicLayer.Services.Interfaces;
+using SacksLogicLayer.Services.Interfaces;
 using SacksLogicLayer.Extensions;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
-using SacksDataLayer.Services.Interfaces;
-using SacksDataLayer.FileProcessing.Models;
+using Sacks.Core.FileProcessing.Models;
 using Microsoft.Extensions.Logging;
-using SacksDataLayer.Configuration;
-using SacksDataLayer.FileProcessing.Configuration;
+using Sacks.Core.Configuration;
+using Sacks.Core.FileProcessing.Configuration;
 using System.ComponentModel.DataAnnotations;
 
 namespace SacksLogicLayer.Services.Implementations

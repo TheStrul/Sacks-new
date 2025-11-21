@@ -5,7 +5,7 @@ using ModelContextProtocol.Server;
 using McpServer.Core.Configuration;
 using McpServer.Database.Configuration;
 using Sacks.Configuration;
-using SacksDataLayer.Data;
+using Sacks.DataAccess.Data;
 
 namespace SacksMcp.Configuration;
 

@@ -1,4 +1,4 @@
-namespace SacksDataLayer.Entities;
+namespace Sacks.Core.Entities;
 
 /// <summary>
 /// Base class for auxiliary/junction entities that are not standalone business entities

@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace SacksDataLayer.Configuration
+namespace Sacks.Core.Configuration
 {
     /// <summary>
     /// Configuration settings for external configuration path(s).

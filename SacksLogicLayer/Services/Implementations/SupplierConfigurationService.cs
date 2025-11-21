@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-using SacksDataLayer.FileProcessing.Configuration;
+using Sacks.Core.FileProcessing.Configuration;
 
 using SacksLogicLayer.Services.Interfaces;
 

@@ -1,9 +1,9 @@
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 
-using SacksDataLayer.Entities;
-using SacksDataLayer.FileProcessing.Configuration;
+using Sacks.Core.Entities;
+using Sacks.Core.FileProcessing.Configuration;
 
-namespace SacksDataLayer.FileProcessing.Models
+namespace Sacks.Core.FileProcessing.Models
 {
 
     /// <summary>

@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
-using SacksDataLayer.Data;
+using Sacks.DataAccess.Data;
 using System;
 using System.IO;
 
-namespace SacksDataLayer.Tests;
+namespace Sacks.Tests;
 
 /// <summary>
 /// Base class for all tests providing common setup and utilities.

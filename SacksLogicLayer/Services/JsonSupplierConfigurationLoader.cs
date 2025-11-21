@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using SacksDataLayer.FileProcessing.Configuration;
+using Sacks.Core.FileProcessing.Configuration;
 
 namespace SacksLogicLayer.Services
 {

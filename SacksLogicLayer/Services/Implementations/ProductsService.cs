@@ -1,9 +1,9 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
 
-using SacksDataLayer.Entities;
-using SacksDataLayer.Repositories.Interfaces;
+using Sacks.Core.Entities;
+using Sacks.DataAccess.Repositories.Interfaces;
 using SacksLogicLayer.Services.Interfaces;
 
 namespace SacksLogicLayer.Services.Implementations

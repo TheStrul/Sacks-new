@@ -1,6 +1,6 @@
 namespace SacksLogicLayer.Services.Interfaces
 {
-    using SacksDataLayer.Entities;
+    using Sacks.Core.Entities;
 
     /// <summary>
     /// Service interface for managing products with comprehensive business logic

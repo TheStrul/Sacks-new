@@ -1,4 +1,4 @@
-﻿namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing
+namespace SacksAIPlatform.InfrastructuresLayer.FileProcessing
 {
     using System.Collections.Generic;
 

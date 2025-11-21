@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
 using ParsingEngine;
-using SacksDataLayer.Entities;
-using SacksDataLayer.FileProcessing.Configuration;
-using SacksDataLayer.FileProcessing.Interfaces;
-using SacksDataLayer.FileProcessing.Models;
+using Sacks.Core.Entities;
+using Sacks.Core.FileProcessing.Configuration;
+using Sacks.Core.FileProcessing.Interfaces;
+using Sacks.Core.FileProcessing.Models;
 
-namespace SacksDataLayer.Configuration;
+namespace Sacks.Core.Configuration;
 
 /// <summary>
 /// Rule-based offer normalizer using ParsingEngine for data extraction

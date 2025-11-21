@@ -2,7 +2,7 @@ using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SacksLogicLayer.Services.Interfaces;
-using SacksDataLayer.FileProcessing.Configuration;
+using Sacks.Core.FileProcessing.Configuration;
 
 namespace SacksApp
 {

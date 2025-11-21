@@ -1,6 +1,6 @@
-namespace SacksDataLayer.Services.Interfaces
+namespace SacksLogicLayer.Services.Interfaces
 {
-    using SacksDataLayer.Entities;
+    using Sacks.Core.Entities;
 
     /// <summary>
     /// Service interface for managing supplier offers

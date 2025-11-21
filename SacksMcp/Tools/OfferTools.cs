@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using McpServer.Database.Tools;
-using SacksDataLayer.Data;
-using SacksDataLayer.Entities;
+using Sacks.DataAccess.Data;
+using Sacks.Core.Entities;
 
 namespace SacksMcp.Tools;
 

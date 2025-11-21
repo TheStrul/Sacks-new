@@ -1,12 +1,12 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 using Microsoft.Extensions.Logging;
 
-using SacksDataLayer.Entities;
-using SacksDataLayer.Repositories.Interfaces;
-using SacksDataLayer.Services.Interfaces;
+using Sacks.Core.Entities;
+using Sacks.DataAccess.Repositories.Interfaces;
+using SacksLogicLayer.Services.Interfaces;
 
-namespace SacksDataLayer.Services.Implementations
+namespace SacksLogicLayer.Services.Implementations
 {
     /// <summary>
     /// Service implementation for managing offer-product relationships

@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 using ParsingEngine;
 
-namespace SacksDataLayer.FileProcessing.Configuration
+namespace Sacks.Core.FileProcessing.Configuration
 {
     /// <summary>
     /// Custom converter that handles both legacy (flat dictionary) and new (LookupEntry array) formats

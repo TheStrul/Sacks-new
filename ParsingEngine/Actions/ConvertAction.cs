@@ -129,7 +129,7 @@ public sealed class ConvertAction : BaseAction
             (6.7, 200)
         };
 
-        const double tol = 0.06; // ~ ±0.06 oz tolerance (~1.77 ml)
+        const double tol = 0.06; // ~ ï¿½0.06 oz tolerance (~1.77 ml)
         foreach (var p in pairs)
         {
             if (Math.Abs(oz - p.oz) <= tol)

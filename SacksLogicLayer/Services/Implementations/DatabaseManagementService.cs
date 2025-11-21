@@ -1,7 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
-using SacksDataLayer.Data;
-using SacksDataLayer.Repositories.Interfaces;
+using Sacks.DataAccess.Data;
+using Sacks.DataAccess.Repositories.Interfaces;
 using SacksLogicLayer.Services.Interfaces;
 
 using System.Diagnostics;
