@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
@@ -20,26 +19,31 @@ public static class SacksMcpServiceExtensions
     /// Adds all SacksMcp services including MCP server, database context, and configuration.
     /// </summary>
     /// <param name="services">The service collection to add services to.</param>
-    /// <param name="configuration">The configuration instance to read settings from.</param>
+    /// <param name="config">The centralized configuration singleton.</param>
     /// <param name="configureLogging">Optional action to configure logging (e.g., for stderr in console apps).</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddSacksMcpServices(
         this IServiceCollection services,
-        IConfiguration configuration,
+        SacksConfigurationOptions config,
         Action<ILoggingBuilder>? configureLogging = null)
     {
         ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(config);
+
+        // Register configuration singletons
+        services.AddSingleton(config);
+        services.AddSingleton(config.Database);
+        services.AddSingleton(config.McpServer);
 
         // Configure MCP server with tools from this assembly
         services.AddMcpServer()
             .WithStdioServerTransport()
             .WithToolsFromAssembly(typeof(SacksMcpServiceExtensions).Assembly);
 
-        // Configure SacksDbContext with options from centralized configuration
+        // Configure SacksDbContext with options from config singleton
         services.AddDbContext<SacksDbContext>(options =>
         {
-            var dbOptions = configuration.GetOptions<Sacks.Configuration.DatabaseOptions>("Sacks:Database");
+            var dbOptions = config.Database;
             
             options.UseSqlServer(dbOptions.ConnectionString, sqlOptions =>
             {
@@ -61,27 +65,25 @@ public static class SacksMcpServiceExtensions
             }
         });
 
-        // Configure MCP server extended options from centralized configuration
-        var mcpServerOptions = configuration.GetOptions<Sacks.Configuration.McpServerOptions>("Sacks:McpServer");
+        // Configure MCP server extended options from config singleton
         services.Configure<McpServerExtendedOptions>(options =>
         {
-            options.ServerName = mcpServerOptions.ServerName;
-            options.Version = mcpServerOptions.Version;
-            options.MaxConcurrentTools = mcpServerOptions.MaxConcurrentTools;
-            options.ToolTimeoutSeconds = mcpServerOptions.ToolTimeoutSeconds;
-            options.EnableDetailedLogging = mcpServerOptions.EnableDetailedLogging;
+            options.ServerName = config.McpServer.ServerName;
+            options.Version = config.McpServer.Version;
+            options.MaxConcurrentTools = config.McpServer.MaxConcurrentTools;
+            options.ToolTimeoutSeconds = config.McpServer.ToolTimeoutSeconds;
+            options.EnableDetailedLogging = config.McpServer.EnableDetailedLogging;
         });
 
         // Map centralized database options to McpServer.Database.Configuration.DatabaseOptions
-        var sacksDbOptions = configuration.GetOptions<Sacks.Configuration.DatabaseOptions>("Sacks:Database");
         services.Configure<McpServer.Database.Configuration.DatabaseOptions>(options =>
         {
-            options.ConnectionString = sacksDbOptions.ConnectionString;
-            options.Provider = sacksDbOptions.Provider;
-            options.CommandTimeout = sacksDbOptions.CommandTimeout;
-            options.EnableSensitiveDataLogging = sacksDbOptions.EnableSensitiveDataLogging;
-            options.EnableDetailedErrors = sacksDbOptions.EnableDetailedErrors;
-            options.MaxRetryAttempts = sacksDbOptions.MaxRetryCount;
+            options.ConnectionString = config.Database.ConnectionString;
+            options.Provider = config.Database.Provider;
+            options.CommandTimeout = config.Database.CommandTimeout;
+            options.EnableSensitiveDataLogging = config.Database.EnableSensitiveDataLogging;
+            options.EnableDetailedErrors = config.Database.EnableDetailedErrors;
+            options.MaxRetryAttempts = config.Database.MaxRetryCount;
         });
 
         // Apply custom logging configuration if provided

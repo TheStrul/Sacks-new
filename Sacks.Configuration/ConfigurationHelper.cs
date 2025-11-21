@@ -1,112 +1,138 @@
-using Microsoft.Extensions.Configuration;
+using System.Text.Json;
 
 namespace Sacks.Configuration;
 
 /// <summary>
-/// Helper class for building configuration from the centralized appsettings.json.
+/// Simple configuration loader that directly deserializes sacks-config.json into SacksConfigurationOptions.
+/// No Microsoft.Extensions.Configuration complexity - just pure JSON to object.
 /// </summary>
-public static class ConfigurationHelper
+public static class ConfigurationLoader
 {
-    /// <summary>
-    /// Builds an IConfiguration instance from appsettings.json.
-    /// Search order:
-    /// 1. Current app directory (production deployment)
-    /// 2. Solution root (development environment)
-    /// 3. Explicit path if provided
-    /// </summary>
-    /// <param name="solutionRootPath">Optional explicit path to config root. If null, will auto-discover.</param>
-    /// <param name="environmentName">Optional environment name (Development, Production, etc.) for environment-specific config files.</param>
-    /// <returns>A configured IConfiguration instance.</returns>
-    public static IConfiguration BuildConfiguration(string? solutionRootPath = null, string? environmentName = null)
+    private const string ConfigFileName = "sacks-config.json";
+    
+    private static SacksConfigurationOptions? _instance;
+    private static readonly object _lock = new();
+    
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        var configRoot = solutionRootPath ?? FindConfigurationRoot();
-        
-        var builder = new ConfigurationBuilder()
-            .SetBasePath(configRoot)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+        PropertyNameCaseInsensitive = true,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true
+    };
 
-        // Add environment-specific configuration if specified
-        if (!string.IsNullOrWhiteSpace(environmentName))
+    /// <summary>
+    /// Gets the singleton configuration instance.
+    /// Loads from sacks-config.json on first access.
+    /// </summary>
+    public static SacksConfigurationOptions Instance
+    {
+        get
         {
-            builder.AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: true);
+            if (_instance == null)
+            {
+                lock (_lock)
+                {
+                    _instance ??= Load();
+                }
+            }
+            return _instance;
         }
-
-        // Add environment variables with SACKS_ prefix
-        builder.AddEnvironmentVariables(prefix: "SACKS_");
-
-        return builder.Build();
     }
 
     /// <summary>
-    /// Finds the configuration root directory using a multi-strategy approach.
-    /// Strategy 1: Check app's own directory (production deployment)
-    /// Strategy 2: Search upward for solution root (development environment)
+    /// Loads configuration from sacks-config.json.
+    /// Search order:
+    /// 1. Current app directory (production deployment - file copied by MSBuild)
+    /// 2. Solution root (development environment fallback)
     /// </summary>
-    /// <returns>The configuration root directory path.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if no valid configuration location is found.</exception>
-    public static string FindConfigurationRoot()
+    public static SacksConfigurationOptions Load(string? explicitPath = null)
     {
-        var appDirectory = AppContext.BaseDirectory;
+        var configPath = explicitPath ?? FindConfigFile();
 
-        // Strategy 1: Check if appsettings.json exists in the app's own directory (production)
-        if (File.Exists(Path.Combine(appDirectory, "appsettings.json")))
-        {
-            return appDirectory;
-        }
-
-        // Strategy 2: Try to find solution root (development)
         try
         {
-            return FindSolutionRoot();
+            var json = File.ReadAllText(configPath);
+            var options = JsonSerializer.Deserialize<SacksConfigurationOptions>(json, JsonOptions);
+
+            if (options == null)
+            {
+                throw new InvalidOperationException($"Failed to deserialize configuration from {configPath}");
+            }
+
+            return options;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException(
+                $"Failed to load configuration from {configPath}. Ensure sacks-config.json is valid JSON.", ex);
+        }
+    }
+
+    /// <summary>
+    /// Finds the sacks-config.json file.
+    /// Checks app directory first (production), then solution root (development).
+    /// </summary>
+    private static string FindConfigFile()
+    {
+        var appDirectory = AppContext.BaseDirectory;
+        var appConfigPath = Path.Combine(appDirectory, ConfigFileName);
+
+        // Strategy 1: App directory (production - file auto-copied by MSBuild)
+        if (File.Exists(appConfigPath))
+        {
+            return appConfigPath;
+        }
+
+        // Strategy 2: Solution root (development fallback)
+        try
+        {
+            var solutionRoot = FindSolutionRoot();
+            var solutionConfigPath = Path.Combine(solutionRoot, "Sacks.Configuration", ConfigFileName);
+            if (File.Exists(solutionConfigPath))
+            {
+                return solutionConfigPath;
+            }
         }
         catch
         {
-            // Solution root not found - this is expected in production
+            // Solution root not found - expected in production
         }
 
-        // If we get here, no config found anywhere
-        throw new InvalidOperationException(
-            $"Could not find appsettings.json. Searched in:\n" +
+        throw new FileNotFoundException(
+            $"Could not find {ConfigFileName}. Searched:\n" +
             $"1. Application directory: {appDirectory}\n" +
-            $"2. Solution root (not found - this is normal in production)\n\n" +
-            $"Ensure appsettings.json is deployed with your application.");
+            $"2. Solution root Sacks.Configuration folder (development only)\n\n" +
+            $"Ensure {ConfigFileName} is deployed with your application.");
     }
 
     /// <summary>
     /// Finds the solution root by searching upward for a .sln file.
-    /// This is primarily used during development.
+    /// Used only during development.
     /// </summary>
-    /// <returns>The solution root directory path.</returns>
-    /// <exception cref="InvalidOperationException">Thrown if solution root cannot be found.</exception>
-    public static string FindSolutionRoot()
+    private static string FindSolutionRoot()
     {
         var currentDirectory = new DirectoryInfo(AppContext.BaseDirectory);
 
         while (currentDirectory != null)
         {
-            var solutionFile = currentDirectory.GetFiles("*.sln").FirstOrDefault();
-            if (solutionFile != null)
+            if (currentDirectory.GetFiles("*.sln").Any())
             {
                 return currentDirectory.FullName;
             }
             currentDirectory = currentDirectory.Parent;
         }
 
-        throw new InvalidOperationException(
-            $"Could not find solution root (.sln file) starting from {AppContext.BaseDirectory}. " +
-            "This is expected in production deployments.");
+        throw new DirectoryNotFoundException("Solution root not found (expected in production)");
     }
 
     /// <summary>
-    /// Gets strongly-typed configuration options.
+    /// Resets the singleton instance. Useful for testing.
     /// </summary>
-    public static T GetOptions<T>(this IConfiguration configuration, string sectionName) where T : new()
+    public static void Reset()
     {
-        ArgumentNullException.ThrowIfNull(configuration);
-        ArgumentException.ThrowIfNullOrWhiteSpace(sectionName);
-        
-        var options = new T();
-        configuration.GetSection(sectionName).Bind(options);
-        return options;
+        lock (_lock)
+        {
+            _instance = null;
+        }
     }
 }

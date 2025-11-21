@@ -1,0 +1,49 @@
+{
+  "Database": {
+    "ConnectionString": "Server=(localdb)\\mssqllocaldb;Database=SacksProductsDb;Trusted_Connection=true;TrustServerCertificate=true;",
+    "Provider": "SqlServer",
+    "CommandTimeout": 30,
+    "RetryOnFailure": true,
+    "MaxRetryCount": 3,
+    "EnableSensitiveDataLogging": false,
+    "EnableDetailedErrors": false
+  },
+  "FileProcessing": {
+    "InputDirectory": "Inputs",
+    "OutputDirectory": "../Outputs",
+    "ArchiveDirectory": "../Archive",
+    "MaxFileSizeBytes": 104857600,
+    "SupportedExtensions": [ ".xlsx", ".xls", ".csv" ]
+  },
+  "OpenBeautyFacts": {
+    "InputDirectory": "AllInputs/db",
+    "BatchSize": 100,
+    "EnableProgressLogging": true,
+    "SupportedFileExtensions": [ ".jsonl" ],
+    "MaxFileSizeBytes": 524288000
+  },
+  "Logging": {
+    "DeleteLogFilesOnStartup": true,
+    "LogFilePaths": [ "logs" ]
+  },
+  "McpServer": {
+    "ServerName": "SacksMcp",
+    "Version": "1.0.0",
+    "MaxConcurrentTools": 10,
+    "ToolTimeoutSeconds": 30,
+    "EnableDetailedLogging": false
+  },
+  "McpClient": {
+    "ServerExecutablePath": "dotnet",
+    "ServerArguments": "run --project SacksMcp.Console/SacksMcp.Console.csproj",
+    "ServerWorkingDirectory": null,
+    "ToolTimeoutSeconds": 30
+  },
+  "ConfigurationFiles": {
+    "ConfigurationFolder": "Configuration",
+    "MainFileName": "supplier-formats.json"
+  },
+  "UI": {
+    "RestoreWindowPositions": true
+  }
+}

@@ -1,18 +1,18 @@
 namespace SacksLogicLayer.Services
 {
-    using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.Logging;
     using System.Text.Json;
     using SacksDataLayer.FileProcessing.Configuration;
     using SacksDataLayer.Configuration;
     using System.Threading.Tasks;
+    using Sacks.Configuration;
 
     /// <summary>
     /// Manages loading and updating supplier configurations from JSON files
     /// /// </summary>
     public class SupplierConfigurationManager
     {
-        private IConfiguration _configuration;
+        private readonly ConfigurationFilesOptions _configOptions;
         private SuppliersConfiguration? _suppliersConfiguration = null;
         private readonly ILogger<SupplierConfigurationManager> _logger;
         private readonly JsonSupplierConfigurationLoader loader;
@@ -30,15 +30,13 @@ namespace SacksLogicLayer.Services
         /// <summary>
         /// Creates a new instance using JsonSupplierConfigurationLoader to build SuppliersConfiguration
         /// /// </summary>
-        public SupplierConfigurationManager(IConfiguration configuration, ILogger<SupplierConfigurationManager> logger)
+        public SupplierConfigurationManager(ConfigurationFilesOptions configOptions, ILogger<SupplierConfigurationManager> logger)
         {
-            ArgumentNullException.ThrowIfNull(configuration);
-
+            ArgumentNullException.ThrowIfNull(configOptions);
             ArgumentNullException.ThrowIfNull(logger);
 
             _logger = logger;
-            _configuration = configuration;
-
+            _configOptions = configOptions;
 
             loader = new JsonSupplierConfigurationLoader(_logger);
 
@@ -126,15 +124,9 @@ namespace SacksLogicLayer.Services
             {
                 return;
             }
-            // Read configuration files paths from appsettings
-            var configFiles = _configuration.GetSection("ConfigurationFiles").Get<ConfigurationFileSettings>();
-            if (configFiles == null)
-            {
-                throw new InvalidOperationException("ConfigurationFiles section missing in appsettings.json");
-            }
 
             var baseFolder = AppContext.BaseDirectory;
-            string fileNmae = Path.Combine(configFiles.ConfigurationFolder, configFiles.MainFileName);
+            string fileNmae = Path.Combine(_configOptions.ConfigurationFolder, _configOptions.MainFileName);
             string? foundPath = null;
 
             // climb a few levels to locate the configuration folder
@@ -154,7 +146,7 @@ namespace SacksLogicLayer.Services
 
             if (foundPath == null)
             {
-                throw new FileNotFoundException($"Could not locate configuration folder '{configFiles.ConfigurationFolder}' with required main file '{configFiles.MainFileName}' starting from '{baseFolder}'");
+                throw new FileNotFoundException($"Could not locate configuration folder '{_configOptions.ConfigurationFolder}' with required main file '{_configOptions.MainFileName}' starting from '{baseFolder}'");
             }
 
             // Load configuration from loader (supports file or directory)

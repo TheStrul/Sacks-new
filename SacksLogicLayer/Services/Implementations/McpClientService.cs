@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Sacks.Configuration;
 using SacksLogicLayer.Services.Interfaces;
 
 namespace SacksLogicLayer.Services.Implementations;
@@ -551,32 +552,4 @@ public class McpClientService : IMcpClientService, IDisposable
             _logger.LogDebug(ex, "Error during disposal");
         }
     }
-}
-
-/// <summary>
-/// Configuration options for the MCP client.
-/// </summary>
-public class McpClientOptions
-{
-    public const string SectionName = "McpClient";
-
-    /// <summary>
-    /// Path to the MCP server executable (SacksMcp.exe or dotnet run).
-    /// </summary>
-    public string ServerExecutablePath { get; set; } = "dotnet";
-
-    /// <summary>
-    /// Arguments to pass to the server executable.
-    /// </summary>
-    public string ServerArguments { get; set; } = "run --project ../SacksMcp/SacksMcp.csproj";
-
-    /// <summary>
-    /// Working directory for the server process.
-    /// </summary>
-    public string? ServerWorkingDirectory { get; set; }
-
-    /// <summary>
-    /// Timeout for tool execution in seconds.
-    /// </summary>
-    public int ToolTimeoutSeconds { get; set; } = 30;
 }

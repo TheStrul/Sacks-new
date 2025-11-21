@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sacks.Configuration;
 
@@ -14,23 +13,15 @@ public static class SacksLogicLayerServiceExtensions
     /// </summary>
     public static IServiceCollection AddSacksLogicLayerServices(
         this IServiceCollection services,
-        IConfiguration configuration)
+        McpClientOptions mcpClientOptions)
     {
         ArgumentNullException.ThrowIfNull(services);
-        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(mcpClientOptions);
 
-        // Map centralized McpClient options to the legacy McpClientOptions
-        var mcpClientConfig = configuration.GetOptions<McpClientOptions>("Sacks:McpClient");
-        
-        services.Configure<Implementations.McpClientOptions>(options =>
-        {
-            options.ServerExecutablePath = mcpClientConfig.ServerExecutablePath;
-            options.ServerArguments = mcpClientConfig.ServerArguments;
-            options.ServerWorkingDirectory = mcpClientConfig.ServerWorkingDirectory;
-            options.ToolTimeoutSeconds = mcpClientConfig.ToolTimeoutSeconds;
-        });
+        // Register McpClient options singleton
+        services.AddSingleton(mcpClientOptions);
 
-        // Register other logic layer services here as needed
+        // Register logic layer services
         services.AddScoped<Interfaces.IMcpClientService, Implementations.McpClientService>();
 
         return services;

@@ -15,6 +15,7 @@ using SacksLogicLayer.Services.Implementations;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
 using SacksLogicLayer.Services;
 using System.Runtime.CompilerServices;
+using Sacks.Configuration;
 
 [assembly: InternalsVisibleTo("Sacks.Tests")]
 
@@ -93,18 +94,27 @@ namespace SacksApp
         {
             try
             {
-                // Initialize configuration and services
-                var configuration = BuildConfiguration();
+                // Load centralized configuration singleton
+                var config = ConfigurationLoader.Instance;
                 
                 // Handle log file cleanup before initializing Serilog
-                HandleLogFileCleanup(configuration);
+                HandleLogFileCleanup(config.Logging);
                 
-                var services = ConfigureServices(configuration);
+                var services = ConfigureServices(config);
                 _serviceProvider = services.BuildServiceProvider();
 
-                // Initialize Serilog
+                // Initialize Serilog with simple file sink
                 Log.Logger = new LoggerConfiguration()
-                    .ReadFrom.Configuration(configuration)
+                    .MinimumLevel.Information()
+                    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+                    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
+                    .WriteTo.File("logs/sacks-.log",
+                        rollingInterval: RollingInterval.Day,
+                        rollOnFileSizeLimit: true,
+                        fileSizeLimitBytes: 10485760,
+                        retainedFileCountLimit: 10,
+                        outputTemplate: "[{Timestamp:HH:mm:ss.fff} {Level:u3}]: {Message:lj}{NewLine}{Exception}")
+                    .Enrich.FromLogContext()
                     .CreateLogger();
 
                 Log.Information("🚀 Sacks Product Management System starting up...");
@@ -148,17 +158,15 @@ namespace SacksApp
         /// <summary>
         /// Handles log file cleanup based on configuration settings
         /// </summary>
-        private static void HandleLogFileCleanup(IConfiguration configuration)
+        private static void HandleLogFileCleanup(LoggingOptions loggingSettings)
         {
-            var loggingSettings = configuration.GetSection("LoggingSettings").Get<LoggingSettings>();
-            if (loggingSettings?.DeleteLogFilesOnStartup != true)
+            if (!loggingSettings.DeleteLogFilesOnStartup || loggingSettings.LogFilePaths.Length == 0)
             {
                 return;
             }
 
             try
             {
-                var solutionRoot = FindSolutionRoot();
                 var deletedCount = 0;
                 var errorCount = 0;
 
@@ -168,7 +176,7 @@ namespace SacksApp
 
                     var resolvedPath = Path.IsPathRooted(logPath) 
                         ? logPath 
-                        : Path.GetFullPath(Path.Combine(solutionRoot, logPath));
+                        : Path.GetFullPath(logPath);
 
                     if (!Directory.Exists(resolvedPath)) continue;
 
@@ -184,7 +192,6 @@ namespace SacksApp
                         catch (Exception ex)
                         {
                             errorCount++;
-                            // Can't use structured logging here as Serilog isn't initialized yet
                             Console.WriteLine($"Warning: Failed to delete log file {file}: {ex.Message}");
                         }
                     }
@@ -202,55 +209,18 @@ namespace SacksApp
             }
         }
 
-        /// <summary>
-        /// Finds the solution root directory by searching upward from the current executable location
-        /// </summary>
-        private static string FindSolutionRoot()
-        {
-            var currentDirectory = new DirectoryInfo(AppContext.BaseDirectory);
-
-            // Search upward for solution file (.sln)
-            while (currentDirectory != null)
-            {
-                var solutionFile = currentDirectory.GetFiles("*.sln").FirstOrDefault();
-                if (solutionFile != null)
-                {
-                    return currentDirectory.FullName;
-                }
-                currentDirectory = currentDirectory.Parent;
-            }
-
-            throw new DirectoryNotFoundException("Solution root directory not found - no .sln file found in directory hierarchy");
-        }
-
-        private static IConfiguration BuildConfiguration()
-        {
-            var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Development";
-            var basePath = AppContext.BaseDirectory;
-
-            // First, load the main appsettings.json
-            var configBuilder = new ConfigurationBuilder()
-                .AddJsonFile("Configuration/appsettings.json", optional: false, reloadOnChange: false)
-                .AddEnvironmentVariables();
-
-            // Build initial configuration to read the ConfigurationFiles section
-            var baseConfig = configBuilder.Build();
-            
-            return configBuilder.Build();
-        }
-
-        private static ServiceCollection ConfigureServices(IConfiguration configuration)
+        private static ServiceCollection ConfigureServices(SacksConfigurationOptions config)
         {
             var services = new ServiceCollection();
 
-            // Add configuration as singleton
-            services.AddSingleton<IConfiguration>(configuration);
-
-            // Add configuration options
-            services.Configure<DatabaseSettings>(configuration.GetSection("DatabaseSettings"));
-            services.Configure<ConfigurationFileSettings>(configuration.GetSection("ConfigurationFiles"));
-            services.Configure<LoggingSettings>(configuration.GetSection("LoggingSettings"));
-            services.Configure<McpClientOptions>(configuration.GetSection(McpClientOptions.SectionName));
+            // Register configuration singleton
+            services.AddSingleton(config);
+            services.AddSingleton(config.Database);
+            services.AddSingleton(config.FileProcessing);
+            services.AddSingleton(config.ConfigurationFiles);
+            services.AddSingleton(config.Logging);
+            services.AddSingleton(config.McpClient);
+            services.AddSingleton(config.UI);
 
             // Add Serilog logging
             services.AddLogging(builder =>
@@ -259,28 +229,22 @@ namespace SacksApp
                 builder.AddSerilog();
             });
 
-            // Get connection string from configuration
-            var connectionString = configuration.GetConnectionString("DefaultConnection");
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new InvalidOperationException("DefaultConnection string is not configured in Configuration/appsettings.json");
-            }
-
-            // Add DbContext with configuration-based connection string
+            // Get database options from config singleton
+            var dbOptions = config.Database;
+            
+            // Add DbContext with centralized configuration
             services.AddDbContext<SacksDbContext>(options =>
             {
-                var dbSettings = configuration.GetSection("DatabaseSettings").Get<DatabaseSettings>() ?? new DatabaseSettings();
-
-                options.UseSqlServer(connectionString, sqlOptions =>
+                options.UseSqlServer(dbOptions.ConnectionString, sqlOptions =>
                 {
-                    if (dbSettings.RetryOnFailure)
+                    if (dbOptions.RetryOnFailure)
                     {
-                        sqlOptions.EnableRetryOnFailure(dbSettings.MaxRetryCount);
+                        sqlOptions.EnableRetryOnFailure(dbOptions.MaxRetryCount);
                     }
-                    sqlOptions.CommandTimeout(dbSettings.CommandTimeout);
+                    sqlOptions.CommandTimeout(dbOptions.CommandTimeout);
                 });
 
-                if (dbSettings.EnableSensitiveDataLogging)
+                if (dbOptions.EnableSensitiveDataLogging)
                 {
                     options.EnableSensitiveDataLogging();
                 }
