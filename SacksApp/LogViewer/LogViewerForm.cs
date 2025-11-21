@@ -4,7 +4,7 @@
 
 using System.Text;
 using System.Reflection;
-using Microsoft.Extensions.Configuration;
+
 
 namespace QMobileDeviceServiceMenu
 {
@@ -758,8 +758,8 @@ namespace QMobileDeviceServiceMenu
                 // Restore persisted window location if available (controlled by configuration setting)
                 try
                 {
-                    var configuration = SacksApp.Utils.ConfigurationLoader.BuildConfiguration();
-                    var restore = configuration.GetValue<bool>("UISettings:RestoreWindowPositions", true);
+                    var config = Sacks.Configuration.ConfigurationLoader.Instance;
+                    var restore = config.UI.RestoreWindowPositions;
                     SacksApp.Utils.WindowStateHelper.RestoreWindowState(this, WindowStateFileName, restore);
                 }
                 catch

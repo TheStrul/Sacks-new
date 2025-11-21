@@ -1,6 +1,5 @@
 ﻿using System.Data;
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -52,8 +51,8 @@ namespace SacksApp
                 var fileProcessingService = _serviceProvider.GetRequiredService<IFileProcessingService>();
 
                 // Get input folder from configuration
-                var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
-                var inputsPath = GetInputDirectoryFromConfiguration(configuration);
+                var config = _serviceProvider.GetRequiredService<Sacks.Configuration.SacksConfigurationOptions>();
+                var inputsPath = GetInputDirectoryFromConfiguration(config.FileProcessing);
 
                 var files = Directory.GetFiles(inputsPath, "*.xls*")
                                    .Where(f => !Path.GetFileName(f).StartsWith("~"))
@@ -93,13 +92,13 @@ namespace SacksApp
         /// <summary>
         /// Gets input directory from configuration using proper path resolution
         /// </summary>
-        private string GetInputDirectoryFromConfiguration(IConfiguration configuration)
+        private string GetInputDirectoryFromConfiguration(Sacks.Configuration.FileProcessingOptions config)
         {
-            var configuredPath = configuration["FileProcessingSettings:InputDirectory"];
+            var configuredPath = config.InputDirectory;
 
             if (string.IsNullOrWhiteSpace(configuredPath))
             {
-                throw new InvalidOperationException("FileProcessingSettings:InputDirectory is not configured in appsettings.json");
+                throw new InvalidOperationException("FileProcessing:InputDirectory is not configured");
             }
 
             // Handle relative paths - resolve relative to solution root instead of bin directory
@@ -294,9 +293,9 @@ namespace SacksApp
         /// <summary>
         /// Gets products directory from configuration or uses default
         /// </summary>
-        private string GetProductsDirectoryFromConfiguration(IConfiguration configuration)
+        private string GetProductsDirectoryFromConfiguration(Sacks.Configuration.OpenBeautyFactsOptions config)
         {
-            var configuredPath = configuration["OpenBeautyFactsSettings:InputDirectory"];
+            var configuredPath = config.InputDirectory;
 
             // Default to AllInputs/db if not configured
             if (string.IsNullOrWhiteSpace(configuredPath))
