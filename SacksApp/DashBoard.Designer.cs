@@ -51,8 +51,6 @@ namespace SacksApp
             aiQueryTableLayout = new TableLayoutPanel();
             aiQueryLabel = new Label();
             aiQueryTextBox = new TextBox();
-            aiToolLabel = new Label();
-            aiToolsComboBox = new ComboBox();
             executeAiQueryButton = new CustomButton();
             aiResultsTextBox = new RichTextBox();
             tableLayoutPanel1.SuspendLayout();
@@ -295,15 +293,12 @@ namespace SacksApp
             aiQueryTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             aiQueryTableLayout.Controls.Add(aiQueryLabel, 0, 0);
             aiQueryTableLayout.Controls.Add(aiQueryTextBox, 1, 0);
-            aiQueryTableLayout.Controls.Add(aiToolLabel, 0, 1);
-            aiQueryTableLayout.Controls.Add(aiToolsComboBox, 1, 1);
-            aiQueryTableLayout.Controls.Add(executeAiQueryButton, 1, 2);
-            aiQueryTableLayout.Controls.Add(aiResultsTextBox, 0, 3);
+            aiQueryTableLayout.Controls.Add(executeAiQueryButton, 1, 1);
+            aiQueryTableLayout.Controls.Add(aiResultsTextBox, 0, 2);
             aiQueryTableLayout.Dock = DockStyle.Fill;
             aiQueryTableLayout.Location = new Point(12, 30);
             aiQueryTableLayout.Name = "aiQueryTableLayout";
-            aiQueryTableLayout.RowCount = 4;
-            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
+            aiQueryTableLayout.RowCount = 3;
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
@@ -330,28 +325,6 @@ namespace SacksApp
             aiQueryTextBox.PlaceholderText = "Enter your query here (e.g., Show all suppliers)";
             aiQueryTextBox.Size = new Size(707, 25);
             aiQueryTextBox.TabIndex = 1;
-            // 
-            // aiToolLabel
-            // 
-            aiToolLabel.Anchor = AnchorStyles.Left;
-            aiToolLabel.AutoSize = true;
-            aiToolLabel.Font = new Font("Segoe UI", 10F);
-            aiToolLabel.Location = new Point(3, 44);
-            aiToolLabel.Name = "aiToolLabel";
-            aiToolLabel.Size = new Size(37, 19);
-            aiToolLabel.TabIndex = 2;
-            aiToolLabel.Text = "Tool:";
-            // 
-            // aiToolsComboBox
-            // 
-            aiToolsComboBox.Dock = DockStyle.Fill;
-            aiToolsComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            aiToolsComboBox.Font = new Font("Segoe UI", 10F);
-            aiToolsComboBox.FormattingEnabled = true;
-            aiToolsComboBox.Location = new Point(123, 39);
-            aiToolsComboBox.Name = "aiToolsComboBox";
-            aiToolsComboBox.Size = new Size(707, 25);
-            aiToolsComboBox.TabIndex = 3;
             // 
             // executeAiQueryButton
             // 
@@ -424,8 +397,6 @@ namespace SacksApp
         private TableLayoutPanel aiQueryTableLayout;
         private Label aiQueryLabel;
         private TextBox aiQueryTextBox;
-        private Label aiToolLabel;
-        private ComboBox aiToolsComboBox;
         private CustomButton executeAiQueryButton;
         private RichTextBox aiResultsTextBox;
     }

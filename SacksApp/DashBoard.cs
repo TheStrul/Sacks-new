@@ -39,9 +39,6 @@ namespace SacksApp
             this._logger = serviceProvider.GetRequiredService<ILogger<DashBoard>>();
 
             // CustomButton styling is now handled directly in the designer - no need for ApplyModernTheme
-            
-            // Load available MCP tools asynchronously
-            _ = LoadAvailableToolsAsync();
         }
 
         private async void ProcessFilesButton_Click(object sender, EventArgs e)
@@ -348,57 +345,6 @@ namespace SacksApp
             }
         }
 
-        private async Task LoadAvailableToolsAsync()
-        {
-            try
-            {
-                var mcpClient = _serviceProvider.GetRequiredService<IMcpClientService>();
-                var tools = await mcpClient.ListToolsAsync(CancellationToken.None).ConfigureAwait(false);
-
-                // Update UI on UI thread
-                if (InvokeRequired)
-                {
-                    Invoke(() => PopulateToolsComboBox(tools));
-                }
-                else
-                {
-                    PopulateToolsComboBox(tools);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to load MCP tools. Server may not be available.");
-                if (InvokeRequired)
-                {
-                    Invoke(() =>
-                    {
-                        aiToolsComboBox.Items.Add("(MCP Server unavailable)");
-                        aiToolsComboBox.Enabled = false;
-                        executeAiQueryButton.Enabled = false;
-                    });
-                }
-                else
-                {
-                    aiToolsComboBox.Items.Add("(MCP Server unavailable)");
-                    aiToolsComboBox.Enabled = false;
-                    executeAiQueryButton.Enabled = false;
-                }
-            }
-        }
-
-        private void PopulateToolsComboBox(IReadOnlyList<ToolInfo> tools)
-        {
-            aiToolsComboBox.Items.Clear();
-            aiToolsComboBox.Items.Add("-- Select a tool --");
-
-            foreach (var tool in tools)
-            {
-                aiToolsComboBox.Items.Add($"{tool.Name} - {tool.Description}");
-            }
-
-            aiToolsComboBox.SelectedIndex = 0;
-        }
-
         private async void ExecuteAiQueryButton_Click(object sender, EventArgs e)
         {
             var query = aiQueryTextBox.Text.Trim();
@@ -416,17 +362,8 @@ namespace SacksApp
 
                 _logger.LogInformation("Processing query: {Query}", query);
 
-                // Check if user selected a specific tool or wants natural language routing
-                if (aiToolsComboBox.SelectedIndex <= 0)
-                {
-                    // Natural language mode - use LLM query routing
-                    await ProcessNaturalLanguageQueryAsync(query).ConfigureAwait(true);
-                }
-                else
-                {
-                    // Tool selection mode - use specific tool
-                    await ProcessToolSpecificQueryAsync(query).ConfigureAwait(true);
-                }
+                // Use natural language routing for all queries
+                await ProcessNaturalLanguageQueryAsync(query).ConfigureAwait(true);
 
                 _logger.LogInformation("Query processed successfully");
             }
@@ -503,62 +440,6 @@ namespace SacksApp
             {
                 aiResultsTextBox.Text = finalText;
             }
-        }
-
-        /// <summary>
-        /// Process query using a specific tool selected from the dropdown
-        /// </summary>
-        private async Task ProcessToolSpecificQueryAsync(string query)
-        {
-            var selectedTool = aiToolsComboBox.SelectedItem?.ToString() ?? string.Empty;
-            var toolName = selectedTool.Split(" - ")[0];
-
-            var mcpClient = _serviceProvider.GetRequiredService<IMcpClientService>();
-            
-            // Build parameters based on query text
-            var parameters = new Dictionary<string, object>();
-            if (!string.IsNullOrWhiteSpace(query))
-            {
-                parameters["query"] = query;
-            }
-
-            var result = await mcpClient.ExecuteToolAsync(toolName, parameters, CancellationToken.None).ConfigureAwait(false);
-
-            // Format and display result
-            var formattedResult = FormatResult(toolName, result);
-            if (InvokeRequired)
-            {
-                Invoke(() => aiResultsTextBox.Text = formattedResult);
-            }
-            else
-            {
-                aiResultsTextBox.Text = formattedResult;
-            }
-        }
-
-        private static string FormatResult(string toolName, string result)
-        {
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"✅ Tool: {toolName}");
-            sb.AppendLine($"⏱️  Executed at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-            sb.AppendLine();
-            sb.AppendLine("📊 Result:");
-            sb.AppendLine(new string('-', 80));
-            
-            // Try to format JSON nicely
-            try
-            {
-                var jsonDoc = System.Text.Json.JsonDocument.Parse(result);
-                var formatted = System.Text.Json.JsonSerializer.Serialize(jsonDoc, s_jsonFormatOptions);
-                sb.AppendLine(formatted);
-            }
-            catch
-            {
-                // Not JSON or parsing failed, just show raw result
-                sb.AppendLine(result);
-            }
-            
-            return sb.ToString();
         }
     }
 }
