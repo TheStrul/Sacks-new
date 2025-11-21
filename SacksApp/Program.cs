@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Sacks.Core.Configuration;
 using Sacks.DataAccess.Data;
-using Sacks.DataAccess.Repositories.Interfaces;
+using Sacks.Core.Repositories.Interfaces;
 using Sacks.DataAccess.Repositories.Implementations;
 using Microsoft.EntityFrameworkCore;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
