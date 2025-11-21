@@ -1,52 +1,54 @@
 ﻿using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-
-using SacksDataLayer.Configuration;
+using Sacks.Configuration;
 using SacksDataLayer.Data;
-
 using SacksLogicLayer.Services.Interfaces;
 
 namespace SacksLogicLayer.Services.Implementations
 {
     /// <summary>
-    /// Implementation of database connection service with proper error handling and logging
+    /// Implementation of database connection service with proper error handling and logging.
+    /// Uses centralized configuration and EF Core context.
     /// </summary>
     public class DatabaseConnectionService : IDatabaseConnectionService
     {
-        private readonly IConfiguration _configuration;
         private readonly ILogger<DatabaseConnectionService> _logger;
-        private readonly DatabaseSettings _databaseSettings;
+        private readonly DatabaseOptions _databaseOptions;
         private readonly SacksDbContext _context;
 
         public DatabaseConnectionService(
-            IConfiguration configuration,
             ILogger<DatabaseConnectionService> logger,
-            IOptions<DatabaseSettings> databaseSettings,
+            DatabaseOptions databaseOptions,
             SacksDbContext context)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _databaseSettings = databaseSettings?.Value ?? throw new ArgumentNullException(nameof(databaseSettings));
+            _databaseOptions = databaseOptions ?? throw new ArgumentNullException(nameof(databaseOptions));
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         public string GetConnectionString()
         {
-            var connectionString = _configuration.GetConnectionString("DefaultConnection");
+            // Get connection string from EF Core context (already configured)
+            var connectionString = _context.Database.GetConnectionString();
             
             if (string.IsNullOrWhiteSpace(connectionString))
             {
-                throw new InvalidOperationException("DefaultConnection connection string is not configured.");
+                // Fallback to centralized config
+                connectionString = _databaseOptions.ConnectionString;
+            }
+
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException("Database connection string is not configured.");
             }
 
             return connectionString;
         }
 
-        public DatabaseSettings GetDatabaseSettings()
+        public DatabaseOptions GetDatabaseSettings()
         {
-            return _databaseSettings;
+            return _databaseOptions;
         }
 
         public async Task<(bool IsAvailable, string Message, Exception? Exception)> TestConnectionAsync()
@@ -61,7 +63,7 @@ namespace SacksLogicLayer.Services.Implementations
                 }
 
                 var serverInfo = await GetServerInfoAsync();
-                var message = $"Successfully connected to {_databaseSettings.Provider}. {serverInfo}";
+                var message = $"Successfully connected to {_databaseOptions.Provider}. {serverInfo}";
                 
                 return (true, message, null);
             }
