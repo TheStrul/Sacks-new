@@ -197,12 +197,6 @@ public class GitHubModelsLlmService : ILlmService
                 sb.AppendLine("If the query doesn't match any tool, explain why in the reasoning but still select the closest match.");
                 break;
             
-            case "ToolWithEcho":
-                sb.AppendLine("MODE: Tool-With-Echo");
-                sb.AppendLine("Select a tool if the query relates to beauty products, offers, or suppliers.");
-                sb.AppendLine("For unrelated queries (greetings, general questions, chitchat), use the Echo tool if available.");
-                break;
-            
             case "Conversational":
                 sb.AppendLine("MODE: Conversational");
                 sb.AppendLine("You can either:");

@@ -57,10 +57,9 @@ public class LlmOptions
     /// <summary>
     /// Response mode: how the LLM should handle queries.
     /// - "ToolOnly": Must select a tool (error if no match)
-    /// - "ToolWithEcho": Use tool if relevant, otherwise Echo for unrelated queries
     /// - "Conversational": Can answer directly without calling tools
     /// </summary>
-    public string ResponseMode { get; set; } = "ToolWithEcho";
+    public string ResponseMode { get; set; } = "Conversational";
 
     /// <summary>
     /// Optional domain context to help LLM understand the business domain.

@@ -339,7 +339,7 @@ namespace SacksApp
             responseModeComboBox.Dock = DockStyle.Fill;
             responseModeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
             responseModeComboBox.Font = new Font("Segoe UI", 9F);
-            responseModeComboBox.Items.AddRange(new object[] { "ToolOnly - Must use tools", "ToolWithEcho - Tools or Echo fallback", "Conversational - Free responses" });
+            responseModeComboBox.Items.AddRange(new object[] { "ToolOnly - Must use tools", "Conversational - Free responses" });
             responseModeComboBox.Location = new Point(123, 33);
             responseModeComboBox.Name = "responseModeComboBox";
             responseModeComboBox.Size = new Size(707, 23);

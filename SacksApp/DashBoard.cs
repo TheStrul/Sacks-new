@@ -41,9 +41,8 @@ namespace SacksApp
             responseModeComboBox.SelectedIndex = config.Llm.ResponseMode switch
             {
                 "ToolOnly" => 0,
-                "ToolWithEcho" => 1,
-                "Conversational" => 2,
-                _ => 2 // Default to Conversational
+                "Conversational" => 1,
+                _ => 1 // Default to Conversational
             };
 
             // CustomButton styling is now handled directly in the designer - no need for ApplyModernTheme
@@ -361,8 +360,7 @@ namespace SacksApp
             config.Llm.ResponseMode = responseModeComboBox.SelectedIndex switch
             {
                 0 => "ToolOnly",
-                1 => "ToolWithEcho",
-                2 => "Conversational",
+                1 => "Conversational",
                 _ => "Conversational"
             };
 
