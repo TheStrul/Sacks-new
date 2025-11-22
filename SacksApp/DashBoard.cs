@@ -389,7 +389,8 @@ namespace SacksApp
             try
             {
                 executeAiQueryButton.Enabled = false;
-                aiResultsTextBox.Text = "⏳ Processing query...";
+                aiMetadataTextBox.Text = "⏳ Processing query...";
+                aiDataResultsTextBox.Text = "";
 
                 _logger.LogInformation("Processing query: {Query}", query);
 
@@ -401,7 +402,8 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing query");
-                aiResultsTextBox.Text = $"❌ Error: {ex.Message}";
+                aiMetadataTextBox.Text = $"❌ Error: {ex.Message}";
+                aiDataResultsTextBox.Text = "";
                 MessageBox.Show($"Error processing query: {ex.Message}", "Execution Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -420,56 +422,58 @@ namespace SacksApp
             // Route the query to the most appropriate tool
             var routingResult = await routerService.RouteQueryAsync(query, CancellationToken.None).ConfigureAwait(false);
 
-            // Format the response with routing information
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine($"🤖 Natural Language Query");
-            sb.AppendLine($"📝 Your question: {query}");
-            sb.AppendLine();
-            sb.AppendLine($"🎯 Routing Analysis:");
-            sb.AppendLine($"   Tool Selected: {routingResult.SelectedToolName}");
-            sb.AppendLine($"   Confidence: {routingResult.RoutingConfidence:P0}");
-            sb.AppendLine($"   Reason: {routingResult.RoutingReason}");
+            // Build metadata text (query info, routing analysis)
+            var metadataSb = new System.Text.StringBuilder();
+            metadataSb.AppendLine($"📝 Query: {query}");
+            metadataSb.AppendLine($"🎯 Tool: {routingResult.SelectedToolName} | Confidence: {routingResult.RoutingConfidence:P0}");
+            metadataSb.AppendLine($"💭 Reason: {routingResult.RoutingReason}");
             
             if (!routingResult.IsSuccessful)
             {
-                sb.AppendLine();
-                sb.AppendLine($"❌ Error: {routingResult.ErrorMessage}");
-                var errorText = sb.ToString();
+                metadataSb.AppendLine();
+                metadataSb.AppendLine($"❌ Error: {routingResult.ErrorMessage}");
+                var errorText = metadataSb.ToString();
                 if (InvokeRequired)
                 {
-                    Invoke(() => aiResultsTextBox.Text = errorText);
+                    Invoke(() =>
+                    {
+                        aiMetadataTextBox.Text = errorText;
+                        aiDataResultsTextBox.Text = "";
+                    });
                 }
                 else
                 {
-                    aiResultsTextBox.Text = errorText;
+                    aiMetadataTextBox.Text = errorText;
+                    aiDataResultsTextBox.Text = "";
                 }
                 return;
             }
 
-            sb.AppendLine();
-            sb.AppendLine($"📊 Result:");
-            sb.AppendLine(new string('-', 80));
-            
             // Parse and display JSON result in user-friendly format
+            string dataResultText;
             try
             {
-                var result = ParseAndFormatToolResult(routingResult.ToolResult);
-                sb.AppendLine(result);
+                dataResultText = ParseAndFormatToolResult(routingResult.ToolResult);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to parse tool result, showing raw response");
-                sb.AppendLine(routingResult.ToolResult);
+                dataResultText = routingResult.ToolResult;
             }
             
-            var finalText = sb.ToString();
+            var metadataText = metadataSb.ToString();
             if (InvokeRequired)
             {
-                Invoke(() => aiResultsTextBox.Text = finalText);
+                Invoke(() =>
+                {
+                    aiMetadataTextBox.Text = metadataText;
+                    aiDataResultsTextBox.Text = dataResultText;
+                });
             }
             else
             {
-                aiResultsTextBox.Text = finalText;
+                aiMetadataTextBox.Text = metadataText;
+                aiDataResultsTextBox.Text = dataResultText;
             }
         }
 

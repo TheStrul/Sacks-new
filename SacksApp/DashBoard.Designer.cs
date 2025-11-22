@@ -54,7 +54,10 @@ namespace SacksApp
             responseModeComboBox = new ComboBox();
             aiQueryTextBox = new TextBox();
             executeAiQueryButton = new CustomButton();
-            aiResultsTextBox = new RichTextBox();
+            aiMetadataTextBox = new RichTextBox();
+            aiDataResultsTextBox = new RichTextBox();
+            aiMetadataLabel = new Label();
+            aiDataLabel = new Label();
             tableLayoutPanel1.SuspendLayout();
             aiQueryGroupBox.SuspendLayout();
             aiQueryTableLayout.SuspendLayout();
@@ -298,16 +301,22 @@ namespace SacksApp
             aiQueryTableLayout.Controls.Add(responseModeComboBox, 1, 1);
             aiQueryTableLayout.Controls.Add(aiQueryTextBox, 1, 2);
             aiQueryTableLayout.Controls.Add(executeAiQueryButton, 1, 3);
-            aiQueryTableLayout.Controls.Add(aiResultsTextBox, 0, 4);
+            aiQueryTableLayout.Controls.Add(aiMetadataLabel, 0, 4);
+            aiQueryTableLayout.Controls.Add(aiMetadataTextBox, 0, 5);
+            aiQueryTableLayout.Controls.Add(aiDataLabel, 0, 6);
+            aiQueryTableLayout.Controls.Add(aiDataResultsTextBox, 0, 7);
             aiQueryTableLayout.Dock = DockStyle.Fill;
             aiQueryTableLayout.Location = new Point(12, 30);
             aiQueryTableLayout.Name = "aiQueryTableLayout";
-            aiQueryTableLayout.RowCount = 5;
+            aiQueryTableLayout.RowCount = 8;
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
-            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24F));
+            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 30F));
+            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24F));
+            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 70F));
             aiQueryTableLayout.Size = new Size(833, 254);
             aiQueryTableLayout.TabIndex = 0;
             // 
@@ -378,18 +387,55 @@ namespace SacksApp
             executeAiQueryButton.UseVisualStyleBackColor = false;
             executeAiQueryButton.Click += ExecuteAiQueryButton_Click;
             // 
-            // aiResultsTextBox
+            // aiMetadataLabel
             // 
-            aiQueryTableLayout.SetColumnSpan(aiResultsTextBox, 2);
-            aiResultsTextBox.Dock = DockStyle.Fill;
-            aiResultsTextBox.Font = new Font("Consolas", 9F);
-            aiResultsTextBox.Location = new Point(3, 145);
-            aiResultsTextBox.Name = "aiResultsTextBox";
-            aiResultsTextBox.ReadOnly = true;
-            aiResultsTextBox.Size = new Size(827, 106);
-            aiResultsTextBox.TabIndex = 5;
-            aiResultsTextBox.Text = "";
-            aiResultsTextBox.WordWrap = false;
+            aiMetadataLabel.Anchor = AnchorStyles.Left;
+            aiMetadataLabel.AutoSize = true;
+            aiQueryTableLayout.SetColumnSpan(aiMetadataLabel, 2);
+            aiMetadataLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            aiMetadataLabel.Location = new Point(3, 145);
+            aiMetadataLabel.Name = "aiMetadataLabel";
+            aiMetadataLabel.Size = new Size(105, 20);
+            aiMetadataLabel.TabIndex = 6;
+            aiMetadataLabel.Text = "📋 Query Info:";
+            // 
+            // aiMetadataTextBox
+            // 
+            aiQueryTableLayout.SetColumnSpan(aiMetadataTextBox, 2);
+            aiMetadataTextBox.Dock = DockStyle.Fill;
+            aiMetadataTextBox.Font = new Font("Segoe UI", 9F);
+            aiMetadataTextBox.Location = new Point(3, 169);
+            aiMetadataTextBox.Name = "aiMetadataTextBox";
+            aiMetadataTextBox.ReadOnly = true;
+            aiMetadataTextBox.Size = new Size(827, 40);
+            aiMetadataTextBox.TabIndex = 7;
+            aiMetadataTextBox.Text = "";
+            aiMetadataTextBox.WordWrap = true;
+            // 
+            // aiDataLabel
+            // 
+            aiDataLabel.Anchor = AnchorStyles.Left;
+            aiDataLabel.AutoSize = true;
+            aiQueryTableLayout.SetColumnSpan(aiDataLabel, 2);
+            aiDataLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            aiDataLabel.Location = new Point(3, 215);
+            aiDataLabel.Name = "aiDataLabel";
+            aiDataLabel.Size = new Size(90, 20);
+            aiDataLabel.TabIndex = 8;
+            aiDataLabel.Text = "📊 Results:";
+            // 
+            // aiDataResultsTextBox
+            // 
+            aiQueryTableLayout.SetColumnSpan(aiDataResultsTextBox, 2);
+            aiDataResultsTextBox.Dock = DockStyle.Fill;
+            aiDataResultsTextBox.Font = new Font("Consolas", 9F);
+            aiDataResultsTextBox.Location = new Point(3, 239);
+            aiDataResultsTextBox.Name = "aiDataResultsTextBox";
+            aiDataResultsTextBox.ReadOnly = true;
+            aiDataResultsTextBox.Size = new Size(827, 100);
+            aiDataResultsTextBox.TabIndex = 9;
+            aiDataResultsTextBox.Text = "";
+            aiDataResultsTextBox.WordWrap = false;
             // 
             // DashBoard
             // 
@@ -431,6 +477,9 @@ namespace SacksApp
         private ComboBox responseModeComboBox;
         private TextBox aiQueryTextBox;
         private CustomButton executeAiQueryButton;
-        private RichTextBox aiResultsTextBox;
+        private Label aiMetadataLabel;
+        private RichTextBox aiMetadataTextBox;
+        private Label aiDataLabel;
+        private RichTextBox aiDataResultsTextBox;
     }
 }
