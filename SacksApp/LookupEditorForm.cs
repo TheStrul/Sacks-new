@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using SacksLogicLayer.Services.Interfaces;
+using Sacks.Core.Services.Interfaces;
 using Sacks.Core.FileProcessing.Configuration;
 
 namespace SacksApp

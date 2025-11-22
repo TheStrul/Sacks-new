@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 using QMobileDeviceServiceMenu;
 
-using SacksLogicLayer.Services.Interfaces;
+using Sacks.Core.Services.Interfaces;
 
 namespace SacksApp
 {

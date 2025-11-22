@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Sacks.Core.Entities;
-using SacksLogicLayer.Services.Interfaces;
+using Sacks.Core.Services.Interfaces;
 
 namespace SacksApp
 {

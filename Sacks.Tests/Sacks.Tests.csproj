@@ -25,7 +25,7 @@
     <ProjectReference Include="..\SacksApp\SacksApp.csproj" />
     <ProjectReference Include="..\Sacks.Core\Sacks.Core.csproj" Condition="Exists('..\Sacks.Core\Sacks.Core.csproj')" />
     <ProjectReference Include="..\Sacks.DataAccess\Sacks.DataAccess.csproj" />
-    <ProjectReference Include="..\SacksLogicLayer\SacksLogicLayer.csproj" Condition="Exists('..\SacksLogicLayer\SacksLogicLayer.csproj')" />
+    <ProjectReference Include="..\Sacks.LogicLayer\Sacks.LogicLayer.csproj" Condition="Exists('..\Sacks.LogicLayer\Sacks.LogicLayer.csproj')" />
   </ItemGroup>
 
   <ItemGroup>

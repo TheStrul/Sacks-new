@@ -1,18 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
-using Sacks.Core.Configuration;
-using Sacks.DataAccess.Data;
-using Sacks.Core.Repositories.Interfaces;
-using Sacks.DataAccess.Repositories.Implementations;
-using Microsoft.EntityFrameworkCore;
-using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
-using SacksLogicLayer.Services.Interfaces;
-using SacksLogicLayer.Services.Implementations;
-using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
-using SacksLogicLayer.Services;
 using System.Runtime.CompilerServices;
+
 using Sacks.Configuration;
+using Sacks.Core.Services.Interfaces;
+using Sacks.DataAccess.Extensions;
+using Sacks.LogicLayer.Extensions;
 
 [assembly: InternalsVisibleTo("Sacks.Tests")]
 
@@ -226,63 +220,11 @@ namespace SacksApp
                 builder.AddSerilog();
             });
 
-            // Get database options from config singleton
-            var dbOptions = config.Database;
-            
-            // Add DbContext with centralized configuration
-            services.AddDbContext<SacksDbContext>(options =>
-            {
-                options.UseSqlServer(dbOptions.ConnectionString, sqlOptions =>
-                {
-                    if (dbOptions.RetryOnFailure)
-                    {
-                        sqlOptions.EnableRetryOnFailure(dbOptions.MaxRetryCount);
-                    }
-                    sqlOptions.CommandTimeout(dbOptions.CommandTimeout);
-                });
+            // Add data access layer (DbContext, repositories, infrastructure services)
+            services.AddSacksDataAccess(config.Database);
 
-                if (dbOptions.EnableSensitiveDataLogging)
-                {
-                    options.EnableSensitiveDataLogging();
-                }
-            });
-
-            // Add repositories
-            services.AddScoped<ITransactionalProductsRepository, TransactionalProductsRepository>();
-            services.AddScoped<ITransactionalSuppliersRepository, TransactionalSuppliersRepository>();
-            services.AddScoped<ITransactionalSupplierOffersRepository, TransactionalSupplierOffersRepository>();
-            services.AddScoped<ITransactionalOfferProductsRepository, TransactionalOfferProductsRepository>();
-
-            // Add Unit of Work
-            services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-            // Add business services
-            services.AddScoped<IProductsService, ProductsService>();
-            services.AddScoped<ISuppliersService, SuppliersService>();
-            services.AddScoped<ISupplierOffersService, SupplierOffersService>();
-            services.AddScoped<IOfferProductsService, OfferProductsService>();
-
-            // Add application services
-            services.AddScoped<IDatabaseManagementService, DatabaseManagementService>();
-            services.AddScoped<IDatabaseConnectionService, DatabaseConnectionService>();
-            services.AddScoped<IFileProcessingDatabaseService, FileProcessingDatabaseService>();
-            services.AddScoped<IFileDataReader, FileDataReader>();
-            services.AddScoped<SubtitleRowProcessor>();
-            services.AddScoped<SupplierConfigurationManager>();
-            services.AddScoped<ISupplierConfigurationService, SupplierConfigurationService>();
-            services.AddScoped<IFileProcessingService, FileProcessingService>();
-
-            // Add query and data management services
-            services.AddScoped<IQueryBuilderService, QueryBuilderService>();
-            services.AddScoped<IProductOffersQueryService, ProductOffersQueryService>();
-            services.AddScoped<IOfferProductDataService, OfferProductDataService>();
-            services.AddScoped<IGridStateManagementService, GridStateManagementService>();
-
-            // Add MCP client service
-            services.AddSingleton<IMcpClientService, McpClientService>();
-
-            // Add LLM query router service (heuristic-based, can be replaced with LLM later)
-            services.AddSingleton<ILlmQueryRouterService, HeuristicQueryRouterService>();
+            // Add business logic layer (business services, orchestration services)
+            services.AddSacksLogicLayer();
 
             return services;
         }

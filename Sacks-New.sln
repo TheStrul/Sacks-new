@@ -18,7 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Sql", "Sql", "{02EA681E-C7D
 		Sql\ProductOffersViewCollapse.sql = Sql\ProductOffersViewCollapse.sql
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SacksLogicLayer", "SacksLogicLayer\SacksLogicLayer.csproj", "{812A97BA-92F9-4DA3-AA3B-36FE64858F2E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sacks.LogicLayer", "Sacks.LogicLayer\Sacks.LogicLayer.csproj", "{812A97BA-92F9-4DA3-AA3B-36FE64858F2E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParsingEngine", "ParsingEngine\ParsingEngine.csproj", "{BB4DA926-BCC2-1BE2-3135-E112A74DBBC5}"
 EndProject

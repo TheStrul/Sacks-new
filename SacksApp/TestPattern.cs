@@ -4,7 +4,7 @@ namespace SacksApp
     using System.Text;
     using System.Windows.Forms;
     using Microsoft.Extensions.DependencyInjection;
-    using SacksLogicLayer.Services;
+    using Sacks.LogicLayer.Services;
     using SacksApp.Utils;
 
     public partial class TestPattern : Form

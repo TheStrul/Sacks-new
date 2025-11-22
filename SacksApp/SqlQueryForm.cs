@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using SacksLogicLayer.Services.Interfaces;
+using Sacks.Core.Services.Interfaces;
 using FilterCondition = SacksLogicLayer.Services.Interfaces.FilterCondition;
 using FilterOperator = SacksLogicLayer.Services.Interfaces.FilterOperator;
 using ClosedXML.Excel; // Excel export

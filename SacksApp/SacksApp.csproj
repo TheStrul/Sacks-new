@@ -11,7 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Sacks.Core\Sacks.Core.csproj" />
     <ProjectReference Include="..\Sacks.DataAccess\Sacks.DataAccess.csproj" />
-    <ProjectReference Include="..\SacksLogicLayer\SacksLogicLayer.csproj" />
+    <ProjectReference Include="..\Sacks.LogicLayer\Sacks.LogicLayer.csproj" />
     <ProjectReference Include="..\Sacks.Configuration\Sacks.Configuration.csproj" />
   </ItemGroup>
 
