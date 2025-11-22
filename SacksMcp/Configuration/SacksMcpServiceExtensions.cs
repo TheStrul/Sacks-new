@@ -46,6 +46,7 @@ public static class SacksMcpServiceExtensions
         services.AddScoped<SacksMcp.Tools.ProductTools>();
         services.AddScoped<SacksMcp.Tools.SupplierTools>();
         services.AddScoped<SacksMcp.Tools.SystemTools>();
+        services.AddScoped<SacksMcp.Tools.ViewQueryTools>();
 
         // Configure HTTP transport for MCP server
         services.AddHttpTransport(new HttpTransportOptions

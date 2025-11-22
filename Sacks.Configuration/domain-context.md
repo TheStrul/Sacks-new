@@ -89,4 +89,31 @@ This is a **price intelligence** and **product catalog** system for the beauty i
 - Discover new products
 - Monitor competitor pricing
 
+## Database Views for Complex Queries
+
+### ProductOffersView
+Pre-joined view combining Products, Offers, and Suppliers with all dynamic properties extracted.
+**When to use**: Price comparisons, analyzing all offers for products, seeing complete offer history.
+**Key columns**: EAN, Name, Brand, Type, Gender, Price, S_Name (supplier), Date, OfferRank, TotalOffers
+**Example queries**: 
+- "Show all offers for Chanel perfumes"
+- "Compare prices for EAN 123456789"
+- "Find cheapest and most expensive offers for women's lipsticks"
+
+### ProductOffersViewCollapse
+Collapsed version showing product details ONLY on cheapest offer row (OfferRank=1), other rows show just price/supplier.
+**When to use**: Cleaner output for product lists, focusing on best prices with minimal repetition.
+**Key columns**: EANKey (always present), Name/Brand/Type (only on OfferRank=1), Price, S_Name, OfferRank
+**Example queries**:
+- "Show me products by brand with best prices"
+- "List all vegan products with cheapest offers"
+- "What's the best price for each L'Oréal shampoo?"
+**Note**: Only includes products with multiple offers (TotalOffers > 1)
+
+### Choosing Between Views
+- Use **ProductOffersView** when you need ALL offer details or price comparisons
+- Use **ProductOffersViewCollapse** when you want product lists with best prices and minimal duplication
+- Both support WHERE clauses with dynamic properties (Brand, Gender, Type, Price, etc.)
+- Both support ORDER BY for sorting (Price, Date, Brand, etc.)
+
 
