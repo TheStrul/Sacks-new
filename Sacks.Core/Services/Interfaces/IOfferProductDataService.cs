@@ -1,3 +1,6 @@
+using Sacks.Core.Services.Models;
+using System.Data;
+
 namespace Sacks.Core.Services.Interfaces;
 
 /// <summary>
@@ -20,4 +23,17 @@ public interface IOfferProductDataService
     /// Validates a value for a specific column
     /// </summary>
     (bool IsValid, string? ErrorMessage) ValidateValue(string columnName, string? value);
+
+    /// <summary>
+    /// Saves all changes from a DataTable
+    /// </summary>
+    Task<SaveChangesResult> SaveAllChangesAsync(
+        DataTable original,
+        DataTable modified,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Extracts identifier from a DataRow
+    /// </summary>
+    OfferProductIdentifier? ExtractIdentifier(DataRow row);
 }

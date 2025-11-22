@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Sacks.Configuration;
 using Sacks.Core.Services.Interfaces;
+using Sacks.Core.Services.Models;
 using Sacks.DataAccess.Data;
 
 namespace Sacks.DataAccess.Services
@@ -51,7 +52,7 @@ namespace Sacks.DataAccess.Services
             return _databaseOptions;
         }
 
-        public async Task<(bool IsAvailable, string Message, Exception? Exception)> TestConnectionAsync()
+        public async Task<bool> TestConnectionAsync()
         {
             try
             {
@@ -63,9 +64,9 @@ namespace Sacks.DataAccess.Services
                 }
 
                 var serverInfo = await GetServerInfoAsync();
-                var message = $"Successfully connected to {_databaseOptions.Provider}. {serverInfo}";
+                _logger.LogInformation("Successfully connected to {Provider}. {ServerInfo}", _databaseOptions.Provider, serverInfo);
                 
-                return (true, message, null);
+                return true;
             }
             catch (SqlException ex)
             {
@@ -78,13 +79,13 @@ namespace Sacks.DataAccess.Services
                 };
 
                 _logger.LogError(ex, "Database connection failed: {ErrorMessage}", message);
-                return (false, message, ex);
+                return false;
             }
             catch (Exception ex)
             {
                 var message = $"Connection failed: {ex.Message}";
                 _logger.LogError(ex, "Unexpected database connection error: {ErrorMessage}", message);
-                return (false, message, ex);
+                return false;
             }
         }
 
@@ -129,42 +130,34 @@ namespace Sacks.DataAccess.Services
         {
             try
             {
-                
                 // First, try to connect to see if database exists
-                var (isAvailable, message, exception) = await TestConnectionAsync();
+                var isAvailable = await TestConnectionAsync();
                 
                 if (isAvailable)
                 {
                     return (true, "Database exists and is accessible", null);
                 }
                 
-                // If we get a "database does not exist" error, try to create it
-                if (exception is SqlException sqlEx && sqlEx.Number == 4060)
+                // If connection failed, try to create the database
+                try
                 {
+                    // Try to create the database using EF Core
+                    var created = await _context.Database.EnsureCreatedAsync();
                     
-                    try
+                    if (created)
                     {
-                        // Try to create the database using EF Core
-                        var created = await _context.Database.EnsureCreatedAsync();
-                        
-                        if (created)
-                        {
-                            return (true, "Database created successfully", null);
-                        }
-                        else
-                        {
-                            return (true, "Database already existed", null);
-                        }
+                        return (true, "Database created successfully", null);
                     }
-                    catch (Exception createEx)
+                    else
                     {
-                        _logger.LogError(createEx, "Failed to create database");
-                        return (false, $"Failed to create database: {createEx.Message}", createEx);
+                        return (true, "Database already existed", null);
                     }
                 }
-                
-                // For other connection errors, return the original error
-                return (false, message, exception);
+                catch (Exception createEx)
+                {
+                    _logger.LogError(createEx, "Failed to create database");
+                    return (false, $"Failed to create database: {createEx.Message}", createEx);
+                }
             }
             catch (Exception ex)
             {

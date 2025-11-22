@@ -15,6 +15,7 @@ public class SacksConfigurationOptions
     public LoggingOptions Logging { get; set; } = new();
     public McpServerOptions McpServer { get; set; } = new();
     public McpClientOptions McpClient { get; set; } = new();
+    public LlmOptions Llm { get; set; } = new();
     public ConfigurationFilesOptions ConfigurationFiles { get; set; } = new();
     public UIOptions UI { get; set; } = new();
 }
@@ -119,6 +120,8 @@ public class McpServerOptions
 
     public string ServerName { get; set; } = "SacksMcp";
     public string Version { get; set; } = "1.0.0";
+    public int HttpPort { get; set; } = 5100;
+    public bool EnableHttps { get; set; } = false;
     public int MaxConcurrentTools { get; set; } = 10;
     public int ToolTimeoutSeconds { get; set; } = 30;
     public bool EnableDetailedLogging { get; set; } = false;
@@ -131,10 +134,10 @@ public class McpClientOptions
 {
     public const string SectionName = "McpClient";
 
-    public string ServerExecutablePath { get; set; } = "dotnet";
-    public string ServerArguments { get; set; } = string.Empty;
-    public string? ServerWorkingDirectory { get; set; }
+    public string ServerUrl { get; set; } = "http://localhost:5100";
     public int ToolTimeoutSeconds { get; set; } = 30;
+    public int MaxRetryAttempts { get; set; } = 3;
+    public int RetryDelayMilliseconds { get; set; } = 1000;
 }
 
 /// <summary>
@@ -155,6 +158,15 @@ public class ConfigurationFilesOptions
     /// </summary>
     [Required]
     public string MainFileName { get; set; } = "supplier-formats.json";
+}
+
+/// <summary>
+/// LLM (Large Language Model) configuration alias for McpServer.Client.Configuration.LlmOptions.
+/// This is just a Sacks-specific wrapper with section name - the actual generic options are in McpServer.Client.
+/// </summary>
+public class LlmOptions : McpServer.Client.Configuration.LlmOptions
+{
+    public const string SectionName = "Llm";
 }
 
 /// <summary>

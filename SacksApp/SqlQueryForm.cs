@@ -5,8 +5,8 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Sacks.Core.Services.Interfaces;
-using FilterCondition = SacksLogicLayer.Services.Interfaces.FilterCondition;
-using FilterOperator = SacksLogicLayer.Services.Interfaces.FilterOperator;
+using Sacks.Core.Services.Models;
+using Sacks.LogicLayer.Services.Interfaces;
 using ClosedXML.Excel; // Excel export
 
 namespace SacksApp
@@ -153,7 +153,7 @@ namespace SacksApp
         {
             try
             {
-                var columns = await _queryService.GetAvailableColumnsAsync().ConfigureAwait(false);
+                var columns = _queryService.GetAvailableColumns();
                 _availableColumns = columns.ToList();
             }
             catch (Exception ex)
@@ -175,7 +175,7 @@ namespace SacksApp
                     clb.Items.Clear();
                     foreach (var filter in _filters)
                     {
-                        clb.Items.Add(filter.ToString(), filter.Enabled);
+                        clb.Items.Add($"{filter.Column} {filter.Operator} {filter.Value}", filter.Enabled);
                     }
                 }
                 else
@@ -183,7 +183,7 @@ namespace SacksApp
                     filtersListBox.Items.Clear();
                     foreach (var filter in _filters)
                     {
-                        filtersListBox.Items.Add(filter.ToString());
+                        filtersListBox.Items.Add($"{filter.Column} {filter.Operator} {filter.Value}");
                     }
                 }
             }
@@ -223,9 +223,7 @@ namespace SacksApp
         private void AddFilter()
         {
             if (filterColumnComboBox.SelectedItem is not string col) return;
-            if (filterOperatorComboBox.SelectedItem is not FilterOperator op) return;
-
-            var type = _queryService.GetColumnType(col);
+            if (filterOperatorComboBox.SelectedItem is not Sacks.Core.Services.Models.FilterOperator op) return;
 
             string? raw = null;
             // avoid incompatible 'as' pattern between unrelated control types by using object
@@ -241,7 +239,7 @@ namespace SacksApp
                 raw = clb.SelectedItem?.ToString()?.Trim();
             }
 
-            if (op is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty)
+            if (op is Sacks.Core.Services.Models.FilterOperator.IsEmpty or Sacks.Core.Services.Models.FilterOperator.IsNotEmpty)
             {
                 raw = null; // value not needed
             }
@@ -250,19 +248,19 @@ namespace SacksApp
                 return; // require value
             }
 
-            // Validate using the service
-            if (!_queryService.ValidateFilterValue(col, raw, op))
+            // Validate using the data service
+            var (isValid, errorMessage) = _dataService.ValidateValue(col, raw);
+            if (!isValid)
             {
-                MessageBox.Show($"Value '{raw}' is not valid for {col}", "Invalid Value", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(errorMessage ?? $"Value '{raw}' is not valid for {col}", "Invalid Value", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             var condition = new FilterCondition
             {
-                PropertyName = col,
-                Operator = op,
-                Value = raw,
-                PropertyType = type,
+                Column = col,
+                Operator = op.ToString(),
+                Value = raw ?? string.Empty,
                 Enabled = true
             };
             _filters.Add(condition);
@@ -270,11 +268,11 @@ namespace SacksApp
             // Add to checked list; mark checked by default
             if (filtersListBox is CheckedListBox clbBox)
             {
-                clbBox.Items.Add(condition.ToString(), true);
+                clbBox.Items.Add($"{col} {op} {raw}", true);
             }
             else
             {
-                filtersListBox.Items.Add(condition.ToString());
+                filtersListBox.Items.Add($"{col} {op} {raw}");
             }
 
             if (tv != null) tv.Clear();
@@ -299,7 +297,15 @@ namespace SacksApp
                 var idx = e.Index;
                 if (idx >= 0 && idx < _filters.Count)
                 {
-                    _filters[idx].Enabled = e.NewValue == CheckState.Checked;
+                    // FilterCondition.Enabled is init-only, so we need to recreate
+                    var old = _filters[idx];
+                    _filters[idx] = new FilterCondition
+                    {
+                        Column = old.Column,
+                        Operator = old.Operator,
+                        Value = old.Value,
+                        Enabled = e.NewValue == CheckState.Checked
+                    };
                 }
             }
             catch (Exception ex)
@@ -1039,11 +1045,14 @@ namespace SacksApp
                     return;
                 }
 
-                var result = await _dataService.SaveAllChangesAsync(dt, cancellationToken);
+                // SaveAllChangesAsync expects original and modified DataTables
+                // For now, pass the same DataTable twice (implementation uses only modified)
+                var result = await _dataService.SaveAllChangesAsync(dt, dt, cancellationToken);
 
                 if (result.TotalChanges > 0)
                 {
-                    if (result.IsFullySuccessful)
+                    // Check if all changes succeeded (no errors)
+                    if (result.Errors.Count == 0)
                     {
                         dt.AcceptChanges();
                         _hasUnsavedChanges = false;

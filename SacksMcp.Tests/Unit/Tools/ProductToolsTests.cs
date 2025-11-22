@@ -47,7 +47,8 @@ public class ProductToolsTests : IDisposable
         _context.SaveChanges();
 
         var mockLogger = MockDbContextFactory.CreateMockLogger<ProductTools>();
-        _sut = new ProductTools(_context, mockLogger.Object);
+        var connectionTracker = Helpers.TestHelpers.CreateMockConnectionTracker();
+        _sut = new ProductTools(_context, mockLogger.Object, connectionTracker);
     }
 
     public void Dispose()

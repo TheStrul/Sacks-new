@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 
 using Sacks.Core.Services.Interfaces;
+using Sacks.Core.Services.Models;
 using Sacks.DataAccess.Data;
 
 namespace Sacks.DataAccess.Services;
@@ -54,7 +55,7 @@ public sealed class QueryBuilderService : IQueryBuilderService
         }
         else
         {
-            bool hasOfferFilters = filterList.Any(f => OfferColumns.Contains(f.PropertyName));
+            bool hasOfferFilters = filterList.Any(f => OfferColumns.Contains(f.Column));
             if (!hasOfferFilters)
             {
                 var where = BuildCollapsedViewWhere(filterList, sqlParams);
@@ -99,7 +100,7 @@ public sealed class QueryBuilderService : IQueryBuilderService
         {
             if (!f.Enabled) continue;
             
-            if (ProductColumns.Contains(f.PropertyName) && !OfferColumns.Contains(f.PropertyName))
+            if (ProductColumns.Contains(f.Column) && !OfferColumns.Contains(f.Column))
             {
                 var innerPred = BuildPredicate("v", f, ref paramIndex, parameters);
                 if (!string.IsNullOrWhiteSpace(innerPred))
@@ -139,19 +140,27 @@ public sealed class QueryBuilderService : IQueryBuilderService
     private string BuildPredicate(string alias, FilterCondition f, ref int paramIndex, List<SqlParameter> parameters)
     {
         var prefix = string.IsNullOrEmpty(alias) ? string.Empty : alias + ".";
-        var colRef = prefix + EscapeIdentifier(f.PropertyName);
+        var colRef = prefix + EscapeIdentifier(f.Column);
+        var columnType = GetColumnType(f.Column);
         
-        if (f.Operator is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty)
+        // Parse operator string to enum
+        if (!Enum.TryParse<FilterOperator>(f.Operator, ignoreCase: true, out var filterOp))
         {
-            if (f.PropertyType == typeof(string))
+            _logger.LogWarning("Unknown filter operator: {Operator}", f.Operator);
+            return string.Empty;
+        }
+        
+        if (filterOp is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty)
+        {
+            if (columnType == typeof(string))
             {
-                return f.Operator == FilterOperator.IsEmpty
+                return filterOp == FilterOperator.IsEmpty
                     ? $"({colRef} IS NULL OR {colRef} = '')"
                     : $"({colRef} IS NOT NULL AND {colRef} <> '')";
             }
             else
             {
-                return f.Operator == FilterOperator.IsEmpty 
+                return filterOp == FilterOperator.IsEmpty 
                     ? $"{colRef} IS NULL" 
                     : $"{colRef} IS NOT NULL";
             }
@@ -161,12 +170,12 @@ public sealed class QueryBuilderService : IQueryBuilderService
             var paramName = $"@p{paramIndex++}";
             object? valueObj = f.Value;
             
-            if (valueObj != null && f.PropertyType != typeof(string))
+            if (valueObj != null && columnType != typeof(string))
             {
-                valueObj = ConvertToType(f.Value!, f.PropertyType);
+                valueObj = ConvertToType(f.Value!, columnType);
             }
             
-            string opSql = f.Operator switch
+            string opSql = filterOp switch
             {
                 FilterOperator.Contains => $"{colRef} LIKE {paramName}",
                 FilterOperator.StartsWith => $"{colRef} LIKE {paramName}",
@@ -181,7 +190,7 @@ public sealed class QueryBuilderService : IQueryBuilderService
             };
 
             object? paramVal = valueObj;
-            switch (f.Operator)
+            switch (filterOp)
             {
                 case FilterOperator.Contains:
                     paramVal = $"%{valueObj}%";
@@ -257,6 +266,18 @@ public sealed class QueryBuilderService : IQueryBuilderService
         sb.Append(inner);
         sb.Append(") AS x WHERE x.[cnt] > 1 ORDER BY x.[EAN], x.[OfferRank]");
         return sb.ToString();
+    }
+
+    private static Type GetColumnType(string columnName)
+    {
+        // Map column names to their types based on ProductOffersView
+        return columnName.ToLowerInvariant() switch
+        {
+            "price" or "size" => typeof(decimal),
+            "quantity" or "offerrank" or "totaloffers" => typeof(int),
+            "dateoffer" => typeof(DateTime),
+            _ => typeof(string)
+        };
     }
 
     private static object? ConvertToType(string raw, Type target)

@@ -1,12 +1,16 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Serilog;
 using System.Runtime.CompilerServices;
 
+using McpServer.Client;
+using McpServer.Client.Configuration;
 using Sacks.Configuration;
 using Sacks.Core.Services.Interfaces;
 using Sacks.DataAccess.Extensions;
 using Sacks.LogicLayer.Extensions;
+using Sacks.LogicLayer.Services;
 
 [assembly: InternalsVisibleTo("Sacks.Tests")]
 
@@ -211,6 +215,7 @@ namespace SacksApp
             services.AddSingleton(config.ConfigurationFiles);
             services.AddSingleton(config.Logging);
             services.AddSingleton(config.McpClient);
+            services.AddSingleton(config.Llm);
             services.AddSingleton(config.UI);
 
             // Add Serilog logging
@@ -225,6 +230,9 @@ namespace SacksApp
 
             // Add business logic layer (business services, orchestration services)
             services.AddSacksLogicLayer();
+            
+            // Add logic layer with MCP client and LLM service (GitHub Models)
+            services.AddSacksLogicLayerServices(config.McpClient, config.Llm);
 
             return services;
         }

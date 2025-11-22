@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Sacks.Core.Services.Interfaces;
 using Sacks.Core.FileProcessing.Configuration;
+using Sacks.LogicLayer.Services.Interfaces;
 
 namespace SacksApp
 {

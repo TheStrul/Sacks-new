@@ -142,7 +142,8 @@ public class OfferToolsTests : IDisposable
         _context.SaveChanges();
 
         var mockLogger = MockDbContextFactory.CreateMockLogger<OfferTools>();
-        _sut = new OfferTools(_context, mockLogger.Object);
+        var connectionTracker = Helpers.TestHelpers.CreateMockConnectionTracker();
+        _sut = new OfferTools(_context, mockLogger.Object, connectionTracker);
     }
 
     public void Dispose()

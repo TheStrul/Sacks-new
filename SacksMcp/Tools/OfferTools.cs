@@ -7,6 +7,7 @@ using ModelContextProtocol.Server;
 using McpServer.Database.Tools;
 using Sacks.DataAccess.Data;
 using Sacks.Core.Entities;
+using SacksMcp.Services;
 
 namespace SacksMcp.Tools;
 
@@ -17,8 +18,13 @@ namespace SacksMcp.Tools;
 [McpServerToolType]
 public class OfferTools : BaseDatabaseToolCollection<SacksDbContext>
 {
-    public OfferTools(SacksDbContext dbContext, ILogger<OfferTools> logger) 
-        : base(dbContext, logger) { }
+    private readonly ConnectionTracker _connectionTracker;
+
+    public OfferTools(SacksDbContext dbContext, ILogger<OfferTools> logger, ConnectionTracker connectionTracker) 
+        : base(dbContext, logger)
+    {
+        _connectionTracker = connectionTracker;
+    }
 
     /// <summary>
     /// Get recent offers.
@@ -29,6 +35,8 @@ public class OfferTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Number of recent offers to return (default: 20, max: 200)")] int limit = 20,
         CancellationToken cancellationToken = default)
     {
+        _connectionTracker.OnFirstRequest();
+        Logger.LogInformation("[MCP] GetRecentOffers called: limit={Limit}", limit);
         ValidateRange(limit, 1, 200, nameof(limit));
 
         return await ExecuteQueryAsync(async () =>
@@ -70,6 +78,7 @@ public class OfferTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Maximum number of offers to return (default: 50, max: 200)")] int limit = 50,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetOffersBySupplier called: supplierId={SupplierId}, limit={Limit}", supplierId, limit);
         ValidateRange(limit, 1, 200, nameof(limit));
 
         return await ExecuteQueryAsync<object>(async () =>
@@ -122,6 +131,7 @@ public class OfferTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Maximum number of results to return (default: 50, max: 200)")] int limit = 50,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] SearchOffers called: searchTerm='{SearchTerm}', limit={Limit}", searchTerm, limit);
         ValidateRequired(searchTerm, nameof(searchTerm));
         ValidateRange(limit, 1, 200, nameof(limit));
 
@@ -168,6 +178,7 @@ public class OfferTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Maximum number of results to return (default: 50, max: 500)")] int limit = 50,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetExpensiveProducts called: minPrice={MinPrice}, currency='{Currency}', limit={Limit}", minPrice, currency ?? "all", limit);
         ValidateRange(limit, 1, 500, nameof(limit));
 
         return await ExecuteQueryAsync(async () =>
@@ -218,6 +229,7 @@ public class OfferTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Product ID to compare prices for")] int productId,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] CompareProductPrices called: productId={ProductId}", productId);
         return await ExecuteQueryAsync<object>(async () =>
         {
             var productExists = await DbContext.Products
@@ -280,6 +292,7 @@ public class OfferTools : BaseDatabaseToolCollection<SacksDbContext>
     public async Task<string> GetOfferStatistics(
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetOfferStatistics called");
         return await ExecuteQueryAsync(async () =>
         {
             var totalOffers = await DbContext.SupplierOffers

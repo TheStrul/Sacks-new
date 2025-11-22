@@ -35,7 +35,8 @@ public class ProductToolsBenchmarks
         _context.SaveChanges();
 
         var mockLogger = new Mock<ILogger<ProductTools>>();
-        _tools = new ProductTools(_context, mockLogger.Object);
+        var connectionTracker = Helpers.TestHelpers.CreateMockConnectionTracker();
+        _tools = new ProductTools(_context, mockLogger.Object, connectionTracker);
     }
 
     [Benchmark]

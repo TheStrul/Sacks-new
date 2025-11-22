@@ -15,6 +15,31 @@ public interface IProductOffersQueryService
         IEnumerable<FilterCondition> filters,
         bool groupByProduct = false,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the list of available columns
+    /// </summary>
+    IReadOnlyList<string> GetAvailableColumns();
+
+    /// <summary>
+    /// Gets the type of a column
+    /// </summary>
+    Type GetColumnType(string columnName);
+
+    /// <summary>
+    /// Gets available filter operators for a column
+    /// </summary>
+    IReadOnlyList<Sacks.Core.Services.Models.FilterOperator> GetFilterOperators(string columnName);
+
+    /// <summary>
+    /// Gets the column categories
+    /// </summary>
+    Sacks.Core.Services.Models.ColumnCategories GetColumnCategories();
+
+    /// <summary>
+    /// Checks if a column is editable
+    /// </summary>
+    bool IsColumnEditable(string columnName);
 }
 
 /// <summary>

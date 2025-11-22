@@ -5,6 +5,7 @@ using ModelContextProtocol.Server;
 using McpServer.Database.Tools;
 using Sacks.DataAccess.Data;
 using Sacks.Core.Entities;
+using SacksMcp.Services;
 
 namespace SacksMcp.Tools;
 
@@ -15,8 +16,13 @@ namespace SacksMcp.Tools;
 [McpServerToolType]
 public class SupplierTools : BaseDatabaseToolCollection<SacksDbContext>
 {
-    public SupplierTools(SacksDbContext dbContext, ILogger<SupplierTools> logger) 
-        : base(dbContext, logger) { }
+    private readonly ConnectionTracker _connectionTracker;
+
+    public SupplierTools(SacksDbContext dbContext, ILogger<SupplierTools> logger, ConnectionTracker connectionTracker) 
+        : base(dbContext, logger)
+    {
+        _connectionTracker = connectionTracker;
+    }
 
     /// <summary>
     /// Search suppliers by name.
@@ -28,6 +34,8 @@ public class SupplierTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Maximum number of results to return (default: 50, max: 200)")] int limit = 50,
         CancellationToken cancellationToken = default)
     {
+        _connectionTracker.OnFirstRequest();
+        Logger.LogInformation("[MCP] SearchSuppliers called: searchTerm='{SearchTerm}', limit={Limit}", searchTerm, limit);
         ValidateRequired(searchTerm, nameof(searchTerm));
         ValidateRange(limit, 1, 200, nameof(limit));
 
@@ -67,6 +75,7 @@ public class SupplierTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Supplier ID to get statistics for")] int supplierId,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetSupplierStats called: supplierId={SupplierId}", supplierId);
         return await ExecuteQueryAsync<object>(async () =>
         {
             var supplier = await DbContext.Suppliers
@@ -105,6 +114,7 @@ public class SupplierTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Maximum number of results to return (default: 100, max: 500)")] int limit = 100,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetAllSuppliers called: limit={Limit}", limit);
         ValidateRange(limit, 1, 500, nameof(limit));
 
         return await ExecuteQueryAsync(async () =>
@@ -141,6 +151,7 @@ public class SupplierTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Number of top suppliers to return (default: 10, max: 100)")] int limit = 10,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetSuppliersWithMostOffers called: limit={Limit}", limit);
         ValidateRange(limit, 1, 100, nameof(limit));
 
         return await ExecuteQueryAsync(async () =>
@@ -184,6 +195,7 @@ public class SupplierTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Maximum number of products to return (default: 100, max: 500)")] int limit = 100,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetSupplierProducts called: supplierId={SupplierId}, limit={Limit}", supplierId, limit);
         ValidateRange(limit, 1, 500, nameof(limit));
 
         return await ExecuteQueryAsync<object>(async () =>

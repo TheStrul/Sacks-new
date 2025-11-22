@@ -22,7 +22,8 @@ public class ProductQueriesIntegrationTests : IClassFixture<DatabaseFixture>
     {
         _fixture = fixture;
         var logger = new Mock<ILogger<ProductTools>>().Object;
-        _sut = new ProductTools(_fixture.DbContext, logger);
+        var connectionTracker = Helpers.TestHelpers.CreateMockConnectionTracker();
+        _sut = new ProductTools(_fixture.DbContext, logger, connectionTracker);
     }
 
     [Fact]

@@ -13,5 +13,8 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\McpServer.Client\McpServer.Client.csproj" />
+  </ItemGroup>
 
 </Project>

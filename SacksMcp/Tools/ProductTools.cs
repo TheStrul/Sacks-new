@@ -5,6 +5,7 @@ using ModelContextProtocol.Server;
 using McpServer.Database.Tools;
 using Sacks.DataAccess.Data;
 using Sacks.Core.Entities;
+using SacksMcp.Services;
 
 namespace SacksMcp.Tools;
 
@@ -15,8 +16,13 @@ namespace SacksMcp.Tools;
 [McpServerToolType]
 public class ProductTools : BaseDatabaseToolCollection<SacksDbContext>
 {
-    public ProductTools(SacksDbContext dbContext, ILogger<ProductTools> logger) 
-        : base(dbContext, logger) { }
+    private readonly ConnectionTracker _connectionTracker;
+
+    public ProductTools(SacksDbContext dbContext, ILogger<ProductTools> logger, ConnectionTracker connectionTracker) 
+        : base(dbContext, logger)
+    {
+        _connectionTracker = connectionTracker;
+    }
 
     /// <summary>
     /// Search products by name with optional filters.
@@ -28,6 +34,8 @@ public class ProductTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Maximum number of results to return (default: 50, max: 500)")] int limit = 50,
         CancellationToken cancellationToken = default)
     {
+        _connectionTracker.OnFirstRequest();
+        Logger.LogInformation("[MCP] SearchProducts called: searchTerm='{SearchTerm}', limit={Limit}", searchTerm, limit);
         ValidateRequired(searchTerm, nameof(searchTerm));
         ValidateRange(limit, 1, 500, nameof(limit));
 
@@ -70,6 +78,7 @@ public class ProductTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("EAN barcode to search for")] string ean,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetProductByEan called: ean='{Ean}'", ean);
         ValidateRequired(ean, nameof(ean));
 
         return await ExecuteQueryAsync<object>(async () =>
@@ -104,6 +113,7 @@ public class ProductTools : BaseDatabaseToolCollection<SacksDbContext>
     public async Task<string> GetProductStatistics(
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetProductStatistics called");
         return await ExecuteQueryAsync(async () =>
         {
             var totalCount = await DbContext.Products.CountAsync(cancellationToken).ConfigureAwait(false);
@@ -143,6 +153,7 @@ public class ProductTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Number of top products to return (default: 10, max: 100)")] int limit = 10,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetProductsWithMostOffers called: limit={Limit}", limit);
         ValidateRange(limit, 1, 100, nameof(limit));
 
         return await ExecuteQueryAsync(async () =>
@@ -181,6 +192,7 @@ public class ProductTools : BaseDatabaseToolCollection<SacksDbContext>
         [Description("Number of recent products to return (default: 20, max: 200)")] int limit = 20,
         CancellationToken cancellationToken = default)
     {
+        Logger.LogInformation("[MCP] GetRecentProducts called: limit={Limit}", limit);
         ValidateRange(limit, 1, 200, nameof(limit));
 
         return await ExecuteQueryAsync(async () =>

@@ -50,6 +50,8 @@ namespace SacksApp
             aiQueryGroupBox = new GroupBox();
             aiQueryTableLayout = new TableLayoutPanel();
             aiQueryLabel = new Label();
+            responseModeLabel = new Label();
+            responseModeComboBox = new ComboBox();
             aiQueryTextBox = new TextBox();
             executeAiQueryButton = new CustomButton();
             aiResultsTextBox = new RichTextBox();
@@ -292,13 +294,17 @@ namespace SacksApp
             aiQueryTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
             aiQueryTableLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             aiQueryTableLayout.Controls.Add(aiQueryLabel, 0, 0);
-            aiQueryTableLayout.Controls.Add(aiQueryTextBox, 1, 0);
-            aiQueryTableLayout.Controls.Add(executeAiQueryButton, 1, 1);
-            aiQueryTableLayout.Controls.Add(aiResultsTextBox, 0, 2);
+            aiQueryTableLayout.Controls.Add(responseModeLabel, 0, 1);
+            aiQueryTableLayout.Controls.Add(responseModeComboBox, 1, 1);
+            aiQueryTableLayout.Controls.Add(aiQueryTextBox, 1, 2);
+            aiQueryTableLayout.Controls.Add(executeAiQueryButton, 1, 3);
+            aiQueryTableLayout.Controls.Add(aiResultsTextBox, 0, 4);
             aiQueryTableLayout.Dock = DockStyle.Fill;
             aiQueryTableLayout.Location = new Point(12, 30);
             aiQueryTableLayout.Name = "aiQueryTableLayout";
-            aiQueryTableLayout.RowCount = 3;
+            aiQueryTableLayout.RowCount = 5;
+            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
+            aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 36F));
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F));
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
@@ -309,22 +315,47 @@ namespace SacksApp
             // 
             aiQueryLabel.Anchor = AnchorStyles.Left;
             aiQueryLabel.AutoSize = true;
-            aiQueryLabel.Font = new Font("Segoe UI", 10F);
-            aiQueryLabel.Location = new Point(3, 8);
+            aiQueryLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            aiQueryLabel.Location = new Point(3, 7);
             aiQueryLabel.Name = "aiQueryLabel";
-            aiQueryLabel.Size = new Size(50, 19);
+            aiQueryLabel.Size = new Size(85, 15);
             aiQueryLabel.TabIndex = 0;
-            aiQueryLabel.Text = "Query:";
+            aiQueryLabel.Text = "AI-Powered Query";
+            aiQueryTableLayout.SetColumnSpan(aiQueryLabel, 2);
+            // 
+            // responseModeLabel
+            // 
+            responseModeLabel.Anchor = AnchorStyles.Left;
+            responseModeLabel.AutoSize = true;
+            responseModeLabel.Font = new Font("Segoe UI", 9F);
+            responseModeLabel.Location = new Point(3, 38);
+            responseModeLabel.Name = "responseModeLabel";
+            responseModeLabel.Size = new Size(43, 15);
+            responseModeLabel.TabIndex = 1;
+            responseModeLabel.Text = "Mode:";
+            // 
+            // responseModeComboBox
+            // 
+            responseModeComboBox.Dock = DockStyle.Fill;
+            responseModeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            responseModeComboBox.Font = new Font("Segoe UI", 9F);
+            responseModeComboBox.Items.AddRange(new object[] { "ToolOnly - Must use tools", "ToolWithEcho - Tools or Echo fallback", "Conversational - Free responses" });
+            responseModeComboBox.Location = new Point(123, 33);
+            responseModeComboBox.Name = "responseModeComboBox";
+            responseModeComboBox.Size = new Size(707, 23);
+            responseModeComboBox.TabIndex = 2;
+            responseModeComboBox.SelectedIndexChanged += ResponseModeComboBox_SelectedIndexChanged;
             // 
             // aiQueryTextBox
             // 
             aiQueryTextBox.Dock = DockStyle.Fill;
             aiQueryTextBox.Font = new Font("Segoe UI", 10F);
-            aiQueryTextBox.Location = new Point(123, 3);
+            aiQueryTextBox.Location = new Point(123, 69);
             aiQueryTextBox.Name = "aiQueryTextBox";
-            aiQueryTextBox.PlaceholderText = "Enter your query here (e.g., Show all suppliers)";
+            aiQueryTextBox.PlaceholderText = "Ask anything... (Press Enter to send)";
             aiQueryTextBox.Size = new Size(707, 25);
-            aiQueryTextBox.TabIndex = 1;
+            aiQueryTextBox.TabIndex = 3;
+            aiQueryTextBox.KeyDown += AiQueryTextBox_KeyDown;
             // 
             // executeAiQueryButton
             // 
@@ -337,7 +368,7 @@ namespace SacksApp
             executeAiQueryButton.ForeColor = Color.FromArgb(30, 30, 30);
             executeAiQueryButton.Glyph = "▶";
             executeAiQueryButton.ImageAlign = ContentAlignment.MiddleLeft;
-            executeAiQueryButton.Location = new Point(684, 75);
+            executeAiQueryButton.Location = new Point(684, 105);
             executeAiQueryButton.Name = "executeAiQueryButton";
             executeAiQueryButton.Padding = new Padding(62, 12, 12, 12);
             executeAiQueryButton.Size = new Size(146, 34);
@@ -352,10 +383,10 @@ namespace SacksApp
             aiQueryTableLayout.SetColumnSpan(aiResultsTextBox, 2);
             aiResultsTextBox.Dock = DockStyle.Fill;
             aiResultsTextBox.Font = new Font("Consolas", 9F);
-            aiResultsTextBox.Location = new Point(3, 115);
+            aiResultsTextBox.Location = new Point(3, 145);
             aiResultsTextBox.Name = "aiResultsTextBox";
             aiResultsTextBox.ReadOnly = true;
-            aiResultsTextBox.Size = new Size(827, 136);
+            aiResultsTextBox.Size = new Size(827, 106);
             aiResultsTextBox.TabIndex = 5;
             aiResultsTextBox.Text = "";
             aiResultsTextBox.WordWrap = false;
@@ -396,6 +427,8 @@ namespace SacksApp
         private GroupBox aiQueryGroupBox;
         private TableLayoutPanel aiQueryTableLayout;
         private Label aiQueryLabel;
+        private Label responseModeLabel;
+        private ComboBox responseModeComboBox;
         private TextBox aiQueryTextBox;
         private CustomButton executeAiQueryButton;
         private RichTextBox aiResultsTextBox;

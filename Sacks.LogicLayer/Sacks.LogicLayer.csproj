@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.AI.Inference" Version="1.0.0-beta.2" />
     <PackageReference Include="ExcelDataReader" Version="3.7.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
@@ -19,6 +20,7 @@
     <ProjectReference Include="..\Sacks.Core\Sacks.Core.csproj" />
     <ProjectReference Include="..\Sacks.DataAccess\Sacks.DataAccess.csproj" />
     <ProjectReference Include="..\Sacks.Configuration\Sacks.Configuration.csproj" />
+    <ProjectReference Include="..\McpServer.Client\McpServer.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>

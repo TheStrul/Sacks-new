@@ -9,4 +9,7 @@ public sealed class DatabaseOperationResult
     public string? Message { get; set; }
     public TimeSpan Duration { get; set; }
     public int AffectedRecords { get; set; }
+    public long ElapsedMilliseconds { get; set; }
+    public Dictionary<string, int> DeletedCounts { get; set; } = new();
+    public List<string> Errors { get; set; } = new();
 }

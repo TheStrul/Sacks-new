@@ -16,4 +16,9 @@ public interface IDatabaseManagementService
     /// Gets counts for all main entities
     /// </summary>
     Task<EntityCounts> GetEntityCountsAsync();
+
+    /// <summary>
+    /// Checks database connection
+    /// </summary>
+    Task<DatabaseConnectionResult> CheckConnectionAsync();
 }

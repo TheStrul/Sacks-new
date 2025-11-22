@@ -1,10 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
 
+using McpServer.Client;
 using Sacks.Core.Repositories.Interfaces;
 using Sacks.Core.Services.Interfaces;
+using Sacks.Core.Services.Implementations;
 using Sacks.LogicLayer.Services;
 using Sacks.LogicLayer.Services.Implementations;
-using Sacks.Core.Services.Interfaces;
+using Sacks.LogicLayer.Services.Interfaces;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing;
 using SacksAIPlatform.InfrastructuresLayer.FileProcessing.Services;
 
@@ -41,11 +43,8 @@ public static class ServiceCollectionExtensions
         // Add query and grid management services
         services.AddScoped<IGridStateManagementService, GridStateManagementService>();
 
-        // Add MCP client service
-        services.AddSingleton<IMcpClientService, McpClientService>();
-
-        // Add LLM query router service
-        services.AddSingleton<ILlmQueryRouterService, HeuristicQueryRouterService>();
+        // Note: MCP client and LLM services are now registered via AddSacksLogicLayerServices()
+        // This method is kept for backwards compatibility but doesn't register MCP/LLM anymore
 
         return services;
     }

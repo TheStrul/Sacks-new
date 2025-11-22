@@ -33,10 +33,11 @@ public class CancellationTokenIntegrationTests : IClassFixture<DatabaseFixture>,
         var productLogger = new Mock<ILogger<ProductTools>>().Object;
         var offerLogger = new Mock<ILogger<OfferTools>>().Object;
         var supplierLogger = new Mock<ILogger<SupplierTools>>().Object;
+        var connectionTracker = Helpers.TestHelpers.CreateMockConnectionTracker();
         
-        _productTools = new ProductTools(_fixture.DbContext, productLogger);
-        _offerTools = new OfferTools(_fixture.DbContext, offerLogger);
-        _supplierTools = new SupplierTools(_fixture.DbContext, supplierLogger);
+        _productTools = new ProductTools(_fixture.DbContext, productLogger, connectionTracker);
+        _offerTools = new OfferTools(_fixture.DbContext, offerLogger, connectionTracker);
+        _supplierTools = new SupplierTools(_fixture.DbContext, supplierLogger, connectionTracker);
     }
 
     public void Dispose()

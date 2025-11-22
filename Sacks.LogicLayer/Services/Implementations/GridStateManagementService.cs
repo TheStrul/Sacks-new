@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Sacks.Core.Services.Interfaces;
+using Sacks.LogicLayer.Services.Interfaces;
 
 namespace Sacks.LogicLayer.Services.Implementations;
 
@@ -82,8 +83,8 @@ public sealed class GridStateManagementService : IGridStateManagementService
             var filterList = filters?.ToList() ?? new List<FilterCondition>();
             var persistedFilters = filterList.Select(f => new PersistedFilter
             {
-                PropertyName = f.PropertyName,
-                Operator = f.Operator.ToString(),
+                PropertyName = f.Column,
+                Operator = f.Operator,
                 Value = f.Value,
                 Enabled = f.Enabled
             }).ToList();
@@ -120,16 +121,13 @@ public sealed class GridStateManagementService : IGridStateManagementService
             var filters = new List<FilterCondition>();
             foreach (var pf in persistedFilters)
             {
-                if (Enum.TryParse<FilterOperator>(pf.Operator, out var op))
+                filters.Add(new FilterCondition
                 {
-                    filters.Add(new FilterCondition
-                    {
-                        PropertyName = pf.PropertyName,
-                        Operator = op,
-                        Value = pf.Value,
-                        Enabled = pf.Enabled
-                    });
-                }
+                    Column = pf.PropertyName,
+                    Operator = pf.Operator,
+                    Value = pf.Value ?? string.Empty,
+                    Enabled = pf.Enabled
+                });
             }
 
             _logger.LogDebug("Loaded {FilterCount} filters from state", filters.Count);

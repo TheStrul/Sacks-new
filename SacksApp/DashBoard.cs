@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using QMobileDeviceServiceMenu;
 
 using Sacks.Core.Services.Interfaces;
+using Sacks.LogicLayer.Services.Interfaces;
 
 namespace SacksApp
 {
@@ -34,6 +35,16 @@ namespace SacksApp
             InitializeComponent();
             this._serviceProvider = serviceProvider;
             this._logger = serviceProvider.GetRequiredService<ILogger<DashBoard>>();
+
+            // Initialize ResponseMode dropdown with current config value
+            var config = serviceProvider.GetRequiredService<Sacks.Configuration.SacksConfigurationOptions>();
+            responseModeComboBox.SelectedIndex = config.Llm.ResponseMode switch
+            {
+                "ToolOnly" => 0,
+                "ToolWithEcho" => 1,
+                "Conversational" => 2,
+                _ => 2 // Default to Conversational
+            };
 
             // CustomButton styling is now handled directly in the designer - no need for ApplyModernTheme
         }
@@ -342,7 +353,32 @@ namespace SacksApp
             }
         }
 
-        private async void ExecuteAiQueryButton_Click(object sender, EventArgs e)
+        private void ResponseModeComboBox_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            var config = _serviceProvider.GetRequiredService<Sacks.Configuration.SacksConfigurationOptions>();
+            
+            // Update the config based on selection
+            config.Llm.ResponseMode = responseModeComboBox.SelectedIndex switch
+            {
+                0 => "ToolOnly",
+                1 => "ToolWithEcho",
+                2 => "Conversational",
+                _ => "Conversational"
+            };
+
+            _logger.LogInformation("Response mode changed to: {Mode}", config.Llm.ResponseMode);
+        }
+
+        private void AiQueryTextBox_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.SuppressKeyPress = true; // Prevent the "ding" sound
+                ExecuteAiQueryButton_Click(sender, e);
+            }
+        }
+
+        private async void ExecuteAiQueryButton_Click(object? sender, EventArgs e)
         {
             var query = aiQueryTextBox.Text.Trim();
 
@@ -413,18 +449,18 @@ namespace SacksApp
             }
 
             sb.AppendLine();
-            sb.AppendLine($"📊 Tool Result:");
+            sb.AppendLine($"📊 Result:");
             sb.AppendLine(new string('-', 80));
             
-            // Try to format JSON nicely
+            // Parse and display JSON result in user-friendly format
             try
             {
-                var jsonDoc = System.Text.Json.JsonDocument.Parse(routingResult.ToolResult);
-                var formatted = System.Text.Json.JsonSerializer.Serialize(jsonDoc, s_jsonFormatOptions);
-                sb.AppendLine(formatted);
+                var result = ParseAndFormatToolResult(routingResult.ToolResult);
+                sb.AppendLine(result);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogWarning(ex, "Failed to parse tool result, showing raw response");
                 sb.AppendLine(routingResult.ToolResult);
             }
             
@@ -437,6 +473,157 @@ namespace SacksApp
             {
                 aiResultsTextBox.Text = finalText;
             }
+        }
+
+        /// <summary>
+        /// Parse MCP JSON-RPC response and format it in a user-friendly way
+        /// </summary>
+        private string ParseAndFormatToolResult(string jsonResult)
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(jsonResult);
+            var root = doc.RootElement;
+
+            // Check for JSON-RPC error
+            if (root.TryGetProperty("error", out var error))
+            {
+                var code = error.TryGetProperty("code", out var c) ? c.GetInt32() : 0;
+                var message = error.TryGetProperty("message", out var m) ? m.GetString() : "Unknown error";
+                return $"❌ Error ({code}): {message}";
+            }
+
+            // Extract the actual result
+            if (!root.TryGetProperty("result", out var result))
+            {
+                return jsonResult; // Fallback to raw JSON
+            }
+
+            var sb = new System.Text.StringBuilder();
+
+            // Extract content array
+            if (result.TryGetProperty("content", out var contentArray) && contentArray.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                foreach (var content in contentArray.EnumerateArray())
+                {
+                    if (content.TryGetProperty("type", out var typeElement) && typeElement.GetString() == "text")
+                    {
+                        if (content.TryGetProperty("text", out var textElement))
+                        {
+                            var text = textElement.GetString() ?? "";
+                            
+                            // Try to parse the text as JSON (nested JSON from tools)
+                            try
+                            {
+                                using var innerDoc = System.Text.Json.JsonDocument.Parse(text);
+                                var innerRoot = innerDoc.RootElement;
+
+                                // Check for success/data pattern
+                                if (innerRoot.TryGetProperty("success", out var success) && success.GetBoolean())
+                                {
+                                    if (innerRoot.TryGetProperty("data", out var data))
+                                    {
+                                        sb.AppendLine(FormatDataObject(data));
+                                    }
+                                    else
+                                    {
+                                        sb.AppendLine("✅ Success");
+                                    }
+                                }
+                                else if (innerRoot.TryGetProperty("error", out var innerError))
+                                {
+                                    sb.AppendLine($"❌ {innerError.GetString()}");
+                                }
+                                else
+                                {
+                                    // Format as readable JSON
+                                    sb.AppendLine(FormatDataObject(innerRoot));
+                                }
+                            }
+                            catch
+                            {
+                                // Not JSON, display as-is
+                                sb.AppendLine(text);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>
+        /// Format a JSON element into readable text
+        /// </summary>
+        private string FormatDataObject(System.Text.Json.JsonElement element)
+        {
+            var sb = new System.Text.StringBuilder();
+
+            if (element.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                var count = 0;
+                foreach (var item in element.EnumerateArray())
+                {
+                    count++;
+                    sb.AppendLine($"\n[Item {count}]");
+                    sb.Append(FormatDataObject(item));
+                }
+                
+                if (count == 0)
+                {
+                    sb.AppendLine("(No items found)");
+                }
+                else
+                {
+                    sb.Insert(0, $"Found {count} item(s):\n");
+                }
+            }
+            else if (element.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                foreach (var prop in element.EnumerateObject())
+                {
+                    var name = prop.Name;
+                    var value = prop.Value;
+
+                    if (value.ValueKind == System.Text.Json.JsonValueKind.Object || value.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    {
+                        sb.AppendLine($"{name}:");
+                        var nested = FormatDataObject(value);
+                        foreach (var line in nested.Split('\n'))
+                        {
+                            if (!string.IsNullOrWhiteSpace(line))
+                            {
+                                sb.AppendLine($"  {line}");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        sb.AppendLine($"{name}: {GetValueAsString(value)}");
+                    }
+                }
+            }
+            else
+            {
+                sb.Append(GetValueAsString(element));
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Get JSON element value as string
+        /// </summary>
+        private string GetValueAsString(System.Text.Json.JsonElement element)
+        {
+            return element.ValueKind switch
+            {
+                System.Text.Json.JsonValueKind.String => element.GetString() ?? "",
+                System.Text.Json.JsonValueKind.Number => element.GetRawText(),
+                System.Text.Json.JsonValueKind.True => "true",
+                System.Text.Json.JsonValueKind.False => "false",
+                System.Text.Json.JsonValueKind.Null => "(null)",
+                _ => element.GetRawText()
+            };
         }
     }
 }

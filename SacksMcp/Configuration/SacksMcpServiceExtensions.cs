@@ -4,6 +4,8 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using McpServer.Core.Configuration;
 using McpServer.Database.Configuration;
+using McpServer.Transport;
+using McpServer.Transport.Http;
 using Sacks.Configuration;
 using Sacks.DataAccess.Data;
 
@@ -35,9 +37,27 @@ public static class SacksMcpServiceExtensions
         services.AddSingleton(config.Database);
         services.AddSingleton(config.McpServer);
 
-        // Configure MCP server with tools from this assembly
+        // Register connection tracker for client connection logging
+        services.AddSingleton<SacksMcp.Services.ConnectionTracker>();
+
+        // Register tool classes for HTTP transport (needed for DI-based invocation)
+        services.AddScoped<SacksMcp.Examples.ExampleTools>();
+        services.AddScoped<SacksMcp.Tools.OfferTools>();
+        services.AddScoped<SacksMcp.Tools.ProductTools>();
+        services.AddScoped<SacksMcp.Tools.SupplierTools>();
+        services.AddScoped<SacksMcp.Tools.SystemTools>();
+
+        // Configure HTTP transport for MCP server
+        services.AddHttpTransport(new HttpTransportOptions
+        {
+            Port = config.McpServer.HttpPort,
+            EnableHttps = config.McpServer.EnableHttps,
+            EndpointPath = "/mcp",
+            EnableConnectionLogging = true
+        });
+
+        // Configure MCP server with tools from this assembly (still needed for tool discovery)
         services.AddMcpServer()
-            .WithStdioServerTransport()
             .WithToolsFromAssembly(typeof(SacksMcpServiceExtensions).Assembly);
 
         // Configure SacksDbContext with options from config singleton

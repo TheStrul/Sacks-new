@@ -35,7 +35,8 @@ public class InputValidationSecurityTests : IDisposable
     {
         // Arrange
         var mockLogger = MockDbContextFactory.CreateMockLogger<ProductTools>();
-        var tools = new ProductTools(_context, mockLogger.Object);
+        var connectionTracker = Helpers.TestHelpers.CreateMockConnectionTracker();
+        var tools = new ProductTools(_context, mockLogger.Object, connectionTracker);
 
         // Act
         var act = () => tools.SearchProducts(maliciousInput, 50);
@@ -51,7 +52,8 @@ public class InputValidationSecurityTests : IDisposable
         // Arrange
         var longString = new string('A', 100000); // 100k characters
         var mockLogger = MockDbContextFactory.CreateMockLogger<ProductTools>();
-        var tools = new ProductTools(_context, mockLogger.Object);
+        var connectionTracker = Helpers.TestHelpers.CreateMockConnectionTracker();
+        var tools = new ProductTools(_context, mockLogger.Object, connectionTracker);
 
         // Act
         var act = () => tools.SearchProducts(longString, 50);
@@ -68,7 +70,8 @@ public class InputValidationSecurityTests : IDisposable
     {
         // Arrange
         var mockLogger = MockDbContextFactory.CreateMockLogger<ProductTools>();
-        var tools = new ProductTools(_context, mockLogger.Object);
+        var connectionTracker = Helpers.TestHelpers.CreateMockConnectionTracker();
+        var tools = new ProductTools(_context, mockLogger.Object, connectionTracker);
 
         // Act & Assert
         if (string.IsNullOrEmpty(invalidEan))

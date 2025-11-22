@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 using Sacks.Core.Services.Interfaces;
+using Sacks.Core.Services.Models;
 using Sacks.DataAccess.Data;
 
 namespace Sacks.DataAccess.Services;
@@ -115,10 +116,11 @@ public sealed class OfferProductDataService : IOfferProductDataService
     }
 
     public async Task<SaveChangesResult> SaveAllChangesAsync(
-        DataTable dataTable, 
+        DataTable original,
+        DataTable modified, 
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(dataTable);
+        ArgumentNullException.ThrowIfNull(modified);
 
         var result = new SaveChangesResult();
         var errors = new List<string>();
@@ -127,7 +129,7 @@ public sealed class OfferProductDataService : IOfferProductDataService
 
         try
         {
-            var modifiedRows = dataTable.Rows.Cast<DataRow>()
+            var modifiedRows = modified.Rows.Cast<DataRow>()
                 .Where(r => r.RowState == DataRowState.Modified)
                 .ToList();
 
@@ -140,7 +142,7 @@ public sealed class OfferProductDataService : IOfferProductDataService
                     continue;
                 }
 
-                foreach (DataColumn column in dataTable.Columns)
+                foreach (DataColumn column in modified.Columns)
                 {
                     var columnName = column.ColumnName;
                     
@@ -197,29 +199,29 @@ public sealed class OfferProductDataService : IOfferProductDataService
         }
     }
 
-    public ValidationResult ValidateValue(string columnName, string? value)
+    public (bool IsValid, string? ErrorMessage) ValidateValue(string columnName, string? value)
     {
         switch (columnName)
         {
             case "Price":
                 if (!decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var price))
-                    return ValidationResult.Error("Invalid decimal format for Price");
+                    return (false, "Invalid decimal format for Price");
                 if (price < 0)
-                    return ValidationResult.Error("Price cannot be negative");
+                    return (false, "Price cannot be negative");
                 break;
 
             case "Currency":
                 if (string.IsNullOrWhiteSpace(value))
-                    return ValidationResult.Error("Currency cannot be empty");
+                    return (false, "Currency cannot be empty");
                 if (value.Length > 3)
-                    return ValidationResult.Error("Currency code cannot exceed 3 characters");
+                    return (false, "Currency code cannot exceed 3 characters");
                 break;
 
             case "Quantity":
                 if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var quantity))
-                    return ValidationResult.Error("Invalid integer format for Quantity");
+                    return (false, "Invalid integer format for Quantity");
                 if (quantity < 0)
-                    return ValidationResult.Error("Quantity cannot be negative");
+                    return (false, "Quantity cannot be negative");
                 break;
 
             case "Description":
@@ -228,10 +230,10 @@ public sealed class OfferProductDataService : IOfferProductDataService
                 break;
 
             default:
-                return ValidationResult.Error($"Column '{columnName}' is not supported for editing");
+                return (false, $"Column '{columnName}' is not supported for editing");
         }
 
-        return ValidationResult.Success();
+        return (true, null);
     }
 
     public OfferProductIdentifier? ExtractIdentifier(DataRow row)

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 using Sacks.Core.Entities;
 using Sacks.Core.Services.Interfaces;
+using Sacks.Core.Services.Models;
 using Sacks.DataAccess.Data;
 
 namespace Sacks.DataAccess.Services;
@@ -217,6 +218,11 @@ public sealed class ProductOffersQueryService : IProductOffersQueryService
         
         // Default to string for unknown columns
         return typeof(string);
+    }
+
+    public IReadOnlyList<string> GetAvailableColumns()
+    {
+        return EntityPropertyNames;
     }
 
     public bool IsColumnEditable(string columnName)

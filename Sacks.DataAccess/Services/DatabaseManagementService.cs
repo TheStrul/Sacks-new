@@ -14,7 +14,6 @@ namespace Sacks.DataAccess.Services
     public class DatabaseManagementService : IDatabaseManagementService
     {
         private readonly SacksDbContext _context;
-        private readonly IUnitOfWork _unitOfWork;
         private readonly ITransactionalProductsRepository _productsRepository;
         private readonly ITransactionalSuppliersRepository _suppliersRepository;
         private readonly ITransactionalSupplierOffersRepository _supplierOffersRepository;
@@ -22,14 +21,12 @@ namespace Sacks.DataAccess.Services
 
         public DatabaseManagementService(
             SacksDbContext context,
-            IUnitOfWork unitOfWork,
             ITransactionalProductsRepository productsRepository,
             ITransactionalSuppliersRepository suppliersRepository,
             ITransactionalSupplierOffersRepository supplierOffersRepository,
             ITransactionalOfferProductsRepository offerProductsRepository)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _productsRepository = productsRepository ?? throw new ArgumentNullException(nameof(productsRepository));
             _suppliersRepository = suppliersRepository ?? throw new ArgumentNullException(nameof(suppliersRepository));
             _supplierOffersRepository = supplierOffersRepository ?? throw new ArgumentNullException(nameof(supplierOffersRepository));
@@ -47,7 +44,8 @@ namespace Sacks.DataAccess.Services
             try
             {
                 // Execute all operations within a single transaction
-                await _unitOfWork.ExecuteInTransactionAsync(async (cancellationToken) =>
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
                     // Clear the DbContext change tracker FIRST to remove any cached/tracked entities
                     _context.ChangeTracker.Clear();
@@ -57,14 +55,21 @@ namespace Sacks.DataAccess.Services
                     result.DeletedCounts = beforeCounts;
                     
                     // Use raw SQL commands to delete data in correct order (faster and avoids EF tracking issues)
-                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM OfferProducts", cancellationToken);
-                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM SupplierOffers", cancellationToken);
-                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM Products", cancellationToken);
-                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM Suppliers", cancellationToken);
+                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM OfferProducts");
+                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM SupplierOffers");
+                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM Products");
+                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM Suppliers");
 
                     // Clear the DbContext change tracker again after deletion
                     _context.ChangeTracker.Clear();
-                }, CancellationToken.None);
+                    
+                    await transaction.CommitAsync();
+                }
+                catch
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
 
                 // Reset auto-increment counters after successful deletion
                 await ResetAutoIncrementCountersInternalAsync();
@@ -154,6 +159,20 @@ namespace Sacks.DataAccess.Services
 
                 return result;
             }
+        }
+
+        /// <summary>
+        /// Gets current record counts for all main entities
+        /// </summary>
+        public async Task<EntityCounts> GetEntityCountsAsync()
+        {
+            return new EntityCounts
+            {
+                Products = await _context.Products.CountAsync(),
+                Suppliers = await _context.Suppliers.CountAsync(),
+                SupplierOffers = await _context.SupplierOffers.CountAsync(),
+                ProductOffers = await _context.OfferProducts.CountAsync()
+            };
         }
 
         /// <summary>

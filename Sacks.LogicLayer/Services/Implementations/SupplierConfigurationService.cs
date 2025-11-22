@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Sacks.Core.FileProcessing.Configuration;
 
 using Sacks.Core.Services.Interfaces;
+using Sacks.LogicLayer.Services.Interfaces;
 
 namespace Sacks.LogicLayer.Services.Implementations
 {
