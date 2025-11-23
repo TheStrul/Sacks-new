@@ -54,10 +54,10 @@ namespace SacksApp
             responseModeComboBox = new ComboBox();
             aiQueryTextBox = new TextBox();
             executeAiQueryButton = new CustomButton();
-            aiMetadataTextBox = new RichTextBox();
-            aiDataResultsTextBox = new RichTextBox();
             aiMetadataLabel = new Label();
+            aiMetadataTextBox = new RichTextBox();
             aiDataLabel = new Label();
+            aiDataResultsTextBox = new RichTextBox();
             tableLayoutPanel1.SuspendLayout();
             aiQueryGroupBox.SuspendLayout();
             aiQueryTableLayout.SuspendLayout();
@@ -324,22 +324,22 @@ namespace SacksApp
             // 
             aiQueryLabel.Anchor = AnchorStyles.Left;
             aiQueryLabel.AutoSize = true;
+            aiQueryTableLayout.SetColumnSpan(aiQueryLabel, 2);
             aiQueryLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             aiQueryLabel.Location = new Point(3, 7);
             aiQueryLabel.Name = "aiQueryLabel";
-            aiQueryLabel.Size = new Size(85, 15);
+            aiQueryLabel.Size = new Size(111, 15);
             aiQueryLabel.TabIndex = 0;
             aiQueryLabel.Text = "AI-Powered Query";
-            aiQueryTableLayout.SetColumnSpan(aiQueryLabel, 2);
             // 
             // responseModeLabel
             // 
             responseModeLabel.Anchor = AnchorStyles.Left;
             responseModeLabel.AutoSize = true;
             responseModeLabel.Font = new Font("Segoe UI", 9F);
-            responseModeLabel.Location = new Point(3, 38);
+            responseModeLabel.Location = new Point(3, 40);
             responseModeLabel.Name = "responseModeLabel";
-            responseModeLabel.Size = new Size(43, 15);
+            responseModeLabel.Size = new Size(41, 15);
             responseModeLabel.TabIndex = 1;
             responseModeLabel.Text = "Mode:";
             // 
@@ -393,9 +393,9 @@ namespace SacksApp
             aiMetadataLabel.AutoSize = true;
             aiQueryTableLayout.SetColumnSpan(aiMetadataLabel, 2);
             aiMetadataLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            aiMetadataLabel.Location = new Point(3, 145);
+            aiMetadataLabel.Location = new Point(3, 146);
             aiMetadataLabel.Name = "aiMetadataLabel";
-            aiMetadataLabel.Size = new Size(105, 20);
+            aiMetadataLabel.Size = new Size(86, 15);
             aiMetadataLabel.TabIndex = 6;
             aiMetadataLabel.Text = "📋 Query Info:";
             // 
@@ -407,10 +407,9 @@ namespace SacksApp
             aiMetadataTextBox.Location = new Point(3, 169);
             aiMetadataTextBox.Name = "aiMetadataTextBox";
             aiMetadataTextBox.ReadOnly = true;
-            aiMetadataTextBox.Size = new Size(827, 40);
+            aiMetadataTextBox.Size = new Size(827, 13);
             aiMetadataTextBox.TabIndex = 7;
             aiMetadataTextBox.Text = "";
-            aiMetadataTextBox.WordWrap = true;
             // 
             // aiDataLabel
             // 
@@ -418,9 +417,9 @@ namespace SacksApp
             aiDataLabel.AutoSize = true;
             aiQueryTableLayout.SetColumnSpan(aiDataLabel, 2);
             aiDataLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            aiDataLabel.Location = new Point(3, 215);
+            aiDataLabel.Location = new Point(3, 189);
             aiDataLabel.Name = "aiDataLabel";
-            aiDataLabel.Size = new Size(90, 20);
+            aiDataLabel.Size = new Size(66, 15);
             aiDataLabel.TabIndex = 8;
             aiDataLabel.Text = "📊 Results:";
             // 
@@ -429,10 +428,10 @@ namespace SacksApp
             aiQueryTableLayout.SetColumnSpan(aiDataResultsTextBox, 2);
             aiDataResultsTextBox.Dock = DockStyle.Fill;
             aiDataResultsTextBox.Font = new Font("Consolas", 9F);
-            aiDataResultsTextBox.Location = new Point(3, 239);
+            aiDataResultsTextBox.Location = new Point(3, 212);
             aiDataResultsTextBox.Name = "aiDataResultsTextBox";
             aiDataResultsTextBox.ReadOnly = true;
-            aiDataResultsTextBox.Size = new Size(827, 100);
+            aiDataResultsTextBox.Size = new Size(827, 39);
             aiDataResultsTextBox.TabIndex = 9;
             aiDataResultsTextBox.Text = "";
             aiDataResultsTextBox.WordWrap = false;

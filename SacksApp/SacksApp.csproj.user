@@ -7,6 +7,9 @@
     <Compile Update="ColumnSelectorForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="CustomMessageBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="DashBoard.cs">
       <SubType>Form</SubType>
     </Compile>
