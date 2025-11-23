@@ -86,7 +86,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load suppliers");
-                MessageBox.Show(this, ex.Message, "Suppliers", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show(ex.Message, "Suppliers", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -107,7 +107,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load offers");
-                MessageBox.Show(this, ex.Message, "Offers", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show(ex.Message, "Offers", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -123,7 +123,7 @@ namespace SacksApp
             var sel = _comboSuppliers.SelectedItem as SupplierItem;
             if (sel == null)
             {
-                MessageBox.Show(this, "Select a supplier first.", "Offers", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                CustomMessageBox.Show("Select a supplier first.", "Offers", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -145,7 +145,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create offer");
-                MessageBox.Show(this, ex.Message, "Create Offer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show(ex.Message, "Create Offer", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -154,7 +154,7 @@ namespace SacksApp
             var row = GetSelectedOffer();
             if (row == null)
             {
-                MessageBox.Show(this, "Select an offer to edit.", "Offers", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                CustomMessageBox.Show("Select an offer to edit.", "Offers", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -162,7 +162,7 @@ namespace SacksApp
             var entity = await _offersService.GetOfferAsync(row.Id);
             if (entity == null)
             {
-                MessageBox.Show(this, "Offer not found.", "Offers", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                CustomMessageBox.Show("Offer not found.", "Offers", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -179,7 +179,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to update offer {OfferId}", entity.Id);
-                MessageBox.Show(this, ex.Message, "Update Offer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show(ex.Message, "Update Offer", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -188,11 +188,11 @@ namespace SacksApp
             var row = GetSelectedOffer();
             if (row == null)
             {
-                MessageBox.Show(this, "Select an offer to delete.", "Offers", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                CustomMessageBox.Show("Select an offer to delete.", "Offers", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            if (MessageBox.Show(this, $"Delete offer '{row.OfferName}'?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+            if (CustomMessageBox.Show($"Delete offer '{row.OfferName}'?", "Confirm", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
                 return;
 
             try
@@ -203,7 +203,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to delete offer {OfferId}", row.Id);
-                MessageBox.Show(this, ex.Message, "Delete Offer", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show(ex.Message, "Delete Offer", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -268,12 +268,12 @@ namespace SacksApp
                 {
                     if (string.IsNullOrWhiteSpace(_tbName.Text))
                     {
-                        MessageBox.Show(this, "Offer Name is required", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        CustomMessageBox.Show("Offer Name is required", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         DialogResult = DialogResult.None;
                     }
                     else if (string.IsNullOrWhiteSpace(_tbCurrency.Text) || _tbCurrency.Text.Trim().Length != 3)
                     {
-                        MessageBox.Show(this, "Currency must be a 3-letter code (e.g., USD)", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        CustomMessageBox.Show("Currency must be a 3-letter code (e.g., USD)", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         DialogResult = DialogResult.None;
                     }
                 };

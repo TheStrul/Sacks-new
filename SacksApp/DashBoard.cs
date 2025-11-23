@@ -68,7 +68,7 @@ namespace SacksApp
 
                 if (files.Length == 0)
                 {
-                    MessageBox.Show("No Excel files found in Inputs folder.",
+                    CustomMessageBox.Show("No Excel files found in Inputs folder.",
                         "No Files", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
@@ -82,13 +82,13 @@ namespace SacksApp
                     _logger.LogDebug($"Finished processing {Path.GetFileName(file)}");
                 }
 
-                MessageBox.Show($"Successfully processed {files.Length} file(s)!",
+                CustomMessageBox.Show($"Successfully processed {files.Length} file(s)!",
                     "Processing Complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing files");
-                MessageBox.Show($"Error processing files:\n{ex.Message}\n\nCheck LogViewer for details.",
+                CustomMessageBox.Show($"Error processing files:\n{ex.Message}\n\nCheck LogViewer for details.",
                     "Processing Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -142,8 +142,8 @@ namespace SacksApp
 
         private async void ClearDatabaseButton_Click(object sender, EventArgs e)
         {
-            var result = MessageBox.Show("Are you sure you want to clear ALL data from the database?\n\nThis action cannot be undone!",
-                "Confirm Database Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+            var result = CustomMessageBox.Show("Are you sure you want to clear ALL data from the database?\n\nThis action cannot be undone!",
+                "Confirm Database Clear", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
             if (result != DialogResult.Yes) return;
 
@@ -157,20 +157,20 @@ namespace SacksApp
                 if (clearResult.Success)
                 {
                     var summary = string.Join("\n", clearResult.DeletedCounts.Select(kvp => $"{kvp.Key}: {kvp.Value:N0} records"));
-                    MessageBox.Show($"Database cleared successfully!\n\nDeleted:\n{summary}\n\nCompleted in {clearResult.ElapsedMilliseconds:N0}ms",
+                    CustomMessageBox.Show($"Database cleared successfully!\n\nDeleted:\n{summary}\n\nCompleted in {clearResult.ElapsedMilliseconds:N0}ms",
                         "Database Cleared", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
                 {
                     var errors = string.Join("\n", clearResult.Errors);
-                    MessageBox.Show($"Failed to clear database:\n{clearResult.Message}\n\nErrors:\n{errors}",
+                    CustomMessageBox.Show($"Failed to clear database:\n{clearResult.Message}\n\nErrors:\n{errors}",
                         "Clear Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error clearing database");
-                MessageBox.Show($"Error clearing database:\n{ex.Message}",
+                CustomMessageBox.Show($"Error clearing database:\n{ex.Message}",
                     "Clear Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -190,7 +190,7 @@ namespace SacksApp
 
                 if (!connectionResult.CanConnect)
                 {
-                    MessageBox.Show($"Cannot connect to database:\n{connectionResult.Message}",
+                    CustomMessageBox.Show($"Cannot connect to database:\n{connectionResult.Message}",
                         "Connection Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
@@ -201,13 +201,13 @@ namespace SacksApp
 
                 var totalRecords = connectionResult.TableCounts.Values.Sum();
 
-                MessageBox.Show($"Database Statistics\n{new string('=', 30)}\n\n{statistics}\n\nTotal records: {totalRecords:N0}\n\nServer: {connectionResult.ServerInfo}",
+                CustomMessageBox.Show($"Database Statistics\n{new string('=', 30)}\n\n{statistics}\n\nTotal records: {totalRecords:N0}\n\nServer: {connectionResult.ServerInfo}",
                     "Database Statistics", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading statistics");
-                MessageBox.Show($"Error loading statistics:\n{ex.Message}",
+                CustomMessageBox.Show($"Error loading statistics:\n{ex.Message}",
                     "Statistics Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -239,7 +239,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error opening SQL Query Tool");
-                MessageBox.Show($"Error opening SQL Query Tool: {ex.Message}",
+                CustomMessageBox.Show($"Error opening SQL Query Tool: {ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -255,7 +255,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error opening log viewer");
-                MessageBox.Show($"Error opening log viewer: {ex.Message}",
+                CustomMessageBox.Show($"Error opening log viewer: {ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -294,7 +294,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error opening Lookup Editor");
-                MessageBox.Show($"Error opening Lookup Editor: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Error opening Lookup Editor: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -348,7 +348,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error opening Offers manager");
-                MessageBox.Show($"Error opening Offers manager: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Error opening Offers manager: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -382,7 +382,7 @@ namespace SacksApp
 
             if (string.IsNullOrWhiteSpace(query))
             {
-                MessageBox.Show("Please enter a query.", "Empty Query", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                CustomMessageBox.Show("Please enter a query.", "Empty Query", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -404,7 +404,7 @@ namespace SacksApp
                 _logger.LogError(ex, "Error processing query");
                 aiMetadataTextBox.Text = $"❌ Error: {ex.Message}";
                 aiDataResultsTextBox.Text = "";
-                MessageBox.Show($"Error processing query: {ex.Message}", "Execution Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Error processing query: {ex.Message}", "Execution Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {

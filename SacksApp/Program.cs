@@ -139,7 +139,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 Log.Fatal(ex, "💥 Fatal application error");
-                MessageBox.Show($"Fatal error: {ex.Message}", "Application Error", 
+                CustomMessageBox.Show($"Fatal error: {ex.Message}", "Application Error", 
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Environment.Exit(1);
             }

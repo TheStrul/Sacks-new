@@ -4,6 +4,7 @@
 
 using System.Text;
 using System.Reflection;
+using SacksApp;
 
 
 namespace QMobileDeviceServiceMenu
@@ -30,7 +31,7 @@ namespace QMobileDeviceServiceMenu
 
             if (!Directory.Exists(logsDirectory))
             {
-                MessageBox.Show($"Logs directory not found: {logsDirectory}\n\nMake sure the service has been started at least once to create log files.",
+                CustomMessageBox.Show($"Logs directory not found: {logsDirectory}\n\nMake sure the service has been started at least once to create log files.",
                     "Logs Directory Not Found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
@@ -38,7 +39,7 @@ namespace QMobileDeviceServiceMenu
             var logFile = LogViewerController.GetMostRecentLogFile(serviceDirectory);
             if (logFile == null)
             {
-                MessageBox.Show($"No log files found in: {logsDirectory}",
+                CustomMessageBox.Show($"No log files found in: {logsDirectory}",
                     "No Log Files Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
@@ -74,7 +75,7 @@ namespace QMobileDeviceServiceMenu
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error opening log viewer:\n{ex.Message}",
+                CustomMessageBox.Show($"Error opening log viewer:\n{ex.Message}",
                     "Log Viewer Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -257,7 +258,7 @@ namespace QMobileDeviceServiceMenu
             {
                 if (e.ShowDialog)
                 {
-                    MessageBox.Show(e.Message, "Search", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    CustomMessageBox.Show(e.Message, "Search", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 return;
             }
@@ -292,7 +293,7 @@ namespace QMobileDeviceServiceMenu
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Export failed: {ex.Message}", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Export failed: {ex.Message}", "Export Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -503,7 +504,7 @@ namespace QMobileDeviceServiceMenu
             catch (Exception ex)
             {
                 statusLabel.Text = $"Monitoring: {_model.LogFileName} | Error: {ex.Message}";
-                MessageBox.Show($"Error during clear operation: {ex.Message}",
+                CustomMessageBox.Show($"Error during clear operation: {ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -897,7 +898,7 @@ namespace QMobileDeviceServiceMenu
             }
             else
             {
-                MessageBox.Show($"'{searchTerm}' not found in logs.", "Search Result",
+                CustomMessageBox.Show($"'{searchTerm}' not found in logs.", "Search Result",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 statusLabel.Text = $"Monitoring: {_model.LogFileName} | '{searchTerm}' not found";
             }

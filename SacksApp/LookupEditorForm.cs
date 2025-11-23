@@ -198,7 +198,7 @@ namespace SacksApp
                 // Validate name
                 if (_suppliersConfig != null && _suppliersConfig.Lookups.ContainsKey(name))
                 {
-                    MessageBox.Show(this, $"Lookup '{name}' already exists.", "Exists", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    CustomMessageBox.Show($"Lookup '{name}' already exists.", "Exists", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     ResetSelectionToCurrentLookup();
                     return;
                 }
@@ -335,7 +335,7 @@ namespace SacksApp
                 _svc ??= _serviceProvider.GetService<ISupplierConfigurationService>();
                 if (_svc == null)
                 {
-                    MessageBox.Show(this, "SupplierConfigurationService not available.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    CustomMessageBox.Show("SupplierConfigurationService not available.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
@@ -387,7 +387,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load lookup {Lookup}", _lookupName);
-                MessageBox.Show(this, ex.Message, "Load failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show(ex.Message, "Load failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
@@ -485,14 +485,13 @@ namespace SacksApp
 
                 if (errors.Count > 0)
                 {
-                    MessageBox.Show(this, string.Join(Environment.NewLine, errors), "Validation Errors", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    CustomMessageBox.Show(string.Join(Environment.NewLine, errors), "Validation Errors", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
                 if (warnings.Count > 0)
                 {
-                    var result = MessageBox.Show(
-                        this,
+                    var result = CustomMessageBox.Show(
                         string.Join(Environment.NewLine, warnings) + Environment.NewLine + Environment.NewLine + "Continue saving?",
                         "Validation Warnings",
                         MessageBoxButtons.YesNo,
@@ -506,14 +505,14 @@ namespace SacksApp
                 _svc ??= _serviceProvider.GetService<ISupplierConfigurationService>();
                 if (_svc == null)
                 {
-                    MessageBox.Show(this, "SupplierConfigurationService not available.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    CustomMessageBox.Show("SupplierConfigurationService not available.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
                 _suppliersConfig ??= await _svc.GetAllConfigurationsAsync();
                 if (_suppliersConfig == null)
                 {
-                    MessageBox.Show(this, "Supplier configuration not loaded.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    CustomMessageBox.Show("Supplier configuration not loaded.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
@@ -569,7 +568,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save lookup {Lookup}", _lookupName);
-                MessageBox.Show(this, ex.Message, "Save failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show(ex.Message, "Save failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {

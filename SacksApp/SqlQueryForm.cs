@@ -252,7 +252,7 @@ namespace SacksApp
             var (isValid, errorMessage) = _dataService.ValidateValue(col, raw);
             if (!isValid)
             {
-                MessageBox.Show(errorMessage ?? $"Value '{raw}' is not valid for {col}", "Invalid Value", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                CustomMessageBox.Show(errorMessage ?? $"Value '{raw}' is not valid for {col}", "Invalid Value", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -403,7 +403,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed after editing cell");
-                MessageBox.Show($"Failed to process edit: {ex.Message}", "Edit Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Failed to process edit: {ex.Message}", "Edit Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -572,7 +572,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error executing query");
-                MessageBox.Show($"Error executing query: {ex.Message}", "Query Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Error executing query: {ex.Message}", "Query Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 UpdateStatus("Error");
             }
             finally
@@ -639,7 +639,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Export to Excel failed");
-                MessageBox.Show(this, ex.Message, "Export failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show(ex.Message, "Export failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -647,7 +647,7 @@ namespace SacksApp
         {
             if (resultsGrid == null || resultsGrid.Columns.Count == 0 || resultsGrid.Rows.Count == 0)
             {
-                MessageBox.Show(this, "There is no data to export.", "Export", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                CustomMessageBox.Show("There is no data to export.", "Export", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -801,7 +801,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error opening Lookup Editor");
-                MessageBox.Show($"Error opening Lookup Editor: {ex.Message}",
+                CustomMessageBox.Show($"Error opening Lookup Editor: {ex.Message}",
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
 
@@ -856,7 +856,7 @@ namespace SacksApp
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed showing column selector");
-                MessageBox.Show($"Failed to show column selector: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show($"Failed to show column selector: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -866,9 +866,8 @@ namespace SacksApp
             {
                 if (_hasUnsavedChanges)
                 {
-                    var res = MessageBox.Show(this, "You have unsaved changes. Save before closing?",
-                        "Unsaved changes", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning,
-                        MessageBoxDefaultButton.Button1);
+                    var res = CustomMessageBox.Show("You have unsaved changes. Save before closing?",
+                        "Unsaved changes", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
                     if (res == DialogResult.Cancel)
                     {
                         e.Cancel = true;
@@ -1078,7 +1077,7 @@ namespace SacksApp
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, ex.Message, "Save failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CustomMessageBox.Show(ex.Message, "Save failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
@@ -1089,7 +1088,7 @@ namespace SacksApp
         private void CancelAllButton_Click(object? sender, EventArgs e)
         {
             if (!_hasUnsavedChanges) return;
-            var result = MessageBox.Show(this, "Discard all unsaved changes?", "Cancel All", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            var result = CustomMessageBox.Show("Discard all unsaved changes?", "Cancel All", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (result != DialogResult.Yes) return;
 
             if (resultsGrid.DataSource is DataTable dt)

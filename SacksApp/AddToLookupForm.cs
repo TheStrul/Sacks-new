@@ -55,13 +55,13 @@ namespace SacksApp
         {
             if (string.IsNullOrWhiteSpace(KeyText))
             {
-                MessageBox.Show(this, "Key cannot be empty", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                CustomMessageBox.Show("Key cannot be empty", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 this.DialogResult = DialogResult.None;
                 return;
             }
             if (string.IsNullOrWhiteSpace(ValueText))
             {
-                MessageBox.Show(this, "Value cannot be empty", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                CustomMessageBox.Show("Value cannot be empty", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 this.DialogResult = DialogResult.None;
                 return;
             }
