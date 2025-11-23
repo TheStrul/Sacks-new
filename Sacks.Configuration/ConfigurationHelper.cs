@@ -44,6 +44,10 @@ public static class ConfigurationLoader
     /// Search order:
     /// 1. Current app directory (production deployment - file copied by MSBuild)
     /// 2. Solution root (development environment fallback)
+    /// 
+    /// Security: Sensitive values (e.g., ApiKey) can be overridden via environment variables.
+    /// Environment variable format: SACKS__{SectionName}__{PropertyName}
+    /// Example: SACKS__Llm__ApiKey for Llm.ApiKey
     /// </summary>
     public static SacksConfigurationOptions Load(string? explicitPath = null)
     {
@@ -58,6 +62,9 @@ public static class ConfigurationLoader
             {
                 throw new InvalidOperationException($"Failed to deserialize configuration from {configPath}");
             }
+
+            // Apply environment variable overrides for sensitive values
+            ApplyEnvironmentOverrides(options);
 
             return options;
         }
@@ -123,6 +130,28 @@ public static class ConfigurationLoader
         }
 
         throw new DirectoryNotFoundException("Solution root not found (expected in production)");
+    }
+
+    /// <summary>
+    /// Applies environment variable overrides to sensitive configuration values.
+    /// Environment variable format: SACKS__{SectionName}__{PropertyName}
+    /// Example: SACKS__Llm__ApiKey overrides Llm.ApiKey
+    /// </summary>
+    private static void ApplyEnvironmentOverrides(SacksConfigurationOptions options)
+    {
+        // Override LLM API Key from environment if provided
+        var llmApiKey = Environment.GetEnvironmentVariable("SACKS__Llm__ApiKey");
+        if (!string.IsNullOrWhiteSpace(llmApiKey))
+        {
+            options.Llm.ApiKey = llmApiKey;
+        }
+
+        // Override Database ConnectionString from environment if provided
+        var dbConnectionString = Environment.GetEnvironmentVariable("SACKS__Database__ConnectionString");
+        if (!string.IsNullOrWhiteSpace(dbConnectionString))
+        {
+            options.Database.ConnectionString = dbConnectionString;
+        }
     }
 
     /// <summary>

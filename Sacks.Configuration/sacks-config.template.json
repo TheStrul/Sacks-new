@@ -1,0 +1,63 @@
+{
+  "Database": {
+    "ConnectionString": "Server=(localdb)\\mssqllocaldb;Database=SacksProductsDb;Trusted_Connection=true;TrustServerCertificate=true;",
+    "Provider": "SqlServer",
+    "CommandTimeout": 30,
+    "RetryOnFailure": true,
+    "MaxRetryCount": 3,
+    "EnableSensitiveDataLogging": false,
+    "EnableDetailedErrors": false
+  },
+  "FileProcessing": {
+    "InputDirectory": "Inputs",
+    "OutputDirectory": "../Outputs",
+    "ArchiveDirectory": "../Archive",
+    "MaxFileSizeBytes": 104857600,
+    "SupportedExtensions": [ ".xlsx", ".xls", ".csv" ]
+  },
+  "OpenBeautyFacts": {
+    "InputDirectory": "AllInputs/db",
+    "BatchSize": 100,
+    "EnableProgressLogging": true,
+    "SupportedFileExtensions": [ ".jsonl" ],
+    "MaxFileSizeBytes": 524288000
+  },
+  "Logging": {
+    "DeleteLogFilesOnStartup": true,
+    "LogFilePaths": [ "logs" ]
+  },
+  "McpServer": {
+    "ServerName": "SacksMcp",
+    "Version": "1.0.0",
+    "HttpPort": 5100,
+    "EnableHttps": false,
+    "MaxConcurrentTools": 10,
+    "ToolTimeoutSeconds": 30,
+    "EnableDetailedLogging": false
+  },
+  "McpClient": {
+    "ServerUrl": "http://localhost:5100/mcp",
+    "ToolTimeoutSeconds": 30,
+    "MaxRetryAttempts": 3,
+    "RetryDelayMilliseconds": 1000
+  },
+  "Llm": {
+    "Provider": "GitHub",
+    "Endpoint": "https://models.inference.ai.azure.com",
+    "ApiKey": "",
+    "ModelName": "gpt-4o-mini",
+    "MaxTokens": 1000,
+    "Temperature": 0.1,
+    "TimeoutSeconds": 30,
+    "ResponseMode": "Conversational",
+    "DomainContext": "@Sacks.Configuration/domain-context.md",
+    "AiLearningsPath": "@Sacks.Configuration/ai-learnings.md"
+  },
+  "ConfigurationFiles": {
+    "ConfigurationFolder": "Configuration",
+    "MainFileName": "supplier-formats.json"
+  },
+  "UI": {
+    "RestoreWindowPositions": true
+  }
+}

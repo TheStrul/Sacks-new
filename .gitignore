@@ -366,3 +366,7 @@ FodyWeavers.xsd
 /BiziOfferImport/BiziOfferImportDemo.csproj
 /BiziOfferImport
 /Inputs
+
+# Sacks Configuration - exclude files with secrets
+# Use sacks-config.template.json as reference
+Sacks.Configuration/sacks-config.json
