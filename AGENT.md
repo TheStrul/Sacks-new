@@ -53,3 +53,4 @@
 - Dictionaries intended to be case-insensitive use `StringComparer.OrdinalIgnoreCase`.
 - Configuration merges keep object references intact and invoke parser lookup merge.
 - Structured logging only; no secrets or PII.
+- **Update Handoff Notes:** Before finishing the session, ALWAYS update `docs/handoff_notes.md` with a summary of changes, current state, and next steps.
