@@ -14,17 +14,20 @@ Modern, themeable WinForms controls library with fluent design and smooth animat
 ## Controls
 
 ### ModernButton
+
 - Rounded corners
 - State-based styling (normal, hover, pressed, disabled)
 - Transparent background support
 - Full designer support
 
 ### ModernGroupBox
+
 - Rounded corners
 - Theme-aware borders and text
 - Clean, modern appearance
 
 ### ModernTextBox
+
 - Rounded corners with focus highlighting
 - Multi-line support
 - Scrollbars
@@ -33,9 +36,11 @@ Modern, themeable WinForms controls library with fluent design and smooth animat
 ## Quick Start
 
 ### 1. Add Reference
+
 Add a reference to the `ModernWinForms.dll` in your WinForms project.
 
 ### 2. Create a Skins Configuration
+
 Create a `Skins` folder in your application directory and add a `skins.json` file:
 
 ```json
@@ -96,6 +101,7 @@ public partial class MyForm : Form
 ```
 
 ### 4. Use Controls
+
 Simply add the modern controls to your form using the designer or programmatically:
 
 ```csharp
@@ -111,6 +117,7 @@ this.Controls.Add(button);
 ## Theme Configuration
 
 The theming system supports:
+
 - **Palette**: Global colors (primary, background, surface, text, border)
 - **Typography**: Font family and size
 - **Control Styles**: Per-control configuration with state-based styling

@@ -9,11 +9,15 @@ namespace ModernWinForms.Controls;
 /// </summary>
 [ToolboxItem(true)]
 [DesignerCategory("Code")]
+[Description("Modern text box control with rounded corners and theme support.")]
 public class ModernTextBox : Control
 {
     private readonly TextBox _textBox;
     private ControlStyle _controlStyle = new();
     private int _padding = 10;
+    private GraphicsPath? _cachedPath;
+    private Size _cachedSize;
+    private int _cachedRadius;
 
     /// <summary>
     /// Initializes a new instance of the ModernTextBox class.
@@ -39,13 +43,22 @@ public class ModernTextBox : Control
 
         Controls.Add(_textBox);
         
+        ThemeManager.ThemeChanged += OnThemeChanged;
         Height = _textBox.Height + (_padding * 2);
         UpdateStyleFromSkin();
+    }
+
+    private void OnThemeChanged(object? sender, EventArgs e)
+    {
+        UpdateStyleFromSkin();
+        Invalidate();
     }
 
     /// <summary>
     /// Gets or sets the text content of the text box.
     /// </summary>
+    [Category("Appearance")]
+    [Description("The text content of the text box.")]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public new string Text
     {
@@ -56,6 +69,9 @@ public class ModernTextBox : Control
     /// <summary>
     /// Gets or sets whether the text box is read-only.
     /// </summary>
+    [Category("Behavior")]
+    [Description("Indicates whether the text box is read-only.")]
+    [DefaultValue(false)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public bool ReadOnly
     {
@@ -66,6 +82,9 @@ public class ModernTextBox : Control
     /// <summary>
     /// Gets or sets whether the text box is multiline.
     /// </summary>
+    [Category("Behavior")]
+    [Description("Indicates whether the text box supports multiple lines of text.")]
+    [DefaultValue(false)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public bool Multiline
     {
@@ -120,6 +139,9 @@ public class ModernTextBox : Control
     /// <summary>
     /// Gets or sets the placeholder text displayed when the text box is empty.
     /// </summary>
+    [Category("Appearance")]
+    [Description("The placeholder text displayed when the text box is empty.")]
+    [DefaultValue("")]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
     public string PlaceholderText
     {
@@ -188,8 +210,8 @@ public class ModernTextBox : Control
             ?? new StateStyle { BorderColor = "#CCCCCC" };
         var borderColor = ColorTranslator.FromHtml(stateStyle.BorderColor ?? "#CCCCCC");
 
+        var path = GetOrCreateCachedPath(ClientRectangle, _controlStyle.CornerRadius);
         using (var pen = new Pen(borderColor, _controlStyle.BorderWidth))
-        using (var path = GetRoundedPath(ClientRectangle, _controlStyle.CornerRadius))
         {
             using (var brush = new SolidBrush(BackColor))
             {
@@ -200,7 +222,26 @@ public class ModernTextBox : Control
         }
     }
 
-    private GraphicsPath GetRoundedPath(RectangleF rect, int radius)
+    private GraphicsPath GetOrCreateCachedPath(Rectangle rect, int radius)
+    {
+        // Check if we can reuse the cached path
+        if (_cachedPath != null && _cachedSize == rect.Size && _cachedRadius == radius)
+        {
+            return _cachedPath;
+        }
+
+        // Dispose old cached path
+        _cachedPath?.Dispose();
+
+        // Create new path and cache it
+        _cachedPath = CreateRoundedPath(rect, radius);
+        _cachedSize = rect.Size;
+        _cachedRadius = radius;
+
+        return _cachedPath;
+    }
+
+    private static GraphicsPath CreateRoundedPath(RectangleF rect, int radius)
     {
         var path = new GraphicsPath();
         if (radius <= 0)
@@ -227,5 +268,17 @@ public class ModernTextBox : Control
         {
             _textBox.Height = Height - (_padding * 2);
         }
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            ThemeManager.ThemeChanged -= OnThemeChanged;
+            _cachedPath?.Dispose();
+            _cachedPath = null;
+        }
+        base.Dispose(disposing);
     }
 }

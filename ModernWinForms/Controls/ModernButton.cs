@@ -9,11 +9,15 @@ namespace ModernWinForms.Controls;
 /// </summary>
 [ToolboxItem(true)]
 [DesignerCategory("Code")]
+[Description("Modern button control with fluent design and smooth state transitions.")]
 public class ModernButton : Button
 {
     private ControlStyle _controlStyle = new();
     private bool _isHovered;
     private bool _isPressed;
+    private GraphicsPath? _cachedPath;
+    private Size _cachedSize;
+    private int _cachedRadius;
 
     /// <summary>
     /// Initializes a new instance of the ModernButton class.
@@ -34,7 +38,14 @@ public class ModernButton : Button
         FlatAppearance.MouseOverBackColor = Color.Transparent;
         UseVisualStyleBackColor = false;
 
+        ThemeManager.ThemeChanged += OnThemeChanged;
         UpdateStyleFromSkin();
+    }
+
+    private void OnThemeChanged(object? sender, EventArgs e)
+    {
+        UpdateStyleFromSkin();
+        Invalidate();
     }
 
     /// <summary>
@@ -127,7 +138,7 @@ public class ModernButton : Button
         var borderColor = ColorTranslator.FromHtml(stateStyle.BorderColor ?? "#CCCCCC");
 
         // Draw rounded button
-        using var path = GetRoundedPath(ClientRectangle, _controlStyle.CornerRadius);
+        var path = GetOrCreateCachedPath(ClientRectangle, _controlStyle.CornerRadius);
         using var brush = new SolidBrush(backColor);
         using var pen = new Pen(borderColor, _controlStyle.BorderWidth);
 
@@ -143,7 +154,26 @@ public class ModernButton : Button
             TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
     }
 
-    private GraphicsPath GetRoundedPath(Rectangle rect, int radius)
+    private GraphicsPath GetOrCreateCachedPath(Rectangle rect, int radius)
+    {
+        // Check if we can reuse the cached path
+        if (_cachedPath != null && _cachedSize == rect.Size && _cachedRadius == radius)
+        {
+            return _cachedPath;
+        }
+
+        // Dispose old cached path
+        _cachedPath?.Dispose();
+
+        // Create new path and cache it
+        _cachedPath = CreateRoundedPath(rect, radius);
+        _cachedSize = rect.Size;
+        _cachedRadius = radius;
+
+        return _cachedPath;
+    }
+
+    private GraphicsPath CreateRoundedPath(Rectangle rect, int radius)
     {
         var path = new GraphicsPath();
         
@@ -167,6 +197,18 @@ public class ModernButton : Button
 
         path.CloseFigure();
         return path;
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            ThemeManager.ThemeChanged -= OnThemeChanged;
+            _cachedPath?.Dispose();
+            _cachedPath = null;
+        }
+        base.Dispose(disposing);
     }
 
     private Color GetEffectiveBackColor()

@@ -9,9 +9,13 @@ namespace ModernWinForms.Controls;
 /// </summary>
 [ToolboxItem(true)]
 [DesignerCategory("Code")]
+[Description("Modern group box control with rounded corners and theme support.")]
 public class ModernGroupBox : GroupBox
 {
     private ControlStyle _controlStyle = new();
+    private GraphicsPath? _cachedPath;
+    private Rectangle _cachedRect;
+    private int _cachedRadius;
 
     /// <summary>
     /// Initializes a new instance of the ModernGroupBox class.
@@ -24,7 +28,14 @@ public class ModernGroupBox : GroupBox
                 ControlStyles.SupportsTransparentBackColor, true);
         
         BackColor = Color.Transparent;
+        ThemeManager.ThemeChanged += OnThemeChanged;
         UpdateStyleFromSkin();
+    }
+
+    private void OnThemeChanged(object? sender, EventArgs e)
+    {
+        UpdateStyleFromSkin();
+        Invalidate();
     }
 
     /// <summary>
@@ -68,8 +79,8 @@ public class ModernGroupBox : GroupBox
         var textRect = new Rectangle(10, 0, (int)textSize.Width + 4, (int)textSize.Height);
         var borderRect = new Rectangle(0, (int)(textSize.Height / 2), ClientRectangle.Width - 1, ClientRectangle.Height - 1 - (int)(textSize.Height / 2));
 
+        var path = GetOrCreateCachedPath(borderRect, _controlStyle.CornerRadius);
         using (var pen = new Pen(borderColor, _controlStyle.BorderWidth))
-        using (var path = GetRoundedPath(borderRect, _controlStyle.CornerRadius))
         {
             g.DrawPath(pen, path);
         }
@@ -86,7 +97,26 @@ public class ModernGroupBox : GroupBox
         }
     }
 
-    private GraphicsPath GetRoundedPath(Rectangle rect, int radius)
+    private GraphicsPath GetOrCreateCachedPath(Rectangle rect, int radius)
+    {
+        // Check if we can reuse the cached path
+        if (_cachedPath != null && _cachedRect == rect && _cachedRadius == radius)
+        {
+            return _cachedPath;
+        }
+
+        // Dispose old cached path
+        _cachedPath?.Dispose();
+
+        // Create new path and cache it
+        _cachedPath = CreateRoundedPath(rect, radius);
+        _cachedRect = rect;
+        _cachedRadius = radius;
+
+        return _cachedPath;
+    }
+
+    private static GraphicsPath CreateRoundedPath(Rectangle rect, int radius)
     {
         var path = new GraphicsPath();
         if (radius <= 0)
@@ -117,5 +147,17 @@ public class ModernGroupBox : GroupBox
             current = current.Parent;
         }
         return SystemColors.Control;
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            ThemeManager.ThemeChanged -= OnThemeChanged;
+            _cachedPath?.Dispose();
+            _cachedPath = null;
+        }
+        base.Dispose(disposing);
     }
 }

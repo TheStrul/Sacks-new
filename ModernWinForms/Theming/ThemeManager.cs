@@ -12,6 +12,7 @@ public static class ThemeManager
     private static ThemingConfiguration _config = new();
     private static readonly string _configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Skins", "skins.json");
     private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
+    private static readonly SemaphoreSlim _configLock = new(1, 1);
 
     static ThemeManager()
     {
@@ -171,26 +172,49 @@ public static class ThemeManager
     /// Loads a skin configuration from a JSON file.
     /// </summary>
     /// <param name="filePath">Path to the JSON configuration file.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>True if loaded successfully; otherwise, false.</returns>
-    public static bool LoadConfigurationFrom(string filePath)
+    public static async Task<bool> LoadConfigurationFromAsync(string filePath, CancellationToken cancellationToken = default)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+        
         try
         {
             if (File.Exists(filePath))
             {
-                var json = File.ReadAllText(filePath);
+                var json = await File.ReadAllTextAsync(filePath, cancellationToken).ConfigureAwait(false);
                 var config = JsonSerializer.Deserialize<ThemingConfiguration>(json);
                 if (config != null)
                 {
-                    _config = config;
+                    await _configLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        _config = config;
+                    }
+                    finally
+                    {
+                        _configLock.Release();
+                    }
                     ThemeChanged?.Invoke(null, EventArgs.Empty);
                     return true;
                 }
             }
         }
-        catch
+        catch (IOException)
         {
-            // Ignore errors
+            // File access error - return false
+        }
+        catch (JsonException)
+        {
+            // Invalid JSON - return false
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Permission denied - return false
+        }
+        catch (OperationCanceledException)
+        {
+            // Operation was cancelled - return false
         }
         return false;
     }
@@ -224,6 +248,10 @@ public static class ThemeManager
         }
     }
 
+    /// <summary>
+    /// Loads the configuration and all theme/skin files from the Skins directory synchronously.
+    /// Called from the static constructor.
+    /// </summary>
     private static void LoadConfiguration()
     {
         try
@@ -257,9 +285,13 @@ public static class ThemeManager
                             _config.Themes[themeName] = themeDef;
                         }
                     }
-                    catch
+                    catch (JsonException)
                     {
                         // Skip invalid theme files
+                    }
+                    catch (IOException)
+                    {
+                        // Skip inaccessible theme files
                     }
                 }
 
@@ -278,9 +310,13 @@ public static class ThemeManager
                             _config.Skins[skinName] = skinDef;
                         }
                     }
-                    catch
+                    catch (JsonException)
                     {
                         // Skip invalid skin files
+                    }
+                    catch (IOException)
+                    {
+                        // Skip inaccessible skin files
                     }
                 }
 
@@ -289,18 +325,117 @@ public static class ThemeManager
                 ResolveSkinInheritance();
             }
         }
-        catch
+        catch (IOException)
         {
-            // Use defaults
+            // Use defaults on file system errors
             _config = new ThemingConfiguration();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Use defaults on permission errors
+            _config = new ThemingConfiguration();
+        }
+    }
+
+    /// <summary>
+    /// Reloads the configuration and all theme/skin files from the Skins directory asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A task that completes when the configuration is reloaded.</returns>
+    public static async Task ReloadConfigurationAsync(CancellationToken cancellationToken = default)
+    {
+        await _configLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var newConfig = new ThemingConfiguration();
+            
+            // Load base configuration (version, currentTheme, and currentSkin)
+            if (File.Exists(_configPath))
+            {
+                var json = await File.ReadAllTextAsync(_configPath, cancellationToken).ConfigureAwait(false);
+                newConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json) ?? new ThemingConfiguration();
+            }
+
+            var skinsDir = Path.GetDirectoryName(_configPath);
+            if (skinsDir != null && Directory.Exists(skinsDir))
+            {
+                // Load theme files (*.theme.json)
+                var themeFiles = Directory.GetFiles(skinsDir, "*.theme.json");
+                foreach (var themeFile in themeFiles)
+                {
+                    try
+                    {
+                        var themeJson = await File.ReadAllTextAsync(themeFile, cancellationToken).ConfigureAwait(false);
+                        var themeDef = JsonSerializer.Deserialize<ThemeDefinition>(themeJson);
+                        if (themeDef != null)
+                        {
+                            var themeName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(themeFile));
+                            newConfig.Themes[themeName] = themeDef;
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        // Skip invalid theme files
+                    }
+                    catch (IOException)
+                    {
+                        // Skip inaccessible theme files
+                    }
+                }
+
+                // Load individual skin files (*.skin.json)
+                var skinFiles = Directory.GetFiles(skinsDir, "*.skin.json");
+                foreach (var skinFile in skinFiles)
+                {
+                    try
+                    {
+                        var skinJson = await File.ReadAllTextAsync(skinFile, cancellationToken).ConfigureAwait(false);
+                        var skinDef = JsonSerializer.Deserialize<SkinDefinition>(skinJson);
+                        if (skinDef != null)
+                        {
+                            var skinName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(skinFile));
+                            newConfig.Skins[skinName] = skinDef;
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        // Skip invalid skin files
+                    }
+                    catch (IOException)
+                    {
+                        // Skip inaccessible skin files
+                    }
+                }
+
+                // Resolve inheritance after all themes and skins are loaded
+                ResolveThemeInheritance(newConfig);
+                ResolveSkinInheritance(newConfig);
+            }
+
+            _config = newConfig;
+            ThemeChanged?.Invoke(null, EventArgs.Empty);
+        }
+        catch (IOException)
+        {
+            // Keep current configuration on errors
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Keep current configuration on errors
+        }
+        finally
+        {
+            _configLock.Release();
         }
     }
 
     /// <summary>
     /// Resolves theme inheritance, merging derived themes with their base themes.
     /// </summary>
-    private static void ResolveThemeInheritance()
+    /// <param name="config">The configuration to resolve. If null, uses the current configuration.</param>
+    private static void ResolveThemeInheritance(ThemingConfiguration? config = null)
     {
+        config ??= _config;
         var resolved = new Dictionary<string, ThemeDefinition>();
         var resolving = new HashSet<string>();
 
@@ -312,7 +447,7 @@ public static class ThemeManager
             if (!resolving.Add(themeName))
                 throw new InvalidOperationException($"Circular inheritance detected for theme '{themeName}'");
 
-            if (!_config.Themes.TryGetValue(themeName, out var theme))
+            if (!config.Themes.TryGetValue(themeName, out var theme))
                 throw new InvalidOperationException($"Theme '{themeName}' not found");
 
             try
@@ -334,14 +469,14 @@ public static class ThemeManager
             }
         }
 
-        var themeNames = _config.Themes.Keys.ToList();
+        var themeNames = config.Themes.Keys.ToList();
         foreach (var themeName in themeNames)
         {
             try
             {
-                _config.Themes[themeName] = ResolveTheme(themeName);
+                config.Themes[themeName] = ResolveTheme(themeName);
             }
-            catch
+            catch (InvalidOperationException)
             {
                 // If inheritance fails, keep the original theme
             }
@@ -351,8 +486,10 @@ public static class ThemeManager
     /// <summary>
     /// Resolves skin inheritance, merging derived skins with their base skins.
     /// </summary>
-    private static void ResolveSkinInheritance()
+    /// <param name="config">The configuration to resolve. If null, uses the current configuration.</param>
+    private static void ResolveSkinInheritance(ThemingConfiguration? config = null)
     {
+        config ??= _config;
         var resolved = new Dictionary<string, SkinDefinition>();
         var resolving = new HashSet<string>();
 
@@ -366,7 +503,7 @@ public static class ThemeManager
             if (!resolving.Add(skinName))
                 throw new InvalidOperationException($"Circular inheritance detected for skin '{skinName}'");
 
-            if (!_config.Skins.TryGetValue(skinName, out var skin))
+            if (!config.Skins.TryGetValue(skinName, out var skin))
                 throw new InvalidOperationException($"Skin '{skinName}' not found");
 
             try
@@ -393,20 +530,23 @@ public static class ThemeManager
         }
 
         // Resolve all skins
-        var skinNames = _config.Skins.Keys.ToList();
+        var skinNames = config.Skins.Keys.ToList();
         foreach (var skinName in skinNames)
         {
             try
             {
-                _config.Skins[skinName] = ResolveSkin(skinName);
+                config.Skins[skinName] = ResolveSkin(skinName);
             }
-            catch
+            catch (InvalidOperationException)
             {
                 // If inheritance fails, keep the original skin
             }
         }
     }
 
+    /// <summary>
+    /// Saves the current configuration to the skins.json file synchronously.
+    /// </summary>
     private static void SaveConfiguration()
     {
         try
@@ -420,9 +560,50 @@ public static class ThemeManager
             var json = JsonSerializer.Serialize(_config, _jsonOptions);
             File.WriteAllText(_configPath, json);
         }
-        catch
+        catch (IOException)
         {
-            // Ignore save errors
+            // Ignore save errors - configuration changes remain in memory
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Ignore permission errors - configuration changes remain in memory
+        }
+    }
+
+    /// <summary>
+    /// Saves the current configuration to the skins.json file asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A task that completes when the configuration is saved.</returns>
+    public static async Task SaveConfigurationAsync(CancellationToken cancellationToken = default)
+    {
+        await _configLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var dir = Path.GetDirectoryName(_configPath);
+            if (dir != null && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            var json = JsonSerializer.Serialize(_config, _jsonOptions);
+            await File.WriteAllTextAsync(_configPath, json, cancellationToken).ConfigureAwait(false);
+        }
+        catch (IOException)
+        {
+            // Ignore save errors - configuration changes remain in memory
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Ignore permission errors - configuration changes remain in memory
+        }
+        catch (OperationCanceledException)
+        {
+            // Operation was cancelled
+        }
+        finally
+        {
+            _configLock.Release();
         }
     }
 }

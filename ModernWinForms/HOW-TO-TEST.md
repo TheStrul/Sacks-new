@@ -1,6 +1,7 @@
 # How to Test the Theming System
 
 ## ✅ Quick Build Test
+
 ```powershell
 # Build ModernWinForms library
 dotnet build ModernWinForms\ModernWinForms.csproj
@@ -14,14 +15,16 @@ dotnet build SacksApp\SacksApp.csproj
 ## 🎨 Visual Testing with ThemeTestForm
 
 I've created **`ThemeTestForm.cs`** in SacksApp - a complete test interface that lets you:
+
 - Switch between themes (GitHub, Material, Fluent)
 - Switch between skins (Light, Dark, Dracula, etc.)
 - See live preview of controls
 - View style information showing structure vs. colors
 
-### To Run ThemeTestForm:
+### To Run ThemeTestForm
 
 **Option 1 - Modify Program.cs temporarily:**
+
 ```csharp
 // In SacksApp/Program.cs, replace Application.Run line with:
 Application.Run(new ThemeTestForm());
@@ -31,6 +34,7 @@ Application.Run(new ThemeTestForm());
 Add a "Test Themes" menu button that opens the ThemeTestForm
 
 **Option 3 - Run directly:**
+
 ```powershell
 cd SacksApp
 # Add this to Program.cs Main method:
@@ -54,7 +58,8 @@ dotnet run
    - Disabled button
    
 4. **Style Info Panel** - Shows:
-   ```
+
+   ```text
    === Button Style ===
    CornerRadius: 8px (from theme)
    BorderWidth: 1px (from theme)
@@ -70,6 +75,7 @@ dotnet run
 ## 📋 Manual Test Checklist
 
 ### Architecture Tests
+
 - [ ] `ControlStateColors` class exists (base class, states only)
 - [ ] `ControlStyle` class exists (derived, adds structure)
 - [ ] `SkinDefinition.Controls` uses `ControlStateColors`
@@ -77,11 +83,13 @@ dotnet run
 - [ ] `ThemeManager.GetControlStyle()` method exists
 
 ### JSON Tests
+
 - [ ] Theme files (GitHub.theme.json, Material.theme.json, Fluent.theme.json) have cornerRadius/borderWidth
 - [ ] Skin files (Light.skin.json, Dark.skin.json, etc.) have only colors in states
 - [ ] Inheritance works (Light inherits from BaseLight inherits from Base)
 
 ### Runtime Tests
+
 - [ ] Switch theme from GitHub → Material → see cornerRadius change
 - [ ] Switch skin from Light → Dark → see colors change, structure stays same
 - [ ] Hover over button → see color transition
