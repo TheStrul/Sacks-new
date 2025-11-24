@@ -1,66 +1,49 @@
+using System;
 using System.ComponentModel;
 using System.Drawing.Drawing2D;
 using SacksApp.Theming;
 
 namespace SacksApp;
 
-/// <summary>
-/// A modern button control with skin support, custom rendering, and animations.
-/// </summary>
 public class ModernButton : Button
 {
-    // Skin configuration
-    private SkinDefinition _currentSkin = new();
     private ControlStyle _controlStyle = new();
-    
-    // State management
     private bool _isHovered;
     private bool _isPressed;
-    
-    // Animation
-    private readonly System.Windows.Forms.Timer _animationTimer;
-    private float _currentHoverOpacity;
-    private const int AnimationInterval = 16; // ~60fps
-    private const float AnimationSpeed = 0.15f;
 
     public ModernButton()
     {
+        // 1. Enable double buffering and custom painting
         SetStyle(ControlStyles.UserPaint | 
                 ControlStyles.AllPaintingInWmPaint | 
                 ControlStyles.OptimizedDoubleBuffer | 
                 ControlStyles.ResizeRedraw | 
                 ControlStyles.SupportsTransparentBackColor, true);
 
-        // Set flat style to prevent default button rendering
+        // 2. IMPORTANT: Set BackColor to Transparent so WinForms attempts to draw the parent first
+        BackColor = Color.Transparent;
+        
+        // 3. Remove default button styling
         FlatStyle = FlatStyle.Flat;
         FlatAppearance.BorderSize = 0;
-        BackColor = Color.Transparent;
 
-        _animationTimer = new System.Windows.Forms.Timer { Interval = AnimationInterval };
-        _animationTimer.Tick += AnimationTimer_Tick;
-
-        // Initial default style
         UpdateStyleFromSkin();
     }
 
-    /// <summary>
-    /// Applies the specified skin to the button
-    /// </summary>
     public void ApplySkin(SkinDefinition skin)
     {
-        _currentSkin = skin;
-        UpdateStyleFromSkin();
+        ArgumentNullException.ThrowIfNull(skin);
+        UpdateStyleFromSkin(skin);
         Invalidate();
     }
 
-    private void UpdateStyleFromSkin()
+    private void UpdateStyleFromSkin(SkinDefinition? skin = null)
     {
-        // Always start with fallback defaults to ensure States dictionary is never empty
+        // Default fallback style
         _controlStyle = new ControlStyle
         {
             CornerRadius = 8,
             BorderWidth = 1,
-            Padding = new PaddingSpec { Left = 16, Top = 10, Right = 16, Bottom = 10 },
             States = new Dictionary<string, StateStyle>
             {
                 ["normal"] = new() { BackColor = "#FAFBFC", ForeColor = "#0D1117", BorderColor = "#E0E6ED" },
@@ -70,32 +53,16 @@ public class ModernButton : Button
             }
         };
 
-        // Override with skin-specific style if available
-        if (_currentSkin?.Controls != null && _currentSkin.Controls.TryGetValue("ModernButton", out var style))
+        if (skin?.Controls != null && skin.Controls.TryGetValue("ModernButton", out var style))
         {
             _controlStyle = style;
         }
-
-        // Apply padding
-        if (_controlStyle.Padding != null)
-        {
-            Padding = _controlStyle.Padding.ToPadding();
-        }
-    }
-
-    [Browsable(false)]
-    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-    public string Theme
-    {
-        get => AppThemeManager.CurrentTheme;
-        set { /* No-op, handled by AppThemeManager.ApplyTheme */ }
     }
 
     protected override void OnMouseEnter(EventArgs e)
     {
         base.OnMouseEnter(e);
         _isHovered = true;
-        _animationTimer.Start();
         Invalidate();
     }
 
@@ -103,7 +70,6 @@ public class ModernButton : Button
     {
         base.OnMouseLeave(e);
         _isHovered = false;
-        _animationTimer.Start();
         Invalidate();
     }
 
@@ -121,108 +87,94 @@ public class ModernButton : Button
         Invalidate();
     }
 
-    private void AnimationTimer_Tick(object? sender, EventArgs e)
-    {
-        bool animating = false;
-
-        // Hover animation
-        float targetOpacity = _isHovered ? 1.0f : 0.0f;
-        if (Math.Abs(_currentHoverOpacity - targetOpacity) > 0.01f)
-        {
-            _currentHoverOpacity += (targetOpacity - _currentHoverOpacity) * AnimationSpeed;
-            animating = true;
-        }
-        else
-        {
-            _currentHoverOpacity = targetOpacity;
-        }
-
-        if (animating)
-        {
-            Invalidate();
-        }
-        else
-        {
-            _animationTimer.Stop();
-        }
-    }
-
     protected override void OnPaint(PaintEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-        // Fill entire area with parent background to eliminate black corners
-        var parentColor = Parent?.BackColor ?? SystemColors.Control;
+        // --- STEP 1: SOLVE THE DIRTY CORNERS ---
+        // We must manually fill the background with the EFFECTIVE parent color.
+        // If the direct parent is transparent (like TableLayoutPanel), we need to look further up.
+        var parentColor = GetEffectiveBackColor();
         using (var parentBrush = new SolidBrush(parentColor))
         {
             g.FillRectangle(parentBrush, ClientRectangle);
         }
 
-        // Determine current state style
+        // --- STEP 2: DETERMINE STATE ---
         var stateName = !Enabled ? "disabled" : _isPressed ? "pressed" : _isHovered ? "hover" : "normal";
-        var stateStyle = _controlStyle.States.TryGetValue(stateName, out var s) ? s : _controlStyle.States.GetValueOrDefault("normal");
+        var stateStyle = _controlStyle.States.GetValueOrDefault(stateName) ?? _controlStyle.States["normal"];
 
-        if (stateStyle == null) return;
-
-        // Resolve colors
         var backColor = ColorTranslator.FromHtml(stateStyle.BackColor ?? "#FFFFFF");
         var foreColor = ColorTranslator.FromHtml(stateStyle.ForeColor ?? "#000000");
         var borderColor = ColorTranslator.FromHtml(stateStyle.BorderColor ?? "#CCCCCC");
 
-        // Draw background
-        using (var path = GetRoundedPath(ClientRectangle, _controlStyle.CornerRadius))
-        using (var brush = new SolidBrush(backColor))
-        using (var pen = new Pen(borderColor, _controlStyle.BorderWidth))
+        // --- STEP 3: DRAW THE ROUNDED BUTTON ---
+        using var path = GetRoundedPath(ClientRectangle, _controlStyle.CornerRadius);
+        using var brush = new SolidBrush(backColor);
+        using var pen = new Pen(borderColor, _controlStyle.BorderWidth);
+
+        // Draw button background
+        g.FillPath(brush, path);
+        
+        // Draw border (if width > 0)
+        if (_controlStyle.BorderWidth > 0)
         {
-            g.FillPath(brush, path);
             g.DrawPath(pen, path);
         }
 
-        // Draw Text
-        var flags = TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis;
-        TextRenderer.DrawText(g, Text, Font, ClientRectangle, foreColor, flags);
+        // --- STEP 4: DRAW TEXT ---
+        TextRenderer.DrawText(g, Text, Font, ClientRectangle, foreColor, 
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
     }
 
     private GraphicsPath GetRoundedPath(Rectangle rect, int radius)
     {
         var path = new GraphicsPath();
+        
+        // Adjust rect to ensure border stays inside
+        // When drawing a border, the pen draws centered on the line. 
+        // We need to shrink the rectangle slightly so the border doesn't get clipped.
+        float adjustment = _controlStyle.BorderWidth / 2f;
+        var r = new RectangleF(rect.X + adjustment, rect.Y + adjustment, 
+                             rect.Width - _controlStyle.BorderWidth, 
+                             rect.Height - _controlStyle.BorderWidth);
+
         if (radius <= 0)
         {
-            path.AddRectangle(rect);
+            path.AddRectangle(r);
             return path;
         }
 
-        int d = radius * 2;
-        var arc = new Rectangle(rect.X, rect.Y, d, d);
-
-        // Top Left
-        path.AddArc(arc, 180, 90);
+        float d = radius * 2;
         
+        // Top Left
+        path.AddArc(r.X, r.Y, d, d, 180, 90);
         // Top Right
-        arc.X = rect.Right - d;
-        path.AddArc(arc, 270, 90);
-
+        path.AddArc(r.Right - d, r.Y, d, d, 270, 90);
         // Bottom Right
-        arc.Y = rect.Bottom - d;
-        path.AddArc(arc, 0, 90);
-
+        path.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);
         // Bottom Left
-        arc.X = rect.Left;
-        path.AddArc(arc, 90, 90);
+        path.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
 
         path.CloseFigure();
         return path;
     }
 
-    protected override void Dispose(bool disposing)
+    private Color GetEffectiveBackColor()
     {
-        if (disposing)
+        var current = Parent;
+        while (current != null)
         {
-            _animationTimer.Dispose();
+            var color = current.BackColor;
+            // Check if color is not transparent (A > 0) and not explicitly Color.Transparent
+            if (color.A > 0 && color != Color.Transparent)
+            {
+                return color;
+            }
+            current = current.Parent;
         }
-        base.Dispose(disposing);
+        return SystemColors.Control;
     }
 }
