@@ -55,9 +55,16 @@ namespace SacksApp
             testConfigurationButton = new ModernButton();
             viewLogsButton = new ModernButton();
             handleOffersButton = new ModernButton();
+            notificationPanel = new Panel();
+            notificationStatusIcon = new Label();
+            notificationMessageLabel = new Label();
+            notificationTimeLabel = new Label();
+            notificationClearButton = new ModernButton();
+            notificationTimer = new System.Windows.Forms.Timer();
             menuStrip.SuspendLayout();
             panel1.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
+            notificationPanel.SuspendLayout();
             aiQueryGroupBox = new GroupBox();
             aiQueryTableLayout = new TableLayoutPanel();
             aiQueryLabel = new Label();
@@ -105,7 +112,6 @@ namespace SacksApp
             toolsToolStripMenuItem.Size = new Size(47, 20);
             toolsToolStripMenuItem.Text = "&Tools";
             // 
-
             // 
             // toolStripSeparator1
             // 
@@ -195,6 +201,7 @@ namespace SacksApp
             // 
             panel1.Controls.Add(aiQueryGroupBox);
             panel1.Controls.Add(tableLayoutPanel1);
+            panel1.Controls.Add(notificationPanel);
             panel1.Dock = DockStyle.Left;
             panel1.Location = new Point(0, 24);
             panel1.Name = "panel1";
@@ -530,6 +537,71 @@ namespace SacksApp
             handleOffersButton.UseVisualStyleBackColor = false;
             handleOffersButton.Click += HandleOffersButton_Click;
             // 
+            // notificationPanel
+            // 
+            notificationPanel.BackColor = Color.FromArgb(240, 249, 235);
+            notificationPanel.BorderStyle = BorderStyle.FixedSingle;
+            notificationPanel.Controls.Add(notificationClearButton);
+            notificationPanel.Controls.Add(notificationTimeLabel);
+            notificationPanel.Controls.Add(notificationMessageLabel);
+            notificationPanel.Controls.Add(notificationStatusIcon);
+            notificationPanel.Dock = DockStyle.Bottom;
+            notificationPanel.Location = new Point(0, 800);
+            notificationPanel.Name = "notificationPanel";
+            notificationPanel.Padding = new Padding(12, 8, 12, 8);
+            notificationPanel.Size = new Size(1264, 60);
+            notificationPanel.TabIndex = 3;
+            notificationPanel.Visible = false;
+            // 
+            // notificationStatusIcon
+            // 
+            notificationStatusIcon.AutoSize = true;
+            notificationStatusIcon.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
+            notificationStatusIcon.Location = new Point(12, 8);
+            notificationStatusIcon.Name = "notificationStatusIcon";
+            notificationStatusIcon.Size = new Size(28, 30);
+            notificationStatusIcon.TabIndex = 0;
+            notificationStatusIcon.Text = "ℹ️";
+            // 
+            // notificationMessageLabel
+            // 
+            notificationMessageLabel.AutoSize = false;
+            notificationMessageLabel.Font = new Font("Segoe UI", 10F);
+            notificationMessageLabel.ForeColor = Color.FromArgb(13, 17, 23);
+            notificationMessageLabel.Location = new Point(50, 8);
+            notificationMessageLabel.Name = "notificationMessageLabel";
+            notificationMessageLabel.Size = new Size(800, 44);
+            notificationMessageLabel.TabIndex = 1;
+            notificationMessageLabel.Text = "Status message";
+            notificationMessageLabel.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // notificationTimeLabel
+            // 
+            notificationTimeLabel.AutoSize = true;
+            notificationTimeLabel.Font = new Font("Segoe UI", 8F);
+            notificationTimeLabel.ForeColor = Color.FromArgb(107, 114, 129);
+            notificationTimeLabel.Location = new Point(1050, 8);
+            notificationTimeLabel.Name = "notificationTimeLabel";
+            notificationTimeLabel.Size = new Size(60, 13);
+            notificationTimeLabel.TabIndex = 2;
+            notificationTimeLabel.Text = "12:34:56";
+            // 
+            // notificationClearButton
+            // 
+            notificationClearButton.Font = new Font("Segoe UI", 9F);
+            notificationClearButton.Location = new Point(1170, 12);
+            notificationClearButton.Name = "notificationClearButton";
+            notificationClearButton.Size = new Size(70, 32);
+            notificationClearButton.TabIndex = 3;
+            notificationClearButton.Text = "✕";
+            notificationClearButton.UseVisualStyleBackColor = true;
+            notificationClearButton.Click += NotificationClearButton_Click;
+            //
+            // notificationTimer
+            //
+            notificationTimer.Interval = 5000;
+            notificationTimer.Tick += NotificationTimer_Tick;
+            // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -552,6 +624,8 @@ namespace SacksApp
             aiQueryGroupBox.ResumeLayout(false);
             aiQueryTableLayout.ResumeLayout(false);
             aiQueryTableLayout.PerformLayout();
+            notificationPanel.ResumeLayout(false);
+            notificationPanel.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -596,7 +670,15 @@ namespace SacksApp
         private RichTextBox aiMetadataTextBox;
         private Label aiDataLabel;
         private RichTextBox aiDataResultsTextBox;
+        private Panel notificationPanel;
+        private Label notificationStatusIcon;
+        private Label notificationMessageLabel;
+        private Label notificationTimeLabel;
+        private ModernButton notificationClearButton;
+        private System.Windows.Forms.Timer notificationTimer;
     }
 }
+
+
 
 

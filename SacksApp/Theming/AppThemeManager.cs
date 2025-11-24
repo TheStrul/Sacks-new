@@ -5,7 +5,7 @@ namespace SacksApp.Theming;
 /// </summary>
 public static class AppThemeManager
 {
-    private static string _currentTheme = "Light";
+    private static string _currentTheme = "TestTheme";
     
     /// <summary>
     /// Gets or sets the current app-wide theme (Light, Dark, etc.)

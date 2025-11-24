@@ -726,4 +726,78 @@ public partial class MainForm : Form
     }
 
     #endregion
+
+    #region Notification System
+
+    /// <summary>
+    /// Notification types for status messages
+    /// </summary>
+    public enum NotificationType
+    {
+        Info,
+        Success,
+        Warning,
+        Error
+    }
+
+    /// <summary>
+    /// Shows a notification message at the bottom of the form.
+    /// Auto-dismisses after 5 seconds unless manually closed.
+    /// </summary>
+    /// <param name="message">The notification message to display</param>
+    /// <param name="type">The type of notification (info, success, warning, error)</param>
+    public void ShowNotification(string message, NotificationType type = NotificationType.Info)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+
+        // Update UI on the main thread
+        if (InvokeRequired)
+        {
+            Invoke(() => ShowNotification(message, type));
+            return;
+        }
+
+        // Set icon and background color based on type
+        (string icon, Color bgColor, Color textColor) = type switch
+        {
+            NotificationType.Success => ("✅", Color.FromArgb(240, 249, 235), Color.FromArgb(26, 127, 55)),
+            NotificationType.Warning => ("⚠️", Color.FromArgb(255, 252, 235), Color.FromArgb(176, 133, 0)),
+            NotificationType.Error => ("❌", Color.FromArgb(252, 240, 240), Color.FromArgb(218, 54, 51)),
+            _ => ("ℹ️", Color.FromArgb(240, 249, 235), Color.FromArgb(13, 17, 23))
+        };
+
+        // Update notification panel
+        notificationStatusIcon.Text = icon;
+        notificationMessageLabel.Text = message;
+        notificationMessageLabel.ForeColor = textColor;
+        notificationTimeLabel.Text = DateTime.Now.ToString("HH:mm:ss");
+        notificationPanel.BackColor = bgColor;
+
+        // Show panel and start auto-dismiss timer
+        notificationPanel.Visible = true;
+        notificationTimer.Stop();
+        notificationTimer.Start();
+
+        _logger.LogInformation("Notification displayed: [{Type}] {Message}", type, message);
+    }
+
+    /// <summary>
+    /// Event handler for notification clear button
+    /// </summary>
+    private void NotificationClearButton_Click(object? sender, EventArgs e)
+    {
+        notificationTimer.Stop();
+        notificationPanel.Visible = false;
+    }
+
+    /// <summary>
+    /// Event handler for notification auto-dismiss timer
+    /// </summary>
+    private void NotificationTimer_Tick(object? sender, EventArgs e)
+    {
+        notificationTimer.Stop();
+        notificationPanel.Visible = false;
+    }
+
+    #endregion
 }
