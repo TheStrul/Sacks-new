@@ -10,14 +10,17 @@
     <Compile Update="CustomMessageBox.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="DashBoard.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Update="LogViewer\LogViewerForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Update="LookupEditorForm.cs">
       <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="ModernButton.cs">
+      <SubType>Component</SubType>
     </Compile>
     <Compile Update="OffersForm.cs">
       <SubType>Form</SubType>

@@ -50,16 +50,6 @@ namespace SacksApp
             Text = $"Lookup Editor - {_lookupName}";
             _titleLabel.Text = "Lookup:";
 
-            // Theming with circular badges + rounded corners
-            try
-            {
-                UITheme.ApplyBadgeStyle(_addButton, Color.FromArgb(33, 150, 243), "?"); // Add (E710)
-                UITheme.ApplyBadgeStyle(_removeButton, Color.FromArgb(244, 67, 54), "?"); // Delete (E74D)
-                UITheme.ApplyBadgeStyle(_reloadButton, Color.FromArgb(156, 39, 176), "?"); // Sync/Refresh (E72C)
-                UITheme.ApplyBadgeStyle(_saveButton, Color.FromArgb(76, 175, 80), "?"); // Save (E74E)
-                UITheme.ApplyBadgeStyle(_closeButton, Color.FromArgb(96, 125, 139), "?"); // Cancel (E710/E711)
-            }
-            catch { }
 
             // Grid styling
             try

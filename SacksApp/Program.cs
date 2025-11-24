@@ -130,9 +130,9 @@ namespace SacksApp
 
                 ApplicationConfiguration.Initialize();
 
-                // Pass service provider to Form1
-                using var form = new DashBoard(_serviceProvider);
-                Application.Run(form);
+                // Launch MDI parent form
+                using var mainForm = new MainForm(_serviceProvider);
+                Application.Run(mainForm);
 
                 Log.Information("🛑 Sacks Product Management System shutting down normally");
             }

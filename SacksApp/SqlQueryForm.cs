@@ -82,11 +82,12 @@ namespace SacksApp
             // Apply modern theme for controls
             try
             {
-                UITheme.ApplyBadgeStyle(addFilterButton, Color.FromArgb(33, 150, 243), ""); // Add
-                UITheme.ApplyBadgeStyle(removeFilterButton, Color.FromArgb(244, 67, 54), ""); // Delete
-                UITheme.ApplyBadgeStyle(runQueryButton, Color.FromArgb(76, 175, 80), ""); // Play (E768)
-                UITheme.ApplyBadgeStyle(buttonShowFilter, Color.FromArgb(156, 39, 176), ""); // Settings
-                UITheme.ApplyBadgeStyle(buttonHideFilters, Color.FromArgb(156, 39, 176), ""); // Settings
+                // TODO: Update to use ModernButton Theme property instead
+                // UITheme.ApplyBadgeStyle(addFilterButton, Color.FromArgb(33, 150, 243), ""); // Add
+                // UITheme.ApplyBadgeStyle(removeFilterButton, Color.FromArgb(244, 67, 54), ""); // Delete
+                // UITheme.ApplyBadgeStyle(runQueryButton, Color.FromArgb(76, 175, 80), ""); // Play (E768)
+                // UITheme.ApplyBadgeStyle(buttonShowFilter, Color.FromArgb(156, 39, 176), ""); // Settings
+                // UITheme.ApplyBadgeStyle(buttonHideFilters, Color.FromArgb(156, 39, 176), ""); // Settings
             }
             catch { }
 
