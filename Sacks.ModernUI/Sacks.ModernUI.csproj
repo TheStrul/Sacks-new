@@ -8,15 +8,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <Authors>TheStrul</Authors>
-    <Description>Modern, themeable WinForms controls with fluent design and smooth animations</Description>
-    <PackageTags>winforms;controls;modern;theme;fluent</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="Skins\skins.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <PackageReference Include="System.Text.Json" Version="10.0.0" />
   </ItemGroup>
 
 </Project>

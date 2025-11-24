@@ -1,0 +1,38 @@
+{
+  "theme": "GitHub",
+  "inheritsFrom": "BaseDark",
+  "description": "Popular dark skin with purple accents",
+  "palette": {
+    "primary": "#BD93F9",
+    "background": "#282A36",
+    "surface": "#44475A",
+    "text": "#F8F8F2",
+    "border": "#6272A4"
+  },
+  "controls": {
+    "ModernButton": {
+      "states": {
+        "normal": {
+          "backColor": "#44475A",
+          "foreColor": "#F8F8F2",
+          "borderColor": "#6272A4"
+        },
+        "hover": {
+          "backColor": "#6272A4",
+          "foreColor": "#F8F8F2",
+          "borderColor": "#BD93F9"
+        },
+        "pressed": {
+          "backColor": "#BD93F9",
+          "foreColor": "#282A36",
+          "borderColor": "#FF79C6"
+        },
+        "disabled": {
+          "backColor": "#383A47",
+          "foreColor": "#6272A4",
+          "borderColor": "#44475A"
+        }
+      }
+    }
+  }
+}

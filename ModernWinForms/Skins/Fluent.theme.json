@@ -1,0 +1,40 @@
+{
+  "description": "Microsoft's Fluent Design system with subtle corners and emphasis on clarity",
+  "typography": {
+    "fontFamily": "Segoe UI",
+    "fontSize": 9.0
+  },
+  "spacing": {
+    "baseUnit": 8,
+    "small": 4,
+    "medium": 8,
+    "large": 16,
+    "xlarge": 24
+  },
+  "controls": {
+    "ModernButton": {
+      "cornerRadius": 4,
+      "borderWidth": 1,
+      "padding": {
+        "left": 16,
+        "top": 10,
+        "right": 16,
+        "bottom": 10
+      }
+    },
+    "ModernGroupBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4
+    },
+    "ModernTextBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "padding": {
+        "left": 10,
+        "top": 8,
+        "right": 10,
+        "bottom": 8
+      }
+    }
+  }
+}

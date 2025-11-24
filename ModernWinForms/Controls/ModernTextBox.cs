@@ -139,7 +139,8 @@ public class ModernTextBox : Control
 
     private void UpdateStyleFromSkin(SkinDefinition? skin = null)
     {
-        _controlStyle = new ControlStyle
+        // Get merged style from theme (structure) + skin (colors)
+        _controlStyle = ThemeManager.GetControlStyle("ModernTextBox") ?? new ControlStyle
         {
             BorderWidth = 1,
             CornerRadius = 4,
@@ -149,18 +150,6 @@ public class ModernTextBox : Control
                 ["focused"] = new() { BorderColor = "#0969DA" }
             }
         };
-
-        if (skin?.Controls != null && skin.Controls.TryGetValue("ModernTextBox", out var style))
-        {
-            _controlStyle = style;
-        }
-        else if (skin?.Palette != null)
-        {
-            _controlStyle.States["normal"].BackColor = skin.Palette.Surface;
-            _controlStyle.States["normal"].ForeColor = skin.Palette.Text;
-            _controlStyle.States["normal"].BorderColor = skin.Palette.Border;
-            _controlStyle.States["focused"] = new StateStyle { BorderColor = skin.Palette.Primary };
-        }
 
         var normalState = _controlStyle.States["normal"];
         var backColor = ColorTranslator.FromHtml(normalState.BackColor ?? "#FFFFFF");
@@ -194,7 +183,9 @@ public class ModernTextBox : Control
         g.SmoothingMode = SmoothingMode.AntiAlias;
 
         var state = _textBox.Focused ? "focused" : "normal";
-        var stateStyle = _controlStyle.States.GetValueOrDefault(state) ?? _controlStyle.States["normal"];
+        var stateStyle = _controlStyle.States.GetValueOrDefault(state) 
+            ?? _controlStyle.States.GetValueOrDefault("normal") 
+            ?? new StateStyle { BorderColor = "#CCCCCC" };
         var borderColor = ColorTranslator.FromHtml(stateStyle.BorderColor ?? "#CCCCCC");
 
         using (var pen = new Pen(borderColor, _controlStyle.BorderWidth))

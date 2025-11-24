@@ -130,9 +130,13 @@ namespace SacksApp
 
                 ApplicationConfiguration.Initialize();
 
+                // TEMPORARY: Launch Theme Test Form
+                using var themeTestForm = new ThemeTestForm();
+                Application.Run(themeTestForm);
+
                 // Launch MDI parent form
-                using var mainForm = new MainForm(_serviceProvider);
-                Application.Run(mainForm);
+                // using var mainForm = new MainForm(_serviceProvider);
+                // Application.Run(mainForm);
 
                 Log.Information("🛑 Sacks Product Management System shutting down normally");
             }

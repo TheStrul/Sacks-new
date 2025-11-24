@@ -30,6 +30,9 @@ public class ModernButton : Button
         BackColor = Color.Transparent;
         FlatStyle = FlatStyle.Flat;
         FlatAppearance.BorderSize = 0;
+        FlatAppearance.MouseDownBackColor = Color.Transparent;
+        FlatAppearance.MouseOverBackColor = Color.Transparent;
+        UseVisualStyleBackColor = false;
 
         UpdateStyleFromSkin();
     }
@@ -47,8 +50,8 @@ public class ModernButton : Button
 
     private void UpdateStyleFromSkin(SkinDefinition? skin = null)
     {
-        // Default fallback style
-        _controlStyle = new ControlStyle
+        // Get merged style from theme (structure) + skin (colors)
+        _controlStyle = ThemeManager.GetControlStyle("ModernButton") ?? new ControlStyle
         {
             CornerRadius = 8,
             BorderWidth = 1,
@@ -60,11 +63,6 @@ public class ModernButton : Button
                 ["disabled"] = new() { BackColor = "#F5F7FA", ForeColor = "#B0B8C3", BorderColor = "#E5EBF0" }
             }
         };
-
-        if (skin?.Controls != null && skin.Controls.TryGetValue("ModernButton", out var style))
-        {
-            _controlStyle = style;
-        }
     }
 
     /// <inheritdoc/>
@@ -103,8 +101,13 @@ public class ModernButton : Button
     protected override void OnPaint(PaintEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
+        
+        // Do NOT call base.OnPaint - we handle all painting
+        
         var g = e.Graphics;
         g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
         // Fill background with parent color to avoid transparency artifacts
         var parentColor = GetEffectiveBackColor();
@@ -115,7 +118,9 @@ public class ModernButton : Button
 
         // Determine state and colors
         var stateName = !Enabled ? "disabled" : _isPressed ? "pressed" : _isHovered ? "hover" : "normal";
-        var stateStyle = _controlStyle.States.GetValueOrDefault(stateName) ?? _controlStyle.States["normal"];
+        var stateStyle = _controlStyle.States.GetValueOrDefault(stateName) 
+            ?? _controlStyle.States.GetValueOrDefault("normal") 
+            ?? new StateStyle { BackColor = "#FFFFFF", ForeColor = "#000000", BorderColor = "#CCCCCC" };
 
         var backColor = ColorTranslator.FromHtml(stateStyle.BackColor ?? "#FFFFFF");
         var foreColor = ColorTranslator.FromHtml(stateStyle.ForeColor ?? "#000000");

@@ -39,8 +39,8 @@ public class ModernGroupBox : GroupBox
 
     private void UpdateStyleFromSkin(SkinDefinition? skin = null)
     {
-        // Default style
-        _controlStyle = new ControlStyle
+        // Get merged style from theme (structure) + skin (colors)
+        _controlStyle = ThemeManager.GetControlStyle("ModernGroupBox") ?? new ControlStyle
         {
             BorderWidth = 1,
             CornerRadius = 4,
@@ -49,16 +49,6 @@ public class ModernGroupBox : GroupBox
                 ["normal"] = new() { ForeColor = "#0D1117", BorderColor = "#E0E6ED" }
             }
         };
-
-        if (skin?.Controls != null && skin.Controls.TryGetValue("ModernGroupBox", out var style))
-        {
-            _controlStyle = style;
-        }
-        else if (skin?.Palette != null)
-        {
-            _controlStyle.States["normal"].ForeColor = skin.Palette.Text;
-            _controlStyle.States["normal"].BorderColor = skin.Palette.Border;
-        }
     }
 
     /// <inheritdoc/>
@@ -69,7 +59,8 @@ public class ModernGroupBox : GroupBox
         g.SmoothingMode = SmoothingMode.AntiAlias;
         g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-        var stateStyle = _controlStyle.States.GetValueOrDefault("normal")!;
+        var stateStyle = _controlStyle.States.GetValueOrDefault("normal") 
+            ?? new StateStyle { ForeColor = "#000000", BorderColor = "#CCCCCC" };
         var foreColor = ColorTranslator.FromHtml(stateStyle.ForeColor ?? "#000000");
         var borderColor = ColorTranslator.FromHtml(stateStyle.BorderColor ?? "#CCCCCC");
         

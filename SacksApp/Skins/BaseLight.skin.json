@@ -1,0 +1,11 @@
+{
+  "theme": "GitHub",
+  "inheritsFrom": "Base",
+  "description": "Base light skin with light color palette",
+  "palette": {
+    "background": "#FAFBFC",
+    "surface": "#FFFFFF",
+    "text": "#0D1117",
+    "border": "#E0E6ED"
+  }
+}

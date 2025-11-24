@@ -1,0 +1,35 @@
+using System.Text.Json.Serialization;
+
+namespace ModernWinForms.Theming;
+
+/// <summary>
+/// Root configuration for the theming system.
+/// Manages both themes (design systems) and skins (color variants).
+/// </summary>
+public sealed class ThemingConfiguration
+{
+    /// <summary>
+    /// Gets or sets the configuration version.
+    /// </summary>
+    [JsonPropertyName("version")] public string? Version { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the current active theme name (design system).
+    /// </summary>
+    [JsonPropertyName("currentTheme")] public string CurrentTheme { get; set; } = "GitHub";
+    
+    /// <summary>
+    /// Gets or sets the current active skin name (color variant).
+    /// </summary>
+    [JsonPropertyName("currentSkin")] public string CurrentSkin { get; set; } = "Light";
+    
+    /// <summary>
+    /// Gets or sets the dictionary of available themes (design systems).
+    /// </summary>
+    [JsonPropertyName("themes")] public Dictionary<string, ThemeDefinition> Themes { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the dictionary of available skins (color variants).
+    /// </summary>
+    [JsonPropertyName("skins")] public Dictionary<string, SkinDefinition> Skins { get; set; } = new();
+}

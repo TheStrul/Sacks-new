@@ -37,5 +37,8 @@
     <Compile Update="TestPattern.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="ThemeTestForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
   </ItemGroup>
 </Project>
