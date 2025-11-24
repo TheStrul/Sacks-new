@@ -58,21 +58,29 @@ public static class AppThemeManager
             catch { /* Ignore invalid colors */ }
         }
 
-        ApplyThemeToControls(form.Controls);
+        ApplyThemeToControls(form.Controls, skin);
     }
 
-    private static void ApplyThemeToControls(Control.ControlCollection controls)
+    private static void ApplyThemeToControls(Control.ControlCollection controls, SkinDefinition skin)
     {
         foreach (Control control in controls)
         {
-            if (control is ModernButton btn)
+            if (control is ModernButton modernButton)
             {
-                btn.ApplySkin(CurrentSkin);
+                modernButton.ApplySkin(skin);
+            }
+            else if (control is ModernGroupBox modernGroupBox)
+            {
+                modernGroupBox.ApplySkin(skin);
+            }
+            else if (control is ModernTextBox modernTextBox)
+            {
+                modernTextBox.ApplySkin(skin);
             }
 
             if (control.HasChildren)
             {
-                ApplyThemeToControls(control.Controls);
+                ApplyThemeToControls(control.Controls, skin);
             }
         }
     }

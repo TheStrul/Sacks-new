@@ -22,6 +22,12 @@
     <Compile Update="ModernButton.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Update="ModernGroupBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="ModernTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Update="OffersForm.cs">
       <SubType>Form</SubType>
     </Compile>

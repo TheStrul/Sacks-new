@@ -47,6 +47,36 @@
                             "borderColor": "#E5EBF0"
                         }
                     }
+                },
+                "ModernGroupBox": {
+                    "borderWidth": 1,
+                    "cornerRadius": 4,
+                    "states": {
+                        "normal": {
+                            "foreColor": "#0D1117",
+                            "borderColor": "#E0E6ED"
+                        }
+                    }
+                },
+                "ModernTextBox": {
+                    "borderWidth": 1,
+                    "cornerRadius": 4,
+                    "padding": {
+                        "left": 8,
+                        "top": 8,
+                        "right": 8,
+                        "bottom": 8
+                    },
+                    "states": {
+                        "normal": {
+                            "backColor": "#FFFFFF",
+                            "foreColor": "#0D1117",
+                            "borderColor": "#E0E6ED"
+                        },
+                        "focused": {
+                            "borderColor": "#0969DA"
+                        }
+                    }
                 }
             }
         },
@@ -93,6 +123,36 @@
                             "backColor": "#1A1F26",
                             "foreColor": "#6E7681",
                             "borderColor": "#2D333B"
+                        }
+                    }
+                },
+                "ModernGroupBox": {
+                    "borderWidth": 1,
+                    "cornerRadius": 4,
+                    "states": {
+                        "normal": {
+                            "foreColor": "#E6EDF3",
+                            "borderColor": "#30363D"
+                        }
+                    }
+                },
+                "ModernTextBox": {
+                    "borderWidth": 1,
+                    "cornerRadius": 4,
+                    "padding": {
+                        "left": 8,
+                        "top": 8,
+                        "right": 8,
+                        "bottom": 8
+                    },
+                    "states": {
+                        "normal": {
+                            "backColor": "#0D1117",
+                            "foreColor": "#E6EDF3",
+                            "borderColor": "#30363D"
+                        },
+                        "focused": {
+                            "borderColor": "#58A6FF"
                         }
                     }
                 }

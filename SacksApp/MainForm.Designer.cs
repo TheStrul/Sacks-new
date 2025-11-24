@@ -56,14 +56,14 @@ namespace SacksApp
             testConfigurationButton = new ModernButton();
             viewLogsButton = new ModernButton();
             handleOffersButton = new ModernButton();
-            aiQueryGroupBox = new GroupBox();
+            aiQueryGroupBox = new ModernGroupBox();
             aiQueryTableLayout = new TableLayoutPanel();
             aiQueryLabel = new Label();
             responseModeLabel = new Label();
             responseModeComboBox = new ComboBox();
-            aiQueryTextBox = new TextBox();
-            aiMetadataTextBox = new RichTextBox();
-            aiDataResultsTextBox = new RichTextBox();
+            aiQueryTextBox = new ModernTextBox();
+            aiMetadataTextBox = new ModernTextBox();
+            aiDataResultsTextBox = new ModernTextBox();
             aiMetadataLabel = new Label();
             executeAiQueryButton = new ModernButton();
             aiDataLabel = new Label();
@@ -482,6 +482,7 @@ namespace SacksApp
             aiMetadataTextBox.Size = new Size(322, 250);
             aiMetadataTextBox.TabIndex = 7;
             aiMetadataTextBox.Text = "";
+            aiMetadataTextBox.ScrollBars = ScrollBars.Both;
             // 
             // aiDataResultsTextBox
             // 
@@ -494,6 +495,7 @@ namespace SacksApp
             aiDataResultsTextBox.Size = new Size(322, 250);
             aiDataResultsTextBox.TabIndex = 9;
             aiDataResultsTextBox.Text = "";
+            aiDataResultsTextBox.ScrollBars = ScrollBars.Both;
             aiDataResultsTextBox.WordWrap = false;
             // 
             // aiMetadataLabel
@@ -676,16 +678,16 @@ namespace SacksApp
         private ModernButton testConfigurationButton;
         private ModernButton viewLogsButton;
         private ModernButton handleOffersButton;
-        private GroupBox aiQueryGroupBox;
+        private ModernGroupBox aiQueryGroupBox;
         private TableLayoutPanel aiQueryTableLayout;
         private Label aiQueryLabel;
         private Label responseModeLabel;
         private ComboBox responseModeComboBox;
-        private TextBox aiQueryTextBox;
+        private ModernTextBox aiQueryTextBox;
         private Label aiMetadataLabel;
-        private RichTextBox aiMetadataTextBox;
+        private ModernTextBox aiMetadataTextBox;
         private Label aiDataLabel;
-        private RichTextBox aiDataResultsTextBox;
+        private ModernTextBox aiDataResultsTextBox;
         private Panel notificationPanel;
         private Label notificationStatusIcon;
         private Label notificationMessageLabel;
