@@ -1,0 +1,23 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  ParsingEngine -> C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\ParsingEngine\bin\Debug\net10.0\ParsingEngine.dll
+  McpServer.Client -> C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\McpServer.Client\bin\Debug\net10.0\McpServer.Client.dll
+  Sacks.Configuration -> C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\Sacks.Configuration\bin\Debug\net10.0\Sacks.Configuration.dll
+  Sacks.Core -> C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\Sacks.Core\bin\Debug\net10.0\Sacks.Core.dll
+  Sacks.DataAccess -> C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\Sacks.DataAccess\bin\Debug\net10.0\Sacks.DataAccess.dll
+  Sacks.LogicLayer -> C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\Sacks.LogicLayer\bin\Debug\net10.0\Sacks.LogicLayer.dll
+C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\MainForm.cs(143,90): error CS8602: Dereference of a possibly null reference. [C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\SacksApp.csproj]
+C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\MainForm.cs(160,52): error CS8601: Possible null reference assignment. [C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\SacksApp.csproj]
+C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\MainForm.cs(126,25): error CA2000: Use recommended dispose pattern to ensure that object created by 'new ToolStripMenuItem("Theme")' is disposed on all paths. If possible, wrap the creation within a 'using' statement or a 'using' declaration. Otherwise, use a try-finally pattern, with a dedicated local variable declared before the try region and an unconditional Dispose invocation on non-null value in the 'finally' region, say 'x?.Dispose()'. If the object is explicitly disposed within the try region or the dispose ownership is transfered to another object or method, assign 'null' to the local variable just after such an operation to prevent double dispose in 'finally'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2000) [C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\SacksApp.csproj]
+C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\MainForm.cs(865,18): error IDE1006: Naming rule violation: These words must begin with upper case characters: fileToolStripMenuItem_Click (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide1006) [C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\SacksApp.csproj]
+
+Build FAILED.
+
+C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\MainForm.cs(143,90): error CS8602: Dereference of a possibly null reference. [C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\SacksApp.csproj]
+C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\MainForm.cs(160,52): error CS8601: Possible null reference assignment. [C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\SacksApp.csproj]
+C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\MainForm.cs(126,25): error CA2000: Use recommended dispose pattern to ensure that object created by 'new ToolStripMenuItem("Theme")' is disposed on all paths. If possible, wrap the creation within a 'using' statement or a 'using' declaration. Otherwise, use a try-finally pattern, with a dedicated local variable declared before the try region and an unconditional Dispose invocation on non-null value in the 'finally' region, say 'x?.Dispose()'. If the object is explicitly disposed within the try region or the dispose ownership is transfered to another object or method, assign 'null' to the local variable just after such an operation to prevent double dispose in 'finally'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2000) [C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\SacksApp.csproj]
+C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\MainForm.cs(865,18): error IDE1006: Naming rule violation: These words must begin with upper case characters: fileToolStripMenuItem_Click (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/style-rules/ide1006) [C:\Users\avist\source\repos\GitHubLocal\Customers\Sacks-New\SacksApp\SacksApp.csproj]
+    0 Warning(s)
+    4 Error(s)
+
+Time Elapsed 00:00:03.17
