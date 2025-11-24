@@ -14,6 +14,7 @@
     <ProjectReference Include="..\Sacks.LogicLayer\Sacks.LogicLayer.csproj" />
     <ProjectReference Include="..\Sacks.Configuration\Sacks.Configuration.csproj" />
     <ProjectReference Include="..\McpServer.Client\McpServer.Client.csproj" />
+    <ProjectReference Include="..\ModernWinForms\ModernWinForms.csproj" />
   </ItemGroup>
 
   <ItemGroup>
