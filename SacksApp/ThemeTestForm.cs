@@ -40,98 +40,80 @@ namespace SacksApp
             
             // Update info
             UpdateInfoLabel();
-            
-            // Set initial style info
-            _styleDetailsLabel.Text = GetStyleInfo();
+
+            // Populate DataGridView with sample data
+            PopulateDataGrid();
 
             // Apply initial theme
             ThemeManager.ApplyTheme(this);
         }
 
-    private void RefreshSkinList()
-    {
-        _skinComboBox.Items.Clear();
-        _skinComboBox.Items.AddRange(ThemeManager.AvailableSkinsForCurrentTheme.ToArray());
-        _skinComboBox.SelectedItem = ThemeManager.CurrentSkin;
-    }
-
-    private void OnThemeChanged(object? sender, EventArgs e)
-    {
-        if (_themeComboBox.SelectedItem is string themeName)
+        private void RefreshSkinList()
         {
-            ThemeManager.CurrentTheme = themeName;
-            RefreshSkinList();
-            UpdateInfoLabel();
-            ThemeManager.ApplyTheme(this);
-
-            // Refresh style info
-            if (_testGroupBox.Controls[4] is Label styleLabel)
-            {
-                styleLabel.Text = GetStyleInfo();
-            }
+            _skinComboBox.Items.Clear();
+            _skinComboBox.Items.AddRange(ThemeManager.AvailableSkinsForCurrentTheme.ToArray());
+            _skinComboBox.SelectedItem = ThemeManager.CurrentSkin;
         }
-    }
 
-    private void OnSkinChanged(object? sender, EventArgs e)
-    {
-        if (_skinComboBox.SelectedItem is string skinName)
+        private void OnThemeChanged(object? sender, EventArgs e)
         {
-            ThemeManager.CurrentSkin = skinName;
-            UpdateInfoLabel();
-            ThemeManager.ApplyTheme(this);
-
-            // Refresh style info
-            if (_testGroupBox.Controls[4] is Label styleLabel)
+            if (_themeComboBox.SelectedItem is string themeName)
             {
-                styleLabel.Text = GetStyleInfo();
-            }
-        }
-    }
-
-    private void UpdateInfoLabel()
-    {
-        var theme = ThemeManager.CurrentThemeDefinition;
-        var skin = ThemeManager.CurrentSkinDefinition;
-
-        _infoLabel.Text = $"Active: {ThemeManager.CurrentTheme} theme + {ThemeManager.CurrentSkin} skin";
-
-        if (!string.IsNullOrEmpty(skin.InheritsFrom))
-        {
-            _infoLabel.Text += $" (inherits from: {skin.InheritsFrom})";
-        }
-    }
-
-    private string GetStyleInfo()
-    {
-        var buttonStyle = ThemeManager.GetControlStyle("ModernButton");
-        var groupBoxStyle = ThemeManager.GetControlStyle("ModernGroupBox");
-        var textBoxStyle = ThemeManager.GetControlStyle("ModernTextBox");
-
-        var info = "=== Button Style ===\n";
-        if (buttonStyle != null)
-        {
-            info += $"CornerRadius: {buttonStyle.CornerRadius}px\n";
-            info += $"BorderWidth: {buttonStyle.BorderWidth}px\n";
-            info += $"States: {string.Join(", ", buttonStyle.States.Keys)}\n";
-            if (buttonStyle.States.TryGetValue("normal", out var normalState))
-            {
-                info += $"Normal: Back={normalState.BackColor}, Fore={normalState.ForeColor}, Border={normalState.BorderColor}\n";
+                ThemeManager.CurrentTheme = themeName;
+                RefreshSkinList();
+                UpdateInfoLabel();
+                ThemeManager.ApplyTheme(this);
             }
         }
 
-        info += "\n=== GroupBox Style ===\n";
-        if (groupBoxStyle != null)
+        private void OnSkinChanged(object? sender, EventArgs e)
         {
-            info += $"CornerRadius: {groupBoxStyle.CornerRadius}px\n";
-            info += $"BorderWidth: {groupBoxStyle.BorderWidth}px\n";
+            if (_skinComboBox.SelectedItem is string skinName)
+            {
+                ThemeManager.CurrentSkin = skinName;
+                UpdateInfoLabel();
+                ThemeManager.ApplyTheme(this);
+            }
         }
 
-        info += "\n=== Architecture Validation ===\n";
-        info += $"✅ Themes provide structure (cornerRadius, borderWidth)\n";
-        info += $"✅ Skins provide colors (states only)\n";
-        info += $"✅ ThemeManager.GetControlStyle() merges both\n";
+        private void UpdateInfoLabel()
+        {
+            var skin = ThemeManager.CurrentSkinDefinition;
+            _infoLabel.Text = $"Active: {ThemeManager.CurrentTheme} theme + {ThemeManager.CurrentSkin} skin";
 
-        return info;
-    }
+            if (!string.IsNullOrEmpty(skin.InheritsFrom))
+            {
+                _infoLabel.Text += $" (inherits from: {skin.InheritsFrom})";
+            }
+        }
+
+        private void PopulateDataGrid()
+        {
+            // Create columns
+            _dataGridView.Columns.Add("ControlName", "Control Name");
+            _dataGridView.Columns.Add("Type", "Type");
+            _dataGridView.Columns.Add("Features", "Key Features");
+            _dataGridView.Columns.Add("ThemeSupport", "Theme Support");
+
+            // Add data rows for all 15 controls
+            _dataGridView.Rows.Add("ModernButton", "Action", "Hover animation, rounded corners", "✅ Full");
+            _dataGridView.Rows.Add("ModernCheckBox", "Selection", "Check animation, custom rendering", "✅ Full");
+            _dataGridView.Rows.Add("ModernComboBox", "Input", "Dropdown selection", "✅ Full");
+            _dataGridView.Rows.Add("ModernTextBox", "Input", "Validation states, icons, focus animation", "✅ Full + IValidatable");
+            _dataGridView.Rows.Add("ModernRadioButton", "Selection", "Radio animation, custom rendering", "✅ Full");
+            _dataGridView.Rows.Add("ModernLabel", "Display", "Themed text display", "✅ Full");
+            _dataGridView.Rows.Add("ModernPanel", "Container", "Background theming", "✅ Full");
+            _dataGridView.Rows.Add("ModernGroupBox", "Container", "Rounded borders, title styling", "✅ Full");
+            _dataGridView.Rows.Add("ModernDataGridView", "Data", "Modern grid styling, alternating rows", "✅ Full");
+            _dataGridView.Rows.Add("ModernSplitContainer", "Layout", "Themed splitter", "✅ Full");
+            _dataGridView.Rows.Add("ModernStatusStrip", "Status", "Bottom status bar", "✅ Full");
+            _dataGridView.Rows.Add("ModernMenuStrip", "Navigation", "Custom renderer, modern colors", "✅ Full");
+            _dataGridView.Rows.Add("ModernTabControl", "Navigation", "Custom-painted tabs", "✅ Full");
+            _dataGridView.Rows.Add("ModernTableLayoutPanel", "Layout", "Grid-based layout", "✅ Full");
+            _dataGridView.Rows.Add("ModernFlowLayoutPanel", "Layout", "Flow-based layout", "✅ Full");
+
+            // Auto-size columns
+            _dataGridView.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        }
     }
 }

@@ -155,8 +155,16 @@ public class ModernButton : Button
     private void UpdateFontFromTheme()
     {
         // Always update theme font cache; it will be used in painting if needed
-        _themeFont?.Dispose();
-        _themeFont = ThemeManager.CreateFont();
+        try
+        {
+            _themeFont?.Dispose();
+            _themeFont = ThemeManager.CreateFont();
+        }
+        catch
+        {
+            // If theme manager fails, just use default font
+            _themeFont = null;
+        }
     }
 
     /// <summary>
@@ -173,7 +181,20 @@ public class ModernButton : Button
     private void UpdateStyleFromSkin(SkinDefinition? skin = null)
     {
         // Get merged style from theme (structure) + skin (colors)
-        _controlStyle = ThemeManager.GetControlStyle("ModernButton") ?? new ControlStyle
+        try
+        {
+            _controlStyle = ThemeManager.GetControlStyle("ModernButton") ?? CreateDefaultStyle();
+        }
+        catch
+        {
+            // If theme manager fails, use default style
+            _controlStyle = CreateDefaultStyle();
+        }
+    }
+
+    private ControlStyle CreateDefaultStyle()
+    {
+        return new ControlStyle
         {
             CornerRadius = 8,
             BorderWidth = 1,

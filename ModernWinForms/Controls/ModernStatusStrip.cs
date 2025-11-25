@@ -1,0 +1,80 @@
+using System.ComponentModel;
+using ModernWinForms.Theming;
+
+namespace ModernWinForms.Controls;
+
+/// <summary>
+/// Modern status strip control with theme support.
+/// </summary>
+[ToolboxItem(true)]
+[DesignerCategory("Code")]
+[Description("Modern status strip control with theme support.")]
+public class ModernStatusStrip : StatusStrip
+{
+    /// <summary>
+    /// Initializes a new instance of the ModernStatusStrip class.
+    /// </summary>
+    public ModernStatusStrip()
+    {
+        ThemeManager.ThemeChanged += OnThemeChanged;
+        UpdateStyleFromTheme();
+    }
+
+    private void OnThemeChanged(object? sender, EventArgs e)
+    {
+        UpdateStyleFromTheme();
+        Invalidate();
+    }
+
+    private void UpdateStyleFromTheme()
+    {
+        var controlStyle = ThemeManager.GetControlStyle("ModernStatusStrip");
+
+        if (controlStyle != null && controlStyle.States.TryGetValue("normal", out var normalState))
+        {
+            if (normalState.BackColor != null)
+            {
+                BackColor = ColorTranslator.FromHtml(normalState.BackColor);
+            }
+
+            if (normalState.ForeColor != null)
+            {
+                ForeColor = ColorTranslator.FromHtml(normalState.ForeColor);
+            }
+        }
+        else
+        {
+            // Default modern styling
+            BackColor = Color.FromArgb(246, 248, 250);
+            ForeColor = Color.FromArgb(13, 17, 23);
+            RenderMode = ToolStripRenderMode.Professional;
+        }
+
+        var themeFont = ThemeManager.CreateFont();
+        if (themeFont != null)
+        {
+            Font = themeFont;
+            themeFont.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Applies the specified skin definition to this status strip.
+    /// </summary>
+    /// <param name="skin">The skin definition to apply.</param>
+    public void ApplySkin(SkinDefinition skin)
+    {
+        UpdateStyleFromTheme();
+        Invalidate();
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            ThemeManager.ThemeChanged -= OnThemeChanged;
+        }
+        base.Dispose(disposing);
+    }
+}

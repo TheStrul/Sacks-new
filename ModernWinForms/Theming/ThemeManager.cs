@@ -623,8 +623,20 @@ public static class ThemeManager
                     return skin;
                 }
 
-                // Resolve parent first
-                var baseSkin = ResolveSkin(skin.InheritsFrom);
+                // Resolve parent first - handle case where parent doesn't exist
+                SkinDefinition baseSkin;
+                try
+                {
+                    baseSkin = ResolveSkin(skin.InheritsFrom);
+                }
+                catch (InvalidOperationException)
+                {
+                    // Parent skin not found, use current skin as-is
+                    System.Diagnostics.Debug.WriteLine($"  Parent '{skin.InheritsFrom}' not found, using as-is");
+                    resolved[skinName] = skin;
+                    return skin;
+                }
+
                 System.Diagnostics.Debug.WriteLine($"  Parent Background: {baseSkin.Palette.Background ?? "null"}");
 
                 // Merge with parent
@@ -639,7 +651,7 @@ public static class ThemeManager
             }
         }
 
-        // Resolve all skins
+        // Resolve all skins - wrap in try-catch to prevent startup failures
         var skinNames = config.Skins.Keys.ToList();
         foreach (var skinName in skinNames)
         {
@@ -647,9 +659,10 @@ public static class ThemeManager
             {
                 config.Skins[skinName] = ResolveSkin(skinName);
             }
-            catch (InvalidOperationException)
+            catch (InvalidOperationException ex)
             {
-                // If inheritance fails, keep the original skin
+                // If inheritance resolution fails completely, keep the original skin
+                System.Diagnostics.Debug.WriteLine($"Failed to resolve {skinName}: {ex.Message}");
             }
         }
     }
