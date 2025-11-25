@@ -1,0 +1,58 @@
+{
+  "theme": "GitHub",
+  "inheritsFrom": "BaseDark",
+  "description": "Arctic, north-bluish color skin",
+  "palette": {
+    "primary": "#88C0D0",
+    "background": "#2E3440",
+    "surface": "#3B4252",
+    "text": "#ECEFF4",
+    "border": "#4C566A"
+  },
+  "controls": {
+    "ModernButton": {
+      "states": {
+        "normal": {
+          "backColor": "#3B4252",
+          "foreColor": "#ECEFF4",
+          "borderColor": "#4C566A"
+        },
+        "hover": {
+          "backColor": "#434C5E",
+          "foreColor": "#ECEFF4",
+          "borderColor": "#88C0D0"
+        },
+        "pressed": {
+          "backColor": "#88C0D0",
+          "foreColor": "#2E3440",
+          "borderColor": "#8FBCBB"
+        },
+        "disabled": {
+          "backColor": "#2E3440",
+          "foreColor": "#4C566A",
+          "borderColor": "#3B4252"
+        }
+      }
+    },
+    "ModernGroupBox": {
+      "states": {
+        "normal": {
+          "foreColor": "#ECEFF4",
+          "borderColor": "#4C566A"
+        }
+      }
+    },
+    "ModernTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#2E3440",
+          "foreColor": "#ECEFF4",
+          "borderColor": "#4C566A"
+        },
+        "focused": {
+          "borderColor": "#88C0D0"
+        }
+      }
+    }
+  }
+}

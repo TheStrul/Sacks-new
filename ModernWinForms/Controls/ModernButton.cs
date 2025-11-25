@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.Drawing.Drawing2D;
+using ModernWinForms.Accessibility;
+using ModernWinForms.Animation;
 using ModernWinForms.Theming;
 
 namespace ModernWinForms.Controls;
@@ -13,14 +15,22 @@ namespace ModernWinForms.Controls;
 public class ModernButton : Button
 {
     private ControlStyle _controlStyle = new();
-    private bool _isHovered;
-    private bool _isPressed;
     private GraphicsPath? _cachedPath;
     private Size _cachedSize;
     private int _cachedRadius;
     private Image? _image;
     private ContentAlignment _imageAlign = ContentAlignment.MiddleLeft;
     private Font? _themeFont;
+    private AnimationEngine? _hoverAnimation;
+    private AnimationEngine? _pressAnimation;
+    private double _hoverProgress;
+    private double _pressProgress;
+    private bool _enableAnimations = true;
+    private bool _enableRippleEffect = true;
+    private Point _rippleCenter;
+    private double _rippleProgress;
+    private AnimationEngine? _rippleAnimation;
+    private bool _showFocusIndicator = true;
 
     /// <summary>
     /// Gets or sets the image displayed on the button.
@@ -61,6 +71,49 @@ public class ModernButton : Button
     }
 
     /// <summary>
+    /// Gets or sets whether smooth animations are enabled.
+    /// </summary>
+    [Category("Behavior")]
+    [Description("Enables smooth state transition animations.")]
+    [DefaultValue(true)]
+    public bool EnableAnimations
+    {
+        get => _enableAnimations;
+        set => _enableAnimations = value;
+    }
+
+    /// <summary>
+    /// Gets or sets whether ripple effect is enabled on click.
+    /// </summary>
+    [Category("Behavior")]
+    [Description("Enables ripple effect when the button is clicked.")]
+    [DefaultValue(true)]
+    public bool EnableRippleEffect
+    {
+        get => _enableRippleEffect;
+        set => _enableRippleEffect = value;
+    }
+
+    /// <summary>
+    /// Gets or sets whether to show focus indicator for keyboard navigation.
+    /// </summary>
+    [Category("Accessibility")]
+    [Description("Shows a focus indicator when the button is focused via keyboard.")]
+    [DefaultValue(true)]
+    public bool ShowFocusIndicator
+    {
+        get => _showFocusIndicator;
+        set
+        {
+            if (_showFocusIndicator != value)
+            {
+                _showFocusIndicator = value;
+                Invalidate();
+            }
+        }
+    }
+
+    /// <summary>
     /// Initializes a new instance of the ModernButton class.
     /// </summary>
     public ModernButton()
@@ -82,6 +135,14 @@ public class ModernButton : Button
         ThemeManager.ThemeChanged += OnThemeChanged;
         UpdateStyleFromSkin();
         UpdateFontFromTheme();
+        InitializeAnimations();
+    }
+
+    private void InitializeAnimations()
+    {
+        _hoverAnimation = new AnimationEngine(this);
+        _pressAnimation = new AnimationEngine(this);
+        _rippleAnimation = new AnimationEngine(this);
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)
@@ -130,32 +191,70 @@ public class ModernButton : Button
     protected override void OnMouseEnter(EventArgs e)
     {
         base.OnMouseEnter(e);
-        _isHovered = true;
-        Invalidate();
+        
+        if (_enableAnimations)
+        {
+            _hoverAnimation?.Animate(1.0, 200, value => _hoverProgress = value);
+        }
+        else
+        {
+            _hoverProgress = 1.0;
+            Invalidate();
+        }
     }
 
     /// <inheritdoc/>
     protected override void OnMouseLeave(EventArgs e)
     {
         base.OnMouseLeave(e);
-        _isHovered = false;
-        Invalidate();
+        
+        if (_enableAnimations)
+        {
+            _hoverAnimation?.Animate(0.0, 200, value => _hoverProgress = value);
+        }
+        else
+        {
+            _hoverProgress = 0.0;
+            Invalidate();
+        }
     }
 
     /// <inheritdoc/>
     protected override void OnMouseDown(MouseEventArgs mevent)
     {
         base.OnMouseDown(mevent);
-        _isPressed = true;
-        Invalidate();
+        
+        if (mevent != null && _enableRippleEffect)
+        {
+            _rippleCenter = mevent.Location;
+            _rippleAnimation?.Animate(1.0, 600, value => _rippleProgress = value, () => _rippleProgress = 0);
+        }
+        
+        if (_enableAnimations)
+        {
+            _pressAnimation?.Animate(1.0, 100, value => _pressProgress = value);
+        }
+        else
+        {
+            _pressProgress = 1.0;
+            Invalidate();
+        }
     }
 
     /// <inheritdoc/>
     protected override void OnMouseUp(MouseEventArgs mevent)
     {
         base.OnMouseUp(mevent);
-        _isPressed = false;
-        Invalidate();
+        
+        if (_enableAnimations)
+        {
+            _pressAnimation?.Animate(0.0, 150, value => _pressProgress = value);
+        }
+        else
+        {
+            _pressProgress = 0.0;
+            Invalidate();
+        }
     }
 
     /// <inheritdoc/>
@@ -177,15 +276,40 @@ public class ModernButton : Button
             g.FillRectangle(parentBrush, ClientRectangle);
         }
 
-        // Determine state and colors
-        var stateName = !Enabled ? "disabled" : _isPressed ? "pressed" : _isHovered ? "hover" : "normal";
-        var stateStyle = _controlStyle.States.GetValueOrDefault(stateName) 
-            ?? _controlStyle.States.GetValueOrDefault("normal") 
+        // Determine state and colors with animation blending
+        var normalStyle = _controlStyle.States.GetValueOrDefault("normal") 
             ?? new StateStyle { BackColor = "#FFFFFF", ForeColor = "#000000", BorderColor = "#CCCCCC" };
-
-        var backColor = ColorTranslator.FromHtml(stateStyle.BackColor ?? "#FFFFFF");
-        var foreColor = ColorTranslator.FromHtml(stateStyle.ForeColor ?? "#000000");
-        var borderColor = ColorTranslator.FromHtml(stateStyle.BorderColor ?? "#CCCCCC");
+        
+        Color backColor, foreColor, borderColor;
+        
+        if (!Enabled)
+        {
+            var disabledStyle = _controlStyle.States.GetValueOrDefault("disabled") ?? normalStyle;
+            backColor = ColorCache.GetColor(disabledStyle.BackColor, Color.LightGray);
+            foreColor = ColorCache.GetColor(disabledStyle.ForeColor, Color.Gray);
+            borderColor = ColorCache.GetColor(disabledStyle.BorderColor, Color.LightGray);
+        }
+        else
+        {
+            var hoverStyle = _controlStyle.States.GetValueOrDefault("hover") ?? normalStyle;
+            var pressedStyle = _controlStyle.States.GetValueOrDefault("pressed") ?? normalStyle;
+            
+            var normalBack = ColorCache.GetColor(normalStyle.BackColor, Color.White);
+            var hoverBack = ColorCache.GetColor(hoverStyle.BackColor, Color.WhiteSmoke);
+            var pressedBack = ColorCache.GetColor(pressedStyle.BackColor, Color.Gainsboro);
+            
+            // Blend colors based on animation progress
+            backColor = BlendColors(normalBack, hoverBack, _hoverProgress);
+            backColor = BlendColors(backColor, pressedBack, _pressProgress);
+            
+            var normalFore = ColorCache.GetColor(normalStyle.ForeColor, Color.Black);
+            var hoverFore = ColorCache.GetColor(hoverStyle.ForeColor, Color.Black);
+            foreColor = BlendColors(normalFore, hoverFore, _hoverProgress);
+            
+            var normalBorder = ColorCache.GetColor(normalStyle.BorderColor, Color.Gray);
+            var hoverBorder = ColorCache.GetColor(hoverStyle.BorderColor, Color.DarkGray);
+            borderColor = BlendColors(normalBorder, hoverBorder, _hoverProgress);
+        }
 
         // Draw rounded button
         var path = GetOrCreateCachedPath(ClientRectangle, _controlStyle.CornerRadius);
@@ -221,6 +345,49 @@ public class ModernButton : Button
             var effectiveFont = GetEffectiveFont();
             TextRenderer.DrawText(g, Text, effectiveFont, textRect, foreColor, textFlags);
         }
+
+        // Draw ripple effect
+        if (_enableRippleEffect && _rippleProgress > 0)
+        {
+            DrawRippleEffect(g, path);
+        }
+
+        // Draw focus indicator for keyboard navigation
+        if (_showFocusIndicator && Focused && ShowFocusCues)
+        {
+            AccessibilityHelper.DrawFocusRectangle(g, ClientRectangle, _controlStyle.CornerRadius);
+        }
+    }
+
+    private void DrawRippleEffect(Graphics g, GraphicsPath clipPath)
+    {
+        var maxRadius = Math.Max(Width, Height) * 1.5;
+        var currentRadius = (float)(maxRadius * _rippleProgress);
+        var alpha = (int)((1.0 - _rippleProgress) * 60); // Fade out
+        
+        using var rippleBrush = new SolidBrush(Color.FromArgb(alpha, Color.White));
+        
+        // Clip to button shape
+        var oldClip = g.Clip;
+        g.SetClip(clipPath);
+        
+        g.FillEllipse(rippleBrush, 
+            _rippleCenter.X - currentRadius, 
+            _rippleCenter.Y - currentRadius, 
+            currentRadius * 2, 
+            currentRadius * 2);
+        
+        g.Clip = oldClip;
+    }
+
+    private static Color BlendColors(Color from, Color to, double progress)
+    {
+        progress = Math.Clamp(progress, 0, 1);
+        var r = (int)(from.R + ((to.R - from.R) * progress));
+        var g = (int)(from.G + ((to.G - from.G) * progress));
+        var b = (int)(from.B + ((to.B - from.B) * progress));
+        var a = (int)(from.A + ((to.A - from.A) * progress));
+        return Color.FromArgb(a, r, g, b);
     }
 
     private Font GetEffectiveFont()
@@ -284,6 +451,12 @@ public class ModernButton : Button
             _cachedPath = null;
             _themeFont?.Dispose();
             _themeFont = null;
+            _hoverAnimation?.Dispose();
+            _hoverAnimation = null;
+            _pressAnimation?.Dispose();
+            _pressAnimation = null;
+            _rippleAnimation?.Dispose();
+            _rippleAnimation = null;
         }
         base.Dispose(disposing);
     }

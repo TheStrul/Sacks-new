@@ -74,11 +74,7 @@ public class ModernGroupBox : GroupBox
         var stateStyle = _controlStyle.States.GetValueOrDefault("normal");
         if (stateStyle?.ForeColor != null)
         {
-            try
-            {
-                ForeColor = ColorTranslator.FromHtml(stateStyle.ForeColor);
-            }
-            catch { /* Ignore invalid colors */ }
+            ForeColor = ColorCache.GetColor(stateStyle.ForeColor, ForeColor);
         }
     }
 
@@ -92,8 +88,8 @@ public class ModernGroupBox : GroupBox
 
         var stateStyle = _controlStyle.States.GetValueOrDefault("normal") 
             ?? new StateStyle { ForeColor = "#000000", BorderColor = "#CCCCCC" };
-        var foreColor = ColorTranslator.FromHtml(stateStyle.ForeColor ?? "#000000");
-        var borderColor = ColorTranslator.FromHtml(stateStyle.BorderColor ?? "#CCCCCC");
+        var foreColor = ColorCache.GetColor(stateStyle.ForeColor, Color.Black);
+        var borderColor = ColorCache.GetColor(stateStyle.BorderColor, Color.Gray);
         
         var textSize = g.MeasureString(Text, Font);
         var textRect = new Rectangle(10, 0, (int)textSize.Width + 4, (int)textSize.Height);

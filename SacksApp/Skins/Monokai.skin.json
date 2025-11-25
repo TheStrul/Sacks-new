@@ -1,0 +1,58 @@
+{
+  "theme": "GitHub",
+  "inheritsFrom": "BaseDark",
+  "description": "Vibrant and warm color skin",
+  "palette": {
+    "primary": "#F92672",
+    "background": "#272822",
+    "surface": "#3E3D32",
+    "text": "#F8F8F2",
+    "border": "#75715E"
+  },
+  "controls": {
+    "ModernButton": {
+      "states": {
+        "normal": {
+          "backColor": "#3E3D32",
+          "foreColor": "#F8F8F2",
+          "borderColor": "#75715E"
+        },
+        "hover": {
+          "backColor": "#49483E",
+          "foreColor": "#F8F8F2",
+          "borderColor": "#A6E22E"
+        },
+        "pressed": {
+          "backColor": "#F92672",
+          "foreColor": "#272822",
+          "borderColor": "#FD971F"
+        },
+        "disabled": {
+          "backColor": "#2D2C24",
+          "foreColor": "#75715E",
+          "borderColor": "#3E3D32"
+        }
+      }
+    },
+    "ModernGroupBox": {
+      "states": {
+        "normal": {
+          "foreColor": "#F8F8F2",
+          "borderColor": "#75715E"
+        }
+      }
+    },
+    "ModernTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#272822",
+          "foreColor": "#F8F8F2",
+          "borderColor": "#75715E"
+        },
+        "focused": {
+          "borderColor": "#A6E22E"
+        }
+      }
+    }
+  }
+}
