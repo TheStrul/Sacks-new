@@ -1,5 +1,4 @@
 {
-  "theme": "GitHub",
   "inheritsFrom": "BaseDark",
   "description": "Sophisticated dark skin",
   "palette": {
@@ -31,8 +30,6 @@
       }
     },
     "ModernGroupBox": {
-      "borderWidth": 1,
-      "cornerRadius": 4,
       "states": {
         "normal": {
           "foreColor": "#E6EDF3",
@@ -41,14 +38,6 @@
       }
     },
     "ModernTextBox": {
-      "borderWidth": 1,
-      "cornerRadius": 4,
-      "padding": {
-        "left": 8,
-        "top": 8,
-        "right": 8,
-        "bottom": 8
-      },
       "states": {
         "normal": {
           "backColor": "#0D1117",

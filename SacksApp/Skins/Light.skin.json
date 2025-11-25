@@ -1,8 +1,10 @@
 {
-  "theme": "GitHub",
   "inheritsFrom": "BaseLight",
   "description": "Clean light skin",
   "palette": {
+    "background": "#FAFBFC",
+    "surface": "#FFFFFF",
+    "text": "#0D1117",
     "primary": "#0969DA"
   },
   "controls": {
@@ -31,8 +33,6 @@
       }
     },
     "ModernGroupBox": {
-      "borderWidth": 1,
-      "cornerRadius": 4,
       "states": {
         "normal": {
           "foreColor": "#0D1117",
@@ -41,14 +41,6 @@
       }
     },
     "ModernTextBox": {
-      "borderWidth": 1,
-      "cornerRadius": 4,
-      "padding": {
-        "left": 8,
-        "top": 8,
-        "right": 8,
-        "bottom": 8
-      },
       "states": {
         "normal": {
           "backColor": "#FFFFFF",

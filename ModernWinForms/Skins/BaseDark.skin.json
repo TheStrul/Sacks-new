@@ -1,5 +1,4 @@
 {
-  "theme": "GitHub",
   "inheritsFrom": "Base",
   "description": "Base dark skin with dark color palette",
   "palette": {

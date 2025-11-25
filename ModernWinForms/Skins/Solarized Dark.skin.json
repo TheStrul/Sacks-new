@@ -1,5 +1,4 @@
 {
-  "theme": "GitHub",
   "inheritsFrom": "BaseDark",
   "description": "Precision colors for machines and people (dark skin)",
   "palette": {

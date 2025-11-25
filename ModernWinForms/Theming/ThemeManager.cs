@@ -594,9 +594,14 @@ public static class ThemeManager
 
         SkinDefinition ResolveSkin(string skinName)
         {
+            System.Diagnostics.Debug.WriteLine($"Resolving skin: {skinName}");
+            
             // Already resolved
             if (resolved.TryGetValue(skinName, out var cachedSkin))
+            {
+                System.Diagnostics.Debug.WriteLine($"  Already resolved: Background={cachedSkin.Palette.Background}");
                 return cachedSkin;
+            }
 
             // Detect circular dependency
             if (!resolving.Add(skinName))
@@ -607,18 +612,24 @@ public static class ThemeManager
 
             try
             {
+                System.Diagnostics.Debug.WriteLine($"  InheritsFrom: {skin.InheritsFrom ?? "null"}");
+                System.Diagnostics.Debug.WriteLine($"  Current Background: {skin.Palette.Background ?? "null"}");
+                
                 // If no inheritance, use as-is
                 if (string.IsNullOrEmpty(skin.InheritsFrom))
                 {
                     resolved[skinName] = skin;
+                    System.Diagnostics.Debug.WriteLine($"  No inheritance, using as-is");
                     return skin;
                 }
 
                 // Resolve parent first
                 var baseSkin = ResolveSkin(skin.InheritsFrom);
+                System.Diagnostics.Debug.WriteLine($"  Parent Background: {baseSkin.Palette.Background ?? "null"}");
 
                 // Merge with parent
                 var merged = skin.MergeWith(baseSkin);
+                System.Diagnostics.Debug.WriteLine($"  Merged Background: {merged.Palette.Background ?? "null"}");
                 resolved[skinName] = merged;
                 return merged;
             }

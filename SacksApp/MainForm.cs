@@ -141,7 +141,7 @@ public partial class MainForm : Form
             var item = new ToolStripMenuItem(skin);
             item.Click += SkinMenuItem_Click;
             // Check the current skin
-            if (ThemeManager.CurrentTheme == skin)
+            if (ThemeManager.CurrentSkin == skin)
             {
                 item.Checked = true;
             }
@@ -159,6 +159,68 @@ public partial class MainForm : Form
         {
             menuStrip.Items.Add(skinMenu);
         }
+
+        // Create Theme menu
+        InitializeThemeMenu();
+    }
+
+    private void InitializeThemeMenu()
+    {
+        // Find the menu strip
+        var menuStrip = Controls.OfType<MenuStrip>().FirstOrDefault();
+        if (menuStrip == null) return;
+
+        // Create Theme menu
+#pragma warning disable CA2000
+        var themeMenu = new ToolStripMenuItem("Theme");
+#pragma warning restore CA2000
+
+        // Get all available themes
+        var availableThemes = ThemeManager.AvailableThemes;
+        foreach (var theme in availableThemes)
+        {
+            var item = new ToolStripMenuItem(theme);
+            item.Click += ThemeMenuItem_Click;
+            // Check the current theme
+            if (ThemeManager.CurrentTheme == theme)
+            {
+                item.Checked = true;
+            }
+            themeMenu.DropDownItems.Add(item);
+        }
+
+        // Find Window menu and insert Theme menu before it (after Skin menu)
+        var windowMenu = menuStrip.Items.OfType<ToolStripMenuItem>().FirstOrDefault(m => m.Text?.Contains("Window") == true);
+        if (windowMenu != null)
+        {
+            var index = menuStrip.Items.IndexOf(windowMenu);
+            menuStrip.Items.Insert(index, themeMenu);
+        }
+        else
+        {
+            menuStrip.Items.Add(themeMenu);
+        }
+    }
+
+    private void ThemeMenuItem_Click(object? sender, EventArgs e)
+    {
+        if (sender is ToolStripMenuItem item)
+        {
+            var theme = item.Text ?? "GitHub";
+            ThemeManager.CurrentTheme = theme;
+            ThemeManager.ApplyTheme(this);
+
+            // Update checked state
+            if (item.Owner is ToolStripDropDown dropdown && dropdown.OwnerItem is ToolStripMenuItem parent)
+            {
+                foreach (ToolStripMenuItem menuItem in parent.DropDownItems)
+                {
+                    menuItem.Checked = menuItem.Text == theme;
+                }
+            }
+
+            ShowNotification($"Theme set to {theme}.", NotificationType.Success);
+        }
     }
 
     private void SkinMenuItem_Click(object? sender, EventArgs e)
@@ -166,7 +228,7 @@ public partial class MainForm : Form
         if (sender is ToolStripMenuItem item)
         {
             var skin = item.Text ?? "Light";
-            ThemeManager.CurrentTheme = skin;
+            ThemeManager.CurrentSkin = skin;
             ThemeManager.ApplyTheme(this);
 
             // Update checked state
