@@ -32,6 +32,12 @@ public sealed class SkinDefinition
     [JsonPropertyName("palette")] public ColorPalette Palette { get; set; } = new();
     
     /// <summary>
+    /// Gets or sets the typography settings for this skin.
+    /// If not specified, inherits from parent skin or theme defaults.
+    /// </summary>
+    [JsonPropertyName("typography")] public Typography? Typography { get; set; }
+    
+    /// <summary>
     /// Gets or sets the control-specific color overrides for this skin.
     /// Contains only state colors (normal, hover, pressed, disabled).
     /// Structural properties (cornerRadius, borderWidth, padding) come from themes.

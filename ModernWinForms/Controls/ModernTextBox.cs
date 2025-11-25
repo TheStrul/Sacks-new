@@ -18,6 +18,7 @@ public class ModernTextBox : Control
     private GraphicsPath? _cachedPath;
     private Size _cachedSize;
     private int _cachedRadius;
+    private Font? _themeFont;
 
     /// <summary>
     /// Initializes a new instance of the ModernTextBox class.
@@ -46,12 +47,24 @@ public class ModernTextBox : Control
         ThemeManager.ThemeChanged += OnThemeChanged;
         Height = _textBox.Height + (_padding * 2);
         UpdateStyleFromSkin();
+        UpdateFontFromTheme();
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)
     {
         UpdateStyleFromSkin();
+        UpdateFontFromTheme();
         Invalidate();
+    }
+
+    private void UpdateFontFromTheme()
+    {
+        _themeFont?.Dispose();
+        _themeFont = ThemeManager.CreateFont();
+        if (_themeFont != null)
+        {
+            _textBox.Font = _themeFont;
+        }
     }
 
     /// <summary>
@@ -278,6 +291,8 @@ public class ModernTextBox : Control
             ThemeManager.ThemeChanged -= OnThemeChanged;
             _cachedPath?.Dispose();
             _cachedPath = null;
+            _themeFont?.Dispose();
+            _themeFont = null;
         }
         base.Dispose(disposing);
     }

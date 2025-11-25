@@ -125,9 +125,82 @@ public static class ThemeManager
     }
 
     /// <summary>
+    /// Gets the effective typography by merging theme and skin typography settings.
+    /// Priority: Skin typography > Theme typography > Default ("Segoe UI", 9.0f).
+    /// </summary>
+    /// <returns>The effective Typography settings.</returns>
+    public static Typography GetEffectiveTypography()
+    {
+        var theme = CurrentThemeDefinition;
+        var skin = CurrentSkinDefinition;
+
+        // Start with default
+        var result = new Typography { FontFamily = "Segoe UI", FontSize = 9.0f };
+
+        // Apply theme typography if available
+        if (theme.Typography != null)
+        {
+            if (!string.IsNullOrWhiteSpace(theme.Typography.FontFamily))
+            {
+                result.FontFamily = theme.Typography.FontFamily;
+            }
+            if (theme.Typography.FontSize > 0)
+            {
+                result.FontSize = theme.Typography.FontSize;
+            }
+        }
+
+        // Override with skin typography if available (skin wins)
+        if (skin.Typography != null)
+        {
+            if (!string.IsNullOrWhiteSpace(skin.Typography.FontFamily))
+            {
+                result.FontFamily = skin.Typography.FontFamily;
+            }
+            if (skin.Typography.FontSize > 0)
+            {
+                result.FontSize = skin.Typography.FontSize;
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Creates a Font object from the effective typography settings.
+    /// </summary>
+    /// <param name="style">Optional font style (Bold, Italic, etc.).</param>
+    /// <returns>A Font object based on theme/skin typography.</returns>
+    public static Font CreateFont(FontStyle style = FontStyle.Regular)
+    {
+        var typography = GetEffectiveTypography();
+        try
+        {
+            return new Font(typography.FontFamily, typography.FontSize, style);
+        }
+        catch
+        {
+            // Fallback if font family is invalid
+            return new Font("Segoe UI", typography.FontSize, style);
+        }
+    }
+
+    /// <summary>
     /// Occurs when the current theme is changed.
     /// </summary>
     public static event EventHandler? ThemeChanged;
+
+    /// <summary>
+    /// Occurs when a validation error is encountered during theme or skin loading.
+    /// Subscribe to this event to log or display validation errors.
+    /// </summary>
+    public static event EventHandler<ValidationEventArgs>? ValidationError;
+
+    /// <summary>
+    /// Gets or sets whether to enable diagnostic mode which logs all validation errors.
+    /// Default is false. Set to true during development to see detailed validation messages.
+    /// </summary>
+    public static bool DiagnosticsEnabled { get; set; }
 
     /// <summary>
     /// Applies the current theme and skin to the specified form and all its controls recursively.
@@ -282,11 +355,24 @@ public static class ThemeManager
                         {
                             // Use filename without extension as theme name (e.g., "Material.theme.json" -> "Material")
                             var themeName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(themeFile));
+                            
+                            // Validate theme
+                            var errors = ThemeValidator.ValidateTheme(themeName, themeDef);
+                            if (errors.Count > 0)
+                            {
+                                RaiseValidationErrors($"Theme '{themeName}' ({themeFile})", errors);
+                                if (!DiagnosticsEnabled)
+                                {
+                                    continue; // Skip invalid themes in production
+                                }
+                            }
+                            
                             _config.Themes[themeName] = themeDef;
                         }
                     }
-                    catch (JsonException)
+                    catch (JsonException ex)
                     {
+                        RaiseValidationError($"Theme file '{themeFile}': Invalid JSON - {ex.Message}");
                         // Skip invalid theme files
                     }
                     catch (IOException)
@@ -307,11 +393,24 @@ public static class ThemeManager
                         {
                             // Use filename without extension as skin name (e.g., "Light.skin.json" -> "Light")
                             var skinName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(skinFile));
+                            
+                            // Validate skin
+                            var errors = ThemeValidator.ValidateSkin(skinName, skinDef);
+                            if (errors.Count > 0)
+                            {
+                                RaiseValidationErrors($"Skin '{skinName}' ({skinFile})", errors);
+                                if (!DiagnosticsEnabled)
+                                {
+                                    continue; // Skip invalid skins in production
+                                }
+                            }
+                            
                             _config.Skins[skinName] = skinDef;
                         }
                     }
-                    catch (JsonException)
+                    catch (JsonException ex)
                     {
+                        RaiseValidationError($"Skin file '{skinFile}': Invalid JSON - {ex.Message}");
                         // Skip invalid skin files
                     }
                     catch (IOException)
@@ -605,5 +704,38 @@ public static class ThemeManager
         {
             _configLock.Release();
         }
+    }
+
+    private static void RaiseValidationError(string message)
+    {
+        ValidationError?.Invoke(null, new ValidationEventArgs(message));
+    }
+
+    private static void RaiseValidationErrors(string context, List<string> errors)
+    {
+        foreach (var error in errors)
+        {
+            RaiseValidationError($"{context}: {error}");
+        }
+    }
+}
+
+/// <summary>
+/// Event arguments for validation errors.
+/// </summary>
+public class ValidationEventArgs : EventArgs
+{
+    /// <summary>
+    /// Gets the validation error message.
+    /// </summary>
+    public string Message { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the ValidationEventArgs class.
+    /// </summary>
+    /// <param name="message">The validation error message.</param>
+    public ValidationEventArgs(string message)
+    {
+        Message = message;
     }
 }

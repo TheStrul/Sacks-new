@@ -33,6 +33,26 @@
           "borderColor": "#3B4252"
         }
       }
+    },
+    "ModernGroupBox": {
+      "states": {
+        "normal": {
+          "foreColor": "#ECEFF4",
+          "borderColor": "#4C566A"
+        }
+      }
+    },
+    "ModernTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#2E3440",
+          "foreColor": "#ECEFF4",
+          "borderColor": "#4C566A"
+        },
+        "focused": {
+          "borderColor": "#88C0D0"
+        }
+      }
     }
   }
 }

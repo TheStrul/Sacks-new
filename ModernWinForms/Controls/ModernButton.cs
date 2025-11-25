@@ -18,6 +18,47 @@ public class ModernButton : Button
     private GraphicsPath? _cachedPath;
     private Size _cachedSize;
     private int _cachedRadius;
+    private Image? _image;
+    private ContentAlignment _imageAlign = ContentAlignment.MiddleLeft;
+    private Font? _themeFont;
+
+    /// <summary>
+    /// Gets or sets the image displayed on the button.
+    /// </summary>
+    [Category("Appearance")]
+    [Description("The image/icon displayed on the button.")]
+    [DefaultValue(null)]
+    public new Image? Image
+    {
+        get => _image;
+        set
+        {
+            if (_image != value)
+            {
+                _image = value;
+                Invalidate();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the alignment of the image on the button.
+    /// </summary>
+    [Category("Appearance")]
+    [Description("The alignment of the image on the button.")]
+    [DefaultValue(ContentAlignment.MiddleLeft)]
+    public new ContentAlignment ImageAlign
+    {
+        get => _imageAlign;
+        set
+        {
+            if (_imageAlign != value)
+            {
+                _imageAlign = value;
+                Invalidate();
+            }
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the ModernButton class.
@@ -40,12 +81,21 @@ public class ModernButton : Button
 
         ThemeManager.ThemeChanged += OnThemeChanged;
         UpdateStyleFromSkin();
+        UpdateFontFromTheme();
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)
     {
         UpdateStyleFromSkin();
+        UpdateFontFromTheme();
         Invalidate();
+    }
+
+    private void UpdateFontFromTheme()
+    {
+        // Always update theme font cache; it will be used in painting if needed
+        _themeFont?.Dispose();
+        _themeFont = ThemeManager.CreateFont();
     }
 
     /// <summary>
@@ -149,9 +199,34 @@ public class ModernButton : Button
             g.DrawPath(pen, path);
         }
 
+        // Calculate layout for image and text
+        var contentRect = ClientRectangle;
+        var imageRect = Rectangle.Empty;
+        var textRect = contentRect;
+
+        // Draw image if present
+        if (_image != null)
+        {
+            imageRect = CalculateImageRectangle(contentRect, _image.Size);
+            g.DrawImage(_image, imageRect);
+
+            // Adjust text rectangle to account for image
+            textRect = CalculateTextRectangle(contentRect, imageRect);
+        }
+
         // Draw text
-        TextRenderer.DrawText(g, Text, Font, ClientRectangle, foreColor, 
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+        if (!string.IsNullOrEmpty(Text))
+        {
+            var textFlags = GetTextFormatFlags();
+            var effectiveFont = GetEffectiveFont();
+            TextRenderer.DrawText(g, Text, effectiveFont, textRect, foreColor, textFlags);
+        }
+    }
+
+    private Font GetEffectiveFont()
+    {
+        // Use theme font if available, otherwise use control's Font
+        return _themeFont ?? Font ?? DefaultFont;
     }
 
     private GraphicsPath GetOrCreateCachedPath(Rectangle rect, int radius)
@@ -207,6 +282,8 @@ public class ModernButton : Button
             ThemeManager.ThemeChanged -= OnThemeChanged;
             _cachedPath?.Dispose();
             _cachedPath = null;
+            _themeFont?.Dispose();
+            _themeFont = null;
         }
         base.Dispose(disposing);
     }
@@ -224,5 +301,96 @@ public class ModernButton : Button
             current = current.Parent;
         }
         return SystemColors.Control;
+    }
+
+    private Rectangle CalculateImageRectangle(Rectangle contentRect, Size imageSize)
+    {
+        const int padding = 8;
+        var x = contentRect.X + padding;
+        var y = contentRect.Y + (contentRect.Height - imageSize.Height) / 2;
+        var width = imageSize.Width;
+        var height = imageSize.Height;
+
+        return _imageAlign switch
+        {
+            ContentAlignment.TopLeft => new Rectangle(contentRect.X + padding, contentRect.Y + padding, width, height),
+            ContentAlignment.TopCenter => new Rectangle(contentRect.X + (contentRect.Width - width) / 2, contentRect.Y + padding, width, height),
+            ContentAlignment.TopRight => new Rectangle(contentRect.Right - width - padding, contentRect.Y + padding, width, height),
+            ContentAlignment.MiddleLeft => new Rectangle(contentRect.X + padding, y, width, height),
+            ContentAlignment.MiddleCenter => new Rectangle(contentRect.X + (contentRect.Width - width) / 2, y, width, height),
+            ContentAlignment.MiddleRight => new Rectangle(contentRect.Right - width - padding, y, width, height),
+            ContentAlignment.BottomLeft => new Rectangle(contentRect.X + padding, contentRect.Bottom - height - padding, width, height),
+            ContentAlignment.BottomCenter => new Rectangle(contentRect.X + (contentRect.Width - width) / 2, contentRect.Bottom - height - padding, width, height),
+            ContentAlignment.BottomRight => new Rectangle(contentRect.Right - width - padding, contentRect.Bottom - height - padding, width, height),
+            _ => new Rectangle(x, y, width, height)
+        };
+    }
+
+    private Rectangle CalculateTextRectangle(Rectangle contentRect, Rectangle imageRect)
+    {
+        const int padding = 8;
+        const int spacing = 4;
+
+        if (imageRect.IsEmpty)
+        {
+            return contentRect;
+        }
+
+        return _imageAlign switch
+        {
+            ContentAlignment.TopLeft or ContentAlignment.MiddleLeft or ContentAlignment.BottomLeft =>
+                new Rectangle(
+                    imageRect.Right + spacing,
+                    contentRect.Y,
+                    contentRect.Width - imageRect.Width - spacing - padding * 2,
+                    contentRect.Height),
+
+            ContentAlignment.TopRight or ContentAlignment.MiddleRight or ContentAlignment.BottomRight =>
+                new Rectangle(
+                    contentRect.X + padding,
+                    contentRect.Y,
+                    contentRect.Width - imageRect.Width - spacing - padding * 2,
+                    contentRect.Height),
+
+            ContentAlignment.TopCenter =>
+                new Rectangle(
+                    contentRect.X,
+                    imageRect.Bottom + spacing,
+                    contentRect.Width,
+                    contentRect.Height - imageRect.Height - spacing - padding),
+
+            ContentAlignment.BottomCenter =>
+                new Rectangle(
+                    contentRect.X,
+                    contentRect.Y + padding,
+                    contentRect.Width,
+                    contentRect.Height - imageRect.Height - spacing - padding),
+
+            _ => contentRect // MiddleCenter - overlap text over image area
+        };
+    }
+
+    private TextFormatFlags GetTextFormatFlags()
+    {
+        var flags = TextFormatFlags.EndEllipsis | TextFormatFlags.WordBreak;
+
+        // Horizontal alignment
+        if (_image == null || _imageAlign is ContentAlignment.TopCenter or ContentAlignment.MiddleCenter or ContentAlignment.BottomCenter)
+        {
+            flags |= TextFormatFlags.HorizontalCenter;
+        }
+        else if (_imageAlign is ContentAlignment.TopRight or ContentAlignment.MiddleRight or ContentAlignment.BottomRight)
+        {
+            flags |= TextFormatFlags.Right;
+        }
+        else
+        {
+            flags |= TextFormatFlags.Left;
+        }
+
+        // Vertical alignment
+        flags |= TextFormatFlags.VerticalCenter;
+
+        return flags;
     }
 }

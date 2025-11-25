@@ -7,6 +7,7 @@ using QMobileDeviceServiceMenu;
 
 using Sacks.Core.Services.Interfaces;
 using Sacks.LogicLayer.Services.Interfaces;
+using ModernWinForms.Theming;
 
 namespace SacksApp;
 
@@ -44,7 +45,7 @@ public partial class MainForm : Form
         };
 
         // Apply app-wide theme to all ModernButtons
-        Theming.AppThemeManager.ApplyTheme(this);
+        ThemeManager.ApplyTheme(this);
 
         // Initialize Skin Menu
         InitializeSkinMenu();
@@ -135,13 +136,12 @@ public partial class MainForm : Form
         // Get all available skins dynamically
         var availableSkins = new[] { "Light", "Dark", "Dracula", "Solarized Light", "Solarized Dark", 
                                      "Monokai", "Nord", "Material", "Fluent", "Cyberpunk", "Gruvbox" };
-
         foreach (var skin in availableSkins)
         {
             var item = new ToolStripMenuItem(skin);
             item.Click += SkinMenuItem_Click;
             // Check the current skin
-            if (Theming.AppThemeManager.CurrentTheme == skin)
+            if (ThemeManager.CurrentTheme == skin)
             {
                 item.Checked = true;
             }
@@ -166,8 +166,8 @@ public partial class MainForm : Form
         if (sender is ToolStripMenuItem item)
         {
             var skin = item.Text ?? "Light";
-            Theming.AppThemeManager.CurrentTheme = skin;
-            Theming.AppThemeManager.ApplyTheme(this);
+            ThemeManager.CurrentTheme = skin;
+            ThemeManager.ApplyTheme(this);
 
             // Update checked state
             if (item.Owner is ToolStripDropDown dropdown && dropdown.OwnerItem is ToolStripMenuItem parent)

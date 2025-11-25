@@ -1,3 +1,5 @@
+using ModernWinForms.Controls;
+
 namespace SacksApp
 {
     partial class MainForm
@@ -382,6 +384,7 @@ namespace SacksApp
             // 
             // aiQueryGroupBox
             // 
+            aiQueryGroupBox.BackColor = Color.Transparent;
             aiQueryGroupBox.Controls.Add(aiQueryTableLayout);
             aiQueryGroupBox.Dock = DockStyle.Fill;
             aiQueryGroupBox.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
@@ -462,40 +465,47 @@ namespace SacksApp
             // 
             // aiQueryTextBox
             // 
+            aiQueryTextBox.BackColor = Color.FromArgb(255, 255, 255);
             aiQueryTextBox.Dock = DockStyle.Fill;
-            aiQueryTextBox.Font = new Font("Segoe UI", 10F);
             aiQueryTextBox.Location = new Point(60, 57);
+            aiQueryTextBox.Multiline = false;
             aiQueryTextBox.Name = "aiQueryTextBox";
             aiQueryTextBox.PlaceholderText = "Ask anything... (Press Enter to send)";
+            aiQueryTextBox.ReadOnly = false;
+            aiQueryTextBox.ScrollBars = ScrollBars.None;
             aiQueryTextBox.Size = new Size(275, 25);
             aiQueryTextBox.TabIndex = 1;
+            aiQueryTextBox.WordWrap = true;
             aiQueryTextBox.KeyDown += AiQueryTextBox_KeyDown;
             // 
             // aiMetadataTextBox
             // 
+            aiMetadataTextBox.BackColor = Color.FromArgb(255, 255, 255);
             aiQueryTableLayout.SetColumnSpan(aiMetadataTextBox, 2);
             aiMetadataTextBox.Dock = DockStyle.Fill;
-            aiMetadataTextBox.Font = new Font("Segoe UI", 9F);
             aiMetadataTextBox.Location = new Point(13, 103);
+            aiMetadataTextBox.Multiline = false;
             aiMetadataTextBox.Name = "aiMetadataTextBox";
+            aiMetadataTextBox.PlaceholderText = "";
             aiMetadataTextBox.ReadOnly = true;
+            aiMetadataTextBox.ScrollBars = ScrollBars.Both;
             aiMetadataTextBox.Size = new Size(322, 250);
             aiMetadataTextBox.TabIndex = 7;
-            aiMetadataTextBox.Text = "";
-            aiMetadataTextBox.ScrollBars = ScrollBars.Both;
+            aiMetadataTextBox.WordWrap = true;
             // 
             // aiDataResultsTextBox
             // 
+            aiDataResultsTextBox.BackColor = Color.FromArgb(255, 255, 255);
             aiQueryTableLayout.SetColumnSpan(aiDataResultsTextBox, 2);
             aiDataResultsTextBox.Dock = DockStyle.Fill;
-            aiDataResultsTextBox.Font = new Font("Consolas", 9F);
             aiDataResultsTextBox.Location = new Point(13, 374);
+            aiDataResultsTextBox.Multiline = false;
             aiDataResultsTextBox.Name = "aiDataResultsTextBox";
+            aiDataResultsTextBox.PlaceholderText = "";
             aiDataResultsTextBox.ReadOnly = true;
+            aiDataResultsTextBox.ScrollBars = ScrollBars.Both;
             aiDataResultsTextBox.Size = new Size(322, 250);
             aiDataResultsTextBox.TabIndex = 9;
-            aiDataResultsTextBox.Text = "";
-            aiDataResultsTextBox.ScrollBars = ScrollBars.Both;
             aiDataResultsTextBox.WordWrap = false;
             // 
             // aiMetadataLabel

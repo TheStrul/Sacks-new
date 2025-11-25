@@ -16,6 +16,7 @@ public class ModernGroupBox : GroupBox
     private GraphicsPath? _cachedPath;
     private Rectangle _cachedRect;
     private int _cachedRadius;
+    private Font? _themeFont;
 
     /// <summary>
     /// Initializes a new instance of the ModernGroupBox class.
@@ -30,12 +31,20 @@ public class ModernGroupBox : GroupBox
         BackColor = Color.Transparent;
         ThemeManager.ThemeChanged += OnThemeChanged;
         UpdateStyleFromSkin();
+        UpdateFontFromTheme();
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)
     {
         UpdateStyleFromSkin();
+        UpdateFontFromTheme();
         Invalidate();
+    }
+
+    private void UpdateFontFromTheme()
+    {
+        _themeFont?.Dispose();
+        _themeFont = ThemeManager.CreateFont();
     }
 
     /// <summary>
@@ -60,6 +69,17 @@ public class ModernGroupBox : GroupBox
                 ["normal"] = new() { ForeColor = "#0D1117", BorderColor = "#E0E6ED" }
             }
         };
+
+        // Apply ForeColor from theme to control
+        var stateStyle = _controlStyle.States.GetValueOrDefault("normal");
+        if (stateStyle?.ForeColor != null)
+        {
+            try
+            {
+                ForeColor = ColorTranslator.FromHtml(stateStyle.ForeColor);
+            }
+            catch { /* Ignore invalid colors */ }
+        }
     }
 
     /// <inheritdoc/>
@@ -91,9 +111,10 @@ public class ModernGroupBox : GroupBox
             g.FillRectangle(brush, textRect);
         }
 
+        var effectiveFont = _themeFont ?? Font ?? DefaultFont;
         using (var brush = new SolidBrush(foreColor))
         {
-            g.DrawString(Text, Font, brush, textRect.X + 2, 0);
+            g.DrawString(Text, effectiveFont, brush, textRect.X + 2, 0);
         }
     }
 
@@ -157,6 +178,8 @@ public class ModernGroupBox : GroupBox
             ThemeManager.ThemeChanged -= OnThemeChanged;
             _cachedPath?.Dispose();
             _cachedPath = null;
+            _themeFont?.Dispose();
+            _themeFont = null;
         }
         base.Dispose(disposing);
     }
