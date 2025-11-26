@@ -1,18 +1,23 @@
 using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ModernWinForms.Theming;
 using Sacks.Core.Services.Interfaces;
 using Sacks.Core.FileProcessing.Configuration;
 using Sacks.LogicLayer.Services.Interfaces;
 
 namespace SacksApp
 {
+    /// <summary>
+    /// Lookup editor form for managing canonical values and their aliases.
+    /// ZERO TOLERANCE: All controls are Modern, all parameters validated.
+    /// </summary>
     public sealed partial class LookupEditorForm : Form
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<LookupEditorForm> _logger;
         private string _lookupName;
-        private ISupplierConfigurationService? _svc;
+        private ISupplierConfigurationService _svc;
         private ISuppliersConfiguration? _suppliersConfig;
 
         private readonly BindingList<LookupEntryViewModel> _entries = new();
@@ -34,36 +39,36 @@ namespace SacksApp
 
         private const string CreateNewItemText = "<Create new...>";
 
+        /// <summary>
+        /// Initializes a new instance of LookupEditorForm.
+        /// ZERO TOLERANCE: Parameters must not be null.
+        /// </summary>
+        /// <param name="serviceProvider">Service provider for dependency resolution. Cannot be null.</param>
+        /// <param name="lookupName">Initial lookup name to display. Cannot be null.</param>
+        /// <exception cref="ArgumentNullException">Thrown when serviceProvider or lookupName is null.</exception>
         public LookupEditorForm(IServiceProvider serviceProvider, string lookupName)
         {
-            if (serviceProvider is null) throw new ArgumentNullException(nameof(serviceProvider));
-            if (lookupName is null) throw new ArgumentNullException(nameof(lookupName));
+            // ZERO TOLERANCE: Validate required parameters
+            ArgumentNullException.ThrowIfNull(serviceProvider);
+            ArgumentNullException.ThrowIfNull(lookupName);
 
             _serviceProvider = serviceProvider;
             _logger = _serviceProvider.GetRequiredService<ILogger<LookupEditorForm>>();
             _lookupName = lookupName;
-            _svc = _serviceProvider.GetService<ISupplierConfigurationService>();
+            
+            // ZERO TOLERANCE: Service MUST be available
+            _svc = _serviceProvider.GetRequiredService<ISupplierConfigurationService>();
 
             InitializeComponent();
+
+            // Apply theme
+            ThemeManager.ApplyTheme(this);
 
             // Titles
             Text = $"Lookup Editor - {_lookupName}";
             _titleLabel.Text = "Lookup:";
 
-
-            // Grid styling
-            try
-            {
-                _grid.BackgroundColor = Color.White;
-                _grid.BorderStyle = BorderStyle.None;
-                _grid.EnableHeadersVisualStyles = false;
-                _grid.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(55, 71, 79);
-                _grid.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-                _grid.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(245, 248, 255);
-                _grid.DefaultCellStyle.SelectionBackColor = Color.FromArgb(3, 169, 244);
-                _grid.DefaultCellStyle.SelectionForeColor = Color.White;
-            }
-            catch { }
+            // Grid styling - already handled by ModernDataGridView
 
             // Bind grid
             _grid.DataSource = _entries;
@@ -85,14 +90,10 @@ namespace SacksApp
 
         private void ConfigureGridForProgrammaticSort()
         {
-            try
+            foreach (DataGridViewColumn col in _grid.Columns)
             {
-                foreach (DataGridViewColumn col in _grid.Columns)
-                {
-                    col.SortMode = DataGridViewColumnSortMode.Programmatic;
-                }
+                col.SortMode = DataGridViewColumnSortMode.Programmatic;
             }
-            catch { }
         }
 
         private void Grid_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
@@ -126,17 +127,13 @@ namespace SacksApp
 
         private void ApplySortGlyphs(string columnProperty, ListSortDirection dir)
         {
-            try
+            foreach (DataGridViewColumn c in _grid.Columns)
             {
-                foreach (DataGridViewColumn c in _grid.Columns)
-                {
-                    var prop = string.IsNullOrWhiteSpace(c.DataPropertyName) ? c.Name : c.DataPropertyName;
-                    c.HeaderCell.SortGlyphDirection = string.Equals(prop, columnProperty, StringComparison.OrdinalIgnoreCase)
-                        ? (dir == ListSortDirection.Ascending ? SortOrder.Ascending : SortOrder.Descending)
-                        : SortOrder.None;
-                }
+                var prop = string.IsNullOrWhiteSpace(c.DataPropertyName) ? c.Name : c.DataPropertyName;
+                c.HeaderCell.SortGlyphDirection = string.Equals(prop, columnProperty, StringComparison.OrdinalIgnoreCase)
+                    ? (dir == ListSortDirection.Ascending ? SortOrder.Ascending : SortOrder.Descending)
+                    : SortOrder.None;
             }
-            catch { }
         }
 
         private void SortEntries(string property, ListSortDirection direction)
@@ -185,7 +182,7 @@ namespace SacksApp
                     return;
                 }
 
-                // Validate name
+                // ZERO TOLERANCE: Validate name
                 if (_suppliersConfig != null && _suppliersConfig.Lookups.ContainsKey(name))
                 {
                     CustomMessageBox.Show($"Lookup '{name}' already exists.", "Exists", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -205,19 +202,9 @@ namespace SacksApp
                     finally { _suppressLookupComboEvents = false; }
 
                     UpdateTitles();
-                    // Clear entries for new lookup
                     _entries.Clear();
                     _entries.ResetBindings();
                     UpdateStatus("Created new lookup - not saved yet");
-                }
-                else
-                {
-                    _lookupName = name;
-                    PopulateLookupCombo();
-                    _suppressLookupComboEvents = true;
-                    try { _lookupCombo.SelectedItem = name; }
-                    finally { _suppressLookupComboEvents = false; }
-                    UpdateTitles();
                 }
                 return;
             }
@@ -230,16 +217,12 @@ namespace SacksApp
 
         private void ResetSelectionToCurrentLookup()
         {
-            try
+            if (!string.IsNullOrWhiteSpace(_lookupName))
             {
-                if (!string.IsNullOrWhiteSpace(_lookupName))
-                {
-                    _suppressLookupComboEvents = true;
-                    try { _lookupCombo.SelectedItem = _lookupName; }
-                    finally { _suppressLookupComboEvents = false; }
-                }
+                _suppressLookupComboEvents = true;
+                try { _lookupCombo.SelectedItem = _lookupName; }
+                finally { _suppressLookupComboEvents = false; }
             }
-            catch { }
         }
 
         private void UpdateTitles()
@@ -322,13 +305,6 @@ namespace SacksApp
                 _cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 ct = _cts.Token;
 
-                _svc ??= _serviceProvider.GetService<ISupplierConfigurationService>();
-                if (_svc == null)
-                {
-                    CustomMessageBox.Show("SupplierConfigurationService not available.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
                 _suppliersConfig ??= await _svc.GetAllConfigurationsAsync();
 
                 // Populate combo from config
@@ -344,13 +320,12 @@ namespace SacksApp
                     UpdateTitles();
                 }
 
-                // Load entries for current lookup - group by canonical value
+                // Load entries for current lookup
                 _entries.RaiseListChangedEvents = false;
                 _entries.Clear();
 
                 if (_suppliersConfig != null && _suppliersConfig.Lookups.TryGetValue(_lookupName, out var dict) && dict != null)
                 {
-                    // Group aliases by canonical value
                     var grouped = dict
                         .GroupBy(kv => kv.Value, StringComparer.OrdinalIgnoreCase)
                         .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase);
@@ -405,7 +380,7 @@ namespace SacksApp
                 }
                 else if (_lookupCombo.Items.Count > 0)
                 {
-                    if (_lookupCombo.Items[0] is string s and not null && !string.Equals(s, CreateNewItemText, StringComparison.Ordinal))
+                    if (_lookupCombo.Items[0] is string s && !string.Equals(s, CreateNewItemText, StringComparison.Ordinal))
                     {
                         _lookupCombo.SelectedIndex = 0;
                     }
@@ -425,21 +400,17 @@ namespace SacksApp
                 SetBusy(true);
                 if (_grid.IsCurrentCellInEditMode) _grid.EndEdit();
 
-                // Validate
+                // ZERO TOLERANCE: Validate
                 var errors = new List<string>();
                 var comparer = StringComparer.OrdinalIgnoreCase;
 
                 // Lookup name validation
                 if (string.IsNullOrWhiteSpace(_lookupName))
-                {
-                    errors.Add("Lookup name is required.");
-                }
+                    throw new InvalidOperationException("Lookup name is required.");
 
                 // No empty canonical values
                 if (_entries.Any(e => string.IsNullOrWhiteSpace(e.Canonical)))
-                {
                     errors.Add("Canonical values cannot be empty.");
-                }
 
                 // Unique canonical values
                 var dupCanonical = _entries
@@ -447,9 +418,7 @@ namespace SacksApp
                     .Where(g => g.Count() > 1)
                     .ToList();
                 if (dupCanonical.Count > 0)
-                {
                     errors.Add("Duplicate canonical values found: " + string.Join(", ", dupCanonical.Select(g => g.Key)));
-                }
 
                 // Validate aliases
                 var warnings = new List<string>();
@@ -487,24 +456,12 @@ namespace SacksApp
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Warning);
                     if (result != DialogResult.Yes)
-                    {
                         return;
-                    }
-                }
-
-                _svc ??= _serviceProvider.GetService<ISupplierConfigurationService>();
-                if (_svc == null)
-                {
-                    CustomMessageBox.Show("SupplierConfigurationService not available.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
                 }
 
                 _suppliersConfig ??= await _svc.GetAllConfigurationsAsync();
                 if (_suppliersConfig == null)
-                {
-                    CustomMessageBox.Show("Supplier configuration not loaded.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                    throw new InvalidOperationException("Supplier configuration not loaded.");
 
                 if (!_suppliersConfig.Lookups.TryGetValue(_lookupName, out var dict) || dict == null)
                 {
@@ -530,9 +487,7 @@ namespace SacksApp
 
                     // If no aliases, add canonical as self-referencing
                     if (aliases.Count == 0)
-                    {
                         aliases.Add(canonical);
-                    }
 
                     // Map all aliases to canonical value
                     foreach (var alias in aliases)

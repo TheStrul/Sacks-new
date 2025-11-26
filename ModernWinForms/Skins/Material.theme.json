@@ -1,34 +1,32 @@
 {
+  "inheritsFrom": "Base",
   "description": "Google's Material Design system with minimal borders and subtle shadows",
-  "typography": {
-    "fontFamily": "Segoe UI",
-    "fontSize": 9.0
-  },
-  "spacing": {
-    "baseUnit": 8,
-    "small": 4,
-    "medium": 8,
-    "large": 16,
-    "xlarge": 24
-  },
   "controls": {
     "ModernButton": {
-      "cornerRadius": 4,
       "borderWidth": 0,
       "padding": {
         "left": 16,
         "top": 10,
         "right": 16,
         "bottom": 10
+      },
+      "states": {
+        "normal": {},
+        "hover": {},
+        "pressed": {},
+        "disabled": {}
       }
     },
-    "ModernGroupBox": {
-      "borderWidth": 1,
-      "cornerRadius": 4
+    "ModernCheckBox": {
+      "borderWidth": 2,
+      "cornerRadius": 2
+    },
+    "ModernRadioButton": {
+      "borderWidth": 2
     },
     "ModernTextBox": {
-      "borderWidth": 1,
-      "cornerRadius": 4,
+      "padding": {
+        "left": 12,
       "padding": {
         "left": 12,
         "top": 8,

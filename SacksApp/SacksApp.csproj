@@ -43,6 +43,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </None>
+    
+    <!-- Copy theme and skin files from ModernWinForms project -->
+    <!-- Files are copied but not visible in Solution Explorer -->
+    <None Include="..\ModernWinForms\Skins\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
   </ItemGroup>
 
 

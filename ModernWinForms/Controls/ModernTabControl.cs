@@ -6,6 +6,7 @@ namespace ModernWinForms.Controls;
 
 /// <summary>
 /// Modern tab control with custom rendering and theme support.
+/// ZERO TOLERANCE: No fallbacks - fails immediately with descriptive errors.
 /// </summary>
 [ToolboxItem(true)]
 [DesignerCategory("Code")]
@@ -51,11 +52,23 @@ public class ModernTabControl : TabControl
             }
         };
 
-        var normalState = _controlStyle.States["normal"];
-        if (normalState.BackColor != null)
+        // ZERO TOLERANCE: 'normal' state MUST exist - throw immediately if missing
+        if (!_controlStyle.States.TryGetValue("normal", out var normalState))
         {
-            BackColor = ColorTranslator.FromHtml(normalState.BackColor);
+            throw new InvalidOperationException(
+                "ModernTabControl theme validation failed: 'normal' state is required but not defined. " +
+                "Run ThemeValidationTool before starting the application to catch this error at startup.");
         }
+
+        // ZERO TOLERANCE: BackColor MUST be defined in normal state
+        if (string.IsNullOrWhiteSpace(normalState.BackColor))
+        {
+            throw new InvalidOperationException(
+                "ModernTabControl theme validation failed: 'normal' state must define backColor. " +
+                "Run ThemeValidationTool before starting the application to catch this error at startup.");
+        }
+
+        BackColor = ColorTranslator.FromHtml(normalState.BackColor);
 
         _themeFont?.Dispose();
         _themeFont = ThemeManager.CreateFont();
@@ -96,11 +109,18 @@ public class ModernTabControl : TabControl
         var contentRect = new Rectangle(
             ClientRectangle.X,
             ClientRectangle.Y + ItemSize.Height,
-                ClientRectangle.Width - 1,
-                ClientRectangle.Height - ItemSize.Height - 1
+            ClientRectangle.Width - 1,
+            ClientRectangle.Height - ItemSize.Height - 1
         );
 
-        var normalState = _controlStyle.States.GetValueOrDefault("normal") ?? new StateStyle { BorderColor = "#CCCCCC" };
+        // ZERO TOLERANCE: normal state MUST exist
+        if (!_controlStyle.States.TryGetValue("normal", out var normalState))
+        {
+            throw new InvalidOperationException(
+                "ModernTabControl rendering failed: 'normal' state not found. " +
+                "This should have been caught by ThemeValidationTool at startup.");
+        }
+
         var borderColor = ColorCache.GetColor(normalState.BorderColor, Color.LightGray);
         
         using var pen = new Pen(borderColor, _controlStyle.BorderWidth);
@@ -112,9 +132,20 @@ public class ModernTabControl : TabControl
         var tabRect = GetTabRect(index);
         var isSelected = SelectedIndex == index;
         
-        // Determine tab colors
-        var normalState = _controlStyle.States.GetValueOrDefault("normal") ?? new StateStyle();
-        var selectedState = _controlStyle.States.GetValueOrDefault("selected") ?? new StateStyle();
+        // ZERO TOLERANCE: required states MUST exist
+        if (!_controlStyle.States.TryGetValue("normal", out var normalState))
+        {
+            throw new InvalidOperationException(
+                "ModernTabControl rendering failed: 'normal' state not found. " +
+                "This should have been caught by ThemeValidationTool at startup.");
+        }
+
+        if (!_controlStyle.States.TryGetValue("selected", out var selectedState))
+        {
+            throw new InvalidOperationException(
+                "ModernTabControl rendering failed: 'selected' state not found. " +
+                "This should have been caught by ThemeValidationTool at startup.");
+        }
         
         var backColor = isSelected
             ? ColorCache.GetColor(selectedState.BackColor, Color.Blue)

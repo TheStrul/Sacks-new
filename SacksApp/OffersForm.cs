@@ -1,67 +1,74 @@
 using System.Data;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
+using ModernWinForms.Controls;
+using ModernWinForms.Theming;
 using Sacks.Core.Entities;
 using Sacks.Core.Services.Interfaces;
 
 namespace SacksApp
 {
-    public sealed class OffersForm : Form
+    /// <summary>
+    /// Form for managing supplier offers.
+    /// ZERO TOLERANCE: All controls are Modern, all parameters validated.
+    /// </summary>
+    public sealed partial class OffersForm : Form
     {
         private readonly IServiceProvider _services;
         private readonly ILogger<OffersForm> _logger;
         private readonly ISuppliersService _suppliersService;
         private readonly ISupplierOffersService _offersService;
 
-        private readonly ComboBox _comboSuppliers = new() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 280 };
-        private readonly Button _btnRefresh = new() { Text = "Refresh" };
-        private readonly Button _btnAdd = new() { Text = "New" };
-        private readonly Button _btnEdit = new() { Text = "Edit" };
-        private readonly Button _btnDelete = new() { Text = "Delete" };
-        private readonly DataGridView _grid = new() { Dock = DockStyle.Fill, ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect, MultiSelect = false };
-        private readonly BindingSource _bs = new();
-
+        /// <summary>
+        /// Initializes a new instance of OffersForm.
+        /// ZERO TOLERANCE: services parameter must not be null.
+        /// </summary>
+        /// <param name="services">Service provider for dependency resolution. Cannot be null.</param>
+        /// <exception cref="ArgumentNullException">Thrown when services is null.</exception>
         public OffersForm(IServiceProvider services)
         {
-            _services = services ?? throw new ArgumentNullException(nameof(services));
+            // ZERO TOLERANCE: Validate required parameter
+            ArgumentNullException.ThrowIfNull(services);
+            
+            _services = services;
             _logger = _services.GetRequiredService<ILogger<OffersForm>>();
             _suppliersService = _services.GetRequiredService<ISuppliersService>();
             _offersService = _services.GetRequiredService<ISupplierOffersService>();
 
-            Text = "Offers";
-            Width = 900;
-            Height = 600;
-            StartPosition = FormStartPosition.CenterParent;
+            InitializeComponent();
 
-            var top = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 40, FlowDirection = FlowDirection.LeftToRight, Padding = new Padding(8) };
-            top.Controls.Add(new Label { Text = "Supplier:", AutoSize = true, Padding = new Padding(0, 8, 8, 0) });
-            top.Controls.Add(_comboSuppliers);
-            top.Controls.Add(_btnRefresh);
-            top.Controls.Add(new Label { Width = 16 });
-            top.Controls.Add(_btnAdd);
-            top.Controls.Add(_btnEdit);
-            top.Controls.Add(_btnDelete);
+            // Apply theme
+            ThemeManager.ApplyTheme(this);
+        }
 
-            Controls.Add(_grid);
-            Controls.Add(top);
+        private async void OffersForm_Load(object sender, EventArgs e)
+        {
+            await LoadSuppliersAsync(CancellationToken.None);
+        }
 
-            _grid.DataSource = _bs;
-            _grid.AutoGenerateColumns = false;
-            _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Offer.Id), HeaderText = "ID", Width = 60 });
-            _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Offer.OfferName), HeaderText = "Offer Name", Width = 220 });
-            _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Offer.Currency), HeaderText = "Currency", Width = 80 });
-            _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Offer.Description), HeaderText = "Description", AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill });
-            _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Offer.CreatedAt), HeaderText = "Created (UTC)", Width = 150 });
-            _grid.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(Offer.ModifiedAt), HeaderText = "Modified (UTC)", Width = 150 });
+        private async void ComboSuppliers_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            await ReloadOffersAsync(CancellationToken.None);
+        }
 
-            Load += async (_, __) => await LoadSuppliersAsync(CancellationToken.None);
-            _comboSuppliers.SelectedIndexChanged += async (_, __) => await ReloadOffersAsync(CancellationToken.None);
-            _btnRefresh.Click += async (_, __) => await ReloadOffersAsync(CancellationToken.None);
-            _btnAdd.Click += async (_, __) => await AddOfferAsync(CancellationToken.None);
-            _btnEdit.Click += async (_, __) => await EditSelectedOfferAsync(CancellationToken.None);
-            _btnDelete.Click += async (_, __) => await DeleteSelectedOfferAsync(CancellationToken.None);
+        private async void BtnRefresh_Click(object sender, EventArgs e)
+        {
+            await ReloadOffersAsync(CancellationToken.None);
+        }
+
+        private async void BtnAdd_Click(object sender, EventArgs e)
+        {
+            await AddOfferAsync(CancellationToken.None);
+        }
+
+        private async void BtnEdit_Click(object sender, EventArgs e)
+        {
+            await EditSelectedOfferAsync(CancellationToken.None);
+        }
+
+        private async void BtnDelete_Click(object sender, EventArgs e)
+        {
+            await DeleteSelectedOfferAsync(CancellationToken.None);
         }
 
         private sealed record SupplierItem(int Id, string Name)
@@ -207,16 +214,38 @@ namespace SacksApp
             }
         }
 
+        /// <summary>
+        /// Nested dialog for creating/editing offers.
+        /// ZERO TOLERANCE: All controls are Modern, validation enforced.
+        /// </summary>
         private sealed class OfferEditDialog : Form
         {
-            private readonly TextBox _tbName = new() { Width = 280 };
-            private readonly TextBox _tbCurrency = new() { Width = 80, Text = "USD" };
-            private readonly TextBox _tbDesc = new() { Width = 360 };
+            private readonly ModernTextBox _tbName = new() { Width = 280 };
+            private readonly ModernTextBox _tbCurrency = new() { Width = 80, Text = "USD" };
+            private readonly ModernTextBox _tbDesc = new() { Width = 360 };
 
+            /// <summary>
+            /// Gets the offer name. ZERO TOLERANCE: Never returns null, always trimmed.
+            /// </summary>
             public string OfferName => _tbName.Text.Trim();
-            public string Currency => (_tbCurrency.Text ?? string.Empty).Trim().ToUpperInvariant();
+
+            /// <summary>
+            /// Gets the currency code. ZERO TOLERANCE: Never returns null, always uppercase.
+            /// </summary>
+            public string Currency => _tbCurrency.Text.Trim().ToUpperInvariant();
+
+            /// <summary>
+            /// Gets the description. Returns null if whitespace-only.
+            /// </summary>
             public string? Description => string.IsNullOrWhiteSpace(_tbDesc.Text) ? null : _tbDesc.Text.Trim();
 
+            /// <summary>
+            /// Initializes a new instance of OfferEditDialog.
+            /// </summary>
+            /// <param name="name">Initial offer name.</param>
+            /// <param name="currency">Initial currency code.</param>
+            /// <param name="desc">Initial description.</param>
+            /// <param name="canEditIdentity">Whether identity fields (name/currency) can be edited.</param>
             public OfferEditDialog(string? name = null, string? currency = null, string? desc = null, bool canEditIdentity = true)
             {
                 Text = string.IsNullOrEmpty(name) ? "New Offer" : "Edit Offer";
@@ -227,21 +256,38 @@ namespace SacksApp
                 Width = 520;
                 Height = 180;
 
-                var ok = new Button { Text = "OK", DialogResult = DialogResult.OK };
-                var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel };
+                // Apply theme
+                ThemeManager.ApplyTheme(this);
 
-                var table = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Padding = new Padding(8), AutoSize = true };
+                var ok = new ModernButton { Text = "OK", DialogResult = DialogResult.OK };
+                var cancel = new ModernButton { Text = "Cancel", DialogResult = DialogResult.Cancel };
+
+                var table = new ModernTableLayoutPanel 
+                { 
+                    Dock = DockStyle.Fill, 
+                    ColumnCount = 2, 
+                    RowCount = 3, 
+                    Padding = new Padding(8), 
+                    AutoSize = true 
+                };
+                
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
                 table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-                table.Controls.Add(new Label { Text = "Offer Name:", AutoSize = true, Padding = new Padding(0, 6, 6, 0) }, 0, 0);
+                table.Controls.Add(new ModernLabel { Text = "Offer Name:", AutoSize = true, Padding = new Padding(0, 6, 6, 0) }, 0, 0);
                 table.Controls.Add(_tbName, 1, 0);
-                table.Controls.Add(new Label { Text = "Currency:", AutoSize = true, Padding = new Padding(0, 6, 6, 0) }, 0, 1);
+                table.Controls.Add(new ModernLabel { Text = "Currency:", AutoSize = true, Padding = new Padding(0, 6, 6, 0) }, 0, 1);
                 table.Controls.Add(_tbCurrency, 1, 1);
-                table.Controls.Add(new Label { Text = "Description:", AutoSize = true, Padding = new Padding(0, 6, 6, 0) }, 0, 2);
+                table.Controls.Add(new ModernLabel { Text = "Description:", AutoSize = true, Padding = new Padding(0, 6, 6, 0) }, 0, 2);
                 table.Controls.Add(_tbDesc, 1, 2);
 
-                var buttons = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, Dock = DockStyle.Bottom, Height = 40, Padding = new Padding(8) };
+                var buttons = new ModernFlowLayoutPanel 
+                { 
+                    FlowDirection = FlowDirection.RightToLeft, 
+                    Dock = DockStyle.Bottom, 
+                    Height = 40, 
+                    Padding = new Padding(8) 
+                };
                 buttons.Controls.Add(ok);
                 buttons.Controls.Add(cancel);
 
@@ -264,17 +310,20 @@ namespace SacksApp
                 AcceptButton = ok;
                 CancelButton = cancel;
 
+                // ZERO TOLERANCE: Validate on OK click
                 ok.Click += (_, __) =>
                 {
                     if (string.IsNullOrWhiteSpace(_tbName.Text))
                     {
                         CustomMessageBox.Show("Offer Name is required", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         DialogResult = DialogResult.None;
+                        _tbName.Focus();
                     }
                     else if (string.IsNullOrWhiteSpace(_tbCurrency.Text) || _tbCurrency.Text.Trim().Length != 3)
                     {
                         CustomMessageBox.Show("Currency must be a 3-letter code (e.g., USD)", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         DialogResult = DialogResult.None;
+                        _tbCurrency.Focus();
                     }
                 };
             }

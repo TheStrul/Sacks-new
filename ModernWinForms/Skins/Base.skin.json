@@ -1,7 +1,22 @@
 {
-  "description": "Base skin with minimal overrides",
+  "description": "Base skin template with all required controls - DO NOT DELETE",
   "typography": {
     "fontFamily": "Segoe UI",
     "fontSize": 9.0
+  },
+  "palette": {
+    "primary": "#0078D4",
+    "background": "#FFFFFF",
+    "surface": "#FFFFFF",
+    "surfaceAlt": "#F5F5F5",
+    "text": "#000000",
+    "textDisabled": "#A0A0A0",
+    "border": "#CCCCCC",
+    "borderAlt": "#E0E0E0",
+    "success": "#107C10",
+    "warning": "#FFB900",
+    "danger": "#D13438",
+    "error": "#D13438",
+    "info": "#0078D4"
   }
 }

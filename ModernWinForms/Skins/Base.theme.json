@@ -1,0 +1,389 @@
+{
+  "description": "Base theme with common control structures and palette mappings - DO NOT DELETE",
+  "typography": {
+    "fontFamily": "Segoe UI",
+    "fontSize": 9.0
+  },
+  "spacing": {
+    "baseUnit": 8,
+    "small": 4,
+    "medium": 8,
+    "large": 16,
+    "xlarge": 24
+  },
+  "controls": {
+    "ModernButton": {
+      "cornerRadius": 4,
+      "borderWidth": 1,
+      "padding": {
+        "left": 16,
+        "top": 10,
+        "right": 16,
+        "bottom": 10
+      },
+      "states": {
+        "normal": {},
+        "hover": {},
+        "pressed": {},
+        "disabled": {}
+      }
+    },
+    "ModernCheckBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "states": {
+        "normal": {},
+        "checked": {},
+        "hover": {},
+        "disabled": {}
+      }
+    },
+    "ModernComboBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "states": {
+        "normal": {},
+        "hover": {},
+        "focused": {},
+        "disabled": {}
+      }
+    },
+    "ModernDataGridView": {
+      "borderWidth": 1,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernFlowLayoutPanel": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernGroupBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernLabel": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernMenuStrip": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernPanel": {
+      "borderWidth": 0,
+      "cornerRadius": 4,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernRadioButton": {
+      "borderWidth": 1,
+      "cornerRadius": 12,
+      "states": {
+        "normal": {},
+        "checked": {},
+        "hover": {},
+        "disabled": {}
+      }
+    },
+    "ModernRichTextBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "padding": {
+        "left": 4,
+        "top": 4,
+        "right": 4,
+        "bottom": 4
+      },
+      "states": {
+        "normal": {},
+        "focused": {},
+        "disabled": {}
+      }
+    },
+    "ModernSplitContainer": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernStatusStrip": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernTableLayoutPanel": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernTabControl": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "states": {
+        "normal": {},
+        "selected": {},
+        "hover": {}
+      }
+    },
+    "ModernTextBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "padding": {
+        "left": 10,
+        "top": 8,
+        "right": 10,
+        "bottom": 8
+      },
+      "states": {
+        "normal": {},
+        "focused": {},
+        "disabled": {},
+        "error": {},
+        "warning": {},
+        "success": {}
+      }
+    }
+  },
+  "paletteMappings": {
+    "ModernButton": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        },
+        "hover": {
+          "borderColor": "primary"
+        },
+        "pressed": {
+          "backColor": "primary",
+          "foreColor": "surface",
+          "borderColor": "primary"
+        },
+        "disabled": {
+          "backColor": "surface",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernCheckBox": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        },
+        "checked": {
+          "backColor": "primary",
+          "foreColor": "surface",
+          "borderColor": "primary"
+        },
+        "hover": {
+          "borderColor": "primary"
+        },
+        "disabled": {
+          "backColor": "surface",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernComboBox": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        },
+        "hover": {
+          "borderColor": "primary"
+        },
+        "focused": {
+          "borderColor": "primary"
+        },
+        "disabled": {
+          "backColor": "surface",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernDataGridView": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernFlowLayoutPanel": {
+      "states": {
+        "normal": {
+          "backColor": "background",
+          "foreColor": "text",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernGroupBox": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernLabel": {
+      "states": {
+        "normal": {
+          "backColor": "background",
+          "foreColor": "text",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernMenuStrip": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernPanel": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernRadioButton": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        },
+        "checked": {
+          "backColor": "primary",
+          "borderColor": "primary"
+        },
+        "hover": {
+          "borderColor": "primary"
+        },
+        "disabled": {
+          "backColor": "surface",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernRichTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        },
+        "focused": {
+          "borderColor": "primary"
+        },
+        "disabled": {
+          "backColor": "surface",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernSplitContainer": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernStatusStrip": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernTableLayoutPanel": {
+      "states": {
+        "normal": {
+          "backColor": "background",
+          "foreColor": "text",
+          "borderColor": "border"
+        }
+      }
+    },
+    "ModernTabControl": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        },
+        "selected": {
+          "backColor": "primary",
+          "foreColor": "surface",
+          "borderColor": "primary"
+        },
+        "hover": {
+          "borderColor": "primary"
+        }
+      }
+    },
+    "ModernTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "surface",
+          "foreColor": "text",
+          "borderColor": "border"
+        },
+        "focused": {
+          "borderColor": "primary"
+        },
+        "disabled": {
+          "backColor": "surface",
+          "borderColor": "border"
+        },
+        "error": {
+          "borderColor": "error"
+        },
+        "warning": {
+          "borderColor": "warning"
+        },
+        "success": {
+          "borderColor": "success"
+        }
+      }
+    }
+  }
+}

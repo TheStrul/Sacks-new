@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup />
+  <ItemGroup>
+    <Compile Update="AddToLookupForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="ColumnSelectorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="CustomMessageBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="LogViewer\LogViewerForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="LookupEditorForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="OffersForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="SqlQueryForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="TestPattern.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="ThemeTestForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+</Project>

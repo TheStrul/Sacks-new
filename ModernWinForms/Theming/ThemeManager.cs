@@ -142,6 +142,7 @@ public static class ThemeManager
 
     /// <summary>
     /// Gets a complete control style by merging theme structure with skin colors.
+    /// Applies automatic palette mappings if defined in theme.
     /// </summary>
     /// <param name="controlName">The name of the control (e.g., "ModernButton").</param>
     /// <returns>A complete ControlStyle with both structure and colors, or null if not found.</returns>
@@ -168,7 +169,35 @@ public static class ThemeManager
             result = new ControlStyle();
         }
 
-        // Override with skin's color definitions
+        // Apply palette mappings from theme (if defined)
+        if (theme?.PaletteMappings != null && theme.PaletteMappings.TryGetValue(controlName, out var paletteMapping) && skin?.Palette != null)
+        {
+            foreach (var (stateName, stateMapping) in paletteMapping.States)
+            {
+                if (!result.States.ContainsKey(stateName))
+                {
+                    result.States[stateName] = new StateStyle();
+                }
+
+                var state = result.States[stateName];
+                
+                // Apply palette colors if not already set
+                if (string.IsNullOrEmpty(state.BackColor) && !string.IsNullOrEmpty(stateMapping.BackColor))
+                {
+                    state.BackColor = GetPaletteColor(skin.Palette, stateMapping.BackColor);
+                }
+                if (string.IsNullOrEmpty(state.ForeColor) && !string.IsNullOrEmpty(stateMapping.ForeColor))
+                {
+                    state.ForeColor = GetPaletteColor(skin.Palette, stateMapping.ForeColor);
+                }
+                if (string.IsNullOrEmpty(state.BorderColor) && !string.IsNullOrEmpty(stateMapping.BorderColor))
+                {
+                    state.BorderColor = GetPaletteColor(skin.Palette, stateMapping.BorderColor);
+                }
+            }
+        }
+
+        // Override with skin's explicit color definitions (these take precedence)
         if (skin != null && skin.Controls != null && skin.Controls.TryGetValue(controlName, out var skinColors))
         {
             foreach (var (stateName, stateStyle) in skinColors.States)
@@ -178,6 +207,28 @@ public static class ThemeManager
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Gets a color from the palette by key name.
+    /// </summary>
+    private static string? GetPaletteColor(ColorPalette palette, string key)
+    {
+        return key.ToLowerInvariant() switch
+        {
+            "primary" => palette.Primary,
+            "secondary" => palette.Secondary,
+            "background" => palette.Background,
+            "surface" => palette.Surface,
+            "text" => palette.Text,
+            "border" => palette.Border,
+            "success" => palette.Success,
+            "warning" => palette.Warning,
+            "danger" => palette.Danger,
+            "error" => palette.Error,
+            "info" => palette.Info,
+            _ => null
+        };
     }
 
     /// <summary>

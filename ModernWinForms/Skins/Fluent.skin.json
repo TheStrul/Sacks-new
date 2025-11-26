@@ -1,11 +1,12 @@
 {
+  "inheritsFrom": "BaseLight",
   "description": "Light skin for Fluent Design System",
   "palette": {
     "primary": "#0078D4",
     "background": "#F3F3F3",
     "surface": "#FFFFFF",
     "text": "#323130",
-    "border": "#EDEBE9",
+    "border": "#8A8886",
     "success": "#107C10",
     "warning": "#FFB900",
     "danger": "#D13438",
@@ -37,59 +38,45 @@
         }
       }
     },
-    "ModernRichTextBox": {
+    "ModernFlowLayoutPanel": {
       "states": {
         "normal": {
-          "backColor": "#FFFFFF",
-          "foreColor": "#323130",
-          "borderColor": "#8A8886"
-        },
-        "focused": {
-          "borderColor": "#0078D4"
-        },
-        "disabled": {
-          "backColor": "#F3F2F1",
-          "foreColor": "#A19F9D",
-          "borderColor": "#EDEBE9"
+          "backColor": "#F3F3F3"
         }
       }
     },
-    "ModernRadioButton": {
+    "ModernLabel": {
       "states": {
         "normal": {
-          "foreColor": "#323130",
-          "borderColor": "#8A8886"
-        },
-        "checked": {
-          "backColor": "#0078D4",
-          "borderColor": "#0078D4"
-        },
-        "hover": {
-          "borderColor": "#0078D4"
-        },
-        "disabled": {
-          "foreColor": "#A19F9D",
-          "borderColor": "#EDEBE9"
+          "backColor": "#F3F3F3"
         }
       }
     },
-    "ModernCheckBox": {
+    "ModernMenuStrip": {
       "states": {
         "normal": {
-          "foreColor": "#323130",
-          "borderColor": "#8A8886"
-        },
-        "checked": {
-          "backColor": "#0078D4",
-          "borderColor": "#0078D4",
-          "foreColor": "#FFFFFF"
-        },
-        "hover": {
-          "borderColor": "#0078D4"
-        },
-        "disabled": {
-          "foreColor": "#A19F9D",
-          "borderColor": "#EDEBE9"
+          "backColor": "#F3F2F1"
+        }
+      }
+    },
+    "ModernSplitContainer": {
+      "states": {
+        "normal": {
+          "backColor": "#F3F2F1"
+        }
+      }
+    },
+    "ModernStatusStrip": {
+      "states": {
+        "normal": {
+          "backColor": "#F3F2F1"
+        }
+      }
+    },
+    "ModernTableLayoutPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#F3F3F3"
         }
       }
     }

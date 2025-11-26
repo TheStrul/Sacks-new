@@ -1,10 +1,16 @@
 {
   "inheritsFrom": "Base",
-  "description": "Base light skin with light color palette",
+  "description": "Base light skin with complete light color palette",
   "palette": {
+    "primary": "#0078D4",
     "background": "#FAFBFC",
     "surface": "#FFFFFF",
     "text": "#0D1117",
-    "border": "#E0E6ED"
+    "border": "#E0E6ED",
+    "success": "#107C10",
+    "warning": "#FFB900",
+    "danger": "#D13438",
+    "error": "#D13438",
+    "info": "#0078D4"
   }
 }

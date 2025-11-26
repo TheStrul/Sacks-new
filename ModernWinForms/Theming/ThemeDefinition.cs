@@ -33,4 +33,11 @@ public sealed class ThemeDefinition
     /// These define the shape language and structural properties (not colors).
     /// </summary>
     [JsonPropertyName("controls")] public Dictionary<string, ControlStyle> Controls { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the default palette mappings for controls.
+    /// Maps control states to palette color keys (e.g., "normal.backColor" -> "surface").
+    /// When specified, controls automatically derive colors from the skin's palette.
+    /// </summary>
+    [JsonPropertyName("paletteMappings")] public Dictionary<string, PaletteMapping>? PaletteMappings { get; set; }
 }

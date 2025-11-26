@@ -1,58 +1,23 @@
 {
+  "inheritsFrom": "Base",
   "description": "GitHub's design system with rounded corners and clean aesthetics",
-  "typography": {
-    "fontFamily": "Segoe UI",
-    "fontSize": 9.0
-  },
-  "spacing": {
-    "baseUnit": 8,
-    "small": 4,
-    "medium": 8,
-    "large": 16,
-    "xlarge": 24
-  },
   "controls": {
     "ModernButton": {
-      "cornerRadius": 8,
-      "borderWidth": 1,
-      "padding": {
-        "left": 16,
-        "top": 10,
-        "right": 16,
-        "bottom": 10
-      }
+      "cornerRadius": 8
     },
-    "ModernGroupBox": {
-      "borderWidth": 1,
-      "cornerRadius": 4
+    "ModernCheckBox": {
+      "borderWidth": 2
+    },
+    "ModernRadioButton": {
+      "borderWidth": 2
     },
     "ModernTextBox": {
-      "borderWidth": 1,
-      "cornerRadius": 4,
       "padding": {
         "left": 8,
         "top": 8,
         "right": 8,
         "bottom": 8
       }
-    },
-    "ModernRichTextBox": {
-      "borderWidth": 1,
-      "cornerRadius": 4,
-      "padding": {
-        "left": 4,
-        "top": 4,
-        "right": 4,
-        "bottom": 4
-      }
-    },
-    "ModernRadioButton": {
-      "borderWidth": 2,
-      "cornerRadius": 12
-    },
-    "ModernCheckBox": {
-      "borderWidth": 2,
-      "cornerRadius": 4
     }
   }
 }

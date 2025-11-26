@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 
 using McpServer.Client;
 using McpServer.Client.Configuration;
+using ModernWinForms.Theming;
 using Sacks.Configuration;
 using Sacks.Core.Services.Interfaces;
 using Sacks.DataAccess.Extensions;
@@ -21,65 +22,6 @@ namespace SacksApp
         private static ServiceProvider? _serviceProvider;
         private static ILogger<Form>? _logger;
 
-        /// <summary>
-        /// Splits a file into multiple files based on the specified lines per file.
-        /// </summary>
-        /// <param name="fullPath">The full path to the file to split.</param>
-        /// <param name="linesPerFile">The number of lines per output file.</param>
-        /// <exception cref="ArgumentException">Thrown when fullPath is null or empty, or linesPerFile is less than 1.</exception>
-        /// <exception cref="FileNotFoundException">Thrown when the source file does not exist.</exception>
-        public static void SplitFile(string fullPath, int linesPerFile)
-        {
-            if (string.IsNullOrWhiteSpace(fullPath))
-            {
-                throw new ArgumentException("File path cannot be null or empty.", nameof(fullPath));
-            }
-
-            if (linesPerFile < 1)
-            {
-                throw new ArgumentException("Lines per file must be at least 1.", nameof(linesPerFile));
-            }
-
-            if (!File.Exists(fullPath))
-            {
-                throw new FileNotFoundException("Source file not found.", fullPath);
-            }
-
-            var directory = Path.GetDirectoryName(fullPath) ?? throw new InvalidOperationException("Could not determine directory from path.");
-            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fullPath);
-            var extension = Path.GetExtension(fullPath);
-
-            var lines = File.ReadAllLines(fullPath);
-            var fileNumber = 1;
-            var currentLineCount = 0;
-            StreamWriter? writer = null;
-
-            try
-            {
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    if (currentLineCount == 0)
-                    {
-                        writer?.Dispose();
-                        var outputPath = Path.Combine(directory, $"{fileNameWithoutExtension}_part{fileNumber}{extension}");
-                        writer = new StreamWriter(outputPath);
-                        fileNumber++;
-                    }
-
-                    writer?.WriteLine(lines[i]);
-                    currentLineCount++;
-
-                    if (currentLineCount >= linesPerFile)
-                    {
-                        currentLineCount = 0;
-                    }
-                }
-            }
-            finally
-            {
-                writer?.Dispose();
-            }
-        }
 
         /// <summary>
         ///  The main entry point for the application.
@@ -89,6 +31,26 @@ namespace SacksApp
         {
             try
             {
+                // ZERO TOLERANCE: Validate theme files BEFORE starting application
+                var skinsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Skins");
+                var validationResult = ThemeValidationTool.ValidateAll(skinsDirectory);
+                
+                // Log validation report to console
+                Console.WriteLine(validationResult.GetFullReport());
+                
+                // ZERO TOLERANCE: If validation failed, show errors and EXIT
+                if (!validationResult.IsValid)
+                {
+                    ThemeValidationTool.DisplayValidationResults(validationResult);
+                    
+                    // ZERO TOLERANCE: DO NOT START APPLICATION with invalid themes
+                    Environment.Exit(1);
+                    return; // Unreachable, but explicit
+                }
+                
+                // Validation passed, show success (optional, can be commented out)
+                // ThemeValidationTool.DisplayValidationResults(validationResult);
+                
                 // Load centralized configuration singleton
                 var config = ConfigurationLoader.Instance;
                 
@@ -113,6 +75,7 @@ namespace SacksApp
                     .CreateLogger();
 
                 Log.Information("🚀 Sacks Product Management System starting up...");
+                Log.Information("✅ Theme validation passed - all theme files are valid");
 
                 _logger = _serviceProvider.GetRequiredService<ILogger<Form>>();
 
@@ -134,6 +97,10 @@ namespace SacksApp
                 using var mainForm = new MainForm(_serviceProvider);
                 Application.Run(mainForm);
 
+                // For testing themes:
+                // using var mainForm = new ThemeTestForm();
+                // Application.Run(mainForm);
+                
                 Log.Information("🛑 Sacks Product Management System shutting down normally");
             }
             catch (Exception ex)

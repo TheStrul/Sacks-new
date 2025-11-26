@@ -355,7 +355,7 @@ public partial class MainForm : Form
     private void TestConfigurationButton_Click(object sender, EventArgs e)
     {
 #pragma warning disable CA2000 // Dispose objects before losing scope
-        var t = new TestPattern();
+        var t = new TestPattern(_serviceProvider);
 #pragma warning restore CA2000
         t.ShowDialog(this);
     }

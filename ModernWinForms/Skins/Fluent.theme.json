@@ -1,16 +1,6 @@
 {
+  "inheritsFrom": "Base",
   "description": "Microsoft's Fluent Design system with subtle corners and emphasis on clarity",
-  "typography": {
-    "fontFamily": "Segoe UI",
-    "fontSize": 9.0
-  },
-  "spacing": {
-    "baseUnit": 8,
-    "small": 4,
-    "medium": 8,
-    "large": 16,
-    "xlarge": 24
-  },
   "controls": {
     "ModernButton": {
       "cornerRadius": 4,
@@ -20,11 +10,130 @@
         "top": 10,
         "right": 16,
         "bottom": 10
+      },
+      "states": {
+        "normal": {},
+        "hover": {},
+        "pressed": {},
+        "disabled": {}
+      }
+    },
+    "ModernCheckBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "states": {
+        "normal": {},
+        "checked": {},
+        "hover": {},
+        "disabled": {}
+      }
+    },
+    "ModernComboBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "states": {
+        "normal": {},
+        "hover": {},
+        "focused": {},
+        "disabled": {}
+      }
+    },
+    "ModernDataGridView": {
+      "borderWidth": 1,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernFlowLayoutPanel": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
       }
     },
     "ModernGroupBox": {
       "borderWidth": 1,
-      "cornerRadius": 4
+      "cornerRadius": 4,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernLabel": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernMenuStrip": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernPanel": {
+      "borderWidth": 0,
+      "cornerRadius": 4,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernRadioButton": {
+      "borderWidth": 1,
+      "cornerRadius": 12,
+      "states": {
+        "normal": {},
+        "checked": {},
+        "hover": {},
+        "disabled": {}
+      }
+    },
+    "ModernRichTextBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "padding": {
+        "left": 4,
+        "top": 4,
+        "right": 4,
+        "bottom": 4
+      },
+      "states": {
+        "normal": {},
+        "focused": {},
+        "disabled": {}
+      }
+    },
+    "ModernSplitContainer": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernStatusStrip": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernTableLayoutPanel": {
+      "borderWidth": 0,
+      "cornerRadius": 0,
+      "states": {
+        "normal": {}
+      }
+    },
+    "ModernTabControl": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "states": {
+        "normal": {},
+        "selected": {},
+        "hover": {}
+      }
     },
     "ModernTextBox": {
       "borderWidth": 1,
@@ -34,6 +143,14 @@
         "top": 8,
         "right": 10,
         "bottom": 8
+      },
+      "states": {
+        "normal": {},
+        "focused": {},
+        "disabled": {},
+        "error": {},
+        "warning": {},
+        "success": {}
       }
     }
   }
