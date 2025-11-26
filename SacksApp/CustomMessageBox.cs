@@ -8,13 +8,8 @@ namespace SacksApp;
 /// Custom message box with modern styling from ThemeManager.
 /// Uses theme colors with intelligent fallbacks when palette entries are missing.
 /// </summary>
-public class CustomMessageBox : Form
+public partial class CustomMessageBox : Form
 {
-    private readonly ModernLabel _iconLabel;
-    private readonly ModernLabel _messageLabel;
-    private readonly ModernLabel _titleLabel;
-    private readonly ModernPanel _buttonPanel;
-    private readonly ModernPanel _contentPanel;
     private readonly Font _themeFont;
     private DialogResult _result = DialogResult.None;
 
@@ -100,82 +95,25 @@ public class CustomMessageBox : Form
 
     private CustomMessageBox()
     {
-        // Form properties
-        FormBorderStyle = FormBorderStyle.None;
-        StartPosition = FormStartPosition.CenterParent;
-        BackColor = BackgroundColor;
-        ShowInTaskbar = false;
-        MinimizeBox = false;
-        MaximizeBox = false;
-        Width = 500;
-        Height = 200;
-        Padding = new Padding(2); // Border
-
-        // Enable double buffering
-        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | 
-                 ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
-
         // Get theme font - ZERO TOLERANCE
         _themeFont = ThemeManager.CreateFont() 
             ?? throw new InvalidOperationException("Theme font creation failed. Theme system not initialized.");
 
-        // Title label
-        _titleLabel = new ModernLabel
-        {
-            Dock = DockStyle.Top,
-            Font = new Font(_themeFont.FontFamily, 11F, FontStyle.Bold),
-            ForeColor = TextColor,
-            Height = 40,
-            Padding = new Padding(15, 10, 15, 5),
-            BackColor = SurfaceColor,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
+        InitializeComponent();
 
-        // Content panel
-        _contentPanel = new ModernPanel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = SurfaceColor,
-            Padding = new Padding(15, 10, 15, 10)
-        };
+        // Apply theme colors
+        BackColor = BackgroundColor;
+        _titleLabel.Font = new Font(_themeFont.FontFamily, 11F, FontStyle.Bold);
+        _titleLabel.ForeColor = TextColor;
+        _titleLabel.BackColor = SurfaceColor;
+        _contentPanel.BackColor = SurfaceColor;
+        _messageLabel.Font = new Font(_themeFont.FontFamily, 10F);
+        _messageLabel.ForeColor = TextColor;
+        _buttonPanel.BackColor = SurfaceColor;
 
-        // Icon label (using MDL2 glyphs)
-        _iconLabel = new ModernLabel
-        {
-            Font = new Font("Segoe MDL2 Assets", 24F),
-            AutoSize = false,
-            Size = new Size(50, 50),
-            TextAlign = ContentAlignment.MiddleCenter,
-            Location = new Point(15, 10)
-        };
-
-        // Message label
-        _messageLabel = new ModernLabel
-        {
-            Font = new Font(_themeFont.FontFamily, 10F),
-            ForeColor = TextColor,
-            AutoSize = false,
-            Location = new Point(75, 10),
-            Width = 390,
-            Height = 80,
-            TextAlign = ContentAlignment.TopLeft
-        };
-
-        // Button panel
-        _buttonPanel = new ModernPanel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 60,
-            BackColor = SurfaceColor,
-            Padding = new Padding(10)
-        };
-
-        _contentPanel.Controls.Add(_iconLabel);
-        _contentPanel.Controls.Add(_messageLabel);
-
-        Controls.Add(_contentPanel);
-        Controls.Add(_buttonPanel);
-        Controls.Add(_titleLabel);
+        // Enable double buffering
+        SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | 
+                 ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -214,70 +152,67 @@ public class CustomMessageBox : Form
         }
     }
 
-    private void AddButton(string text, DialogResult result, bool isDefault = false)
+    private void Button_Click(object? sender, EventArgs e)
     {
-        // ZERO TOLERANCE: text must not be empty
-        if (string.IsNullOrWhiteSpace(text))
-            throw new ArgumentException("Button text cannot be null or whitespace.", nameof(text));
-
-        var button = new ModernButton
+        if (sender is ModernButton button)
         {
-            Text = text,
-            DialogResult = result,
-            Width = 100,
-            Height = 36,
-            Cursor = Cursors.Hand,
-            Dock = DockStyle.Right,
-            Margin = new Padding(5, 0, 0, 0)
-        };
-
-        button.Click += (s, e) =>
-        {
-            _result = result;
+            _result = button.DialogResult;
             Close();
-        };
-
-        _buttonPanel.Controls.Add(button);
-        
-        if (isDefault)
-        {
-            AcceptButton = button;
         }
     }
 
     private void SetupButtons(MessageBoxButtons buttons)
     {
+        // Hide all buttons first
+        _btnOK.Visible = false;
+        _btnCancel.Visible = false;
+        _btnYes.Visible = false;
+        _btnNo.Visible = false;
+        _btnRetry.Visible = false;
+        _btnAbort.Visible = false;
+        _btnIgnore.Visible = false;
+
+        // Show and set default button based on button type
         switch (buttons)
         {
             case MessageBoxButtons.OK:
-                AddButton("OK", DialogResult.OK, isDefault: true);
+                _btnOK.Visible = true;
+                AcceptButton = _btnOK;
                 break;
 
             case MessageBoxButtons.OKCancel:
-                AddButton("Cancel", DialogResult.Cancel);
-                AddButton("OK", DialogResult.OK, isDefault: true);
+                _btnOK.Visible = true;
+                _btnCancel.Visible = true;
+                AcceptButton = _btnOK;
+                CancelButton = _btnCancel;
                 break;
 
             case MessageBoxButtons.YesNo:
-                AddButton("No", DialogResult.No);
-                AddButton("Yes", DialogResult.Yes, isDefault: true);
+                _btnYes.Visible = true;
+                _btnNo.Visible = true;
+                AcceptButton = _btnYes;
                 break;
 
             case MessageBoxButtons.YesNoCancel:
-                AddButton("Cancel", DialogResult.Cancel);
-                AddButton("No", DialogResult.No);
-                AddButton("Yes", DialogResult.Yes, isDefault: true);
+                _btnYes.Visible = true;
+                _btnNo.Visible = true;
+                _btnCancel.Visible = true;
+                AcceptButton = _btnYes;
+                CancelButton = _btnCancel;
                 break;
 
             case MessageBoxButtons.RetryCancel:
-                AddButton("Cancel", DialogResult.Cancel);
-                AddButton("Retry", DialogResult.Retry, isDefault: true);
+                _btnRetry.Visible = true;
+                _btnCancel.Visible = true;
+                AcceptButton = _btnRetry;
+                CancelButton = _btnCancel;
                 break;
 
             case MessageBoxButtons.AbortRetryIgnore:
-                AddButton("Ignore", DialogResult.Ignore);
-                AddButton("Retry", DialogResult.Retry);
-                AddButton("Abort", DialogResult.Abort, isDefault: true);
+                _btnAbort.Visible = true;
+                _btnRetry.Visible = true;
+                _btnIgnore.Visible = true;
+                AcceptButton = _btnAbort;
                 break;
 
             default:
@@ -377,14 +312,5 @@ public class CustomMessageBox : Form
     {
         var result = Show(message, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         return result == DialogResult.Yes;
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _themeFont?.Dispose();
-        }
-        base.Dispose(disposing);
     }
 }
