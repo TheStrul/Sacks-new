@@ -52,7 +52,7 @@ namespace SacksApp
             UpdatePanelsVisibility();
         }
 
-        private void SetupAutocomplete(params (TextBox box, string key)[] entries)
+        private void SetupAutocomplete(params (dynamic box, string key)[] entries)
         {
             foreach (var (tb, key) in entries)
             {
@@ -69,7 +69,7 @@ namespace SacksApp
             }
         }
 
-        private void AddHistory(TextBox? tb, string key, string? value)
+        private void AddHistory(dynamic? tb, string key, string? value)
         {
             if (tb == null) return;
             var v = (value ?? string.Empty).Trim();

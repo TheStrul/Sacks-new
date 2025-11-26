@@ -187,6 +187,52 @@ public class ModernTextBox : Control, IValidatable
     }
 
     /// <summary>
+    /// Gets or sets the autocomplete mode.
+    /// </summary>
+    [Category("Behavior")]
+    [Description("The autocomplete mode for the text box.")]
+    [DefaultValue(AutoCompleteMode.None)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+    public AutoCompleteMode AutoCompleteMode
+    {
+        get => _textBox.AutoCompleteMode;
+        set => _textBox.AutoCompleteMode = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the autocomplete source.
+    /// </summary>
+    [Category("Behavior")]
+    [Description("The autocomplete source for the text box.")]
+    [DefaultValue(AutoCompleteSource.None)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+    public AutoCompleteSource AutoCompleteSource
+    {
+        get => _textBox.AutoCompleteSource;
+        set => _textBox.AutoCompleteSource = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the custom autocomplete string collection.
+    /// </summary>
+    [Category("Behavior")]
+    [Description("The custom autocomplete string collection for the text box.")]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+    public AutoCompleteStringCollection? AutoCompleteCustomSource
+    {
+        get => _textBox.AutoCompleteCustomSource;
+        set => _textBox.AutoCompleteCustomSource = value;
+    }
+
+    /// <summary>
+    /// Selects all text in the text box.
+    /// </summary>
+    public void SelectAll()
+    {
+        _textBox.SelectAll();
+    }
+
+    /// <summary>
     /// Gets or sets the validation state.
     /// </summary>
     [Category("Validation")]

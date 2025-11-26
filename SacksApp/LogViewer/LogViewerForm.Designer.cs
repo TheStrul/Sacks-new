@@ -19,23 +19,23 @@ namespace QMobileDeviceServiceMenu
         /// </summary>
         private void InitializeComponent()
         {
-            toolbarPanel = new Panel();
-            autoScrollCheckBox = new CheckBox();
-            clearButton = new Button();
-            colorLegendButton = new Button();
-            logLevelFiltersPanel = new Panel();
-            allCheckBox = new CheckBox();
-            errorCheckBox = new CheckBox();
-            warningCheckBox = new CheckBox();
-            infoCheckBox = new CheckBox();
-            debugCheckBox = new CheckBox();
-            defaultCheckBox = new CheckBox();
-            searchBox = new TextBox();
-            searchButton = new Button();
-            exportButton = new Button();
+            toolbarPanel = new ModernWinForms.Controls.ModernPanel();
+            autoScrollCheckBox = new ModernWinForms.Controls.ModernCheckBox();
+            clearButton = new ModernWinForms.Controls.ModernButton();
+            colorLegendButton = new ModernWinForms.Controls.ModernButton();
+            logLevelFiltersPanel = new ModernWinForms.Controls.ModernPanel();
+            allCheckBox = new ModernWinForms.Controls.ModernCheckBox();
+            errorCheckBox = new ModernWinForms.Controls.ModernCheckBox();
+            warningCheckBox = new ModernWinForms.Controls.ModernCheckBox();
+            infoCheckBox = new ModernWinForms.Controls.ModernCheckBox();
+            debugCheckBox = new ModernWinForms.Controls.ModernCheckBox();
+            defaultCheckBox = new ModernWinForms.Controls.ModernCheckBox();
+            searchBox = new ModernWinForms.Controls.ModernTextBox();
+            searchButton = new ModernWinForms.Controls.ModernButton();
+            exportButton = new ModernWinForms.Controls.ModernButton();
             logTextBox = new RichTextBox();
-            statusPanel = new Panel();
-            statusLabel = new Label();
+            statusPanel = new ModernWinForms.Controls.ModernPanel();
+            statusLabel = new ModernWinForms.Controls.ModernLabel();
             toolbarPanel.SuspendLayout();
             logLevelFiltersPanel.SuspendLayout();
             statusPanel.SuspendLayout();
@@ -269,24 +269,24 @@ namespace QMobileDeviceServiceMenu
 
         #endregion
 
-        private Panel toolbarPanel;
-        private CheckBox autoScrollCheckBox;
-        private Button clearButton;
-        private Button colorLegendButton;
-        private Panel logLevelFiltersPanel;
-        private CheckBox allCheckBox;
-        private CheckBox errorCheckBox;
-        private CheckBox warningCheckBox;
-        private CheckBox infoCheckBox;
-        private CheckBox debugCheckBox;
-        private CheckBox defaultCheckBox;
-        private TextBox searchBox;
-        private Button searchButton;
-    private Button exportButton;
+        private ModernWinForms.Controls.ModernPanel toolbarPanel;
+        private ModernWinForms.Controls.ModernCheckBox autoScrollCheckBox;
+        private ModernWinForms.Controls.ModernButton clearButton;
+        private ModernWinForms.Controls.ModernButton colorLegendButton;
+        private ModernWinForms.Controls.ModernPanel logLevelFiltersPanel;
+        private ModernWinForms.Controls.ModernCheckBox allCheckBox;
+        private ModernWinForms.Controls.ModernCheckBox errorCheckBox;
+        private ModernWinForms.Controls.ModernCheckBox warningCheckBox;
+        private ModernWinForms.Controls.ModernCheckBox infoCheckBox;
+        private ModernWinForms.Controls.ModernCheckBox debugCheckBox;
+        private ModernWinForms.Controls.ModernCheckBox defaultCheckBox;
+        private ModernWinForms.Controls.ModernTextBox searchBox;
+        private ModernWinForms.Controls.ModernButton searchButton;
+    private ModernWinForms.Controls.ModernButton exportButton;
     private ContextMenuStrip logContextMenu;
         private RichTextBox logTextBox;
-        private Panel statusPanel;
-        private Label statusLabel;
+        private ModernWinForms.Controls.ModernPanel statusPanel;
+        private ModernWinForms.Controls.ModernLabel statusLabel;
     private bool suspendCheckboxEvents;
     }
 }

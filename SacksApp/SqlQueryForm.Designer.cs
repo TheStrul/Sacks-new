@@ -5,32 +5,32 @@ namespace SacksApp
         /// <summary>
         /// Required designer variable.
         /// </summary>
-        private System.Windows.Forms.SplitContainer mainSplitContainer;
-        private System.Windows.Forms.ComboBox filterColumnComboBox;
-        private System.Windows.Forms.ComboBox filterOperatorComboBox;
-        private System.Windows.Forms.TextBox filterValueTextBox;
-        private System.Windows.Forms.Button addFilterButton;
+        private ModernWinForms.Controls.ModernSplitContainer mainSplitContainer;
+        private ModernWinForms.Controls.ModernComboBox filterColumnComboBox;
+        private ModernWinForms.Controls.ModernComboBox filterOperatorComboBox;
+        private ModernWinForms.Controls.ModernTextBox filterValueTextBox;
+        private ModernWinForms.Controls.ModernButton addFilterButton;
         private System.Windows.Forms.CheckedListBox filtersListBox;
-        private System.Windows.Forms.Button removeFilterButton;
-        private System.Windows.Forms.Button runQueryButton;
-        private System.Windows.Forms.DataGridView resultsGrid;
-        private System.Windows.Forms.StatusStrip statusStrip;
+        private ModernWinForms.Controls.ModernButton removeFilterButton;
+        private ModernWinForms.Controls.ModernButton runQueryButton;
+        private ModernWinForms.Controls.ModernDataGridView resultsGrid;
+        private ModernWinForms.Controls.ModernStatusStrip statusStrip;
         private System.Windows.Forms.ToolStripStatusLabel statusLabel;
         private System.Windows.Forms.ToolStripProgressBar progressBar;
-        private System.Windows.Forms.TableLayoutPanel tableLayoutFilters;
+        private ModernWinForms.Controls.ModernTableLayoutPanel tableLayoutFilters;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
         private System.ComponentModel.IContainer components;
         private System.Windows.Forms.ToolStripMenuItem OpenLookupsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem showHideCoulmnsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem groupByProductToolStripMenuItem;
-        private System.Windows.Forms.Button buttonHideFilters;
-        private System.Windows.Forms.Button buttonShowFilter;
+        private ModernWinForms.Controls.ModernButton buttonHideFilters;
+        private ModernWinForms.Controls.ModernButton buttonShowFilter;
 
         // New edit controls
-        private System.Windows.Forms.FlowLayoutPanel editControlsPanel;
-        private System.Windows.Forms.CheckBox editModeCheckBox;
-        private System.Windows.Forms.Button saveChangesButton;
-        private System.Windows.Forms.Button cancelAllButton;
+        private ModernWinForms.Controls.ModernFlowLayoutPanel editControlsPanel;
+        private ModernWinForms.Controls.ModernCheckBox editModeCheckBox;
+        private ModernWinForms.Controls.ModernButton saveChangesButton;
+        private ModernWinForms.Controls.ModernButton cancelAllButton;
 
         #region Windows Form Designer generated code
 
@@ -42,27 +42,27 @@ namespace SacksApp
         {
             components = new System.ComponentModel.Container();
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
-            mainSplitContainer = new SplitContainer();
-            tableLayoutFilters = new TableLayoutPanel();
-            addFilterButton = new Button();
-            filterOperatorComboBox = new ComboBox();
-            filterColumnComboBox = new ComboBox();
-            filterValueTextBox = new TextBox();
-            removeFilterButton = new Button();
+            mainSplitContainer = new ModernWinForms.Controls.ModernSplitContainer();
+            tableLayoutFilters = new ModernWinForms.Controls.ModernTableLayoutPanel();
+            addFilterButton = new ModernWinForms.Controls.ModernButton();
+            filterOperatorComboBox = new ModernWinForms.Controls.ModernComboBox();
+            filterColumnComboBox = new ModernWinForms.Controls.ModernComboBox();
+            filterValueTextBox = new ModernWinForms.Controls.ModernTextBox();
+            removeFilterButton = new ModernWinForms.Controls.ModernButton();
             filtersListBox = new CheckedListBox();
-            buttonHideFilters = new Button();
-            buttonShowFilter = new Button();
-            resultsGrid = new DataGridView();
+            buttonHideFilters = new ModernWinForms.Controls.ModernButton();
+            buttonShowFilter = new ModernWinForms.Controls.ModernButton();
+            resultsGrid = new ModernWinForms.Controls.ModernDataGridView();
             contextMenuStrip1 = new ContextMenuStrip(components);
             OpenLookupsToolStripMenuItem = new ToolStripMenuItem();
             showHideCoulmnsToolStripMenuItem = new ToolStripMenuItem();
             groupByProductToolStripMenuItem = new ToolStripMenuItem();
-            editControlsPanel = new FlowLayoutPanel();
-            editModeCheckBox = new CheckBox();
-            saveChangesButton = new Button();
-            cancelAllButton = new Button();
-            runQueryButton = new Button();
-            statusStrip = new StatusStrip();
+            editControlsPanel = new ModernWinForms.Controls.ModernFlowLayoutPanel();
+            editModeCheckBox = new ModernWinForms.Controls.ModernCheckBox();
+            saveChangesButton = new ModernWinForms.Controls.ModernButton();
+            cancelAllButton = new ModernWinForms.Controls.ModernButton();
+            runQueryButton = new ModernWinForms.Controls.ModernButton();
+            statusStrip = new ModernWinForms.Controls.ModernStatusStrip();
             statusLabel = new ToolStripStatusLabel();
             progressBar = new ToolStripProgressBar();
             ((System.ComponentModel.ISupportInitialize)mainSplitContainer).BeginInit();

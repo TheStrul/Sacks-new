@@ -3,19 +3,19 @@ namespace SacksApp
     partial class LookupEditorForm
     {
         private System.ComponentModel.IContainer components = null;
-        private System.Windows.Forms.Label _titleLabel;
-        private System.Windows.Forms.ComboBox _lookupCombo;
-        private System.Windows.Forms.DataGridView _grid;
-        private System.Windows.Forms.Button _addButton;
-        private System.Windows.Forms.Button _removeButton;
-        private System.Windows.Forms.Button _reloadButton;
-        private System.Windows.Forms.Button _saveButton;
-        private System.Windows.Forms.Button _closeButton;
-        private System.Windows.Forms.StatusStrip _statusStrip;
+        private ModernWinForms.Controls.ModernLabel _titleLabel;
+        private ModernWinForms.Controls.ModernComboBox _lookupCombo;
+        private ModernWinForms.Controls.ModernDataGridView _grid;
+        private ModernWinForms.Controls.ModernButton _addButton;
+        private ModernWinForms.Controls.ModernButton _removeButton;
+        private ModernWinForms.Controls.ModernButton _reloadButton;
+        private ModernWinForms.Controls.ModernButton _saveButton;
+        private ModernWinForms.Controls.ModernButton _closeButton;
+        private ModernWinForms.Controls.ModernStatusStrip _statusStrip;
         private System.Windows.Forms.ToolStripStatusLabel _statusLabel;
-        private System.Windows.Forms.TableLayoutPanel _root;
-        private System.Windows.Forms.FlowLayoutPanel _buttonsPanel;
-        private System.Windows.Forms.FlowLayoutPanel _headerPanel;
+        private ModernWinForms.Controls.ModernTableLayoutPanel _root;
+        private ModernWinForms.Controls.ModernFlowLayoutPanel _buttonsPanel;
+        private ModernWinForms.Controls.ModernFlowLayoutPanel _headerPanel;
         private System.Windows.Forms.DataGridViewTextBoxColumn colKey;
         private System.Windows.Forms.DataGridViewTextBoxColumn colVal;
 
@@ -31,21 +31,21 @@ namespace SacksApp
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            _titleLabel = new System.Windows.Forms.Label();
-            _lookupCombo = new System.Windows.Forms.ComboBox();
-            _grid = new System.Windows.Forms.DataGridView();
+            _titleLabel = new ModernWinForms.Controls.ModernLabel();
+            _lookupCombo = new ModernWinForms.Controls.ModernComboBox();
+            _grid = new ModernWinForms.Controls.ModernDataGridView();
             colKey = new System.Windows.Forms.DataGridViewTextBoxColumn();
             colVal = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            _addButton = new System.Windows.Forms.Button();
-            _removeButton = new System.Windows.Forms.Button();
-            _reloadButton = new System.Windows.Forms.Button();
-            _saveButton = new System.Windows.Forms.Button();
-            _closeButton = new System.Windows.Forms.Button();
-            _statusStrip = new System.Windows.Forms.StatusStrip();
+            _addButton = new ModernWinForms.Controls.ModernButton();
+            _removeButton = new ModernWinForms.Controls.ModernButton();
+            _reloadButton = new ModernWinForms.Controls.ModernButton();
+            _saveButton = new ModernWinForms.Controls.ModernButton();
+            _closeButton = new ModernWinForms.Controls.ModernButton();
+            _statusStrip = new ModernWinForms.Controls.ModernStatusStrip();
             _statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            _root = new System.Windows.Forms.TableLayoutPanel();
-            _buttonsPanel = new System.Windows.Forms.FlowLayoutPanel();
-            _headerPanel = new System.Windows.Forms.FlowLayoutPanel();
+            _root = new ModernWinForms.Controls.ModernTableLayoutPanel();
+            _buttonsPanel = new ModernWinForms.Controls.ModernFlowLayoutPanel();
+            _headerPanel = new ModernWinForms.Controls.ModernFlowLayoutPanel();
             ((System.ComponentModel.ISupportInitialize)_grid).BeginInit();
             _statusStrip.SuspendLayout();
             _root.SuspendLayout();
