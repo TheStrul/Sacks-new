@@ -264,7 +264,7 @@ public class ModernTextBox : Control, IValidatable
             }
         };
 
-        var normalState = _controlStyle.States["normal"];
+        var normalState = _controlStyle.States.GetValueOrDefault("normal") ?? new StateStyle();
         var backColor = ColorTranslator.FromHtml(normalState.BackColor ?? "#FFFFFF");
         var foreColor = ColorTranslator.FromHtml(normalState.ForeColor ?? "#000000");
 

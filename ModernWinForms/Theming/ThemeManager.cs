@@ -58,14 +58,38 @@ public static class ThemeManager
     /// <summary>
     /// Gets the current active theme definition (design system).
     /// </summary>
-    public static ThemeDefinition CurrentThemeDefinition => 
-        _config.Themes.TryGetValue(_config.CurrentTheme, out var theme) ? theme : new ThemeDefinition();
+    public static ThemeDefinition CurrentThemeDefinition
+    {
+        get
+        {
+            try
+            {
+                return _config.Themes.TryGetValue(_config.CurrentTheme, out var theme) ? theme : new ThemeDefinition();
+            }
+            catch
+            {
+                return new ThemeDefinition();
+            }
+        }
+    }
 
     /// <summary>
     /// Gets the current active skin definition (color variant).
     /// </summary>
-    public static SkinDefinition CurrentSkinDefinition => 
-        _config.Skins.TryGetValue(_config.CurrentSkin, out var skin) ? skin : new SkinDefinition();
+    public static SkinDefinition CurrentSkinDefinition
+    {
+        get
+        {
+            try
+            {
+                return _config.Skins.TryGetValue(_config.CurrentSkin, out var skin) ? skin : new SkinDefinition();
+            }
+            catch
+            {
+                return new SkinDefinition();
+            }
+        }
+    }
 
     /// <summary>
     /// Gets all available theme names (design systems).
@@ -75,14 +99,46 @@ public static class ThemeManager
     /// <summary>
     /// Gets all available skin names (color variants).
     /// </summary>
-    public static IEnumerable<string> AvailableSkins => _config.Skins.Keys;
+    public static IEnumerable<string> AvailableSkins => _config.Skins
+            .Where(kvp => !IsBaseSkinName(kvp.Key) && !IsTemplateSkin(kvp.Value))
+            .Select(kvp => kvp.Key);
 
     /// <summary>
-    /// Gets skins available for the current theme.
+    /// Gets the skins available for the current theme.
     /// </summary>
-    public static IEnumerable<string> AvailableSkinsForCurrentTheme => 
-        _config.Skins.Where(kvp => kvp.Value.Theme == _config.CurrentTheme || string.IsNullOrEmpty(kvp.Value.Theme))
+    public static IEnumerable<string> AvailableSkinsForCurrentTheme =>
+        _config.Skins
+            .Where(kvp => !IsBaseSkinName(kvp.Key) && !IsTemplateSkin(kvp.Value) && (string.IsNullOrEmpty(kvp.Value.Theme) || string.Equals(kvp.Value.Theme, _config.CurrentTheme, StringComparison.OrdinalIgnoreCase)))
             .Select(kvp => kvp.Key);
+
+    private static bool HasPaletteColors(ColorPalette? palette)
+    {
+        if (palette == null) return false;
+        return !string.IsNullOrWhiteSpace(palette.Background)
+            || !string.IsNullOrWhiteSpace(palette.Surface)
+            || !string.IsNullOrWhiteSpace(palette.Text)
+            || !string.IsNullOrWhiteSpace(palette.Primary)
+            || !string.IsNullOrWhiteSpace(palette.Secondary)
+            || !string.IsNullOrWhiteSpace(palette.Border)
+            || !string.IsNullOrWhiteSpace(palette.Info)
+            || !string.IsNullOrWhiteSpace(palette.Warning)
+            || !string.IsNullOrWhiteSpace(palette.Danger)
+            || !string.IsNullOrWhiteSpace(palette.Success);
+    }
+
+    private static bool IsTemplateSkin(SkinDefinition? skin)
+    {
+        if (skin == null) return true;
+        var hasPalette = HasPaletteColors(skin.Palette);
+        var hasControls = skin.Controls != null && skin.Controls.Count > 0;
+        return !hasPalette && !hasControls;
+    }
+
+    private static bool IsBaseSkinName(string? skinName)
+    {
+        if (string.IsNullOrWhiteSpace(skinName)) return false;
+        return skinName.StartsWith("Base", StringComparison.OrdinalIgnoreCase);
+    }
 
     /// <summary>
     /// Gets a complete control style by merging theme structure with skin colors.
@@ -96,7 +152,7 @@ public static class ThemeManager
 
         // Start with theme's structural definition
         ControlStyle? result = null;
-        if (theme.Controls.TryGetValue(controlName, out var themeStyle))
+        if (theme != null && theme.Controls != null && theme.Controls.TryGetValue(controlName, out var themeStyle))
         {
             result = new ControlStyle
             {
@@ -113,7 +169,7 @@ public static class ThemeManager
         }
 
         // Override with skin's color definitions
-        if (skin.Controls.TryGetValue(controlName, out var skinColors))
+        if (skin != null && skin.Controls != null && skin.Controls.TryGetValue(controlName, out var skinColors))
         {
             foreach (var (stateName, stateStyle) in skinColors.States)
             {
@@ -138,7 +194,7 @@ public static class ThemeManager
         var result = new Typography { FontFamily = "Segoe UI", FontSize = 9.0f };
 
         // Apply theme typography if available
-        if (theme.Typography != null)
+        if (theme?.Typography != null)
         {
             if (!string.IsNullOrWhiteSpace(theme.Typography.FontFamily))
             {
@@ -151,7 +207,7 @@ public static class ThemeManager
         }
 
         // Override with skin typography if available (skin wins)
-        if (skin.Typography != null)
+        if (skin?.Typography != null)
         {
             if (!string.IsNullOrWhiteSpace(skin.Typography.FontFamily))
             {
@@ -213,7 +269,7 @@ public static class ThemeManager
         var skin = CurrentSkinDefinition;
         
         // Apply global background if defined
-        if (!string.IsNullOrEmpty(skin.Palette.Background))
+        if (skin?.Palette != null && !string.IsNullOrEmpty(skin.Palette.Background))
         {
             try
             {
@@ -292,7 +348,7 @@ public static class ThemeManager
         return false;
     }
 
-    private static void ApplyThemeToControls(Control.ControlCollection controls, SkinDefinition skin)
+    private static void ApplyThemeToControls(Control.ControlCollection controls, SkinDefinition? skin)
     {
         foreach (Control control in controls)
         {
@@ -305,18 +361,18 @@ public static class ThemeManager
         }
     }
 
-    private static void ApplyThemeToControl(Control control, SkinDefinition skin)
+    private static void ApplyThemeToControl(Control control, SkinDefinition? skin)
     {
         switch (control)
         {
             case ModernButton modernButton:
-                modernButton.ApplySkin(skin);
+                modernButton.ApplySkin(skin ?? new SkinDefinition());
                 break;
             case ModernGroupBox modernGroupBox:
-                modernGroupBox.ApplySkin(skin);
+                modernGroupBox.ApplySkin(skin ?? new SkinDefinition());
                 break;
             case ModernTextBox modernTextBox:
-                modernTextBox.ApplySkin(skin);
+                modernTextBox.ApplySkin(skin ?? new SkinDefinition());
                 break;
         }
     }
@@ -329,16 +385,16 @@ public static class ThemeManager
     {
         try
         {
+            ThemingConfiguration? loadedConfig = null;
+
             // Load base configuration (version, currentTheme, and currentSkin)
             if (File.Exists(_configPath))
             {
                 var json = File.ReadAllText(_configPath);
-                _config = JsonSerializer.Deserialize<ThemingConfiguration>(json) ?? new ThemingConfiguration();
+                loadedConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json);
             }
-            else
-            {
-                _config = new ThemingConfiguration();
-            }
+
+            var newConfig = loadedConfig ?? new ThemingConfiguration();
 
             var skinsDir = Path.GetDirectoryName(_configPath);
             if (skinsDir != null && Directory.Exists(skinsDir))
@@ -367,7 +423,7 @@ public static class ThemeManager
                                 }
                             }
                             
-                            _config.Themes[themeName] = themeDef;
+                            newConfig.Themes[themeName] = themeDef;
                         }
                     }
                     catch (JsonException ex)
@@ -405,7 +461,7 @@ public static class ThemeManager
                                 }
                             }
                             
-                            _config.Skins[skinName] = skinDef;
+                            newConfig.Skins[skinName] = skinDef;
                         }
                     }
                     catch (JsonException ex)
@@ -420,9 +476,11 @@ public static class ThemeManager
                 }
 
                 // Resolve inheritance after all themes and skins are loaded
-                ResolveThemeInheritance();
-                ResolveSkinInheritance();
+                ResolveThemeInheritance(newConfig);
+                ResolveSkinInheritance(newConfig);
             }
+            
+            _config = newConfig;
         }
         catch (IOException)
         {
@@ -446,14 +504,16 @@ public static class ThemeManager
         await _configLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var newConfig = new ThemingConfiguration();
+            ThemingConfiguration? loadedConfig = null;
             
             // Load base configuration (version, currentTheme, and currentSkin)
             if (File.Exists(_configPath))
             {
                 var json = await File.ReadAllTextAsync(_configPath, cancellationToken).ConfigureAwait(false);
-                newConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json) ?? new ThemingConfiguration();
+                loadedConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json);
             }
+
+            var newConfig = loadedConfig ?? new ThemingConfiguration();
 
             var skinsDir = Path.GetDirectoryName(_configPath);
             if (skinsDir != null && Directory.Exists(skinsDir))
@@ -535,8 +595,8 @@ public static class ThemeManager
     private static void ResolveThemeInheritance(ThemingConfiguration? config = null)
     {
         config ??= _config;
-        var resolved = new Dictionary<string, ThemeDefinition>();
-        var resolving = new HashSet<string>();
+        var resolved = new Dictionary<string, ThemeDefinition>(StringComparer.OrdinalIgnoreCase);
+        var resolving = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         ThemeDefinition ResolveTheme(string themeName)
         {
@@ -589,59 +649,48 @@ public static class ThemeManager
     private static void ResolveSkinInheritance(ThemingConfiguration? config = null)
     {
         config ??= _config;
-        var resolved = new Dictionary<string, SkinDefinition>();
-        var resolving = new HashSet<string>();
+        var resolved = new Dictionary<string, SkinDefinition>(StringComparer.OrdinalIgnoreCase);
+        var resolving = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         SkinDefinition ResolveSkin(string skinName)
         {
-            System.Diagnostics.Debug.WriteLine($"Resolving skin: {skinName}");
-            
-            // Already resolved
             if (resolved.TryGetValue(skinName, out var cachedSkin))
-            {
-                System.Diagnostics.Debug.WriteLine($"  Already resolved: Background={cachedSkin.Palette.Background}");
                 return cachedSkin;
-            }
 
             // Detect circular dependency
             if (!resolving.Add(skinName))
+            {
+                RaiseValidationError($"Circular inheritance detected for skin '{skinName}'");
                 throw new InvalidOperationException($"Circular inheritance detected for skin '{skinName}'");
+            }
 
             if (!config.Skins.TryGetValue(skinName, out var skin))
+            {
+                RaiseValidationError($"Skin '{skinName}' not found during inheritance resolution.");
                 throw new InvalidOperationException($"Skin '{skinName}' not found");
+            }
 
             try
             {
-                System.Diagnostics.Debug.WriteLine($"  InheritsFrom: {skin.InheritsFrom ?? "null"}");
-                System.Diagnostics.Debug.WriteLine($"  Current Background: {skin.Palette.Background ?? "null"}");
-                
                 // If no inheritance, use as-is
                 if (string.IsNullOrEmpty(skin.InheritsFrom))
                 {
                     resolved[skinName] = skin;
-                    System.Diagnostics.Debug.WriteLine($"  No inheritance, using as-is");
                     return skin;
                 }
 
                 // Resolve parent first - handle case where parent doesn't exist
-                SkinDefinition baseSkin;
-                try
+                if (!config.Skins.TryGetValue(skin.InheritsFrom, out _))
                 {
-                    baseSkin = ResolveSkin(skin.InheritsFrom);
-                }
-                catch (InvalidOperationException)
-                {
-                    // Parent skin not found, use current skin as-is
-                    System.Diagnostics.Debug.WriteLine($"  Parent '{skin.InheritsFrom}' not found, using as-is");
-                    resolved[skinName] = skin;
+                    RaiseValidationError($"Base skin '{skin.InheritsFrom}' not found for derived skin '{skinName}'.");
+                    resolved[skinName] = skin; // Use the skin as-is without inheritance
                     return skin;
                 }
 
-                System.Diagnostics.Debug.WriteLine($"  Parent Background: {baseSkin.Palette.Background ?? "null"}");
+                var baseSkin = ResolveSkin(skin.InheritsFrom);
 
                 // Merge with parent
                 var merged = skin.MergeWith(baseSkin);
-                System.Diagnostics.Debug.WriteLine($"  Merged Background: {merged.Palette.Background ?? "null"}");
                 resolved[skinName] = merged;
                 return merged;
             }
@@ -659,10 +708,10 @@ public static class ThemeManager
             {
                 config.Skins[skinName] = ResolveSkin(skinName);
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
                 // If inheritance resolution fails completely, keep the original skin
-                System.Diagnostics.Debug.WriteLine($"Failed to resolve {skinName}: {ex.Message}");
+                RaiseValidationError($"Failed to resolve inheritance for skin '{skinName}': {ex.Message}");
             }
         }
     }

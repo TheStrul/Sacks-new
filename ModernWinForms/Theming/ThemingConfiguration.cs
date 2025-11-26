@@ -9,6 +9,17 @@ namespace ModernWinForms.Theming;
 public sealed class ThemingConfiguration
 {
     /// <summary>
+    /// Initializes a new instance of the <see cref="ThemingConfiguration"/> class
+    /// with case-insensitive dictionaries for themes and skins.
+    /// </summary>
+    [JsonConstructor]
+    public ThemingConfiguration()
+    {
+        Themes = new Dictionary<string, ThemeDefinition>(StringComparer.OrdinalIgnoreCase);
+        Skins = new Dictionary<string, SkinDefinition>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// Gets or sets the configuration version.
     /// </summary>
     [JsonPropertyName("version")] public string? Version { get; set; }
@@ -26,10 +37,10 @@ public sealed class ThemingConfiguration
     /// <summary>
     /// Gets or sets the dictionary of available themes (design systems).
     /// </summary>
-    [JsonPropertyName("themes")] public Dictionary<string, ThemeDefinition> Themes { get; set; } = new();
+    [JsonPropertyName("themes")] public Dictionary<string, ThemeDefinition> Themes { get; init; }
     
     /// <summary>
     /// Gets or sets the dictionary of available skins (color variants).
     /// </summary>
-    [JsonPropertyName("skins")] public Dictionary<string, SkinDefinition> Skins { get; set; } = new();
+    [JsonPropertyName("skins")] public Dictionary<string, SkinDefinition> Skins { get; init; }
 }
