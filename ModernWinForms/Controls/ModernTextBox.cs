@@ -26,6 +26,8 @@ public class ModernTextBox : Control, IValidatable
     private ValidationState _validationState = ValidationState.None;
     private string _validationMessage = string.Empty;
     private bool _showValidationIcon = true;
+    private string? _theme;
+    private string? _skin;
 
     /// <summary>
     /// Initializes a new instance of the ModernTextBox class.
@@ -70,9 +72,13 @@ public class ModernTextBox : Control, IValidatable
 
     private void OnThemeChanged(object? sender, EventArgs e)
     {
-        UpdateStyleFromSkin();
-        UpdateFontFromTheme();
-        Invalidate();
+        // Only update if we're using global theme/skin (no overrides)
+        if (string.IsNullOrWhiteSpace(_theme) && string.IsNullOrWhiteSpace(_skin))
+        {
+            UpdateStyleFromSkin();
+            UpdateFontFromTheme();
+            Invalidate();
+        }
     }
 
     private void UpdateFontFromTheme()
@@ -238,6 +244,52 @@ public class ModernTextBox : Control, IValidatable
     }
 
     /// <summary>
+    /// Gets or sets the theme (design system) to use for this control.
+    /// If null or empty, uses the global ThemeManager.CurrentTheme.
+    /// </summary>
+    [Category("Appearance")]
+    [Description("The theme (design system) to use for this control. If not set, uses the global theme.")]
+    [DefaultValue(null)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+    public string? Theme
+    {
+        get => _theme;
+        set
+        {
+            if (_theme != value)
+            {
+                _theme = value;
+                UpdateStyleFromSkin();
+                UpdateFontFromTheme();
+                Invalidate();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets the skin (color variant) to use for this control.
+    /// If null or empty, uses the global ThemeManager.CurrentSkin.
+    /// </summary>
+    [Category("Appearance")]
+    [Description("The skin (color variant) to use for this control. If not set, uses the global skin.")]
+    [DefaultValue(null)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
+    public string? Skin
+    {
+        get => _skin;
+        set
+        {
+            if (_skin != value)
+            {
+                _skin = value;
+                UpdateStyleFromSkin();
+                UpdateFontFromTheme();
+                Invalidate();
+            }
+        }
+    }
+
+    /// <summary>
     /// Applies the specified skin definition to this text box.
     /// </summary>
     /// <param name="skin">The skin definition to apply.</param>
@@ -250,7 +302,7 @@ public class ModernTextBox : Control, IValidatable
     private void UpdateStyleFromSkin(SkinDefinition? skin = null)
     {
         // Get merged style from theme (structure) + skin (colors)
-        _controlStyle = ThemeManager.GetControlStyle("ModernTextBox") ?? new ControlStyle
+        _controlStyle = GetEffectiveControlStyle() ?? new ControlStyle
         {
             BorderWidth = 1,
             CornerRadius = 4,
@@ -285,6 +337,87 @@ public class ModernTextBox : Control, IValidatable
             {
                 _textBox.Height = Height - (_padding * 2);
             }
+        }
+    }
+
+    /// <summary>
+    /// Gets the effective control style considering per-control theme/skin overrides.
+    /// </summary>
+    private ControlStyle? GetEffectiveControlStyle()
+    {
+        // If theme or skin is overridden, build custom style
+        if (!string.IsNullOrWhiteSpace(_theme) || !string.IsNullOrWhiteSpace(_skin))
+        {
+            var themeName = !string.IsNullOrWhiteSpace(_theme) ? _theme : ThemeManager.CurrentTheme;
+            var skinName = !string.IsNullOrWhiteSpace(_skin) ? _skin : ThemeManager.CurrentSkin;
+            
+            return GetControlStyleForThemeAndSkin(themeName, skinName);
+        }
+        
+        // Use global theme and skin
+        return ThemeManager.GetControlStyle("ModernTextBox");
+    }
+
+    /// <summary>
+    /// Gets the control style for a specific theme and skin combination.
+    /// This replicates ThemeManager.GetControlStyle logic but for custom theme/skin.
+    /// </summary>
+    private ControlStyle? GetControlStyleForThemeAndSkin(string themeName, string skinName)
+    {
+        try
+        {
+            // Try to get the theme definition
+            ThemeDefinition? theme = null;
+            if (ThemeManager.AvailableThemes.Contains(themeName, StringComparer.OrdinalIgnoreCase))
+            {
+                // Only available if it's the current theme (limitation: we can't access other themes)
+                if (themeName.Equals(ThemeManager.CurrentTheme, StringComparison.OrdinalIgnoreCase))
+                {
+                    theme = ThemeManager.CurrentThemeDefinition;
+                }
+            }
+            
+            // Try to get the skin definition
+            SkinDefinition? skin = null;
+            if (ThemeManager.AvailableSkins.Contains(skinName, StringComparer.OrdinalIgnoreCase))
+            {
+                if (skinName.Equals(ThemeManager.CurrentSkin, StringComparison.OrdinalIgnoreCase))
+                {
+                    skin = ThemeManager.CurrentSkinDefinition;
+                }
+            }
+            
+            // Build control style
+            ControlStyle? result = null;
+            if (theme?.Controls?.TryGetValue("ModernTextBox", out var themeStyle) == true)
+            {
+                result = new ControlStyle
+                {
+                    CornerRadius = themeStyle.CornerRadius,
+                    BorderWidth = themeStyle.BorderWidth,
+                    Padding = themeStyle.Padding,
+                    States = new Dictionary<string, StateStyle>(themeStyle.States)
+                };
+            }
+            else
+            {
+                result = new ControlStyle();
+            }
+            
+            // Override with skin colors
+            if (skin?.Controls?.TryGetValue("ModernTextBox", out var skinColors) == true)
+            {
+                foreach (var (stateName, stateStyle) in skinColors.States)
+                {
+                    result.States[stateName] = stateStyle;
+                }
+            }
+            
+            return result;
+        }
+        catch
+        {
+            return null;
         }
     }
 

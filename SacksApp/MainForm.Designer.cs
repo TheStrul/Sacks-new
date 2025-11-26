@@ -40,6 +40,9 @@ namespace SacksApp
             offersManagerToolStripMenuItem = new ToolStripMenuItem();
             lookupEditorToolStripMenuItem = new ToolStripMenuItem();
             logViewerToolStripMenuItem = new ToolStripMenuItem();
+            viewToolStripMenuItem = new ToolStripMenuItem();
+            themeToolStripMenuItem = new ToolStripMenuItem();
+            skinToolStripMenuItem = new ToolStripMenuItem();
             windowToolStripMenuItem = new ToolStripMenuItem();
             cascadeToolStripMenuItem = new ToolStripMenuItem();
             tileHorizontalToolStripMenuItem = new ToolStripMenuItem();
@@ -87,7 +90,7 @@ namespace SacksApp
             // 
             // menuStrip
             // 
-            menuStrip.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, toolsToolStripMenuItem, windowToolStripMenuItem });
+            menuStrip.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, toolsToolStripMenuItem, viewToolStripMenuItem, windowToolStripMenuItem });
             menuStrip.Location = new Point(0, 0);
             menuStrip.MdiWindowListItem = windowToolStripMenuItem;
             menuStrip.Name = "menuStrip";
@@ -154,6 +157,27 @@ namespace SacksApp
             logViewerToolStripMenuItem.Size = new Size(199, 22);
             logViewerToolStripMenuItem.Text = "Lo&g Viewer";
             logViewerToolStripMenuItem.Click += LogViewerToolStripMenuItem_Click;
+            // 
+            // viewToolStripMenuItem
+            // 
+            viewToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { themeToolStripMenuItem, skinToolStripMenuItem });
+            viewToolStripMenuItem.Name = "viewToolStripMenuItem";
+            viewToolStripMenuItem.Size = new Size(44, 20);
+            viewToolStripMenuItem.Text = "&View";
+            // 
+            // themeToolStripMenuItem
+            // 
+            themeToolStripMenuItem.Name = "themeToolStripMenuItem";
+            themeToolStripMenuItem.Size = new Size(180, 22);
+            themeToolStripMenuItem.Text = "&Theme";
+            themeToolStripMenuItem.DropDownOpening += ThemeToolStripMenuItem_DropDownOpening;
+            // 
+            // skinToolStripMenuItem
+            // 
+            skinToolStripMenuItem.Name = "skinToolStripMenuItem";
+            skinToolStripMenuItem.Size = new Size(180, 22);
+            skinToolStripMenuItem.Text = "&Skin";
+            skinToolStripMenuItem.DropDownOpening += SkinToolStripMenuItem_DropDownOpening;
             // 
             // windowToolStripMenuItem
             // 
@@ -670,6 +694,9 @@ namespace SacksApp
         private ToolStripMenuItem offersManagerToolStripMenuItem;
         private ToolStripMenuItem lookupEditorToolStripMenuItem;
         private ToolStripMenuItem logViewerToolStripMenuItem;
+        private ToolStripMenuItem viewToolStripMenuItem;
+        private ToolStripMenuItem themeToolStripMenuItem;
+        private ToolStripMenuItem skinToolStripMenuItem;
         private ToolStripMenuItem windowToolStripMenuItem;
         private ToolStripMenuItem cascadeToolStripMenuItem;
         private ToolStripMenuItem tileHorizontalToolStripMenuItem;
@@ -708,6 +735,99 @@ namespace SacksApp
         private ModernButton executeAiQueryButton;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -70,6 +70,93 @@ public partial class MainForm : Form
         Application.Exit();
     }
 
+    // View Menu
+    private void ThemeToolStripMenuItem_DropDownOpening(object? sender, EventArgs e)
+    {
+        // Dynamically populate theme submenu
+        themeToolStripMenuItem.DropDownItems.Clear();
+
+        var availableThemes = ThemeManager.AvailableThemes.ToList();
+        var currentTheme = ThemeManager.CurrentTheme;
+
+        foreach (var theme in availableThemes)
+        {
+            var item = new ToolStripMenuItem(theme)
+            {
+                Checked = theme.Equals(currentTheme, StringComparison.OrdinalIgnoreCase),
+                Tag = theme
+            };
+            item.Click += OnThemeMenuItemClick;
+            themeToolStripMenuItem.DropDownItems.Add(item);
+        }
+
+        if (availableThemes.Count == 0)
+        {
+            themeToolStripMenuItem.DropDownItems.Add(new ToolStripMenuItem("(No themes available)") { Enabled = false });
+        }
+    }
+
+    private void OnThemeMenuItemClick(object? sender, EventArgs e)
+    {
+        if (sender is ToolStripMenuItem menuItem && menuItem.Tag is string themeName)
+        {
+            try
+            {
+                ThemeManager.CurrentTheme = themeName;
+                ShowNotification($"Theme changed to: {themeName}", NotificationType.Success);
+                _logger.LogInformation("Theme changed to: {Theme}", themeName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing theme to {Theme}", themeName);
+                ShowNotification($"Error changing theme: {ex.Message}", NotificationType.Error);
+            }
+        }
+    }
+
+    private void SkinToolStripMenuItem_DropDownOpening(object? sender, EventArgs e)
+    {
+        // Dynamically populate skin submenu
+        skinToolStripMenuItem.DropDownItems.Clear();
+
+        var availableSkins = ThemeManager.AvailableSkins.ToList();
+        var currentSkin = ThemeManager.CurrentSkin;
+
+        foreach (var skin in availableSkins)
+        {
+            var item = new ToolStripMenuItem(skin)
+            {
+                Checked = skin.Equals(currentSkin, StringComparison.OrdinalIgnoreCase),
+                Tag = skin
+            };
+            item.Click += OnSkinMenuItemClick;
+            skinToolStripMenuItem.DropDownItems.Add(item);
+        }
+
+        if (availableSkins.Count == 0)
+        {
+            skinToolStripMenuItem.DropDownItems.Add(new ToolStripMenuItem("(No skins available)") { Enabled = false });
+        }
+    }
+
+    private void OnSkinMenuItemClick(object? sender, EventArgs e)
+    {
+        if (sender is ToolStripMenuItem menuItem && menuItem.Tag is string skinName)
+        {
+            try
+            {
+                ThemeManager.CurrentSkin = skinName;
+                ShowNotification($"Skin changed to: {skinName}", NotificationType.Success);
+                _logger.LogInformation("Skin changed to: {Skin}", skinName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing skin to {Skin}", skinName);
+                ShowNotification($"Error changing skin: {ex.Message}", NotificationType.Error);
+            }
+        }
+    }
+
     // Tools Menu
 
 
