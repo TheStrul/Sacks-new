@@ -27,12 +27,12 @@ public sealed class ThemingConfiguration
     /// <summary>
     /// Gets or sets the current active theme name (design system).
     /// </summary>
-    [JsonPropertyName("currentTheme")] public string CurrentTheme { get; set; } = "GitHub";
+    [JsonPropertyName("currentTheme")] public required string CurrentTheme { get; set; }
     
     /// <summary>
     /// Gets or sets the current active skin name (color variant).
     /// </summary>
-    [JsonPropertyName("currentSkin")] public string CurrentSkin { get; set; } = "Light";
+    [JsonPropertyName("currentSkin")] public required string CurrentSkin { get; set; }
     
     /// <summary>
     /// Gets or sets the dictionary of available themes (design systems).

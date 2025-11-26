@@ -49,6 +49,7 @@ public class ModernRadioButton : RadioButton
 
     private void UpdateStyleFromTheme()
     {
+        // ZERO TOLERANCE: Get style or create with REQUIRED states
         _controlStyle = ThemeManager.GetControlStyle("ModernRadioButton") ?? new ControlStyle
         {
             BorderWidth = 2,
@@ -62,18 +63,25 @@ public class ModernRadioButton : RadioButton
             }
         };
 
-        var normalState = _controlStyle.States["normal"];
-        if (normalState.ForeColor != null)
-        {
-            ForeColor = ColorTranslator.FromHtml(normalState.ForeColor);
-        }
+        // ZERO TOLERANCE: Validate 'normal' state exists
+        if (!_controlStyle.States.TryGetValue("normal", out var normalState))
+            throw new InvalidOperationException(
+                "ModernRadioButton 'normal' state not defined in theme. Theme configuration is incomplete.");
 
+        // ZERO TOLERANCE: ForeColor MUST be defined
+        if (string.IsNullOrWhiteSpace(normalState.ForeColor))
+            throw new InvalidOperationException(
+                "ModernRadioButton ForeColor not defined in 'normal' state. Theme configuration is incomplete.");
+
+        ForeColor = ColorTranslator.FromHtml(normalState.ForeColor);
+
+        // ZERO TOLERANCE: Theme font MUST be available
         _themeFont?.Dispose();
-        _themeFont = ThemeManager.CreateFont();
-        if (_themeFont != null)
-        {
-            Font = _themeFont;
-        }
+        _themeFont = ThemeManager.CreateFont() 
+            ?? throw new InvalidOperationException(
+                "Theme font creation failed. Theme system not initialized.");
+        
+        Font = _themeFont;
     }
 
     /// <summary>

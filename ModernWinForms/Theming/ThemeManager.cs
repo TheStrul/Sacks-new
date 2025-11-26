@@ -9,7 +9,7 @@ namespace ModernWinForms.Theming;
 /// </summary>
 public static class ThemeManager
 {
-    private static ThemingConfiguration _config = new();
+    private static ThemingConfiguration _config = null!;
     private static readonly string _configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Skins", "skins.json");
     private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
     private static readonly SemaphoreSlim _configLock = new(1, 1);
@@ -388,13 +388,20 @@ public static class ThemeManager
             ThemingConfiguration? loadedConfig = null;
 
             // Load base configuration (version, currentTheme, and currentSkin)
-            if (File.Exists(_configPath))
+            if (!File.Exists(_configPath))
             {
-                var json = File.ReadAllText(_configPath);
-                loadedConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json);
+                throw new InvalidOperationException($"Theme configuration file not found: {_configPath}. Cannot initialize theme system.");
             }
 
-            var newConfig = loadedConfig ?? new ThemingConfiguration();
+            var json = File.ReadAllText(_configPath);
+            loadedConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json);
+            
+            if (loadedConfig == null)
+            {
+                throw new InvalidOperationException($"Failed to parse theme configuration from: {_configPath}");
+            }
+
+            var newConfig = loadedConfig;
 
             var skinsDir = Path.GetDirectoryName(_configPath);
             if (skinsDir != null && Directory.Exists(skinsDir))
@@ -482,15 +489,13 @@ public static class ThemeManager
             
             _config = newConfig;
         }
-        catch (IOException)
+        catch (IOException ex)
         {
-            // Use defaults on file system errors
-            _config = new ThemingConfiguration();
+            throw new InvalidOperationException($"Failed to load theme configuration due to I/O error: {_configPath}", ex);
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
-            // Use defaults on permission errors
-            _config = new ThemingConfiguration();
+            throw new InvalidOperationException($"Access denied when loading theme configuration: {_configPath}", ex);
         }
     }
 
@@ -504,16 +509,21 @@ public static class ThemeManager
         await _configLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            ThemingConfiguration? loadedConfig = null;
-            
             // Load base configuration (version, currentTheme, and currentSkin)
-            if (File.Exists(_configPath))
+            if (!File.Exists(_configPath))
             {
-                var json = await File.ReadAllTextAsync(_configPath, cancellationToken).ConfigureAwait(false);
-                loadedConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json);
+                throw new InvalidOperationException($"Theme configuration file not found: {_configPath}. Cannot reload theme system.");
             }
 
-            var newConfig = loadedConfig ?? new ThemingConfiguration();
+            var json = await File.ReadAllTextAsync(_configPath, cancellationToken).ConfigureAwait(false);
+            var loadedConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json);
+            
+            if (loadedConfig == null)
+            {
+                throw new InvalidOperationException($"Failed to parse theme configuration from: {_configPath}");
+            }
+
+            var newConfig = loadedConfig;
 
             var skinsDir = Path.GetDirectoryName(_configPath);
             if (skinsDir != null && Directory.Exists(skinsDir))
@@ -769,9 +779,9 @@ public static class ThemeManager
         {
             // Ignore permission errors - configuration changes remain in memory
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            // Operation was cancelled
+            throw new InvalidOperationException("Theme configuration reload was cancelled.", ex);
         }
         finally
         {

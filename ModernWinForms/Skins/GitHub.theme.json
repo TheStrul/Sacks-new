@@ -45,6 +45,14 @@
         "right": 4,
         "bottom": 4
       }
+    },
+    "ModernRadioButton": {
+      "borderWidth": 2,
+      "cornerRadius": 12
+    },
+    "ModernCheckBox": {
+      "borderWidth": 2,
+      "cornerRadius": 4
     }
   }
 }

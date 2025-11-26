@@ -53,11 +53,14 @@ public class ModernCheckBox : CheckBox
     private void UpdateFontFromTheme()
     {
         _themeFont?.Dispose();
-        _themeFont = ThemeManager.CreateFont();
+        _themeFont = ThemeManager.CreateFont() 
+            ?? throw new InvalidOperationException(
+                "Theme font creation failed. Theme system not initialized.");
     }
 
     private void UpdateStyleFromSkin()
     {
+        // ZERO TOLERANCE: Get style or create with REQUIRED states
         _controlStyle = ThemeManager.GetControlStyle("ModernCheckBox") ?? new ControlStyle
         {
             CornerRadius = 4,
@@ -70,6 +73,24 @@ public class ModernCheckBox : CheckBox
                 ["disabled"] = new() { BackColor = "#F6F8FA", ForeColor = "#8C959F", BorderColor = "#D0D7DE" }
             }
         };
+
+        // ZERO TOLERANCE: Validate 'normal' state exists
+        if (!_controlStyle.States.TryGetValue("normal", out var normalState))
+            throw new InvalidOperationException(
+                "ModernCheckBox 'normal' state not defined in theme. Theme configuration is incomplete.");
+
+        // ZERO TOLERANCE: All required colors MUST be defined
+        if (string.IsNullOrWhiteSpace(normalState.BackColor))
+            throw new InvalidOperationException(
+                "ModernCheckBox BackColor not defined in 'normal' state. Theme configuration is incomplete.");
+
+        if (string.IsNullOrWhiteSpace(normalState.ForeColor))
+            throw new InvalidOperationException(
+                "ModernCheckBox ForeColor not defined in 'normal' state. Theme configuration is incomplete.");
+
+        if (string.IsNullOrWhiteSpace(normalState.BorderColor))
+            throw new InvalidOperationException(
+                "ModernCheckBox BorderColor not defined in 'normal' state. Theme configuration is incomplete.");
     }
 
     /// <inheritdoc/>

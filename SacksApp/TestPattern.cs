@@ -1,104 +1,147 @@
+using System.Text;
+using Microsoft.Extensions.DependencyInjection;
+using ModernWinForms.Theming;
+using Sacks.LogicLayer.Services;
+using SacksApp.Utils;
+
 namespace SacksApp
 {
-    using System;
-    using System.Text;
-    using System.Windows.Forms;
-    using Microsoft.Extensions.DependencyInjection;
-    using Sacks.LogicLayer.Services;
-    using SacksApp.Utils;
-
+    /// <summary>
+    /// Test form for pattern/action testing with ParsingEngine.
+    /// ZERO TOLERANCE: All controls are Modern, all operations validated.
+    /// </summary>
     public partial class TestPattern : Form
     {
-        private readonly IServiceProvider? _serviceProvider;
+        private readonly IServiceProvider _serviceProvider;
         private readonly AutocompleteHistoryStore _history = AutocompleteHistoryStore.Load();
 
-        public TestPattern(IServiceProvider? serviceProvider = null)
+        /// <summary>
+        /// Initializes a new instance of TestPattern.
+        /// ZERO TOLERANCE: serviceProvider must not be null.
+        /// </summary>
+        /// <param name="serviceProvider">Service provider for dependency resolution. Cannot be null.</param>
+        /// <exception cref="ArgumentNullException">Thrown when serviceProvider is null.</exception>
+        public TestPattern(IServiceProvider serviceProvider)
         {
-            InitializeComponent();
+            // ZERO TOLERANCE: Validate required parameter
+            ArgumentNullException.ThrowIfNull(serviceProvider);
             _serviceProvider = serviceProvider;
 
-            // Defaults
-            textBoxInputKey.Text = string.IsNullOrWhiteSpace(textBoxInputKey.Text) ? "Text" : textBoxInputKey.Text;
-            textBoxOutputName.Text = string.IsNullOrWhiteSpace(textBoxOutputName.Text) ? "Out" : textBoxOutputName.Text;
-            if (!radioButtonTitle.Checked && !radioButtonUpper.Checked && !radioButtonLower.Checked)
-                radioButtonTitle.Checked = true;
+            InitializeComponent();
+
+            // Apply theme
+            ThemeManager.ApplyTheme(this);
+
+            // Set defaults - ZERO TOLERANCE: No null coalescing, explicit values
+            textBoxInputKey.Text = "Text";
+            textBoxOutputName.Text = "Out";
+            radioButtonTitle.Checked = true;
 
             // Enable autocomplete and load persisted history
-            SetupAutocomplete(
-                (textBoxInputText, nameof(textBoxInputText)),
-                (textBoxInputKey, nameof(textBoxInputKey)),
-                (textBoxOutputName, nameof(textBoxOutputName)),
-                (textBoxPatterm, nameof(textBoxPatterm)),
-                (textBoxPatternKey, nameof(textBoxPatternKey)),
-                (textBoxSeedKey, nameof(textBoxSeedKey)),
-                (textBoxSeedValue, nameof(textBoxSeedValue)),
-                (textBoxMapTable, nameof(textBoxMapTable)),
-                (textBoxMapInputKey, nameof(textBoxMapInputKey)),
-                (textBoxDelimiter, nameof(textBoxDelimiter)),
-                (textBoxSplitOutputKey, nameof(textBoxSplitOutputKey)),
-                (textBoxCondition, nameof(textBoxCondition))
-            );
+            SetupAutocomplete();
 
             // Wire events
             buttonRun.Click += OnRunClick;
             comboBoxOp.SelectedIndexChanged += (_, __) => UpdatePanelsVisibility();
-            this.FormClosed += (_, __) => _history.Save();
+            FormClosed += (_, __) => _history.Save();
 
-            // Initialize op selection
-            if (comboBoxOp.Items.Count > 0)
-            {
-                comboBoxOp.SelectedItem = comboBoxOp.Items[0]; // default to first (Find)
-            }
+            // Initialize op selection - ZERO TOLERANCE: Validate items exist
+            if (comboBoxOp.Items.Count == 0)
+                throw new InvalidOperationException("ComboBox operation list is empty. Designer initialization failed.");
+
+            comboBoxOp.SelectedIndex = 0; // Select first item (Find)
             UpdatePanelsVisibility();
         }
 
-        private void SetupAutocomplete(params (dynamic box, string key)[] entries)
+        /// <summary>
+        /// Sets up autocomplete for all text boxes.
+        /// ZERO TOLERANCE: Type-safe, no dynamic keyword.
+        /// </summary>
+        private void SetupAutocomplete()
         {
-            foreach (var (tb, key) in entries)
+            var textBoxes = new Dictionary<ModernWinForms.Controls.ModernTextBox, string>
             {
-                if (tb == null) continue;
-                tb.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
-                tb.AutoCompleteSource = AutoCompleteSource.CustomSource;
-                tb.AutoCompleteCustomSource ??= new AutoCompleteStringCollection();
-                // preload items
+                { textBoxInputText, nameof(textBoxInputText) },
+                { textBoxInputKey, nameof(textBoxInputKey) },
+                { textBoxOutputName, nameof(textBoxOutputName) },
+                { textBoxPatterm, nameof(textBoxPatterm) },
+                { textBoxPatternKey, nameof(textBoxPatternKey) },
+                { textBoxSeedKey, nameof(textBoxSeedKey) },
+                { textBoxSeedValue, nameof(textBoxSeedValue) },
+                { textBoxMapTable, nameof(textBoxMapTable) },
+                { textBoxMapInputKey, nameof(textBoxMapInputKey) },
+                { textBoxDelimiter, nameof(textBoxDelimiter) },
+                { textBoxSplitOutputKey, nameof(textBoxSplitOutputKey) },
+                { textBoxCondition, nameof(textBoxCondition) }
+            };
+
+            foreach (var (textBox, key) in textBoxes)
+            {
+                textBox.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
+                textBox.AutoCompleteSource = AutoCompleteSource.CustomSource;
+
                 var items = _history.Get(key);
                 if (items.Count > 0)
                 {
-                    tb.AutoCompleteCustomSource.AddRange(items.ToArray());
+                    var collection = new AutoCompleteStringCollection();
+                    collection.AddRange(items.ToArray());
+                    textBox.AutoCompleteCustomSource = collection;
                 }
             }
         }
 
-        private void AddHistory(dynamic? tb, string key, string? value)
+        /// <summary>
+        /// Adds value to autocomplete history.
+        /// ZERO TOLERANCE: Type-safe, validates inputs.
+        /// </summary>
+        private void AddHistory(ModernWinForms.Controls.ModernTextBox textBox, string key, string? value)
         {
-            if (tb == null) return;
-            var v = (value ?? string.Empty).Trim();
-            if (v.Length == 0) return;
+            // ZERO TOLERANCE: Validate inputs
+            ArgumentNullException.ThrowIfNull(textBox);
+            if (string.IsNullOrWhiteSpace(key))
+                throw new ArgumentException("History key cannot be null or whitespace.", nameof(key));
 
-            tb.AutoCompleteCustomSource ??= new AutoCompleteStringCollection();
-            // avoid dup in textbox source
-            foreach (string item in tb.AutoCompleteCustomSource)
+            var trimmedValue = (value ?? string.Empty).Trim();
+            if (trimmedValue.Length == 0) return;
+
+            // Ensure collection exists
+            textBox.AutoCompleteCustomSource ??= new AutoCompleteStringCollection();
+
+            // Check for duplicates
+            bool exists = false;
+            foreach (string item in textBox.AutoCompleteCustomSource)
             {
-                if (string.Equals(item, v, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(item, trimmedValue, StringComparison.OrdinalIgnoreCase))
                 {
-                    // still ensure persisted order freshness
-                    _history.Add(key, v);
-                    return;
+                    exists = true;
+                    break;
                 }
             }
-            tb.AutoCompleteCustomSource.Add(v);
-            _history.Add(key, v);
+
+            if (!exists)
+            {
+                textBox.AutoCompleteCustomSource.Add(trimmedValue);
+            }
+
+            _history.Add(key, trimmedValue);
         }
 
+        /// <summary>
+        /// Updates visibility of action-specific panels based on selected operation.
+        /// </summary>
         private void UpdatePanelsVisibility()
         {
-            var op = (comboBoxOp?.SelectedItem?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
+            var op = (comboBoxOp.SelectedItem?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
+
             tableLayoutPanelFindAction.Visible = string.Equals(op, "find", StringComparison.OrdinalIgnoreCase);
             tableLayoutPanelMapAction.Visible = string.Equals(op, "map", StringComparison.OrdinalIgnoreCase);
             tableLayoutPanelSplitAction.Visible = string.Equals(op, "split", StringComparison.OrdinalIgnoreCase);
             tableLayoutPanelCaseAction.Visible = string.Equals(op, "case", StringComparison.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// Builds find options string from checkboxes.
+        /// </summary>
         private string BuildFindOptionsString()
         {
             string? mode = null;
@@ -106,30 +149,42 @@ namespace SacksApp
             else if (chkLast.Checked) mode = "last";
             else if (chkAll.Checked) mode = "all";
 
-            var parts = new System.Collections.Generic.List<string>();
+            var parts = new List<string>();
             if (!string.IsNullOrEmpty(mode)) parts.Add(mode);
             if (chkIgnoreCase.Checked) parts.Add("ignorecase");
             if (chkRemove.Checked) parts.Add("remove");
+            
             return string.Join(',', parts);
         }
 
-        private async System.Threading.Tasks.Task<System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>> LoadLookupsAsync()
+        /// <summary>
+        /// Loads lookup tables from configuration.
+        /// ZERO TOLERANCE: Returns empty dictionary on failure, never null.
+        /// </summary>
+        private async Task<Dictionary<string, Dictionary<string, string>>> LoadLookupsAsync()
         {
             try
             {
-                if (_serviceProvider == null) return new(StringComparer.OrdinalIgnoreCase);
                 var configMgr = _serviceProvider.GetService<SupplierConfigurationManager>();
-                if (configMgr == null) return new(StringComparer.OrdinalIgnoreCase);
+                if (configMgr == null) 
+                    return new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+
                 var cfg = await configMgr.GetConfigurationAsync();
-                return new System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, string>>(cfg.Lookups, StringComparer.OrdinalIgnoreCase);
+                return new Dictionary<string, Dictionary<string, string>>(cfg.Lookups, StringComparer.OrdinalIgnoreCase);
             }
-            catch { return new(StringComparer.OrdinalIgnoreCase); }
+            catch
+            {
+                return new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+            }
         }
 
+        /// <summary>
+        /// Executes the action test.
+        /// </summary>
         private async void OnRunClick(object? sender, EventArgs e)
         {
             var inputText = textBoxInputText.Text ?? string.Empty;
-            var op = (comboBoxOp?.SelectedItem?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
+            var op = (comboBoxOp.SelectedItem?.ToString() ?? string.Empty).Trim().ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(op)) op = "find";
 
             var inputKey = string.IsNullOrWhiteSpace(textBoxInputKey.Text) ? "Text" : textBoxInputKey.Text.Trim();
@@ -137,7 +192,7 @@ namespace SacksApp
             var assign = checkAssign.Checked;
             var condition = string.IsNullOrWhiteSpace(textBoxCondition.Text) ? null : textBoxCondition.Text;
 
-            var parameters = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var parameters = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             switch (op)
             {
@@ -145,15 +200,19 @@ namespace SacksApp
                 {
                     var opts = BuildFindOptionsString();
                     if (!string.IsNullOrWhiteSpace(opts)) parameters["Options"] = opts;
+                    
                     var patternKey = (textBoxPatternKey.Text ?? string.Empty).Trim();
-                    if (!string.IsNullOrWhiteSpace(patternKey)) parameters["PatternKey"] = patternKey;
-                    else parameters["Pattern"] = textBoxPatterm.Text ?? string.Empty;
+                    if (!string.IsNullOrWhiteSpace(patternKey)) 
+                        parameters["PatternKey"] = patternKey;
+                    else 
+                        parameters["Pattern"] = textBoxPatterm.Text ?? string.Empty;
                     break;
                 }
                 case "map":
                 {
                     var table = (textBoxMapTable.Text ?? string.Empty).Trim();
                     if (!string.IsNullOrWhiteSpace(table)) parameters["Table"] = table;
+                    
                     var mapIn = (textBoxMapInputKey.Text ?? string.Empty).Trim();
                     if (!string.IsNullOrWhiteSpace(mapIn)) inputKey = mapIn;
                     break;
@@ -167,7 +226,9 @@ namespace SacksApp
                 }
                 case "case":
                 {
-                    var mode = radioButtonUpper.Checked ? "upper" : radioButtonLower.Checked ? "lower" : "title";
+                    var mode = radioButtonUpper.Checked ? "upper" 
+                             : radioButtonLower.Checked ? "lower" 
+                             : "title";
                     parameters["Mode"] = mode;
                     break;
                 }
