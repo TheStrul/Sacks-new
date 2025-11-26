@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using ModernWinForms.Controls;
 using ModernWinForms.Theming;
 
 namespace SacksApp;
@@ -154,7 +153,7 @@ public partial class CustomMessageBox : Form
 
     private void Button_Click(object? sender, EventArgs e)
     {
-        if (sender is ModernButton button)
+        if (sender is Button button)
         {
             _result = button.DialogResult;
             Close();
