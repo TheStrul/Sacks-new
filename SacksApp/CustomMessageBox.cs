@@ -1,30 +1,102 @@
 using System.ComponentModel;
-using System.Drawing.Drawing2D;
+using ModernWinForms.Controls;
+using ModernWinForms.Theming;
 
 namespace SacksApp;
 
 /// <summary>
-/// Custom message box with modern styling matching the application theme.
-/// Provides static Show methods similar to System.Windows.Forms.MessageBox.
+/// Custom message box with modern styling from ThemeManager.
+/// Uses theme colors with intelligent fallbacks when palette entries are missing.
 /// </summary>
 public class CustomMessageBox : Form
 {
-    private readonly Label _iconLabel;
-    private readonly Label _messageLabel;
-    private readonly Label _titleLabel;
-    private readonly Panel _buttonPanel;
-    private readonly Panel _contentPanel;
+    private readonly ModernLabel _iconLabel;
+    private readonly ModernLabel _messageLabel;
+    private readonly ModernLabel _titleLabel;
+    private readonly ModernPanel _buttonPanel;
+    private readonly ModernPanel _contentPanel;
+    private readonly Font _themeFont;
     private DialogResult _result = DialogResult.None;
 
-    // Theme colors
-    private static readonly Color ErrorColor = Color.FromArgb(244, 67, 54);
-    private static readonly Color WarningColor = Color.FromArgb(255, 152, 0);
-    private static readonly Color InfoColor = Color.FromArgb(33, 150, 243);
-    private static readonly Color SuccessColor = Color.FromArgb(76, 175, 80);
-    private static readonly Color QuestionColor = Color.FromArgb(156, 39, 176);
-    private static readonly Color BackgroundColor = Color.FromArgb(250, 250, 252);
-    private static readonly Color TextColor = Color.FromArgb(30, 30, 30);
-    private static readonly Color BorderColor = Color.FromArgb(200, 200, 200);
+    // Icon colors from theme palette with fallbacks
+    private static Color ErrorColor => GetSemanticColor("error");
+    private static Color WarningColor => GetSemanticColor("warning");
+    private static Color InfoColor => GetSemanticColor("info");
+    private static Color SuccessColor => GetSemanticColor("success");
+    private static Color QuestionColor => GetSemanticColor("question");
+    private static Color BackgroundColor => GetPaletteColor("background");
+    private static Color SurfaceColor => GetPaletteColor("surface");
+    private static Color TextColor => GetPaletteColor("text");
+    private static Color BorderColor => GetPaletteColor("border");
+
+    /// <summary>
+    /// Gets a semantic color from the current theme palette with intelligent fallbacks.
+    /// </summary>
+    private static Color GetSemanticColor(string name)
+    {
+        var skin = ThemeManager.CurrentSkinDefinition;
+        if (skin == null)
+        {
+            // Fallback to standard colors when theme not initialized
+            return name.ToLowerInvariant() switch
+            {
+                "error" => Color.FromArgb(220, 53, 69),
+                "warning" => Color.FromArgb(255, 193, 7),
+                "info" => Color.FromArgb(13, 110, 253),
+                "success" => Color.FromArgb(40, 167, 69),
+                "question" => Color.FromArgb(13, 110, 253),
+                _ => Color.Gray
+            };
+        }
+
+        var colorHex = name.ToLowerInvariant() switch
+        {
+            // Error: try Error, Danger, or derive from Primary with red tint
+            "error" => skin.Palette.Error ?? skin.Palette.Danger ?? "#DC3545",
+            // Warning: try Warning, or use orange fallback
+            "warning" => skin.Palette.Warning ?? "#FFC107",
+            // Info: try Info, Primary, or blue fallback
+            "info" => skin.Palette.Info ?? skin.Palette.Primary ?? "#0D6EFD",
+            // Success: try Success, or green fallback
+            "success" => skin.Palette.Success ?? "#28A745",
+            // Question: use Primary or blue fallback
+            "question" => skin.Palette.Primary ?? "#0D6EFD",
+            _ => "#6C757D" // Gray fallback
+        };
+
+        return ColorTranslator.FromHtml(colorHex);
+    }
+
+    /// <summary>
+    /// Gets a palette color from the current theme with intelligent fallbacks.
+    /// </summary>
+    private static Color GetPaletteColor(string name)
+    {
+        var skin = ThemeManager.CurrentSkinDefinition;
+        if (skin == null)
+        {
+            // Fallback to standard colors when theme not initialized
+            return name.ToLowerInvariant() switch
+            {
+                "background" => Color.FromArgb(13, 17, 23),
+                "surface" => Color.FromArgb(22, 27, 34),
+                "text" => Color.FromArgb(230, 237, 243),
+                "border" => Color.FromArgb(48, 54, 61),
+                _ => Color.Gray
+            };
+        }
+
+        var colorHex = name.ToLowerInvariant() switch
+        {
+            "background" => skin.Palette.Background ?? "#0D1117",
+            "surface" => skin.Palette.Surface ?? "#161B22",
+            "text" => skin.Palette.Text ?? "#E6EDF3",
+            "border" => skin.Palette.Border ?? "#30363D",
+            _ => "#6C757D" // Gray fallback
+        };
+
+        return ColorTranslator.FromHtml(colorHex);
+    }
 
     private CustomMessageBox()
     {
@@ -43,28 +115,32 @@ public class CustomMessageBox : Form
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | 
                  ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
 
+        // Get theme font - ZERO TOLERANCE
+        _themeFont = ThemeManager.CreateFont() 
+            ?? throw new InvalidOperationException("Theme font creation failed. Theme system not initialized.");
+
         // Title label
-        _titleLabel = new Label
+        _titleLabel = new ModernLabel
         {
             Dock = DockStyle.Top,
-            Font = new Font("Segoe UI", 11F, FontStyle.Bold),
+            Font = new Font(_themeFont.FontFamily, 11F, FontStyle.Bold),
             ForeColor = TextColor,
             Height = 40,
             Padding = new Padding(15, 10, 15, 5),
-            BackColor = Color.White,
+            BackColor = SurfaceColor,
             TextAlign = ContentAlignment.MiddleLeft
         };
 
         // Content panel
-        _contentPanel = new Panel
+        _contentPanel = new ModernPanel
         {
             Dock = DockStyle.Fill,
-            BackColor = Color.White,
+            BackColor = SurfaceColor,
             Padding = new Padding(15, 10, 15, 10)
         };
 
         // Icon label (using MDL2 glyphs)
-        _iconLabel = new Label
+        _iconLabel = new ModernLabel
         {
             Font = new Font("Segoe MDL2 Assets", 24F),
             AutoSize = false,
@@ -74,9 +150,9 @@ public class CustomMessageBox : Form
         };
 
         // Message label
-        _messageLabel = new Label
+        _messageLabel = new ModernLabel
         {
-            Font = new Font("Segoe UI", 10F),
+            Font = new Font(_themeFont.FontFamily, 10F),
             ForeColor = TextColor,
             AutoSize = false,
             Location = new Point(75, 10),
@@ -86,11 +162,11 @@ public class CustomMessageBox : Form
         };
 
         // Button panel
-        _buttonPanel = new Panel
+        _buttonPanel = new ModernPanel
         {
             Dock = DockStyle.Bottom,
             Height = 60,
-            BackColor = Color.White,
+            BackColor = SurfaceColor,
             Padding = new Padding(10)
         };
 
@@ -134,50 +210,31 @@ public class CustomMessageBox : Form
                 _iconLabel.ForeColor = QuestionColor;
                 break;
             default:
-                _iconLabel.Text = "\uE946"; // Info icon
-                _iconLabel.ForeColor = InfoColor;
-                break;
+                throw new ArgumentException($"Unsupported MessageBoxIcon: {icon}");
         }
     }
 
     private void AddButton(string text, DialogResult result, bool isDefault = false)
     {
-        var button = new Button
+        // ZERO TOLERANCE: text must not be empty
+        if (string.IsNullOrWhiteSpace(text))
+            throw new ArgumentException("Button text cannot be null or whitespace.", nameof(text));
+
+        var button = new ModernButton
         {
             Text = text,
             DialogResult = result,
             Width = 100,
             Height = 36,
-            FlatStyle = FlatStyle.Flat,
-            BackColor = isDefault ? Color.FromArgb(0, 120, 215) : Color.FromArgb(240, 240, 240),
-            ForeColor = isDefault ? Color.White : TextColor,
-            Font = new Font("Segoe UI", 10F),
             Cursor = Cursors.Hand,
             Dock = DockStyle.Right,
             Margin = new Padding(5, 0, 0, 0)
         };
 
-        button.FlatAppearance.BorderSize = 1;
-        button.FlatAppearance.BorderColor = isDefault ? Color.FromArgb(0, 90, 158) : BorderColor;
-
         button.Click += (s, e) =>
         {
             _result = result;
             Close();
-        };
-
-        button.MouseEnter += (s, e) =>
-        {
-            button.BackColor = isDefault 
-                ? Color.FromArgb(0, 90, 158) 
-                : Color.FromArgb(230, 230, 230);
-        };
-
-        button.MouseLeave += (s, e) =>
-        {
-            button.BackColor = isDefault 
-                ? Color.FromArgb(0, 120, 215) 
-                : Color.FromArgb(240, 240, 240);
         };
 
         _buttonPanel.Controls.Add(button);
@@ -222,11 +279,17 @@ public class CustomMessageBox : Form
                 AddButton("Retry", DialogResult.Retry);
                 AddButton("Abort", DialogResult.Abort, isDefault: true);
                 break;
+
+            default:
+                throw new ArgumentException($"Unsupported MessageBoxButtons: {buttons}");
         }
     }
 
     private void AdjustSize(string message)
     {
+        // ZERO TOLERANCE: message must not be null
+        ArgumentNullException.ThrowIfNull(message);
+
         // Measure message text
         using var g = CreateGraphics();
         var size = g.MeasureString(message, _messageLabel.Font, 390);
@@ -240,11 +303,15 @@ public class CustomMessageBox : Form
 
     /// <summary>
     /// Displays a message box with specified text, caption, buttons, and icon.
+    /// ZERO TOLERANCE: All parameters are validated.
     /// </summary>
     public static DialogResult Show(string message, string caption = "Message", 
         MessageBoxButtons buttons = MessageBoxButtons.OK, 
         MessageBoxIcon icon = MessageBoxIcon.Information)
     {
+        ArgumentNullException.ThrowIfNull(message);
+        ArgumentNullException.ThrowIfNull(caption);
+
         using var msgBox = new CustomMessageBox();
         msgBox._titleLabel.Text = caption;
         msgBox._messageLabel.Text = message;
@@ -310,5 +377,14 @@ public class CustomMessageBox : Form
     {
         var result = Show(message, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
         return result == DialogResult.Yes;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _themeFont?.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }

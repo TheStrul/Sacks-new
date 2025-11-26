@@ -35,6 +35,16 @@
         "right": 8,
         "bottom": 8
       }
+    },
+    "ModernRichTextBox": {
+      "borderWidth": 1,
+      "cornerRadius": 4,
+      "padding": {
+        "left": 4,
+        "top": 4,
+        "right": 4,
+        "bottom": 4
+      }
     }
   }
 }

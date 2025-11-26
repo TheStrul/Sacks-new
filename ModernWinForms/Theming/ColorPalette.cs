@@ -29,6 +29,12 @@ public sealed class ColorPalette
     [JsonPropertyName("danger")] public string? Danger { get; set; }
     
     /// <summary>
+    /// Error color - alias for Danger color. Used for error states and destructive actions.
+    /// If not specified, falls back to Danger color.
+    /// </summary>
+    [JsonPropertyName("error")] public string? Error { get; set; }
+    
+    /// <summary>
     /// Warning color - used for cautionary messages and warnings.
     /// </summary>
     [JsonPropertyName("warning")] public string? Warning { get; set; }
