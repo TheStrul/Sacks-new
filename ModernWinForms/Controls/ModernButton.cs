@@ -132,10 +132,19 @@ public class ModernButton : Button
         FlatAppearance.MouseOverBackColor = Color.Transparent;
         UseVisualStyleBackColor = false;
 
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromSkin();
-        UpdateFontFromTheme();
-        InitializeAnimations();
+        // Only initialize theme-dependent features at runtime, not in designer
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromSkin();
+            UpdateFontFromTheme();
+            InitializeAnimations();
+        }
+        else
+        {
+            // Use default style in designer
+            _controlStyle = CreateDefaultStyle();
+        }
     }
 
     private void InitializeAnimations()
