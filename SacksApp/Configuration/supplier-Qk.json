@@ -1,0 +1,159 @@
+{
+  "Name": "Qk",
+  "Currency": "USD",
+  "ParserConfig": {
+    "Settings": {
+      "StopOnFirstMatchPerColumn": false,
+      "DefaultCulture": "en-US"
+    },
+    "ColumnRules": [
+      {
+        "Column": "B",
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.EAN",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ]
+      },
+      {
+        "Column": "C",
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.Brand",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": {
+              "Table": "Brand"
+            }
+          }
+        ]
+      },
+      {
+        "Column": "D",
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Description",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          },
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "Genders",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "(?i)\\b([MWUL])\\s+(?:COL|EDT|EDP|PARFUM|COLOGNE)",
+              "Options": "first,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Genders",
+            "Output": "Product.Gender",
+            "Assign": true,
+            "Condition": "Genders.Valid==true",
+            "Parameters": {
+              "Table": "Gender"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Genders.Clean",
+            "Output": "Concentrations",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Concentration",
+              "Options": "first,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Concentrations",
+            "Output": "Product.Concentration",
+            "Assign": true,
+            "Condition": "Concentrations.Valid==true",
+            "Parameters": {
+              "Table": "Concentration"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Concentrations.Clean",
+            "Output": "SizeAndUnit",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "(?i)(?<size>\\d+(?:\\.\\d+)?)\\s*$",
+              "Options": "first,remove"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "SizeAndUnit",
+            "Output": "Product.Size",
+            "Assign": true,
+            "Condition": "SizeAndUnit.Valid==true",
+            "Parameters": null
+          },
+          {
+            "Op": "Assign",
+            "Input": "SizeAndUnit.Clean",
+            "Output": "Product.Name",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ]
+      },
+      {
+        "Column": "E",
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Price",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ]
+      }
+    ]
+  },
+  "FileStructure": {
+    "DataStartRowIndex": 4,
+    "ExpectedColumnCount": 6,
+    "HeaderRowIndex": 2,
+    "Detection": {
+      "FileNamePatterns": [
+        "qk*.xls*"
+      ]
+    }
+  },
+  "SubtitleHandling": {
+    "DetectionRules": [
+      {
+        "Key": "Section",
+        "DetectionMethod": "pattern",
+        "Pattern": "^(OPEN STOCK|MINIMUM QUANTITY)$",
+        "ApplyToSubsequentRows": false,
+        "ValidationPatterns": []
+      }
+    ],
+    "FallbackAction": "skip",
+    "Transforms": [],
+    "Assignments": []
+  }
+}

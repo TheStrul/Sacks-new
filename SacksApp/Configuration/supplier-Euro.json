@@ -1,5 +1,5 @@
 {
-  "Name": "Ace",
+  "Name": "Euro",
   "Currency": "USD",
   "ParserConfig": {
     "Settings": {
@@ -37,21 +37,6 @@
         "Column": "C",
         "Actions": [
           {
-            "Op": "Map",
-            "Input": "Text",
-            "Output": "Product.Brand",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": {
-              "Table": "Brand"
-            }
-          }
-        ]
-      },
-      {
-        "Column": "D",
-        "Actions": [
-          {
             "Op": "Assign",
             "Input": "Text",
             "Output": "Offer.Description",
@@ -62,50 +47,38 @@
           {
             "Op": "Find",
             "Input": "Text",
-            "Output": "Product.Type 1",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": {
-              "Pattern": "(?i)\\b(TESTER|SET)\\b",
-              "Options": "first,remove"
-            }
-          },
-          {
-            "Op": "Find",
-            "Input": "Product.Type 1.Clean",
-            "Output": "SizeWithUnit",
+            "Output": "TextNoBrand",
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)(?<size>\\d+(?:\\.\\d+)?\\s*(?:ML|OZ|FL\\s*OZ))\\s*$",
-              "Options": "first,remove"
+              "PatternKey": "Product.Brand",
+              "Options": "first,ignorecase,remove"
             }
           },
           {
             "Op": "Find",
-            "Input": "SizeWithUnit",
-            "Output": "Product.Size",
-            "Assign": true,
-            "Condition": "SizeWithUnit.Valid==true",
+            "Input": "TextNoBrand.Clean",
+            "Output": "Genders",
+            "Assign": false,
+            "Condition": null,
             "Parameters": {
-              "Pattern": "(?<num>\\d+(?:\\.\\d+)?)",
-              "Options": "first"
+              "Pattern": "(?i)\\(([LUWM])\\)",
+              "Options": "first,ignorecase,remove"
             }
           },
           {
-            "Op": "Find",
-            "Input": "SizeWithUnit",
-            "Output": "Product.Units",
+            "Op": "Map",
+            "Input": "Genders",
+            "Output": "Product.Gender",
             "Assign": true,
-            "Condition": "SizeWithUnit.Valid==true",
+            "Condition": "Genders.Valid==true",
             "Parameters": {
-              "Pattern": "(?i)(?<unit>ML|OZ|FL\\s*OZ)",
-              "Options": "first"
+              "Table": "Gender"
             }
           },
           {
             "Op": "Find",
-            "Input": "SizeWithUnit.Clean",
+            "Input": "Genders.Clean",
             "Output": "Concentrations",
             "Assign": false,
             "Condition": null,
@@ -127,27 +100,39 @@
           {
             "Op": "Find",
             "Input": "Concentrations.Clean",
-            "Output": "Genders",
+            "Output": "SizeAndUnit",
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)\\b(MEN|WOMEN|WOMAN|MALE|FEMALE|UNISEX|M|W|U)\\b",
-              "Options": "first,remove"
+              "Pattern": "(?i)(?<size>\\d+(?:\\.\\d+)?\\s*ml)\\b",
+              "Options": "first,ignorecase,remove"
             }
           },
           {
-            "Op": "Map",
-            "Input": "Genders",
-            "Output": "Product.Gender",
+            "Op": "Find",
+            "Input": "SizeAndUnit",
+            "Output": "Product.Size",
             "Assign": true,
-            "Condition": "Genders.Valid==true",
+            "Condition": "SizeAndUnit.Valid==true",
             "Parameters": {
-              "Table": "Gender"
+              "Pattern": "(?<num>\\d+(?:\\.\\d+)?)",
+              "Options": "first"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "SizeAndUnit",
+            "Output": "Product.Units",
+            "Assign": true,
+            "Condition": "SizeAndUnit.Valid==true",
+            "Parameters": {
+              "Pattern": "(?i)(?<unit>ml)",
+              "Options": "first"
             }
           },
           {
             "Op": "Assign",
-            "Input": "Genders.Clean",
+            "Input": "SizeAndUnit.Clean",
             "Output": "Product.Name",
             "Assign": true,
             "Condition": null,
@@ -157,36 +142,6 @@
       },
       {
         "Column": "E",
-        "Actions": [
-          {
-            "Op": "Map",
-            "Input": "Text",
-            "Output": "Product.Type 2",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": {
-              "Table": "Concentration"
-            }
-          }
-        ]
-      },
-      {
-        "Column": "F",
-        "Actions": [
-          {
-            "Op": "Map",
-            "Input": "Text",
-            "Output": "Product.COO",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": {
-              "Table": "COO"
-            }
-          }
-        ]
-      },
-      {
-        "Column": "G",
         "Actions": [
           {
             "Op": "Assign",
@@ -199,7 +154,7 @@
         ]
       },
       {
-        "Column": "H",
+        "Column": "F",
         "Actions": [
           {
             "Op": "Assign",
@@ -214,12 +169,12 @@
     ]
   },
   "FileStructure": {
-    "DataStartRowIndex": 4,
-    "ExpectedColumnCount": 8,
-    "HeaderRowIndex": 3,
+    "DataStartRowIndex": 5,
+    "ExpectedColumnCount": 7,
+    "HeaderRowIndex": 4,
     "Detection": {
       "FileNamePatterns": [
-        "ace*.xls*"
+        "euro*.xls*"
       ]
     }
   },

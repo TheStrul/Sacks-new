@@ -1,5 +1,5 @@
 {
-  "Name": "Ace",
+  "Name": "Sanya",
   "Currency": "USD",
   "ParserConfig": {
     "Settings": {
@@ -13,47 +13,6 @@
           {
             "Op": "Assign",
             "Input": "Text",
-            "Output": "Product.EAN",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": null
-          }
-        ]
-      },
-      {
-        "Column": "B",
-        "Actions": [
-          {
-            "Op": "Assign",
-            "Input": "Text",
-            "Output": "Offer.Ref",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": null
-          }
-        ]
-      },
-      {
-        "Column": "C",
-        "Actions": [
-          {
-            "Op": "Map",
-            "Input": "Text",
-            "Output": "Product.Brand",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": {
-              "Table": "Brand"
-            }
-          }
-        ]
-      },
-      {
-        "Column": "D",
-        "Actions": [
-          {
-            "Op": "Assign",
-            "Input": "Text",
             "Output": "Offer.Description",
             "Assign": true,
             "Condition": null,
@@ -62,31 +21,31 @@
           {
             "Op": "Find",
             "Input": "Text",
-            "Output": "Product.Type 1",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": {
-              "Pattern": "(?i)\\b(TESTER|SET)\\b",
-              "Options": "first,remove"
-            }
-          },
-          {
-            "Op": "Find",
-            "Input": "Product.Type 1.Clean",
-            "Output": "SizeWithUnit",
+            "Output": "TextNoBrand",
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)(?<size>\\d+(?:\\.\\d+)?\\s*(?:ML|OZ|FL\\s*OZ))\\s*$",
-              "Options": "first,remove"
+              "PatternKey": "Product.Brand",
+              "Options": "first,ignorecase,remove"
             }
           },
           {
             "Op": "Find",
-            "Input": "SizeWithUnit",
+            "Input": "TextNoBrand.Clean",
+            "Output": "SizeAndUnit",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "(?i)(?<size>\\d+(?:\\.\\d+)?\\s*(?:ML|OZ|FL\\s*OZ))\\b",
+              "Options": "first,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "SizeAndUnit",
             "Output": "Product.Size",
             "Assign": true,
-            "Condition": "SizeWithUnit.Valid==true",
+            "Condition": "SizeAndUnit.Valid==true",
             "Parameters": {
               "Pattern": "(?<num>\\d+(?:\\.\\d+)?)",
               "Options": "first"
@@ -94,10 +53,10 @@
           },
           {
             "Op": "Find",
-            "Input": "SizeWithUnit",
+            "Input": "SizeAndUnit",
             "Output": "Product.Units",
             "Assign": true,
-            "Condition": "SizeWithUnit.Valid==true",
+            "Condition": "SizeAndUnit.Valid==true",
             "Parameters": {
               "Pattern": "(?i)(?<unit>ML|OZ|FL\\s*OZ)",
               "Options": "first"
@@ -105,7 +64,7 @@
           },
           {
             "Op": "Find",
-            "Input": "SizeWithUnit.Clean",
+            "Input": "SizeAndUnit.Clean",
             "Output": "Concentrations",
             "Assign": false,
             "Condition": null,
@@ -131,8 +90,8 @@
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)\\b(MEN|WOMEN|WOMAN|MALE|FEMALE|UNISEX|M|W|U)\\b",
-              "Options": "first,remove"
+              "Pattern": "(?i)\\(([MW])\\)|\\b(MEN|WOMEN|MALE|FEMALE)\\b",
+              "Options": "first,ignorecase,remove"
             }
           },
           {
@@ -146,65 +105,30 @@
             }
           },
           {
-            "Op": "Assign",
+            "Op": "Find",
             "Input": "Genders.Clean",
-            "Output": "Product.Name",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": null
-          }
-        ]
-      },
-      {
-        "Column": "E",
-        "Actions": [
-          {
-            "Op": "Map",
-            "Input": "Text",
-            "Output": "Product.Type 2",
-            "Assign": true,
+            "Output": "COO",
+            "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Table": "Concentration"
+              "Pattern": "(?i)\\(([A-Z]{2,20})\\)\\s*$",
+              "Options": "first,remove"
             }
-          }
-        ]
-      },
-      {
-        "Column": "F",
-        "Actions": [
+          },
           {
             "Op": "Map",
-            "Input": "Text",
+            "Input": "COO",
             "Output": "Product.COO",
             "Assign": true,
-            "Condition": null,
+            "Condition": "COO.Valid==true",
             "Parameters": {
               "Table": "COO"
             }
-          }
-        ]
-      },
-      {
-        "Column": "G",
-        "Actions": [
+          },
           {
             "Op": "Assign",
-            "Input": "Text",
-            "Output": "Offer.Quantity",
-            "Assign": true,
-            "Condition": null,
-            "Parameters": null
-          }
-        ]
-      },
-      {
-        "Column": "H",
-        "Actions": [
-          {
-            "Op": "Assign",
-            "Input": "Text",
-            "Output": "Offer.Price",
+            "Input": "COO.Clean",
+            "Output": "Product.Name",
             "Assign": true,
             "Condition": null,
             "Parameters": null
@@ -214,12 +138,12 @@
     ]
   },
   "FileStructure": {
-    "DataStartRowIndex": 4,
-    "ExpectedColumnCount": 8,
-    "HeaderRowIndex": 3,
+    "DataStartRowIndex": 6,
+    "ExpectedColumnCount": 1,
+    "HeaderRowIndex": 5,
     "Detection": {
       "FileNamePatterns": [
-        "ace*.xls*"
+        "sanya*.xls*"
       ]
     }
   },
