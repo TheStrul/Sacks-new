@@ -1,4 +1,5 @@
 ﻿using System.Windows.Forms;
+using ModernWinForms.Controls;
 
 namespace SacksApp;
 
@@ -35,18 +36,18 @@ partial class CustomMessageBox
     /// </summary>
     private void InitializeComponent()
     {
-        _titleLabel = new Label();
-        _contentPanel = new Panel();
-        _messageLabel = new Label();
-        _iconLabel = new Label();
-        _buttonPanel = new FlowLayoutPanel();
-        _btnIgnore = new Button();
-        _btnAbort = new Button();
-        _btnRetry = new Button();
-        _btnNo = new Button();
-        _btnYes = new Button();
-        _btnCancel = new Button();
-        _btnOK = new Button();
+        _titleLabel = new ModernLabel();
+        _contentPanel = new ModernPanel();
+        _messageLabel = new ModernLabel();
+        _iconLabel = new ModernLabel();
+        _buttonPanel = new ModernFlowLayoutPanel();
+        _btnIgnore = new ModernButton();
+        _btnAbort = new ModernButton();
+        _btnRetry = new ModernButton();
+        _btnNo = new ModernButton();
+        _btnYes = new ModernButton();
+        _btnCancel = new ModernButton();
+        _btnOK = new ModernButton();
         _contentPanel.SuspendLayout();
         _buttonPanel.SuspendLayout();
         SuspendLayout();
@@ -225,16 +226,16 @@ partial class CustomMessageBox
 
     #endregion
 
-    private Label _titleLabel;
-    private Panel _contentPanel;
-    private Label _iconLabel;
-    private Label _messageLabel;
-    private FlowLayoutPanel _buttonPanel;
-    private Button _btnOK;
-    private Button _btnCancel;
-    private Button _btnYes;
-    private Button _btnNo;
-    private Button _btnRetry;
-    private Button _btnAbort;
-    private Button _btnIgnore;
+    private ModernLabel _titleLabel;
+    private ModernPanel _contentPanel;
+    private ModernLabel _iconLabel;
+    private ModernLabel _messageLabel;
+    private ModernFlowLayoutPanel _buttonPanel;
+    private ModernButton _btnOK;
+    private ModernButton _btnCancel;
+    private ModernButton _btnYes;
+    private ModernButton _btnNo;
+    private ModernButton _btnRetry;
+    private ModernButton _btnAbort;
+    private ModernButton _btnIgnore;
 }

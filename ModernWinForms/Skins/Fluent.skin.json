@@ -14,6 +14,14 @@
     "info": "#0078D4"
   },
   "controls": {
+    "ModernGroupBox": {
+      "states": {
+        "normal": {
+          "foreColor": "#323130",
+          "borderColor": "#8A8886"
+        }
+      }
+    },
     "ModernButton": {
       "states": {
         "normal": {
@@ -38,45 +46,181 @@
         }
       }
     },
+    "ModernCheckBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#323130",
+          "borderColor": "#8A8886"
+        },
+        "checked": {
+          "backColor": "#0078D4",
+          "foreColor": "#FFFFFF",
+          "borderColor": "#0078D4"
+        },
+        "hover": {
+          "borderColor": "#323130"
+        },
+        "disabled": {
+          "backColor": "#F3F2F1",
+          "foreColor": "#A19F9D",
+          "borderColor": "#EDEBE9"
+        }
+      }
+    },
+    "ModernRadioButton": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#323130",
+          "borderColor": "#8A8886"
+        },
+        "checked": {
+          "backColor": "#0078D4",
+          "foreColor": "#FFFFFF",
+          "borderColor": "#0078D4"
+        },
+        "hover": {
+          "borderColor": "#323130"
+        },
+        "disabled": {
+          "backColor": "#F3F2F1",
+          "foreColor": "#A19F9D",
+          "borderColor": "#EDEBE9"
+        }
+      }
+    },
+    "ModernRichTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#323130",
+          "borderColor": "#8A8886"
+        },
+        "focused": {
+          "borderColor": "#0078D4"
+        },
+        "disabled": {
+          "backColor": "#F3F2F1",
+          "foreColor": "#A19F9D",
+          "borderColor": "#EDEBE9"
+        }
+      }
+    },
+    "ModernTabControl": {
+      "states": {
+        "normal": {
+          "backColor": "#F3F3F3",
+          "foreColor": "#323130",
+          "borderColor": "#8A8886"
+        },
+        "selected": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#323130",
+          "borderColor": "#0078D4"
+        },
+        "hover": {
+          "borderColor": "#323130"
+        }
+      }
+    },
     "ModernFlowLayoutPanel": {
       "states": {
         "normal": {
-          "backColor": "#F3F3F3"
+          "backColor": "#F3F3F3",
+          "foreColor": "#323130"
         }
       }
     },
     "ModernLabel": {
       "states": {
         "normal": {
-          "backColor": "#F3F3F3"
+          "backColor": "#F3F3F3",
+          "foreColor": "#323130"
         }
       }
     },
     "ModernMenuStrip": {
       "states": {
         "normal": {
-          "backColor": "#F3F2F1"
+          "backColor": "#F3F2F1",
+          "foreColor": "#323130"
         }
       }
     },
     "ModernSplitContainer": {
       "states": {
         "normal": {
-          "backColor": "#F3F2F1"
+          "backColor": "#F3F2F1",
+          "foreColor": "#323130"
         }
       }
     },
     "ModernStatusStrip": {
       "states": {
         "normal": {
-          "backColor": "#F3F2F1"
+          "backColor": "#F3F2F1",
+          "foreColor": "#323130"
         }
       }
     },
     "ModernTableLayoutPanel": {
       "states": {
         "normal": {
-          "backColor": "#F3F3F3"
+          "backColor": "#F3F3F3",
+          "foreColor": "#323130"
+        }
+      }
+    },
+    "ModernTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#323130",
+          "borderColor": "#8A8886"
+        },
+        "focused": {
+          "borderColor": "#0078D4"
+        },
+        "disabled": {
+          "backColor": "#F3F2F1",
+          "foreColor": "#A19F9D",
+          "borderColor": "#EDEBE9"
+        }
+      }
+    },
+    "ModernComboBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#323130",
+          "borderColor": "#8A8886"
+        },
+        "hover": {
+          "borderColor": "#323130"
+        },
+        "disabled": {
+          "backColor": "#F3F2F1",
+          "foreColor": "#A19F9D",
+          "borderColor": "#EDEBE9"
+        }
+      }
+    },
+    "ModernDataGridView": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#323130",
+          "borderColor": "#8A8886"
+        }
+      }
+    },
+    "ModernPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#F3F3F3",
+          "foreColor": "#323130",
+          "borderColor": "#8A8886"
         }
       }
     }

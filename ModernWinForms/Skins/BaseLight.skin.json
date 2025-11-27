@@ -12,5 +12,217 @@
     "danger": "#D13438",
     "error": "#D13438",
     "info": "#0078D4"
+  },
+  "controls": {
+    "ModernGroupBox": {
+      "states": {
+        "normal": {
+          "foreColor": "#0D1117",
+          "borderColor": "#E0E6ED"
+        }
+      }
+    },
+    "ModernCheckBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#0D1117",
+          "borderColor": "#E0E6ED"
+        },
+        "checked": {
+          "backColor": "#0078D4",
+          "foreColor": "#FFFFFF",
+          "borderColor": "#0078D4"
+        },
+        "hover": {
+          "borderColor": "#0078D4"
+        },
+        "disabled": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#8C959F",
+          "borderColor": "#E0E6ED"
+        }
+      }
+    },
+    "ModernRadioButton": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#0D1117",
+          "borderColor": "#E0E6ED"
+        },
+        "checked": {
+          "backColor": "#0078D4",
+          "foreColor": "#FFFFFF",
+          "borderColor": "#0078D4"
+        },
+        "hover": {
+          "borderColor": "#0078D4"
+        },
+        "disabled": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#8C959F",
+          "borderColor": "#E0E6ED"
+        }
+      }
+    },
+    "ModernRichTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#0D1117",
+          "borderColor": "#E0E6ED"
+        },
+        "focused": {
+          "borderColor": "#0078D4"
+        },
+        "disabled": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#8C959F",
+          "borderColor": "#E0E6ED"
+        }
+      }
+    },
+    "ModernTabControl": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#0D1117",
+          "borderColor": "#E0E6ED"
+        },
+        "selected": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#0D1117",
+          "borderColor": "#0078D4"
+        },
+        "hover": {
+          "borderColor": "#0078D4"
+        }
+      }
+    },
+    "ModernLabel": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#0D1117"
+        }
+      }
+    },
+    "ModernTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#0D1117",
+          "borderColor": "#E0E6ED"
+        },
+        "focused": {
+          "borderColor": "#0078D4"
+        },
+        "disabled": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#8C959F",
+          "borderColor": "#E0E6ED"
+        }
+      }
+    },
+    "ModernComboBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#0D1117",
+          "borderColor": "#E0E6ED"
+        },
+        "hover": {
+          "borderColor": "#0078D4"
+        },
+        "disabled": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#8C959F",
+          "borderColor": "#E0E6ED"
+        }
+      }
+    },
+    "ModernDataGridView": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#0D1117",
+          "borderColor": "#E0E6ED"
+        }
+      }
+    },
+    "ModernPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#0D1117",
+          "borderColor": "#E0E6ED"
+        }
+      }
+    },
+    "ModernButton": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#0D1117",
+          "borderColor": "#E0E6ED"
+        },
+        "hover": {
+          "backColor": "#F3F2F1",
+          "foreColor": "#0D1117",
+          "borderColor": "#0078D4"
+        },
+        "pressed": {
+          "backColor": "#0078D4",
+          "foreColor": "#FFFFFF",
+          "borderColor": "#0078D4"
+        },
+        "disabled": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#8C959F",
+          "borderColor": "#E0E6ED"
+        }
+      }
+    },
+    "ModernMenuStrip": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#0D1117"
+        }
+      }
+    },
+    "ModernStatusStrip": {
+      "states": {
+        "normal": {
+          "backColor": "#F3F2F1",
+          "foreColor": "#0D1117"
+        }
+      }
+    },
+    "ModernFlowLayoutPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#0D1117"
+        }
+      }
+    },
+    "ModernTableLayoutPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#0D1117"
+        }
+      }
+    },
+    "ModernSplitContainer": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFBFC",
+          "foreColor": "#0D1117"
+        }
+      }
+    }
   }
 }

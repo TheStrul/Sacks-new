@@ -14,9 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="Skins\*.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <EmbeddedResource Include="Skins\*.json" />
   </ItemGroup>
 
 </Project>

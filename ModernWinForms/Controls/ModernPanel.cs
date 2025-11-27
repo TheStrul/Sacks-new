@@ -5,20 +5,17 @@ using ModernWinForms.Theming;
 namespace ModernWinForms.Controls;
 
 /// <summary>
-/// Modern panel control with rounded corners, shadow, and theme support.
+/// Modern panel control with rounded corners and theme support.
 /// </summary>
 [ToolboxItem(true)]
 [DesignerCategory("Code")]
-[Description("Modern panel control with rounded corners, shadow, and theme support.")]
+[Description("Modern panel control with rounded corners and theme support.")]
 public class ModernPanel : Panel
 {
     private ControlStyle _controlStyle = new();
     private GraphicsPath? _cachedPath;
     private Rectangle _cachedRect;
     private int _cachedRadius;
-    private bool _showShadow = true;
-    private int _shadowDepth = 4;
-    private Color _shadowColor = Color.FromArgb(50, 0, 0, 0);
 
     /// <summary>
     /// Initializes a new instance of the ModernPanel class.
@@ -36,63 +33,6 @@ public class ModernPanel : Panel
         {
             ThemeManager.ThemeChanged += OnThemeChanged;
             UpdateStyleFromSkin();
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets whether to show shadow effect.
-    /// </summary>
-    [Category("Appearance")]
-    [Description("Indicates whether to show shadow effect.")]
-    [DefaultValue(true)]
-    public bool ShowShadow
-    {
-        get => _showShadow;
-        set
-        {
-            if (_showShadow != value)
-            {
-                _showShadow = value;
-                Invalidate();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets the shadow depth in pixels.
-    /// </summary>
-    [Category("Appearance")]
-    [Description("The depth of the shadow effect in pixels.")]
-    [DefaultValue(4)]
-    public int ShadowDepth
-    {
-        get => _shadowDepth;
-        set
-        {
-            if (_shadowDepth != value)
-            {
-                _shadowDepth = Math.Max(0, value);
-                Invalidate();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Gets or sets the shadow color.
-    /// </summary>
-    [Category("Appearance")]
-    [Description("The color of the shadow effect.")]
-    [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
-    public Color ShadowColor
-    {
-        get => _shadowColor;
-        set
-        {
-            if (_shadowColor != value)
-            {
-                _shadowColor = value;
-                Invalidate();
-            }
         }
     }
 
@@ -130,11 +70,6 @@ public class ModernPanel : Panel
         g.SmoothingMode = SmoothingMode.AntiAlias;
 
         var panelRect = ClientRectangle;
-        if (_showShadow && _shadowDepth > 0)
-        {
-            panelRect = new Rectangle(0, 0, Width - _shadowDepth, Height - _shadowDepth);
-            DrawShadow(g, panelRect);
-        }
 
         // Draw panel background
         var path = GetOrCreateCachedPath(panelRect, _controlStyle.CornerRadius);
@@ -153,22 +88,7 @@ public class ModernPanel : Panel
         }
     }
 
-    private void DrawShadow(Graphics g, Rectangle rect)
-    {
-        for (var i = 0; i < _shadowDepth; i++)
-        {
-            var alpha = (int)(_shadowColor.A * (1.0 - (i / (double)_shadowDepth)));
-            var shadowRect = new Rectangle(
-                rect.X + i + 2,
-                rect.Y + i + 2,
-                rect.Width,
-                rect.Height);
 
-            using var shadowPath = GraphicsHelper.CreateRoundedRectangle(shadowRect, _controlStyle.CornerRadius);
-            using var shadowBrush = new SolidBrush(Color.FromArgb(alpha, _shadowColor));
-            g.FillPath(shadowBrush, shadowPath);
-        }
-    }
 
     private GraphicsPath GetOrCreateCachedPath(Rectangle rect, int radius)
     {

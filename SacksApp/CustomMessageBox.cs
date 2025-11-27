@@ -100,15 +100,10 @@ public partial class CustomMessageBox : Form
 
         InitializeComponent();
 
-        // Apply theme colors
+        // Apply theme colors to form (Modern controls auto-theme themselves)
         BackColor = BackgroundColor;
         _titleLabel.Font = new Font(_themeFont.FontFamily, 11F, FontStyle.Bold);
-        _titleLabel.ForeColor = TextColor;
-        _titleLabel.BackColor = SurfaceColor;
-        _contentPanel.BackColor = SurfaceColor;
         _messageLabel.Font = new Font(_themeFont.FontFamily, 10F);
-        _messageLabel.ForeColor = TextColor;
-        _buttonPanel.BackColor = SurfaceColor;
 
         // Enable double buffering
         SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | 

@@ -23,8 +23,5 @@ public sealed class StateStyle
     /// </summary>
     [JsonPropertyName("borderColor")] public string? BorderColor { get; set; }
     
-    /// <summary>
-    /// Optional shadow effect for this state.
-    /// </summary>
-    [JsonPropertyName("shadow")] public ShadowStyle? Shadow { get; set; }
+
 }

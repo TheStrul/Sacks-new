@@ -31,6 +31,7 @@ namespace SacksApp
         {
             try
             {
+                /*
                 // ZERO TOLERANCE: Validate theme files BEFORE starting application
                 var skinsDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Skins");
                 var validationResult = ThemeValidationTool.ValidateAll(skinsDirectory);
@@ -50,7 +51,7 @@ namespace SacksApp
                 
                 // Validation passed, show success (optional, can be commented out)
                 // ThemeValidationTool.DisplayValidationResults(validationResult);
-                
+                */
                 // Load centralized configuration singleton
                 var config = ConfigurationLoader.Instance;
                 

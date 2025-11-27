@@ -52,6 +52,84 @@
           "borderColor": "#A6E22E"
         }
       }
+    },
+    "ModernCheckBox": {
+      "states": {
+        "normal": {
+          "backColor": "#3E3D32",
+          "foreColor": "#F8F8F2",
+          "borderColor": "#75715E"
+        },
+        "checked": {
+          "backColor": "#F92672",
+          "foreColor": "#272822",
+          "borderColor": "#FD971F"
+        },
+        "hover": {
+          "borderColor": "#A6E22E"
+        },
+        "disabled": {
+          "backColor": "#2D2C24",
+          "foreColor": "#75715E",
+          "borderColor": "#3E3D32"
+        }
+      }
+    },
+    "ModernRadioButton": {
+      "states": {
+        "normal": {
+          "backColor": "#3E3D32",
+          "foreColor": "#F8F8F2",
+          "borderColor": "#75715E"
+        },
+        "checked": {
+          "backColor": "#F92672",
+          "foreColor": "#272822",
+          "borderColor": "#FD971F"
+        },
+        "hover": {
+          "borderColor": "#A6E22E"
+        },
+        "disabled": {
+          "backColor": "#2D2C24",
+          "foreColor": "#75715E",
+          "borderColor": "#3E3D32"
+        }
+      }
+    },
+    "ModernRichTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#272822",
+          "foreColor": "#F8F8F2",
+          "borderColor": "#75715E"
+        },
+        "focused": {
+          "borderColor": "#A6E22E"
+        },
+        "disabled": {
+          "backColor": "#272822",
+          "foreColor": "#75715E",
+          "borderColor": "#3E3D32"
+        }
+      }
+    },
+    "ModernTabControl": {
+      "states": {
+        "normal": {
+          "backColor": "#272822",
+          "foreColor": "#F8F8F2",
+          "borderColor": "#75715E"
+        },
+        "selected": {
+          "backColor": "#3E3D32",
+          "foreColor": "#F8F8F2",
+          "borderColor": "#F92672"
+        },
+        "hover": {
+          "borderColor": "#A6E22E"
+        }
+      }
     }
   }
 }

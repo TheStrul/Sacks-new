@@ -9,6 +9,14 @@
     "border": "#93A1A1"
   },
   "controls": {
+    "ModernGroupBox": {
+      "states": {
+        "normal": {
+          "foreColor": "#657B83",
+          "borderColor": "#93A1A1"
+        }
+      }
+    },
     "ModernButton": {
       "states": {
         "normal": {
@@ -30,6 +38,84 @@
           "backColor": "#FDF6E3",
           "foreColor": "#93A1A1",
           "borderColor": "#EEE8D5"
+        }
+      }
+    },
+    "ModernCheckBox": {
+      "states": {
+        "normal": {
+          "backColor": "#EEE8D5",
+          "foreColor": "#657B83",
+          "borderColor": "#93A1A1"
+        },
+        "checked": {
+          "backColor": "#268BD2",
+          "foreColor": "#FDF6E3",
+          "borderColor": "#2AA198"
+        },
+        "hover": {
+          "borderColor": "#268BD2"
+        },
+        "disabled": {
+          "backColor": "#FDF6E3",
+          "foreColor": "#93A1A1",
+          "borderColor": "#EEE8D5"
+        }
+      }
+    },
+    "ModernRadioButton": {
+      "states": {
+        "normal": {
+          "backColor": "#EEE8D5",
+          "foreColor": "#657B83",
+          "borderColor": "#93A1A1"
+        },
+        "checked": {
+          "backColor": "#268BD2",
+          "foreColor": "#FDF6E3",
+          "borderColor": "#2AA198"
+        },
+        "hover": {
+          "borderColor": "#268BD2"
+        },
+        "disabled": {
+          "backColor": "#FDF6E3",
+          "foreColor": "#93A1A1",
+          "borderColor": "#EEE8D5"
+        }
+      }
+    },
+    "ModernRichTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FDF6E3",
+          "foreColor": "#657B83",
+          "borderColor": "#93A1A1"
+        },
+        "focused": {
+          "borderColor": "#268BD2"
+        },
+        "disabled": {
+          "backColor": "#FDF6E3",
+          "foreColor": "#93A1A1",
+          "borderColor": "#EEE8D5"
+        }
+      }
+    },
+    "ModernTabControl": {
+      "states": {
+        "normal": {
+          "backColor": "#FDF6E3",
+          "foreColor": "#657B83",
+          "borderColor": "#93A1A1"
+        },
+        "selected": {
+          "backColor": "#EEE8D5",
+          "foreColor": "#657B83",
+          "borderColor": "#268BD2"
+        },
+        "hover": {
+          "borderColor": "#268BD2"
         }
       }
     }

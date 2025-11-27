@@ -24,6 +24,30 @@ internal static class SkinInheritanceExtensions
         // Merge spacing
         merged.Spacing = derived.Spacing ?? baseTheme.Spacing;
 
+        // Merge palette mappings - start with base mappings, overlay derived
+        if (baseTheme.PaletteMappings != null || derived.PaletteMappings != null)
+        {
+            merged.PaletteMappings = new Dictionary<string, PaletteMapping>();
+            
+            // Copy all base palette mappings
+            if (baseTheme.PaletteMappings != null)
+            {
+                foreach (var (controlName, mapping) in baseTheme.PaletteMappings)
+                {
+                    merged.PaletteMappings[controlName] = DeepClonePaletteMapping(mapping);
+                }
+            }
+            
+            // Override with derived palette mappings
+            if (derived.PaletteMappings != null)
+            {
+                foreach (var (controlName, mapping) in derived.PaletteMappings)
+                {
+                    merged.PaletteMappings[controlName] = DeepClonePaletteMapping(mapping);
+                }
+            }
+        }
+
         // Merge controls
         merged.Controls = new Dictionary<string, ControlStyle>(baseTheme.Controls);
         foreach (var (controlName, controlStyle) in derived.Controls)
@@ -136,8 +160,7 @@ internal static class SkinInheritanceExtensions
         {
             BackColor = derived.BackColor ?? baseState.BackColor,
             ForeColor = derived.ForeColor ?? baseState.ForeColor,
-            BorderColor = derived.BorderColor ?? baseState.BorderColor,
-            Shadow = derived.Shadow ?? baseState.Shadow
+            BorderColor = derived.BorderColor ?? baseState.BorderColor
         };
     }
 
@@ -146,6 +169,26 @@ internal static class SkinInheritanceExtensions
         // Use JSON serialization for deep cloning
         var json = JsonSerializer.Serialize(source);
         return JsonSerializer.Deserialize<ControlStyle>(json) ?? new ControlStyle();
+    }
+
+    private static PaletteMapping DeepClonePaletteMapping(PaletteMapping source)
+    {
+        var cloned = new PaletteMapping
+        {
+            States = new Dictionary<string, PaletteStateMapping>(source.States.Count)
+        };
+        
+        foreach (var (stateName, stateMapping) in source.States)
+        {
+            cloned.States[stateName] = new PaletteStateMapping
+            {
+                BackColor = stateMapping.BackColor,
+                ForeColor = stateMapping.ForeColor,
+                BorderColor = stateMapping.BorderColor
+            };
+        }
+        
+        return cloned;
     }
 
     private static ControlStateColors MergeControlStateColors(ControlStateColors derived, ControlStateColors baseColors)

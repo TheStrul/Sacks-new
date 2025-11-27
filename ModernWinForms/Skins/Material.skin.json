@@ -9,6 +9,14 @@
     "border": "#E0E0E0"
   },
   "controls": {
+    "ModernGroupBox": {
+      "states": {
+        "normal": {
+          "foreColor": "#212121",
+          "borderColor": "#E0E0E0"
+        }
+      }
+    },
     "ModernButton": {
       "states": {
         "normal": {
@@ -30,6 +38,184 @@
           "backColor": "#E0E0E0",
           "foreColor": "#9E9E9E",
           "borderColor": "#E0E0E0"
+        }
+      }
+    },
+    "ModernCheckBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#212121",
+          "borderColor": "#E0E0E0"
+        },
+        "checked": {
+          "backColor": "#2196F3",
+          "foreColor": "#FFFFFF",
+          "borderColor": "#2196F3"
+        },
+        "hover": {
+          "borderColor": "#2196F3"
+        },
+        "disabled": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#9E9E9E",
+          "borderColor": "#E0E0E0"
+        }
+      }
+    },
+    "ModernRadioButton": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#212121",
+          "borderColor": "#E0E0E0"
+        },
+        "checked": {
+          "backColor": "#2196F3",
+          "foreColor": "#FFFFFF",
+          "borderColor": "#2196F3"
+        },
+        "hover": {
+          "borderColor": "#2196F3"
+        },
+        "disabled": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#9E9E9E",
+          "borderColor": "#E0E0E0"
+        }
+      }
+    },
+    "ModernRichTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#212121",
+          "borderColor": "#E0E0E0"
+        },
+        "focused": {
+          "borderColor": "#2196F3"
+        },
+        "disabled": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#9E9E9E",
+          "borderColor": "#E0E0E0"
+        }
+      }
+    },
+    "ModernTabControl": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#212121",
+          "borderColor": "#E0E0E0"
+        },
+        "selected": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#212121",
+          "borderColor": "#2196F3"
+        },
+        "hover": {
+          "borderColor": "#2196F3"
+        }
+      }
+    },
+    "ModernTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#212121",
+          "borderColor": "#E0E0E0"
+        },
+        "focused": {
+          "borderColor": "#2196F3"
+        },
+        "disabled": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#9E9E9E",
+          "borderColor": "#E0E0E0"
+        }
+      }
+    },
+    "ModernComboBox": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#212121",
+          "borderColor": "#E0E0E0"
+        },
+        "hover": {
+          "borderColor": "#2196F3"
+        },
+        "disabled": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#9E9E9E",
+          "borderColor": "#E0E0E0"
+        }
+      }
+    },
+    "ModernDataGridView": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#212121",
+          "borderColor": "#E0E0E0"
+        }
+      }
+    },
+    "ModernPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#212121",
+          "borderColor": "#E0E0E0"
+        }
+      }
+    },
+    "ModernLabel": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#212121"
+        }
+      }
+    },
+    "ModernMenuStrip": {
+      "states": {
+        "normal": {
+          "backColor": "#FFFFFF",
+          "foreColor": "#212121"
+        }
+      }
+    },
+    "ModernStatusStrip": {
+      "states": {
+        "normal": {
+          "backColor": "#F5F5F5",
+          "foreColor": "#212121"
+        }
+      }
+    },
+    "ModernFlowLayoutPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#212121"
+        }
+      }
+    },
+    "ModernTableLayoutPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#212121"
+        }
+      }
+    },
+    "ModernSplitContainer": {
+      "states": {
+        "normal": {
+          "backColor": "#FAFAFA",
+          "foreColor": "#212121"
         }
       }
     }

@@ -12,5 +12,202 @@
     "danger": "#FF0000",
     "error": "#FF0000",
     "info": "#00FFFF"
+  },
+  "controls": {
+    "ModernGroupBox": {
+      "states": {
+        "normal": {
+          "foreColor": "#00FFFF",
+          "borderColor": "#FF00FF"
+        }
+      }
+    },
+    "ModernButton": {
+      "states": {
+        "normal": {
+          "backColor": "#1A1F3A",
+          "foreColor": "#00FFFF",
+          "borderColor": "#FF00FF"
+        },
+        "hover": {
+          "backColor": "#FF00FF",
+          "foreColor": "#0A0E27",
+          "borderColor": "#FF00FF"
+        },
+        "pressed": {
+          "backColor": "#00FFFF",
+          "foreColor": "#0A0E27",
+          "borderColor": "#00FFFF"
+        },
+        "disabled": {
+          "backColor": "#0A0E27",
+          "foreColor": "#586E75",
+          "borderColor": "#1A1F3A"
+        }
+      }
+    },
+    "ModernLabel": {
+      "states": {
+        "normal": {
+          "backColor": "#0A0E27",
+          "foreColor": "#00FFFF"
+        }
+      }
+    },
+    "ModernTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#1A1F3A",
+          "foreColor": "#00FFFF",
+          "borderColor": "#FF00FF"
+        },
+        "focused": {
+          "borderColor": "#00FFFF"
+        },
+        "disabled": {
+          "backColor": "#0A0E27",
+          "foreColor": "#586E75",
+          "borderColor": "#1A1F3A"
+        }
+      }
+    },
+    "ModernComboBox": {
+      "states": {
+        "normal": {
+          "backColor": "#1A1F3A",
+          "foreColor": "#00FFFF",
+          "borderColor": "#FF00FF"
+        },
+        "hover": {
+          "borderColor": "#00FFFF"
+        },
+        "disabled": {
+          "backColor": "#0A0E27",
+          "foreColor": "#586E75",
+          "borderColor": "#1A1F3A"
+        }
+      }
+    },
+    "ModernDataGridView": {
+      "states": {
+        "normal": {
+          "backColor": "#1A1F3A",
+          "foreColor": "#00FFFF",
+          "borderColor": "#FF00FF"
+        }
+      }
+    },
+    "ModernPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#0A0E27",
+          "foreColor": "#00FFFF",
+          "borderColor": "#FF00FF"
+        }
+      }
+    },
+    "ModernMenuStrip": {
+      "states": {
+        "normal": {
+          "backColor": "#1A1F3A",
+          "foreColor": "#00FFFF"
+        }
+      }
+    },
+    "ModernStatusStrip": {
+      "states": {
+        "normal": {
+          "backColor": "#1A1F3A",
+          "foreColor": "#00FFFF"
+        }
+      }
+    },
+    "ModernCheckBox": {
+      "states": {
+        "normal": {
+          "backColor": "#1A1F3A",
+          "foreColor": "#00FFFF",
+          "borderColor": "#FF00FF"
+        },
+        "checked": {
+          "backColor": "#FF00FF",
+          "foreColor": "#0A0E27",
+          "borderColor": "#FF00FF"
+        },
+        "hover": {
+          "borderColor": "#00FFFF"
+        }
+      }
+    },
+    "ModernRadioButton": {
+      "states": {
+        "normal": {
+          "backColor": "#1A1F3A",
+          "foreColor": "#00FFFF",
+          "borderColor": "#FF00FF"
+        },
+        "checked": {
+          "backColor": "#FF00FF",
+          "foreColor": "#0A0E27",
+          "borderColor": "#FF00FF"
+        },
+        "hover": {
+          "borderColor": "#00FFFF"
+        }
+      }
+    },
+    "ModernRichTextBox": {
+      "states": {
+        "normal": {
+          "backColor": "#1A1F3A",
+          "foreColor": "#00FFFF",
+          "borderColor": "#FF00FF"
+        },
+        "focused": {
+          "borderColor": "#00FFFF"
+        }
+      }
+    },
+    "ModernTabControl": {
+      "states": {
+        "normal": {
+          "backColor": "#0A0E27",
+          "foreColor": "#00FFFF",
+          "borderColor": "#FF00FF"
+        },
+        "selected": {
+          "backColor": "#1A1F3A",
+          "foreColor": "#00FFFF",
+          "borderColor": "#00FFFF"
+        },
+        "hover": {
+          "borderColor": "#00FFFF"
+        }
+      }
+    },
+    "ModernFlowLayoutPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#0A0E27",
+          "foreColor": "#00FFFF"
+        }
+      }
+    },
+    "ModernTableLayoutPanel": {
+      "states": {
+        "normal": {
+          "backColor": "#0A0E27",
+          "foreColor": "#00FFFF"
+        }
+      }
+    },
+    "ModernSplitContainer": {
+      "states": {
+        "normal": {
+          "backColor": "#0A0E27",
+          "foreColor": "#00FFFF"
+        }
+      }
+    }
   }
 }

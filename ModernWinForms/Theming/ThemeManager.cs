@@ -10,9 +10,9 @@ namespace ModernWinForms.Theming;
 public static class ThemeManager
 {
     private static ThemingConfiguration _config = null!;
-    private static readonly string _configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Skins", "skins.json");
+    private static readonly string _embeddedResourcePrefix = "ModernWinForms.Skins.";
     private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
-    private static readonly SemaphoreSlim _configLock = new(1, 1);
+    private static SemaphoreSlim _configLock = new(1, 1);
 
     static ThemeManager()
     {
@@ -417,13 +417,13 @@ public static class ThemeManager
         {
             bool changed = false;
             
-            if (_config.CurrentTheme != themeName)
+            if (!string.Equals(_config.CurrentTheme, themeName, StringComparison.OrdinalIgnoreCase))
             {
                 _config.CurrentTheme = themeName;
                 changed = true;
             }
             
-            if (_config.CurrentSkin != skinName)
+            if (!string.Equals(_config.CurrentSkin, skinName, StringComparison.OrdinalIgnoreCase))
             {
                 _config.CurrentSkin = skinName;
                 changed = true;
@@ -532,99 +532,117 @@ public static class ThemeManager
         try
         {
             ThemingConfiguration? loadedConfig = null;
+            var assembly = typeof(ThemeManager).Assembly;
 
-            // Load base configuration (version, currentTheme, and currentSkin)
-            if (!File.Exists(_configPath))
+            // Load base configuration (version, currentTheme, and currentSkin) from embedded resource
+            var configResourceName = $"{_embeddedResourcePrefix}skins.json";
+            using (var stream = assembly.GetManifestResourceStream(configResourceName))
             {
-                throw new InvalidOperationException($"Theme configuration file not found: {_configPath}. Cannot initialize theme system.");
-            }
+                if (stream == null)
+                {
+                    throw new InvalidOperationException($"Theme configuration resource not found: {configResourceName}. Cannot initialize theme system.");
+                }
 
-            var json = File.ReadAllText(_configPath);
-            loadedConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json);
-            
-            if (loadedConfig == null)
-            {
-                throw new InvalidOperationException($"Failed to parse theme configuration from: {_configPath}");
+                using var reader = new StreamReader(stream);
+                var json = reader.ReadToEnd();
+                loadedConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json);
+                
+                if (loadedConfig == null)
+                {
+                    throw new InvalidOperationException($"Failed to parse theme configuration from embedded resource: {configResourceName}");
+                }
             }
 
             var newConfig = loadedConfig;
 
-            var skinsDir = Path.GetDirectoryName(_configPath);
-            if (skinsDir != null && Directory.Exists(skinsDir))
+            // Load all themes and skins from embedded resources
+            if (true) // Always load from embedded resources
             {
-                // Load theme files (*.theme.json)
-                var themeFiles = Directory.GetFiles(skinsDir, "*.theme.json");
-                foreach (var themeFile in themeFiles)
+                // Load theme files from embedded resources (*.theme.json)
+                var themeResourceNames = assembly.GetManifestResourceNames()
+                    .Where(name => name.StartsWith(_embeddedResourcePrefix) && name.EndsWith(".theme.json"))
+                    .ToArray();
+                
+                foreach (var resourceName in themeResourceNames)
                 {
                     try
                     {
-                        var themeJson = File.ReadAllText(themeFile);
-                        var themeDef = JsonSerializer.Deserialize<ThemeDefinition>(themeJson);
-                        if (themeDef != null)
+                        using var stream = assembly.GetManifestResourceStream(resourceName);
+                        if (stream != null)
                         {
-                            // Use filename without extension as theme name (e.g., "Material.theme.json" -> "Material")
-                            var themeName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(themeFile));
-                            
-                            // Validate theme
-                            var errors = ThemeValidator.ValidateTheme(themeName, themeDef);
-                            if (errors.Count > 0)
+                            using var reader = new StreamReader(stream);
+                            var themeJson = reader.ReadToEnd();
+                            var themeDef = JsonSerializer.Deserialize<ThemeDefinition>(themeJson);
+                            if (themeDef != null)
                             {
-                                RaiseValidationErrors($"Theme '{themeName}' ({themeFile})", errors);
-                                if (!DiagnosticsEnabled)
+                                // Extract theme name: "ModernWinForms.Skins.Fluent.theme.json" -> "Fluent"
+                                var themeName = resourceName
+                                    .Substring(_embeddedResourcePrefix.Length)
+                                    .Replace(".theme.json", "");
+                                
+                                // Validate theme
+                                var errors = ThemeValidator.ValidateTheme(themeName, themeDef);
+                                if (errors.Count > 0)
                                 {
-                                    continue; // Skip invalid themes in production
+                                    RaiseValidationErrors($"Theme '{themeName}' (embedded resource: {resourceName})", errors);
+                                    if (!DiagnosticsEnabled)
+                                    {
+                                        continue; // Skip invalid themes in production
+                                    }
                                 }
+                                
+                                newConfig.Themes[themeName] = themeDef;
                             }
-                            
-                            newConfig.Themes[themeName] = themeDef;
                         }
                     }
                     catch (JsonException ex)
                     {
-                        RaiseValidationError($"Theme file '{themeFile}': Invalid JSON - {ex.Message}");
-                        // Skip invalid theme files
-                    }
-                    catch (IOException)
-                    {
-                        // Skip inaccessible theme files
+                        RaiseValidationError($"Theme resource '{resourceName}': Invalid JSON - {ex.Message}");
+                        // Skip invalid theme resources
                     }
                 }
 
-                // Load individual skin files (*.skin.json)
-                var skinFiles = Directory.GetFiles(skinsDir, "*.skin.json");
-                foreach (var skinFile in skinFiles)
+                // Load individual skin files from embedded resources (*.skin.json)
+                var skinResourceNames = assembly.GetManifestResourceNames()
+                    .Where(name => name.StartsWith(_embeddedResourcePrefix) && name.EndsWith(".skin.json"))
+                    .ToArray();
+                
+                foreach (var resourceName in skinResourceNames)
                 {
                     try
                     {
-                        var skinJson = File.ReadAllText(skinFile);
-                        var skinDef = JsonSerializer.Deserialize<SkinDefinition>(skinJson);
-                        if (skinDef != null)
+                        using var stream = assembly.GetManifestResourceStream(resourceName);
+                        if (stream != null)
                         {
-                            // Use filename without extension as skin name (e.g., "Light.skin.json" -> "Light")
-                            var skinName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(skinFile));
-                            
-                            // Validate skin
-                            var errors = ThemeValidator.ValidateSkin(skinName, skinDef);
-                            if (errors.Count > 0)
+                            using var reader = new StreamReader(stream);
+                            var skinJson = reader.ReadToEnd();
+                            var skinDef = JsonSerializer.Deserialize<SkinDefinition>(skinJson);
+                            if (skinDef != null)
                             {
-                                RaiseValidationErrors($"Skin '{skinName}' ({skinFile})", errors);
-                                if (!DiagnosticsEnabled)
+                                // Extract skin name: "ModernWinForms.Skins.Fluent.skin.json" -> "Fluent"
+                                var skinName = resourceName
+                                    .Substring(_embeddedResourcePrefix.Length)
+                                    .Replace(".skin.json", "");
+                                
+                                // Validate skin
+                                var errors = ThemeValidator.ValidateSkin(skinName, skinDef);
+                                if (errors.Count > 0)
                                 {
-                                    continue; // Skip invalid skins in production
+                                    RaiseValidationErrors($"Skin '{skinName}' (embedded resource: {resourceName})", errors);
+                                    if (!DiagnosticsEnabled)
+                                    {
+                                        continue; // Skip invalid skins in production
+                                    }
                                 }
+                                
+                                newConfig.Skins[skinName] = skinDef;
                             }
-                            
-                            newConfig.Skins[skinName] = skinDef;
                         }
                     }
                     catch (JsonException ex)
                     {
-                        RaiseValidationError($"Skin file '{skinFile}': Invalid JSON - {ex.Message}");
-                        // Skip invalid skin files
-                    }
-                    catch (IOException)
-                    {
-                        // Skip inaccessible skin files
+                        RaiseValidationError($"Skin resource '{resourceName}': Invalid JSON - {ex.Message}");
+                        // Skip invalid skin resources
                     }
                 }
 
@@ -637,11 +655,11 @@ public static class ThemeManager
         }
         catch (IOException ex)
         {
-            throw new InvalidOperationException($"Failed to load theme configuration due to I/O error: {_configPath}", ex);
+            throw new InvalidOperationException($"Failed to load theme configuration due to I/O error reading embedded resources.", ex);
         }
         catch (UnauthorizedAccessException ex)
         {
-            throw new InvalidOperationException($"Access denied when loading theme configuration: {_configPath}", ex);
+            throw new InvalidOperationException($"Access denied when loading theme configuration from embedded resources.", ex);
         }
     }
 
@@ -655,70 +673,92 @@ public static class ThemeManager
         await _configLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            // Load base configuration (version, currentTheme, and currentSkin)
-            if (!File.Exists(_configPath))
-            {
-                throw new InvalidOperationException($"Theme configuration file not found: {_configPath}. Cannot reload theme system.");
-            }
-
-            var json = await File.ReadAllTextAsync(_configPath, cancellationToken).ConfigureAwait(false);
-            var loadedConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json);
+            // Load base configuration (version, currentTheme, and currentSkin) from embedded resource
+            var assembly = typeof(ThemeManager).Assembly;
+            var configResourceName = $"{_embeddedResourcePrefix}skins.json";
             
-            if (loadedConfig == null)
+            ThemingConfiguration? loadedConfig;
+            using (var stream = assembly.GetManifestResourceStream(configResourceName))
             {
-                throw new InvalidOperationException($"Failed to parse theme configuration from: {_configPath}");
+                if (stream == null)
+                {
+                    throw new InvalidOperationException($"Theme configuration resource not found: {configResourceName}. Cannot reload theme system.");
+                }
+
+                using var reader = new StreamReader(stream);
+                var json = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+                loadedConfig = JsonSerializer.Deserialize<ThemingConfiguration>(json);
+                
+                if (loadedConfig == null)
+                {
+                    throw new InvalidOperationException($"Failed to parse theme configuration from embedded resource: {configResourceName}");
+                }
             }
 
             var newConfig = loadedConfig;
 
-            var skinsDir = Path.GetDirectoryName(_configPath);
-            if (skinsDir != null && Directory.Exists(skinsDir))
+            // Always load from embedded resources
+            if (true)
             {
-                // Load theme files (*.theme.json)
-                var themeFiles = Directory.GetFiles(skinsDir, "*.theme.json");
-                foreach (var themeFile in themeFiles)
+                // Load theme files from embedded resources (*.theme.json)
+                var themeResourceNames = assembly.GetManifestResourceNames()
+                    .Where(name => name.StartsWith(_embeddedResourcePrefix) && name.EndsWith(".theme.json"))
+                    .ToArray();
+                
+                foreach (var resourceName in themeResourceNames)
                 {
                     try
                     {
-                        var themeJson = await File.ReadAllTextAsync(themeFile, cancellationToken).ConfigureAwait(false);
-                        var themeDef = JsonSerializer.Deserialize<ThemeDefinition>(themeJson);
-                        if (themeDef != null)
+                        using var stream = assembly.GetManifestResourceStream(resourceName);
+                        if (stream != null)
                         {
-                            var themeName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(themeFile));
-                            newConfig.Themes[themeName] = themeDef;
+                            using var reader = new StreamReader(stream);
+                            var themeJson = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+                            var themeDef = JsonSerializer.Deserialize<ThemeDefinition>(themeJson);
+                            if (themeDef != null)
+                            {
+                                // Extract theme name: "ModernWinForms.Skins.Fluent.theme.json" -> "Fluent"
+                                var themeName = resourceName
+                                    .Substring(_embeddedResourcePrefix.Length)
+                                    .Replace(".theme.json", "");
+                                newConfig.Themes[themeName] = themeDef;
+                            }
                         }
                     }
                     catch (JsonException)
                     {
-                        // Skip invalid theme files
-                    }
-                    catch (IOException)
-                    {
-                        // Skip inaccessible theme files
+                        // Skip invalid theme resources
                     }
                 }
 
-                // Load individual skin files (*.skin.json)
-                var skinFiles = Directory.GetFiles(skinsDir, "*.skin.json");
-                foreach (var skinFile in skinFiles)
+                // Load individual skin files from embedded resources (*.skin.json)
+                var skinResourceNames = assembly.GetManifestResourceNames()
+                    .Where(name => name.StartsWith(_embeddedResourcePrefix) && name.EndsWith(".skin.json"))
+                    .ToArray();
+                
+                foreach (var resourceName in skinResourceNames)
                 {
                     try
                     {
-                        var skinJson = await File.ReadAllTextAsync(skinFile, cancellationToken).ConfigureAwait(false);
-                        var skinDef = JsonSerializer.Deserialize<SkinDefinition>(skinJson);
-                        if (skinDef != null)
+                        using var stream = assembly.GetManifestResourceStream(resourceName);
+                        if (stream != null)
                         {
-                            var skinName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(skinFile));
-                            newConfig.Skins[skinName] = skinDef;
+                            using var reader = new StreamReader(stream);
+                            var skinJson = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+                            var skinDef = JsonSerializer.Deserialize<SkinDefinition>(skinJson);
+                            if (skinDef != null)
+                            {
+                                // Extract skin name: "ModernWinForms.Skins.Fluent.skin.json" -> "Fluent"
+                                var skinName = resourceName
+                                    .Substring(_embeddedResourcePrefix.Length)
+                                    .Replace(".skin.json", "");
+                                newConfig.Skins[skinName] = skinDef;
+                            }
                         }
                     }
                     catch (JsonException)
                     {
-                        // Skip invalid skin files
-                    }
-                    catch (IOException)
-                    {
-                        // Skip inaccessible skin files
+                        // Skip invalid skin resources
                     }
                 }
 
@@ -873,66 +913,26 @@ public static class ThemeManager
     }
 
     /// <summary>
-    /// Saves the current configuration to the skins.json file synchronously.
+    /// Saves the current configuration (no-op since embedded resources are read-only).
+    /// Configuration changes remain in memory only.
     /// </summary>
     private static void SaveConfiguration()
     {
-        try
-        {
-            var dir = Path.GetDirectoryName(_configPath);
-            if (dir != null && !Directory.Exists(dir))
-            {
-                Directory.CreateDirectory(dir);
-            }
-
-            var json = JsonSerializer.Serialize(_config, _jsonOptions);
-            File.WriteAllText(_configPath, json);
-        }
-        catch (IOException)
-        {
-            // Ignore save errors - configuration changes remain in memory
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Ignore permission errors - configuration changes remain in memory
-        }
+        // No-op: Embedded resources are read-only
+        // Theme/skin selection changes remain in memory for the application lifetime
     }
 
     /// <summary>
-    /// Saves the current configuration to the skins.json file asynchronously.
+    /// Saves the current configuration asynchronously (no-op since embedded resources are read-only).
+    /// Configuration changes remain in memory only.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
-    /// <returns>A task that completes when the configuration is saved.</returns>
-    public static async Task SaveConfigurationAsync(CancellationToken cancellationToken = default)
+    /// <returns>A completed task.</returns>
+    public static Task SaveConfigurationAsync(CancellationToken cancellationToken = default)
     {
-        await _configLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            var dir = Path.GetDirectoryName(_configPath);
-            if (dir != null && !Directory.Exists(dir))
-            {
-                Directory.CreateDirectory(dir);
-            }
-
-            var json = JsonSerializer.Serialize(_config, _jsonOptions);
-            await File.WriteAllTextAsync(_configPath, json, cancellationToken).ConfigureAwait(false);
-        }
-        catch (IOException)
-        {
-            // Ignore save errors - configuration changes remain in memory
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Ignore permission errors - configuration changes remain in memory
-        }
-        catch (OperationCanceledException ex)
-        {
-            throw new InvalidOperationException("Theme configuration reload was cancelled.", ex);
-        }
-        finally
-        {
-            _configLock.Release();
-        }
+        // No-op: Embedded resources are read-only
+        // Theme/skin selection changes remain in memory for the application lifetime
+        return Task.CompletedTask;
     }
 
     private static void RaiseValidationError(string message)
@@ -954,7 +954,9 @@ public static class ThemeManager
     /// </summary>
     public static void Cleanup()
     {
-        _configLock?.Dispose();
+        var oldLock = _configLock;
+        _configLock = new SemaphoreSlim(1, 1);
+        oldLock?.Dispose();
         GraphicsPathPool.Clear();
         ColorCache.Clear();
     }
