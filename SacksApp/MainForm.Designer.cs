@@ -67,13 +67,13 @@ namespace SacksApp
             aiQueryGroupBox = new ModernGroupBox();
             aiQueryTableLayout = new TableLayoutPanel();
             aiQueryLabel = new Label();
+            responseModeLabel = new Label();
+            responseModeComboBox = new ComboBox();
             aiQueryTextBox = new ModernTextBox();
             aiMetadataLabel = new Label();
             aiMetadataTextBox = new ModernTextBox();
             aiDataLabel = new Label();
             aiDataResultsTextBox = new ModernTextBox();
-            responseModeLabel = new Label();
-            responseModeComboBox = new ComboBox();
             notificationPanel = new Panel();
             notificationMessageLabel = new Label();
             notificationTimeLabel = new Label();
@@ -466,73 +466,6 @@ namespace SacksApp
             aiQueryLabel.TabIndex = 0;
             aiQueryLabel.Text = "AI-Powered Query";
             // 
-            // aiQueryTextBox
-            // 
-            aiQueryTextBox.BackColor = Color.FromArgb(255, 255, 255);
-            aiQueryTableLayout.SetColumnSpan(aiQueryTextBox, 2);
-            aiQueryTextBox.Dock = DockStyle.Fill;
-            aiQueryTextBox.Location = new Point(13, 57);
-            aiQueryTextBox.Multiline = true;
-            aiQueryTextBox.Name = "aiQueryTextBox";
-            aiQueryTextBox.PlaceholderText = "Enter your natural language query...";
-            aiQueryTextBox.ScrollBars = ScrollBars.Vertical;
-            aiQueryTextBox.Size = new Size(342, 100);
-            aiQueryTextBox.TabIndex = 3;
-            aiQueryTextBox.WordWrap = true;
-            aiQueryTextBox.KeyDown += AiQueryTextBox_KeyDown;
-            // 
-            // aiMetadataLabel
-            // 
-            aiMetadataLabel.Anchor = AnchorStyles.Left;
-            aiMetadataLabel.AutoSize = true;
-            aiQueryTableLayout.SetColumnSpan(aiMetadataLabel, 2);
-            aiMetadataLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            aiMetadataLabel.Location = new Point(13, 206);
-            aiMetadataLabel.Name = "aiMetadataLabel";
-            aiMetadataLabel.Size = new Size(86, 15);
-            aiMetadataLabel.TabIndex = 5;
-            aiMetadataLabel.Text = "📋 Query Info:";
-            // 
-            // aiMetadataTextBox
-            // 
-            aiMetadataTextBox.BackColor = Color.FromArgb(255, 255, 255);
-            aiQueryTableLayout.SetColumnSpan(aiMetadataTextBox, 2);
-            aiMetadataTextBox.Dock = DockStyle.Fill;
-            aiMetadataTextBox.Location = new Point(13, 224);
-            aiMetadataTextBox.Multiline = true;
-            aiMetadataTextBox.Name = "aiMetadataTextBox";
-            aiMetadataTextBox.ReadOnly = true;
-            aiMetadataTextBox.ScrollBars = ScrollBars.Vertical;
-            aiMetadataTextBox.Size = new Size(342, 225);
-            aiMetadataTextBox.TabIndex = 6;
-            aiMetadataTextBox.WordWrap = true;
-            // 
-            // aiDataLabel
-            // 
-            aiDataLabel.Anchor = AnchorStyles.Left;
-            aiDataLabel.AutoSize = true;
-            aiQueryTableLayout.SetColumnSpan(aiDataLabel, 2);
-            aiDataLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            aiDataLabel.Location = new Point(13, 452);
-            aiDataLabel.Name = "aiDataLabel";
-            aiDataLabel.Size = new Size(66, 15);
-            aiDataLabel.TabIndex = 7;
-            aiDataLabel.Text = "📊 Results:";
-            // 
-            // aiDataResultsTextBox
-            // 
-            aiDataResultsTextBox.BackColor = Color.FromArgb(255, 255, 255);
-            aiQueryTableLayout.SetColumnSpan(aiDataResultsTextBox, 2);
-            aiDataResultsTextBox.Dock = DockStyle.Fill;
-            aiDataResultsTextBox.Location = new Point(13, 470);
-            aiDataResultsTextBox.Multiline = true;
-            aiDataResultsTextBox.Name = "aiDataResultsTextBox";
-            aiDataResultsTextBox.ReadOnly = true;
-            aiDataResultsTextBox.ScrollBars = ScrollBars.Vertical;
-            aiDataResultsTextBox.Size = new Size(342, 225);
-            aiDataResultsTextBox.TabIndex = 8;
-            aiDataResultsTextBox.WordWrap = true;
-            // 
             // responseModeLabel
             // 
             responseModeLabel.Anchor = AnchorStyles.Left;
@@ -555,6 +488,73 @@ namespace SacksApp
             responseModeComboBox.Size = new Size(295, 23);
             responseModeComboBox.TabIndex = 2;
             responseModeComboBox.SelectedIndexChanged += ResponseModeComboBox_SelectedIndexChanged;
+            // 
+            // aiQueryTextBox
+            // 
+            aiQueryTextBox.BackColor = Color.FromArgb(255, 255, 255);
+            aiQueryTableLayout.SetColumnSpan(aiQueryTextBox, 2);
+            aiQueryTextBox.Dock = DockStyle.Fill;
+            aiQueryTextBox.Location = new Point(13, 57);
+            aiQueryTextBox.Multiline = true;
+            aiQueryTextBox.Name = "aiQueryTextBox";
+            aiQueryTextBox.PlaceholderText = "Enter your natural language query...";
+            aiQueryTextBox.ScrollBars = ScrollBars.Vertical;
+            aiQueryTextBox.Size = new Size(342, 100);
+            aiQueryTextBox.TabIndex = 3;
+            aiQueryTextBox.WordWrap = true;
+            aiQueryTextBox.KeyDown += AiQueryTextBox_KeyDown;
+            // 
+            // aiMetadataLabel
+            // 
+            aiMetadataLabel.Anchor = AnchorStyles.Left;
+            aiMetadataLabel.AutoSize = true;
+            aiQueryTableLayout.SetColumnSpan(aiMetadataLabel, 2);
+            aiMetadataLabel.Font = new Font("Segoe UI", 12F);
+            aiMetadataLabel.Location = new Point(13, 206);
+            aiMetadataLabel.Name = "aiMetadataLabel";
+            aiMetadataLabel.Size = new Size(113, 21);
+            aiMetadataLabel.TabIndex = 5;
+            aiMetadataLabel.Text = "📋 Query Info:";
+            // 
+            // aiMetadataTextBox
+            // 
+            aiMetadataTextBox.BackColor = Color.FromArgb(255, 255, 255);
+            aiQueryTableLayout.SetColumnSpan(aiMetadataTextBox, 2);
+            aiMetadataTextBox.Dock = DockStyle.Fill;
+            aiMetadataTextBox.Location = new Point(13, 230);
+            aiMetadataTextBox.Multiline = true;
+            aiMetadataTextBox.Name = "aiMetadataTextBox";
+            aiMetadataTextBox.ReadOnly = true;
+            aiMetadataTextBox.ScrollBars = ScrollBars.Vertical;
+            aiMetadataTextBox.Size = new Size(342, 219);
+            aiMetadataTextBox.TabIndex = 6;
+            aiMetadataTextBox.WordWrap = true;
+            // 
+            // aiDataLabel
+            // 
+            aiDataLabel.Anchor = AnchorStyles.Left;
+            aiDataLabel.AutoSize = true;
+            aiQueryTableLayout.SetColumnSpan(aiDataLabel, 2);
+            aiDataLabel.Font = new Font("Segoe UI", 12F);
+            aiDataLabel.Location = new Point(13, 452);
+            aiDataLabel.Name = "aiDataLabel";
+            aiDataLabel.Size = new Size(89, 21);
+            aiDataLabel.TabIndex = 7;
+            aiDataLabel.Text = "📊 Results:";
+            // 
+            // aiDataResultsTextBox
+            // 
+            aiDataResultsTextBox.BackColor = Color.FromArgb(255, 255, 255);
+            aiQueryTableLayout.SetColumnSpan(aiDataResultsTextBox, 2);
+            aiDataResultsTextBox.Dock = DockStyle.Fill;
+            aiDataResultsTextBox.Location = new Point(13, 476);
+            aiDataResultsTextBox.Multiline = true;
+            aiDataResultsTextBox.Name = "aiDataResultsTextBox";
+            aiDataResultsTextBox.ReadOnly = true;
+            aiDataResultsTextBox.ScrollBars = ScrollBars.Vertical;
+            aiDataResultsTextBox.Size = new Size(342, 219);
+            aiDataResultsTextBox.TabIndex = 8;
+            aiDataResultsTextBox.WordWrap = true;
             // 
             // notificationPanel
             // 

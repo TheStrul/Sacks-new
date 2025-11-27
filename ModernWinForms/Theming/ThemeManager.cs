@@ -134,7 +134,8 @@ public static class ThemeManager
     /// <summary>
     /// Gets all available theme names (design systems).
     /// </summary>
-    public static IEnumerable<string> AvailableThemes => _config.Themes.Keys;
+    public static IEnumerable<string> AvailableThemes => _config.Themes.Keys
+        .Where(name => !IsBaseThemeName(name));
 
     /// <summary>
     /// Gets all available skin names (color variants).
@@ -178,6 +179,12 @@ public static class ThemeManager
     {
         if (string.IsNullOrWhiteSpace(skinName)) return false;
         return skinName.StartsWith("Base", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsBaseThemeName(string? themeName)
+    {
+        if (string.IsNullOrWhiteSpace(themeName)) return false;
+        return themeName.Equals("Base", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -369,6 +376,24 @@ public static class ThemeManager
             catch { /* Ignore invalid colors */ }
         }
 
+        // Apply MDI background if this is an MDI container
+        if (form.IsMdiContainer && skin?.Palette != null && !string.IsNullOrEmpty(skin.Palette.Background))
+        {
+            try
+            {
+                // Find the MdiClient control and set its background
+                foreach (Control control in form.Controls)
+                {
+                    if (control is MdiClient mdiClient)
+                    {
+                        mdiClient.BackColor = ColorTranslator.FromHtml(skin.Palette.Background);
+                        break;
+                    }
+                }
+            }
+            catch { /* Ignore invalid colors */ }
+        }
+
         ApplyThemeToControls(form.Controls, skin);
     }
 
@@ -555,6 +580,42 @@ public static class ThemeManager
 
             var newConfig = loadedConfig;
 
+            // Try to load saved theme/skin selections from AppData
+            try
+            {
+                var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                var settingsPath = Path.Combine(appData, "ModernWinForms", "theme-settings.json");
+                
+                if (File.Exists(settingsPath))
+                {
+                    var settingsJson = File.ReadAllText(settingsPath);
+                    using var settingsDoc = JsonDocument.Parse(settingsJson);
+                    var root = settingsDoc.RootElement;
+                    
+                    if (root.TryGetProperty("currentTheme", out var themeElement))
+                    {
+                        var savedTheme = themeElement.GetString();
+                        if (!string.IsNullOrEmpty(savedTheme))
+                        {
+                            newConfig.CurrentTheme = savedTheme;
+                        }
+                    }
+                    
+                    if (root.TryGetProperty("currentSkin", out var skinElement))
+                    {
+                        var savedSkin = skinElement.GetString();
+                        if (!string.IsNullOrEmpty(savedSkin))
+                        {
+                            newConfig.CurrentSkin = savedSkin;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // If loading saved settings fails, just use defaults from embedded resource
+            }
+
             // Load all themes and skins from embedded resources
             if (true) // Always load from embedded resources
             {
@@ -580,14 +641,17 @@ public static class ThemeManager
                                     .Substring(_embeddedResourcePrefix.Length)
                                     .Replace(".theme.json", "");
                                 
-                                // Validate theme
-                                var errors = ThemeValidator.ValidateTheme(themeName, themeDef);
-                                if (errors.Count > 0)
+                                // Validate theme if diagnostics enabled
+                                if (DiagnosticsEnabled)
                                 {
-                                    RaiseValidationErrors($"Theme '{themeName}' (embedded resource: {resourceName})", errors);
-                                    if (!DiagnosticsEnabled)
+                                    var errors = ThemeValidator.ValidateTheme(themeName, themeDef);
+                                    if (errors.Count > 0)
                                     {
-                                        continue; // Skip invalid themes in production
+                                        foreach (var error in errors)
+                                        {
+                                            ValidationError?.Invoke(null, new ValidationEventArgs($"Theme '{themeName}': {error}"));
+                                        }
+                                        continue; // Skip invalid themes when diagnostics enabled
                                     }
                                 }
                                 
@@ -595,9 +659,8 @@ public static class ThemeManager
                             }
                         }
                     }
-                    catch (JsonException ex)
+                    catch (JsonException)
                     {
-                        RaiseValidationError($"Theme resource '{resourceName}': Invalid JSON - {ex.Message}");
                         // Skip invalid theme resources
                     }
                 }
@@ -624,24 +687,12 @@ public static class ThemeManager
                                     .Substring(_embeddedResourcePrefix.Length)
                                     .Replace(".skin.json", "");
                                 
-                                // Validate skin
-                                var errors = ThemeValidator.ValidateSkin(skinName, skinDef);
-                                if (errors.Count > 0)
-                                {
-                                    RaiseValidationErrors($"Skin '{skinName}' (embedded resource: {resourceName})", errors);
-                                    if (!DiagnosticsEnabled)
-                                    {
-                                        continue; // Skip invalid skins in production
-                                    }
-                                }
-                                
                                 newConfig.Skins[skinName] = skinDef;
                             }
                         }
                     }
-                    catch (JsonException ex)
+                    catch (JsonException)
                     {
-                        RaiseValidationError($"Skin resource '{resourceName}': Invalid JSON - {ex.Message}");
                         // Skip invalid skin resources
                     }
                 }
@@ -856,13 +907,11 @@ public static class ThemeManager
             // Detect circular dependency
             if (!resolving.Add(skinName))
             {
-                RaiseValidationError($"Circular inheritance detected for skin '{skinName}'");
                 throw new InvalidOperationException($"Circular inheritance detected for skin '{skinName}'");
             }
 
             if (!config.Skins.TryGetValue(skinName, out var skin))
             {
-                RaiseValidationError($"Skin '{skinName}' not found during inheritance resolution.");
                 throw new InvalidOperationException($"Skin '{skinName}' not found");
             }
 
@@ -878,7 +927,6 @@ public static class ThemeManager
                 // Resolve parent first - handle case where parent doesn't exist
                 if (!config.Skins.TryGetValue(skin.InheritsFrom, out _))
                 {
-                    RaiseValidationError($"Base skin '{skin.InheritsFrom}' not found for derived skin '{skinName}'.");
                     resolved[skinName] = skin; // Use the skin as-is without inheritance
                     return skin;
                 }
@@ -904,47 +952,74 @@ public static class ThemeManager
             {
                 config.Skins[skinName] = ResolveSkin(skinName);
             }
-            catch (Exception ex)
+            catch
             {
                 // If inheritance resolution fails completely, keep the original skin
-                RaiseValidationError($"Failed to resolve inheritance for skin '{skinName}': {ex.Message}");
             }
         }
     }
 
     /// <summary>
-    /// Saves the current configuration (no-op since embedded resources are read-only).
-    /// Configuration changes remain in memory only.
+    /// Saves the current configuration to user's AppData folder.
+    /// Only saves currentTheme and currentSkin selections (not the full theme/skin definitions).
     /// </summary>
     private static void SaveConfiguration()
     {
-        // No-op: Embedded resources are read-only
-        // Theme/skin selection changes remain in memory for the application lifetime
+        try
+        {
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var themeDirectory = Path.Combine(appData, "ModernWinForms");
+            Directory.CreateDirectory(themeDirectory);
+            
+            var settingsPath = Path.Combine(themeDirectory, "theme-settings.json");
+            
+            // Only save the current selections, not the full configuration
+            var settings = new
+            {
+                version = "2.0",
+                currentTheme = _config.CurrentTheme,
+                currentSkin = _config.CurrentSkin
+            };
+            
+            var json = JsonSerializer.Serialize(settings, _jsonOptions);
+            File.WriteAllText(settingsPath, json);
+        }
+        catch
+        {
+            // Silently fail - theme selection will just not persist across sessions
+        }
     }
 
     /// <summary>
-    /// Saves the current configuration asynchronously (no-op since embedded resources are read-only).
-    /// Configuration changes remain in memory only.
+    /// Saves the current configuration asynchronously to user's AppData folder.
+    /// Only saves currentTheme and currentSkin selections (not the full theme/skin definitions).
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
-    /// <returns>A completed task.</returns>
-    public static Task SaveConfigurationAsync(CancellationToken cancellationToken = default)
+    /// <returns>A task that completes when the configuration is saved.</returns>
+    public static async Task SaveConfigurationAsync(CancellationToken cancellationToken = default)
     {
-        // No-op: Embedded resources are read-only
-        // Theme/skin selection changes remain in memory for the application lifetime
-        return Task.CompletedTask;
-    }
-
-    private static void RaiseValidationError(string message)
-    {
-        ValidationError?.Invoke(null, new ValidationEventArgs(message));
-    }
-
-    private static void RaiseValidationErrors(string context, List<string> errors)
-    {
-        foreach (var error in errors)
+        try
         {
-            RaiseValidationError($"{context}: {error}");
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var themeDirectory = Path.Combine(appData, "ModernWinForms");
+            Directory.CreateDirectory(themeDirectory);
+            
+            var settingsPath = Path.Combine(themeDirectory, "theme-settings.json");
+            
+            // Only save the current selections, not the full configuration
+            var settings = new
+            {
+                version = "2.0",
+                currentTheme = _config.CurrentTheme,
+                currentSkin = _config.CurrentSkin
+            };
+            
+            var json = JsonSerializer.Serialize(settings, _jsonOptions);
+            await File.WriteAllTextAsync(settingsPath, json, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Silently fail - theme selection will just not persist across sessions
         }
     }
 

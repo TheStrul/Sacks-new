@@ -373,7 +373,23 @@ public class ModernButton : Button
         {
             var textFlags = GetTextFormatFlags();
             var effectiveFont = GetEffectiveFont();
-            TextRenderer.DrawText(g, Text, effectiveFont, textRect, foreColor, textFlags);
+            
+            // Add left padding for better alignment
+            var paddedTextRect = textRect;
+            paddedTextRect.X += 12; // Add 12px left padding
+            paddedTextRect.Width -= 12;
+            
+            // Increase font size for emoji icons (they're at the start of text)
+            if (Text.Length > 0 && char.IsHighSurrogate(Text[0]))
+            {
+                // This text contains emoji - use larger font
+                using var emojiFont = new Font(effectiveFont.FontFamily, effectiveFont.Size * 1.3f, effectiveFont.Style);
+                TextRenderer.DrawText(g, Text, emojiFont, paddedTextRect, foreColor, textFlags);
+            }
+            else
+            {
+                TextRenderer.DrawText(g, Text, effectiveFont, paddedTextRect, foreColor, textFlags);
+            }
         }
 
         // Draw ripple effect
@@ -579,10 +595,11 @@ public class ModernButton : Button
     {
         var flags = TextFormatFlags.EndEllipsis | TextFormatFlags.WordBreak;
 
-        // Horizontal alignment
+        // Horizontal alignment - default to left for better icon+text layout
         if (_image == null || _imageAlign is ContentAlignment.TopCenter or ContentAlignment.MiddleCenter or ContentAlignment.BottomCenter)
         {
-            flags |= TextFormatFlags.HorizontalCenter;
+            // If no image or centered image, use left alignment for text with emoji icons
+            flags |= TextFormatFlags.Left;
         }
         else if (_imageAlign is ContentAlignment.TopRight or ContentAlignment.MiddleRight or ContentAlignment.BottomRight)
         {

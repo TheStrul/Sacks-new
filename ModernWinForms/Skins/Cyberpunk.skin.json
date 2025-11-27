@@ -5,7 +5,7 @@
     "primary": "#FF00FF",
     "background": "#0A0E27",
     "surface": "#1A1F3A",
-    "text": "#00FFFF",
+    "text": "#E0E0E0",
     "border": "#FF00FF",
     "success": "#00FF00",
     "warning": "#FFFF00",
@@ -26,7 +26,7 @@
       "states": {
         "normal": {
           "backColor": "#1A1F3A",
-          "foreColor": "#00FFFF",
+          "foreColor": "#E0E0E0",
           "borderColor": "#FF00FF"
         },
         "hover": {
@@ -50,7 +50,7 @@
       "states": {
         "normal": {
           "backColor": "#0A0E27",
-          "foreColor": "#00FFFF"
+          "foreColor": "#E0E0E0"
         }
       }
     },
@@ -58,7 +58,7 @@
       "states": {
         "normal": {
           "backColor": "#1A1F3A",
-          "foreColor": "#00FFFF",
+          "foreColor": "#E0E0E0",
           "borderColor": "#FF00FF"
         },
         "focused": {
@@ -75,7 +75,7 @@
       "states": {
         "normal": {
           "backColor": "#1A1F3A",
-          "foreColor": "#00FFFF",
+          "foreColor": "#E0E0E0",
           "borderColor": "#FF00FF"
         },
         "hover": {
@@ -92,7 +92,7 @@
       "states": {
         "normal": {
           "backColor": "#1A1F3A",
-          "foreColor": "#00FFFF",
+          "foreColor": "#E0E0E0",
           "borderColor": "#FF00FF"
         }
       }
@@ -101,7 +101,7 @@
       "states": {
         "normal": {
           "backColor": "#0A0E27",
-          "foreColor": "#00FFFF",
+          "foreColor": "#E0E0E0",
           "borderColor": "#FF00FF"
         }
       }
@@ -110,7 +110,7 @@
       "states": {
         "normal": {
           "backColor": "#1A1F3A",
-          "foreColor": "#00FFFF"
+          "foreColor": "#E0E0E0"
         }
       }
     },
@@ -118,7 +118,7 @@
       "states": {
         "normal": {
           "backColor": "#1A1F3A",
-          "foreColor": "#00FFFF"
+          "foreColor": "#E0E0E0"
         }
       }
     },
@@ -126,7 +126,7 @@
       "states": {
         "normal": {
           "backColor": "#1A1F3A",
-          "foreColor": "#00FFFF",
+          "foreColor": "#E0E0E0",
           "borderColor": "#FF00FF"
         },
         "checked": {
@@ -143,7 +143,7 @@
       "states": {
         "normal": {
           "backColor": "#1A1F3A",
-          "foreColor": "#00FFFF",
+          "foreColor": "#E0E0E0",
           "borderColor": "#FF00FF"
         },
         "checked": {
@@ -160,7 +160,7 @@
       "states": {
         "normal": {
           "backColor": "#1A1F3A",
-          "foreColor": "#00FFFF",
+          "foreColor": "#E0E0E0",
           "borderColor": "#FF00FF"
         },
         "focused": {
@@ -172,12 +172,12 @@
       "states": {
         "normal": {
           "backColor": "#0A0E27",
-          "foreColor": "#00FFFF",
+          "foreColor": "#E0E0E0",
           "borderColor": "#FF00FF"
         },
         "selected": {
           "backColor": "#1A1F3A",
-          "foreColor": "#00FFFF",
+          "foreColor": "#E0E0E0",
           "borderColor": "#00FFFF"
         },
         "hover": {
@@ -189,7 +189,7 @@
       "states": {
         "normal": {
           "backColor": "#0A0E27",
-          "foreColor": "#00FFFF"
+          "foreColor": "#E0E0E0"
         }
       }
     },
@@ -197,7 +197,7 @@
       "states": {
         "normal": {
           "backColor": "#0A0E27",
-          "foreColor": "#00FFFF"
+          "foreColor": "#E0E0E0"
         }
       }
     },
@@ -205,7 +205,7 @@
       "states": {
         "normal": {
           "backColor": "#0A0E27",
-          "foreColor": "#00FFFF"
+          "foreColor": "#E0E0E0"
         }
       }
     }

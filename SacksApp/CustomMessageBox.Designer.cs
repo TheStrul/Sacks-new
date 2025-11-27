@@ -212,7 +212,7 @@ partial class CustomMessageBox
         Controls.Add(_contentPanel);
         Controls.Add(_titleLabel);
         Controls.Add(_buttonPanel);
-        FormBorderStyle = FormBorderStyle.None;
+        FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
         Name = "CustomMessageBox";

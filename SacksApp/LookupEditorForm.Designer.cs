@@ -16,8 +16,6 @@ namespace SacksApp
         private ModernWinForms.Controls.ModernTableLayoutPanel _root;
         private ModernWinForms.Controls.ModernFlowLayoutPanel _buttonsPanel;
         private ModernWinForms.Controls.ModernFlowLayoutPanel _headerPanel;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colKey;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colVal;
 
         protected override void Dispose(bool disposing)
         {

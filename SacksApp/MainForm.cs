@@ -755,10 +755,31 @@ public partial class MainForm : Form
 
         try
         {
-            // Find solution root for log files
-            var solutionRoot = FindSolutionRoot();
-            QMobileDeviceServiceMenu.LogViewerForm.ShowServiceLogs(solutionRoot);
-            _logger.LogInformation("Log Viewer opened");
+            // Try to find logs directory - check application directory first, then solution root
+            string logsDirectory;
+            var appLogsDir = Path.Combine(AppContext.BaseDirectory, "logs");
+            
+            if (Directory.Exists(appLogsDir))
+            {
+                // Logs found in application directory
+                logsDirectory = AppContext.BaseDirectory;
+            }
+            else
+            {
+                // Try solution root
+                try
+                {
+                    logsDirectory = FindSolutionRoot();
+                }
+                catch (DirectoryNotFoundException)
+                {
+                    // If solution root not found, use app directory anyway and let LogViewer handle it
+                    logsDirectory = AppContext.BaseDirectory;
+                }
+            }
+            
+            QMobileDeviceServiceMenu.LogViewerForm.ShowServiceLogs(logsDirectory);
+            _logger.LogInformation("Log Viewer opened for directory: {LogsDirectory}", logsDirectory);
         }
         catch (Exception ex)
         {
@@ -781,7 +802,12 @@ public partial class MainForm : Form
             currentDirectory = currentDirectory.Parent;
         }
 
-        throw new DirectoryNotFoundException("Solution root directory not found - no .sln file found in directory hierarchy");
+        // If no solution file found, return the application base directory
+        // This allows the log viewer to still attempt to open logs relative to the app location
+        var baseDir = AppContext.BaseDirectory;
+        throw new DirectoryNotFoundException(
+            $"Solution root directory not found - no .sln file found in directory hierarchy.\n" +
+            $"Searched from: {baseDir}");
     }
 
     private async void ShowStatisticsButton_Click(object sender, EventArgs e)
