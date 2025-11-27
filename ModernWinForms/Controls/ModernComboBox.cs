@@ -33,9 +33,13 @@ public class ModernComboBox : ComboBox
         FlatStyle = FlatStyle.Flat;
 
         _focusAnimation = new AnimationEngine(this);
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromSkin();
-        UpdateFontFromTheme();
+        
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromSkin();
+            UpdateFontFromTheme();
+        }
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)

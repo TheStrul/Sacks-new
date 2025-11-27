@@ -19,8 +19,11 @@ public class ModernDataGridView : DataGridView
     /// </summary>
     public ModernDataGridView()
     {
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromTheme();
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromTheme();
+        }
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)

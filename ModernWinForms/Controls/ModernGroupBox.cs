@@ -29,9 +29,13 @@ public class ModernGroupBox : GroupBox
                 ControlStyles.SupportsTransparentBackColor, true);
         
         BackColor = Color.Transparent;
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromSkin();
-        UpdateFontFromTheme();
+        
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromSkin();
+            UpdateFontFromTheme();
+        }
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)

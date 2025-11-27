@@ -38,9 +38,12 @@ public class ModernCheckBox : CheckBox
         _checkAnimation = new AnimationEngine(this);
         _hoverAnimation = new AnimationEngine(this);
 
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromSkin();
-        UpdateFontFromTheme();
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromSkin();
+            UpdateFontFromTheme();
+        }
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)

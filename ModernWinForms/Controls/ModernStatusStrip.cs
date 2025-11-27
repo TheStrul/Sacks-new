@@ -17,8 +17,11 @@ public class ModernStatusStrip : StatusStrip
     /// </summary>
     public ModernStatusStrip()
     {
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromTheme();
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromTheme();
+        }
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)

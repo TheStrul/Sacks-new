@@ -16,8 +16,11 @@ public class ModernTableLayoutPanel : TableLayoutPanel
     /// </summary>
     public ModernTableLayoutPanel()
     {
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromTheme();
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromTheme();
+        }
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)

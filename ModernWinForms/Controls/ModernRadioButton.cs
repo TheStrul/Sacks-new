@@ -29,8 +29,13 @@ public class ModernRadioButton : RadioButton
                 ControlStyles.SupportsTransparentBackColor, true);
 
         _checkAnimation = new AnimationEngine(this);
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromTheme();
+        
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromTheme();
+        }
+        
         _checkProgress = Checked ? 1.0 : 0.0;
     }
 

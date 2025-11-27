@@ -947,6 +947,17 @@ public static class ThemeManager
             RaiseValidationError($"{context}: {error}");
         }
     }
+
+    /// <summary>
+    /// Cleans up static resources used by ThemeManager.
+    /// Should be called during application shutdown to ensure proper resource disposal.
+    /// </summary>
+    public static void Cleanup()
+    {
+        _configLock?.Dispose();
+        GraphicsPathPool.Clear();
+        ColorCache.Clear();
+    }
 }
 
 /// <summary>

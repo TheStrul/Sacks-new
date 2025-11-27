@@ -41,9 +41,9 @@ internal static partial class ThemeValidator
             }
 
             // Validate structural properties
-            if (controlStyle.CornerRadius < 0)
+            if (controlStyle.CornerRadius < 0 || controlStyle.CornerRadius > 100)
             {
-                errors.Add($"Theme '{themeName}', control '{controlName}': CornerRadius cannot be negative.");
+                errors.Add($"Theme '{themeName}', control '{controlName}': CornerRadius must be between 0 and 100, got {controlStyle.CornerRadius}.");
             }
 
             if (controlStyle.BorderWidth < 0)

@@ -27,8 +27,11 @@ public class ModernRichTextBox : RichTextBox
 
         BorderStyle = BorderStyle.FixedSingle;
         
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromTheme();
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromTheme();
+        }
     }
 
     /// <summary>

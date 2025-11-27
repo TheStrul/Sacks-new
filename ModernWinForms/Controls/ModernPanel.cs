@@ -31,8 +31,12 @@ public class ModernPanel : Panel
                 ControlStyles.SupportsTransparentBackColor, true);
 
         BackColor = Color.White;
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromSkin();
+        
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromSkin();
+        }
     }
 
     /// <summary>

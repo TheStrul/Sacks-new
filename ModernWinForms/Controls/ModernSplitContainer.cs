@@ -16,8 +16,11 @@ public class ModernSplitContainer : SplitContainer
     /// </summary>
     public ModernSplitContainer()
     {
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromTheme();
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromTheme();
+        }
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)

@@ -16,8 +16,11 @@ public class ModernFlowLayoutPanel : FlowLayoutPanel
     /// </summary>
     public ModernFlowLayoutPanel()
     {
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromTheme();
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromTheme();
+        }
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)

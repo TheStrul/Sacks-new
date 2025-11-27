@@ -26,8 +26,12 @@ public class ModernTabControl : TabControl
                 ControlStyles.OptimizedDoubleBuffer |
                 ControlStyles.SupportsTransparentBackColor, true);
 
-        ThemeManager.ThemeChanged += OnThemeChanged;
-        UpdateStyleFromTheme();
+        if (!DesignMode)
+        {
+            ThemeManager.ThemeChanged += OnThemeChanged;
+            UpdateStyleFromTheme();
+        }
+        
         ItemSize = new Size(120, 40);
         SizeMode = TabSizeMode.Fixed;
     }
