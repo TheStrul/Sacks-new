@@ -88,7 +88,7 @@
           },
           {
             "Op": "Find",
-            "Input": "Concentrations.Clean",
+            "Input": "Genders.Clean",
             "Output": "Types",
             "Assign": false,
             "Condition": null,
@@ -256,7 +256,7 @@
   },
   "FileStructure": {
     "DataStartRowIndex": 2,
-    "ExpectedColumnCount": 7,
+    "ExpectedColumnCount": 13,
     "HeaderRowIndex": 1,
     "Detection": {
       "FileNamePatterns": [

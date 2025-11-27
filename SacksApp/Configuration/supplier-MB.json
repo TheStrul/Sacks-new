@@ -34,7 +34,7 @@
             "Assign": false,
             "Condition": null,
             "Parameters": {
-              "Pattern": "(?i)\\b\\d+(?:[.,]\\d+)?\\s*oz\\s*/\\s*",
+              "Pattern": "(?i)\\d+(?:[.,]\\d+)?\\s*oz\\s*(?:/\\s*)?",
               "Options": "first,ignorecase,remove"
             }
           },

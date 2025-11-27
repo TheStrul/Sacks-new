@@ -120,8 +120,8 @@
             "Assign": true,
             "Condition": "Product.Type 2 != 'Set' && Product.Type 2 != 'Mini Set'",
             "Parameters": {
-              "Pattern": "lookup:Size",
-              "Options": "first,ignorecase,remove"
+              "Pattern": "(?<num>\\d+(?:\\.\\d+)?)",
+              "Options": "first,remove"
             }
           },
           {
@@ -217,7 +217,7 @@
   },
   "FileStructure": {
     "DataStartRowIndex": 2,
-    "ExpectedColumnCount": 10,
+    "ExpectedColumnCount": 9,
     "HeaderRowIndex": 1,
     "Detection": {
       "FileNamePatterns": [

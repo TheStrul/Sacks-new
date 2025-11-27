@@ -73,6 +73,27 @@
           {
             "Op": "Find",
             "Input": "Text",
+            "Output": "BrandFallback",
+            "Assign": false,
+            "Condition": "Product.Brand == ",
+            "Parameters": {
+              "Pattern": "lookup:Brand",
+              "Options": "first,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "BrandFallback",
+            "Output": "Product.Brand",
+            "Assign": true,
+            "Condition": "BrandFallback.Valid == true",
+            "Parameters": {
+              "Table": "Brand"
+            }
+          },
+          {
+            "Op": "Find",
+            "Input": "Text",
             "Output": "Sizes",
             "Assign": false,
             "Condition": null,
@@ -240,7 +261,7 @@
     ]
   },
   "FileStructure": {
-    "DataStartRowIndex": 8,
+    "DataStartRowIndex": 2,
     "ExpectedColumnCount": 5,
     "HeaderRowIndex": 1,
     "Detection": {
