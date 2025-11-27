@@ -31,8 +31,6 @@ namespace SacksApp
         private void InitializeComponent()
         {
             components = new System.ComponentModel.Container();
-            
-            // Initialize all controls first
             menuStrip = new MenuStrip();
             fileToolStripMenuItem = new ToolStripMenuItem();
             exitToolStripMenuItem = new ToolStripMenuItem();
@@ -53,11 +51,8 @@ namespace SacksApp
             toolStripSeparator2 = new ToolStripSeparator();
             closeAllToolStripMenuItem = new ToolStripMenuItem();
             dashboardToolStripMenuItem = new ToolStripMenuItem();
-            
             panelButtuns = new Panel();
             tableLayoutPanel1 = new TableLayoutPanel();
-            
-            // Initialize all ModernButton controls
             processFilesButton = new ModernButton();
             showStatisticsButton = new ModernButton();
             sqlQueryButton = new ModernButton();
@@ -68,28 +63,22 @@ namespace SacksApp
             handleOffersButton = new ModernButton();
             executeAiQueryButton = new ModernButton();
             notificationClearButton = new ModernButton();
-            
-            // Initialize AI panel controls
             panelAI = new Panel();
             aiQueryGroupBox = new ModernGroupBox();
             aiQueryTableLayout = new TableLayoutPanel();
             aiQueryLabel = new Label();
-            responseModeLabel = new Label();
-            responseModeComboBox = new ComboBox();
             aiQueryTextBox = new ModernTextBox();
             aiMetadataLabel = new Label();
             aiMetadataTextBox = new ModernTextBox();
             aiDataLabel = new Label();
             aiDataResultsTextBox = new ModernTextBox();
-            
-            // Initialize notification panel
+            responseModeLabel = new Label();
+            responseModeComboBox = new ComboBox();
             notificationPanel = new Panel();
-            notificationStatusIcon = new Label();
             notificationMessageLabel = new Label();
             notificationTimeLabel = new Label();
+            notificationStatusIcon = new Label();
             notificationTimer = new System.Windows.Forms.Timer(components);
-            
-            // Suspend layouts
             menuStrip.SuspendLayout();
             panelButtuns.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
@@ -98,7 +87,6 @@ namespace SacksApp
             aiQueryTableLayout.SuspendLayout();
             notificationPanel.SuspendLayout();
             SuspendLayout();
-            
             // 
             // menuStrip
             // 
@@ -109,7 +97,6 @@ namespace SacksApp
             menuStrip.Size = new Size(1264, 24);
             menuStrip.TabIndex = 0;
             menuStrip.Text = "menuStrip1";
-            
             // 
             // fileToolStripMenuItem
             // 
@@ -118,7 +105,6 @@ namespace SacksApp
             fileToolStripMenuItem.Size = new Size(37, 20);
             fileToolStripMenuItem.Text = "&File";
             fileToolStripMenuItem.Click += FileToolStripMenuItem_Click;
-            
             // 
             // exitToolStripMenuItem
             // 
@@ -127,7 +113,6 @@ namespace SacksApp
             exitToolStripMenuItem.Size = new Size(134, 22);
             exitToolStripMenuItem.Text = "E&xit";
             exitToolStripMenuItem.Click += ExitToolStripMenuItem_Click;
-            
             // 
             // toolsToolStripMenuItem
             // 
@@ -135,13 +120,11 @@ namespace SacksApp
             toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             toolsToolStripMenuItem.Size = new Size(47, 20);
             toolsToolStripMenuItem.Text = "&Tools";
-            
             // 
             // toolStripSeparator1
             // 
             toolStripSeparator1.Name = "toolStripSeparator1";
             toolStripSeparator1.Size = new Size(196, 6);
-            
             // 
             // sqlQueryToolStripMenuItem
             // 
@@ -150,7 +133,6 @@ namespace SacksApp
             sqlQueryToolStripMenuItem.Size = new Size(199, 22);
             sqlQueryToolStripMenuItem.Text = "SQL &Query";
             sqlQueryToolStripMenuItem.Click += SqlQueryToolStripMenuItem_Click;
-            
             // 
             // offersManagerToolStripMenuItem
             // 
@@ -159,7 +141,6 @@ namespace SacksApp
             offersManagerToolStripMenuItem.Size = new Size(199, 22);
             offersManagerToolStripMenuItem.Text = "&Offers Manager";
             offersManagerToolStripMenuItem.Click += OffersManagerToolStripMenuItem_Click;
-            
             // 
             // lookupEditorToolStripMenuItem
             // 
@@ -168,7 +149,6 @@ namespace SacksApp
             lookupEditorToolStripMenuItem.Size = new Size(199, 22);
             lookupEditorToolStripMenuItem.Text = "&Lookup Editor";
             lookupEditorToolStripMenuItem.Click += LookupEditorToolStripMenuItem_Click;
-            
             // 
             // logViewerToolStripMenuItem
             // 
@@ -177,7 +157,6 @@ namespace SacksApp
             logViewerToolStripMenuItem.Size = new Size(199, 22);
             logViewerToolStripMenuItem.Text = "Lo&g Viewer";
             logViewerToolStripMenuItem.Click += LogViewerToolStripMenuItem_Click;
-            
             // 
             // viewToolStripMenuItem
             // 
@@ -185,7 +164,6 @@ namespace SacksApp
             viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             viewToolStripMenuItem.Size = new Size(44, 20);
             viewToolStripMenuItem.Text = "&View";
-            
             // 
             // themeToolStripMenuItem
             // 
@@ -193,7 +171,6 @@ namespace SacksApp
             themeToolStripMenuItem.Size = new Size(111, 22);
             themeToolStripMenuItem.Text = "&Theme";
             themeToolStripMenuItem.DropDownOpening += ThemeToolStripMenuItem_DropDownOpening;
-            
             // 
             // skinToolStripMenuItem
             // 
@@ -201,7 +178,6 @@ namespace SacksApp
             skinToolStripMenuItem.Size = new Size(111, 22);
             skinToolStripMenuItem.Text = "&Skin";
             skinToolStripMenuItem.DropDownOpening += SkinToolStripMenuItem_DropDownOpening;
-            
             // 
             // windowToolStripMenuItem
             // 
@@ -209,7 +185,6 @@ namespace SacksApp
             windowToolStripMenuItem.Name = "windowToolStripMenuItem";
             windowToolStripMenuItem.Size = new Size(63, 20);
             windowToolStripMenuItem.Text = "&Window";
-            
             // 
             // cascadeToolStripMenuItem
             // 
@@ -217,7 +192,6 @@ namespace SacksApp
             cascadeToolStripMenuItem.Size = new Size(151, 22);
             cascadeToolStripMenuItem.Text = "&Cascade";
             cascadeToolStripMenuItem.Click += CascadeToolStripMenuItem_Click;
-            
             // 
             // tileHorizontalToolStripMenuItem
             // 
@@ -225,7 +199,6 @@ namespace SacksApp
             tileHorizontalToolStripMenuItem.Size = new Size(151, 22);
             tileHorizontalToolStripMenuItem.Text = "Tile &Horizontal";
             tileHorizontalToolStripMenuItem.Click += TileHorizontalToolStripMenuItem_Click;
-            
             // 
             // tileVerticalToolStripMenuItem
             // 
@@ -233,7 +206,6 @@ namespace SacksApp
             tileVerticalToolStripMenuItem.Size = new Size(151, 22);
             tileVerticalToolStripMenuItem.Text = "Tile &Vertical";
             tileVerticalToolStripMenuItem.Click += TileVerticalToolStripMenuItem_Click;
-            
             // 
             // arrangeIconsToolStripMenuItem
             // 
@@ -241,13 +213,11 @@ namespace SacksApp
             arrangeIconsToolStripMenuItem.Size = new Size(151, 22);
             arrangeIconsToolStripMenuItem.Text = "&Arrange Icons";
             arrangeIconsToolStripMenuItem.Click += ArrangeIconsToolStripMenuItem_Click;
-            
             // 
             // toolStripSeparator2
             // 
             toolStripSeparator2.Name = "toolStripSeparator2";
             toolStripSeparator2.Size = new Size(148, 6);
-            
             // 
             // closeAllToolStripMenuItem
             // 
@@ -255,109 +225,21 @@ namespace SacksApp
             closeAllToolStripMenuItem.Size = new Size(151, 22);
             closeAllToolStripMenuItem.Text = "Close &All";
             closeAllToolStripMenuItem.Click += CloseAllToolStripMenuItem_Click;
-            
             // 
             // dashboardToolStripMenuItem
             // 
             dashboardToolStripMenuItem.Name = "dashboardToolStripMenuItem";
             dashboardToolStripMenuItem.Size = new Size(32, 19);
-            
             // 
-            // processFilesButton
+            // panelButtuns
             // 
-            processFilesButton.Dock = DockStyle.Fill;
-            processFilesButton.Location = new Point(8, 8);
-            processFilesButton.Margin = new Padding(3);
-            processFilesButton.Name = "processFilesButton";
-            processFilesButton.Size = new Size(249, 40);
-            processFilesButton.TabIndex = 0;
-            processFilesButton.Text = "📁 Process Files";
-            processFilesButton.Click += ProcessFilesButton_Click;
-            
-            // 
-            // showStatisticsButton
-            // 
-            showStatisticsButton.Dock = DockStyle.Fill;
-            showStatisticsButton.Location = new Point(8, 54);
-            showStatisticsButton.Margin = new Padding(3);
-            showStatisticsButton.Name = "showStatisticsButton";
-            showStatisticsButton.Size = new Size(249, 40);
-            showStatisticsButton.TabIndex = 1;
-            showStatisticsButton.Text = "📊 Show Statistics";
-            showStatisticsButton.Click += ShowStatisticsButton_Click;
-            
-            // 
-            // sqlQueryButton
-            // 
-            sqlQueryButton.Dock = DockStyle.Fill;
-            sqlQueryButton.Location = new Point(8, 100);
-            sqlQueryButton.Margin = new Padding(3);
-            sqlQueryButton.Name = "sqlQueryButton";
-            sqlQueryButton.Size = new Size(249, 40);
-            sqlQueryButton.TabIndex = 2;
-            sqlQueryButton.Text = "🔍 SQL Query";
-            sqlQueryButton.Click += SqlQueryButton_Click;
-            
-            // 
-            // clearDatabaseButton
-            // 
-            clearDatabaseButton.Dock = DockStyle.Fill;
-            clearDatabaseButton.Location = new Point(8, 146);
-            clearDatabaseButton.Margin = new Padding(3);
-            clearDatabaseButton.Name = "clearDatabaseButton";
-            clearDatabaseButton.Size = new Size(249, 40);
-            clearDatabaseButton.TabIndex = 3;
-            clearDatabaseButton.Text = "🗑️ Clear Database";
-            clearDatabaseButton.Click += ClearDatabaseButton_Click;
-            
-            // 
-            // testConfigurationButton
-            // 
-            testConfigurationButton.Dock = DockStyle.Fill;
-            testConfigurationButton.Location = new Point(8, 192);
-            testConfigurationButton.Margin = new Padding(3);
-            testConfigurationButton.Name = "testConfigurationButton";
-            testConfigurationButton.Size = new Size(249, 40);
-            testConfigurationButton.TabIndex = 4;
-            testConfigurationButton.Text = "⚙️ Test Configuration";
-            testConfigurationButton.Click += TestConfigurationButton_Click;
-            
-            // 
-            // viewLogsButton
-            // 
-            viewLogsButton.Dock = DockStyle.Fill;
-            viewLogsButton.Location = new Point(8, 238);
-            viewLogsButton.Margin = new Padding(3);
-            viewLogsButton.Name = "viewLogsButton";
-            viewLogsButton.Size = new Size(249, 40);
-            viewLogsButton.TabIndex = 5;
-            viewLogsButton.Text = "📜 View Logs";
-            viewLogsButton.Click += ViewLogsButton_Click;
-            
-            // 
-            // buttonEditMaps
-            // 
-            buttonEditMaps.Dock = DockStyle.Fill;
-            buttonEditMaps.Location = new Point(8, 284);
-            buttonEditMaps.Margin = new Padding(3);
-            buttonEditMaps.Name = "buttonEditMaps";
-            buttonEditMaps.Size = new Size(249, 40);
-            buttonEditMaps.TabIndex = 6;
-            buttonEditMaps.Text = "📝 Edit Lookups";
-            buttonEditMaps.Click += ButtonEditMaps_Click;
-            
-            // 
-            // handleOffersButton
-            // 
-            handleOffersButton.Dock = DockStyle.Fill;
-            handleOffersButton.Location = new Point(8, 330);
-            handleOffersButton.Margin = new Padding(3);
-            handleOffersButton.Name = "handleOffersButton";
-            handleOffersButton.Size = new Size(249, 40);
-            handleOffersButton.TabIndex = 7;
-            handleOffersButton.Text = "💼 Handle Offers";
-            handleOffersButton.Click += HandleOffersButton_Click;
-            
+            panelButtuns.Controls.Add(tableLayoutPanel1);
+            panelButtuns.Dock = DockStyle.Left;
+            panelButtuns.Location = new Point(0, 24);
+            panelButtuns.Name = "panelButtuns";
+            panelButtuns.Padding = new Padding(10);
+            panelButtuns.Size = new Size(285, 766);
+            panelButtuns.TabIndex = 2;
             // 
             // tableLayoutPanel1
             // 
@@ -386,136 +268,160 @@ namespace SacksApp
             tableLayoutPanel1.RowStyles.Add(new RowStyle());
             tableLayoutPanel1.RowStyles.Add(new RowStyle());
             tableLayoutPanel1.RowStyles.Add(new RowStyle());
-            tableLayoutPanel1.Size = new Size(265, 380);
+            tableLayoutPanel1.Size = new Size(265, 378);
             tableLayoutPanel1.TabIndex = 15;
-            
             // 
-            // panelButtuns
+            // processFilesButton
             // 
-            panelButtuns.Controls.Add(tableLayoutPanel1);
-            panelButtuns.Dock = DockStyle.Left;
-            panelButtuns.Location = new Point(0, 24);
-            panelButtuns.Name = "panelButtuns";
-            panelButtuns.Padding = new Padding(10);
-            panelButtuns.Size = new Size(285, 766);
-            panelButtuns.TabIndex = 2;
-            
+            processFilesButton.BackColor = Color.Transparent;
+            processFilesButton.Dock = DockStyle.Fill;
+            processFilesButton.FlatStyle = FlatStyle.Flat;
+            processFilesButton.Location = new Point(8, 8);
+            processFilesButton.Name = "processFilesButton";
+            processFilesButton.Size = new Size(249, 40);
+            processFilesButton.TabIndex = 0;
+            processFilesButton.Text = "📁 Process Files";
+            processFilesButton.UseVisualStyleBackColor = false;
+            processFilesButton.Click += ProcessFilesButton_Click;
             // 
-            // aiQueryLabel
+            // showStatisticsButton
             // 
-            aiQueryLabel.Anchor = AnchorStyles.Left;
-            aiQueryLabel.AutoSize = true;
-            aiQueryTableLayout.SetColumnSpan(aiQueryLabel, 2);
-            aiQueryLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            aiQueryLabel.Location = new Point(13, 10);
-            aiQueryLabel.Name = "aiQueryLabel";
-            aiQueryLabel.Size = new Size(111, 15);
-            aiQueryLabel.TabIndex = 0;
-            aiQueryLabel.Text = "AI-Powered Query";
-            
+            showStatisticsButton.BackColor = Color.Transparent;
+            showStatisticsButton.Dock = DockStyle.Fill;
+            showStatisticsButton.FlatStyle = FlatStyle.Flat;
+            showStatisticsButton.Location = new Point(8, 54);
+            showStatisticsButton.Name = "showStatisticsButton";
+            showStatisticsButton.Size = new Size(249, 40);
+            showStatisticsButton.TabIndex = 1;
+            showStatisticsButton.Text = "📊 Show Statistics";
+            showStatisticsButton.UseVisualStyleBackColor = false;
+            showStatisticsButton.Click += ShowStatisticsButton_Click;
             // 
-            // responseModeLabel
+            // sqlQueryButton
             // 
-            responseModeLabel.Anchor = AnchorStyles.Left;
-            responseModeLabel.AutoSize = true;
-            responseModeLabel.Font = new Font("Segoe UI", 9F);
-            responseModeLabel.Location = new Point(13, 32);
-            responseModeLabel.Name = "responseModeLabel";
-            responseModeLabel.Size = new Size(41, 15);
-            responseModeLabel.TabIndex = 1;
-            responseModeLabel.Text = "Mode:";
-            
+            sqlQueryButton.BackColor = Color.Transparent;
+            sqlQueryButton.Dock = DockStyle.Fill;
+            sqlQueryButton.FlatStyle = FlatStyle.Flat;
+            sqlQueryButton.Location = new Point(8, 100);
+            sqlQueryButton.Name = "sqlQueryButton";
+            sqlQueryButton.Size = new Size(249, 40);
+            sqlQueryButton.TabIndex = 2;
+            sqlQueryButton.Text = "🔍 SQL Query";
+            sqlQueryButton.UseVisualStyleBackColor = false;
+            sqlQueryButton.Click += SqlQueryButton_Click;
             // 
-            // responseModeComboBox
+            // clearDatabaseButton
             // 
-            responseModeComboBox.Dock = DockStyle.Fill;
-            responseModeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
-            responseModeComboBox.Font = new Font("Segoe UI", 9F);
-            responseModeComboBox.Items.AddRange(new object[] { "ToolOnly - Must use tools", "Conversational - Free responses" });
-            responseModeComboBox.Location = new Point(60, 28);
-            responseModeComboBox.Name = "responseModeComboBox";
-            responseModeComboBox.Size = new Size(275, 23);
-            responseModeComboBox.TabIndex = 2;
-            responseModeComboBox.SelectedIndexChanged += ResponseModeComboBox_SelectedIndexChanged;
-            
+            clearDatabaseButton.BackColor = Color.Transparent;
+            clearDatabaseButton.Dock = DockStyle.Fill;
+            clearDatabaseButton.FlatStyle = FlatStyle.Flat;
+            clearDatabaseButton.Location = new Point(8, 146);
+            clearDatabaseButton.Name = "clearDatabaseButton";
+            clearDatabaseButton.Size = new Size(249, 40);
+            clearDatabaseButton.TabIndex = 3;
+            clearDatabaseButton.Text = "🗑️ Clear Database";
+            clearDatabaseButton.UseVisualStyleBackColor = false;
+            clearDatabaseButton.Click += ClearDatabaseButton_Click;
             // 
-            // aiQueryTextBox
+            // testConfigurationButton
             // 
-            aiQueryTableLayout.SetColumnSpan(aiQueryTextBox, 2);
-            aiQueryTextBox.Dock = DockStyle.Fill;
-            aiQueryTextBox.Location = new Point(13, 57);
-            aiQueryTextBox.Multiline = true;
-            aiQueryTextBox.Name = "aiQueryTextBox";
-            aiQueryTextBox.PlaceholderText = "Enter your natural language query...";
-            aiQueryTextBox.ScrollBars = ScrollBars.Vertical;
-            aiQueryTextBox.Size = new Size(322, 100);
-            aiQueryTextBox.TabIndex = 3;
-            aiQueryTextBox.KeyDown += AiQueryTextBox_KeyDown;
-            
+            testConfigurationButton.BackColor = Color.Transparent;
+            testConfigurationButton.Dock = DockStyle.Fill;
+            testConfigurationButton.FlatStyle = FlatStyle.Flat;
+            testConfigurationButton.Location = new Point(8, 192);
+            testConfigurationButton.Name = "testConfigurationButton";
+            testConfigurationButton.Size = new Size(249, 40);
+            testConfigurationButton.TabIndex = 4;
+            testConfigurationButton.Text = "⚙️ Test Configuration";
+            testConfigurationButton.UseVisualStyleBackColor = false;
+            testConfigurationButton.Click += TestConfigurationButton_Click;
+            // 
+            // viewLogsButton
+            // 
+            viewLogsButton.BackColor = Color.Transparent;
+            viewLogsButton.Dock = DockStyle.Fill;
+            viewLogsButton.FlatStyle = FlatStyle.Flat;
+            viewLogsButton.Location = new Point(8, 238);
+            viewLogsButton.Name = "viewLogsButton";
+            viewLogsButton.Size = new Size(249, 40);
+            viewLogsButton.TabIndex = 5;
+            viewLogsButton.Text = "📜 View Logs";
+            viewLogsButton.UseVisualStyleBackColor = false;
+            viewLogsButton.Click += ViewLogsButton_Click;
+            // 
+            // buttonEditMaps
+            // 
+            buttonEditMaps.BackColor = Color.Transparent;
+            buttonEditMaps.Dock = DockStyle.Fill;
+            buttonEditMaps.FlatStyle = FlatStyle.Flat;
+            buttonEditMaps.Location = new Point(8, 284);
+            buttonEditMaps.Name = "buttonEditMaps";
+            buttonEditMaps.Size = new Size(249, 40);
+            buttonEditMaps.TabIndex = 6;
+            buttonEditMaps.Text = "📝 Edit Lookups";
+            buttonEditMaps.UseVisualStyleBackColor = false;
+            buttonEditMaps.Click += ButtonEditMaps_Click;
+            // 
+            // handleOffersButton
+            // 
+            handleOffersButton.BackColor = Color.Transparent;
+            handleOffersButton.Dock = DockStyle.Fill;
+            handleOffersButton.FlatStyle = FlatStyle.Flat;
+            handleOffersButton.Location = new Point(8, 330);
+            handleOffersButton.Name = "handleOffersButton";
+            handleOffersButton.Size = new Size(249, 40);
+            handleOffersButton.TabIndex = 7;
+            handleOffersButton.Text = "💼 Handle Offers";
+            handleOffersButton.UseVisualStyleBackColor = false;
+            handleOffersButton.Click += HandleOffersButton_Click;
             // 
             // executeAiQueryButton
             // 
+            executeAiQueryButton.BackColor = Color.Transparent;
             aiQueryTableLayout.SetColumnSpan(executeAiQueryButton, 2);
             executeAiQueryButton.Dock = DockStyle.Fill;
+            executeAiQueryButton.FlatStyle = FlatStyle.Flat;
             executeAiQueryButton.Location = new Point(13, 163);
             executeAiQueryButton.Name = "executeAiQueryButton";
-            executeAiQueryButton.Size = new Size(322, 40);
+            executeAiQueryButton.Size = new Size(342, 40);
             executeAiQueryButton.TabIndex = 4;
             executeAiQueryButton.Text = "🚀 Execute Query";
+            executeAiQueryButton.UseVisualStyleBackColor = false;
             executeAiQueryButton.Click += ExecuteAiQueryButton_Click;
-            
             // 
-            // aiMetadataLabel
+            // notificationClearButton
             // 
-            aiMetadataLabel.Anchor = AnchorStyles.Left;
-            aiMetadataLabel.AutoSize = true;
-            aiQueryTableLayout.SetColumnSpan(aiMetadataLabel, 2);
-            aiMetadataLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            aiMetadataLabel.Location = new Point(13, 210);
-            aiMetadataLabel.Name = "aiMetadataLabel";
-            aiMetadataLabel.Size = new Size(86, 15);
-            aiMetadataLabel.TabIndex = 5;
-            aiMetadataLabel.Text = "📋 Query Info:";
-            
+            notificationClearButton.BackColor = Color.Transparent;
+            notificationClearButton.FlatStyle = FlatStyle.Flat;
+            notificationClearButton.Location = new Point(0, 0);
+            notificationClearButton.Name = "notificationClearButton";
+            notificationClearButton.Size = new Size(75, 23);
+            notificationClearButton.TabIndex = 0;
+            notificationClearButton.UseVisualStyleBackColor = false;
             // 
-            // aiMetadataTextBox
+            // panelAI
             // 
-            aiQueryTableLayout.SetColumnSpan(aiMetadataTextBox, 2);
-            aiMetadataTextBox.Dock = DockStyle.Fill;
-            aiMetadataTextBox.Location = new Point(13, 235);
-            aiMetadataTextBox.Multiline = true;
-            aiMetadataTextBox.Name = "aiMetadataTextBox";
-            aiMetadataTextBox.ReadOnly = true;
-            aiMetadataTextBox.ScrollBars = ScrollBars.Vertical;
-            aiMetadataTextBox.Size = new Size(322, 150);
-            aiMetadataTextBox.TabIndex = 6;
-            
+            panelAI.Controls.Add(aiQueryGroupBox);
+            panelAI.Dock = DockStyle.Right;
+            panelAI.Location = new Point(872, 24);
+            panelAI.Name = "panelAI";
+            panelAI.Padding = new Padding(10);
+            panelAI.Size = new Size(392, 766);
+            panelAI.TabIndex = 4;
             // 
-            // aiDataLabel
+            // aiQueryGroupBox
             // 
-            aiDataLabel.Anchor = AnchorStyles.Left;
-            aiDataLabel.AutoSize = true;
-            aiQueryTableLayout.SetColumnSpan(aiDataLabel, 2);
-            aiDataLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            aiDataLabel.Location = new Point(13, 395);
-            aiDataLabel.Name = "aiDataLabel";
-            aiDataLabel.Size = new Size(66, 15);
-            aiDataLabel.TabIndex = 7;
-            aiDataLabel.Text = "📊 Results:";
-            
-            // 
-            // aiDataResultsTextBox
-            // 
-            aiQueryTableLayout.SetColumnSpan(aiDataResultsTextBox, 2);
-            aiDataResultsTextBox.Dock = DockStyle.Fill;
-            aiDataResultsTextBox.Location = new Point(13, 420);
-            aiDataResultsTextBox.Multiline = true;
-            aiDataResultsTextBox.Name = "aiDataResultsTextBox";
-            aiDataResultsTextBox.ReadOnly = true;
-            aiDataResultsTextBox.ScrollBars = ScrollBars.Vertical;
-            aiDataResultsTextBox.Size = new Size(322, 271);
-            aiDataResultsTextBox.TabIndex = 8;
-            
+            aiQueryGroupBox.BackColor = Color.Transparent;
+            aiQueryGroupBox.Controls.Add(aiQueryTableLayout);
+            aiQueryGroupBox.Dock = DockStyle.Fill;
+            aiQueryGroupBox.ForeColor = Color.FromArgb(50, 49, 48);
+            aiQueryGroupBox.Location = new Point(10, 10);
+            aiQueryGroupBox.Name = "aiQueryGroupBox";
+            aiQueryGroupBox.Padding = new Padding(2, 20, 2, 2);
+            aiQueryGroupBox.Size = new Size(372, 746);
+            aiQueryGroupBox.TabIndex = 0;
+            aiQueryGroupBox.TabStop = false;
+            aiQueryGroupBox.Text = "AI Query Panel";
             // 
             // aiQueryTableLayout
             // 
@@ -532,7 +438,7 @@ namespace SacksApp
             aiQueryTableLayout.Controls.Add(aiDataLabel, 0, 6);
             aiQueryTableLayout.Controls.Add(aiDataResultsTextBox, 0, 7);
             aiQueryTableLayout.Dock = DockStyle.Fill;
-            aiQueryTableLayout.Location = new Point(2, 20);
+            aiQueryTableLayout.Location = new Point(2, 36);
             aiQueryTableLayout.Margin = new Padding(10);
             aiQueryTableLayout.Name = "aiQueryTableLayout";
             aiQueryTableLayout.Padding = new Padding(10);
@@ -545,71 +451,110 @@ namespace SacksApp
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             aiQueryTableLayout.RowStyles.Add(new RowStyle());
             aiQueryTableLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            aiQueryTableLayout.Size = new Size(348, 724);
+            aiQueryTableLayout.Size = new Size(368, 708);
             aiQueryTableLayout.TabIndex = 0;
-            
             // 
-            // aiQueryGroupBox
+            // aiQueryLabel
             // 
-            aiQueryGroupBox.Controls.Add(aiQueryTableLayout);
-            aiQueryGroupBox.Dock = DockStyle.Fill;
-            aiQueryGroupBox.Location = new Point(10, 10);
-            aiQueryGroupBox.Name = "aiQueryGroupBox";
-            aiQueryGroupBox.Padding = new Padding(2, 20, 2, 2);
-            aiQueryGroupBox.Size = new Size(372, 746);
-            aiQueryGroupBox.TabIndex = 0;
-            aiQueryGroupBox.TabStop = false;
-            aiQueryGroupBox.Text = "AI Query Panel";
-            
+            aiQueryLabel.Anchor = AnchorStyles.Left;
+            aiQueryLabel.AutoSize = true;
+            aiQueryTableLayout.SetColumnSpan(aiQueryLabel, 2);
+            aiQueryLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            aiQueryLabel.Location = new Point(13, 10);
+            aiQueryLabel.Name = "aiQueryLabel";
+            aiQueryLabel.Size = new Size(111, 15);
+            aiQueryLabel.TabIndex = 0;
+            aiQueryLabel.Text = "AI-Powered Query";
             // 
-            // panelAI
+            // aiQueryTextBox
             // 
-            panelAI.Controls.Add(aiQueryGroupBox);
-            panelAI.Dock = DockStyle.Right;
-            panelAI.Location = new Point(872, 24);
-            panelAI.Name = "panelAI";
-            panelAI.Padding = new Padding(10);
-            panelAI.Size = new Size(392, 766);
-            panelAI.TabIndex = 4;
-            
+            aiQueryTextBox.BackColor = Color.FromArgb(255, 255, 255);
+            aiQueryTableLayout.SetColumnSpan(aiQueryTextBox, 2);
+            aiQueryTextBox.Dock = DockStyle.Fill;
+            aiQueryTextBox.Location = new Point(13, 57);
+            aiQueryTextBox.Multiline = true;
+            aiQueryTextBox.Name = "aiQueryTextBox";
+            aiQueryTextBox.PlaceholderText = "Enter your natural language query...";
+            aiQueryTextBox.ScrollBars = ScrollBars.Vertical;
+            aiQueryTextBox.Size = new Size(342, 100);
+            aiQueryTextBox.TabIndex = 3;
+            aiQueryTextBox.WordWrap = true;
+            aiQueryTextBox.KeyDown += AiQueryTextBox_KeyDown;
             // 
-            // notificationStatusIcon
+            // aiMetadataLabel
             // 
-            notificationStatusIcon.AutoSize = true;
-            notificationStatusIcon.Dock = DockStyle.Left;
-            notificationStatusIcon.Font = new Font("Segoe UI", 12F);
-            notificationStatusIcon.Location = new Point(12, 8);
-            notificationStatusIcon.Margin = new Padding(0);
-            notificationStatusIcon.Name = "notificationStatusIcon";
-            notificationStatusIcon.Size = new Size(32, 21);
-            notificationStatusIcon.TabIndex = 0;
-            notificationStatusIcon.Text = "ℹ️";
-            
+            aiMetadataLabel.Anchor = AnchorStyles.Left;
+            aiMetadataLabel.AutoSize = true;
+            aiQueryTableLayout.SetColumnSpan(aiMetadataLabel, 2);
+            aiMetadataLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            aiMetadataLabel.Location = new Point(13, 206);
+            aiMetadataLabel.Name = "aiMetadataLabel";
+            aiMetadataLabel.Size = new Size(86, 15);
+            aiMetadataLabel.TabIndex = 5;
+            aiMetadataLabel.Text = "📋 Query Info:";
             // 
-            // notificationMessageLabel
+            // aiMetadataTextBox
             // 
-            notificationMessageLabel.Dock = DockStyle.Fill;
-            notificationMessageLabel.Font = new Font("Segoe UI", 10F);
-            notificationMessageLabel.ForeColor = Color.FromArgb(13, 17, 23);
-            notificationMessageLabel.Location = new Point(44, 8);
-            notificationMessageLabel.Name = "notificationMessageLabel";
-            notificationMessageLabel.Size = new Size(1206, 23);
-            notificationMessageLabel.TabIndex = 1;
-            notificationMessageLabel.Text = "Status message";
-            notificationMessageLabel.TextAlign = ContentAlignment.MiddleLeft;
-            
+            aiMetadataTextBox.BackColor = Color.FromArgb(255, 255, 255);
+            aiQueryTableLayout.SetColumnSpan(aiMetadataTextBox, 2);
+            aiMetadataTextBox.Dock = DockStyle.Fill;
+            aiMetadataTextBox.Location = new Point(13, 224);
+            aiMetadataTextBox.Multiline = true;
+            aiMetadataTextBox.Name = "aiMetadataTextBox";
+            aiMetadataTextBox.ReadOnly = true;
+            aiMetadataTextBox.ScrollBars = ScrollBars.Vertical;
+            aiMetadataTextBox.Size = new Size(342, 225);
+            aiMetadataTextBox.TabIndex = 6;
+            aiMetadataTextBox.WordWrap = true;
             // 
-            // notificationTimeLabel
+            // aiDataLabel
             // 
-            notificationTimeLabel.AutoSize = true;
-            notificationTimeLabel.Font = new Font("Segoe UI", 8F);
-            notificationTimeLabel.ForeColor = Color.FromArgb(107, 114, 129);
-            notificationTimeLabel.Location = new Point(1050, 8);
-            notificationTimeLabel.Name = "notificationTimeLabel";
-            notificationTimeLabel.Size = new Size(49, 13);
-            notificationTimeLabel.TabIndex = 2;
-            notificationTimeLabel.Text = "12:34:56";
-            
+            aiDataLabel.Anchor = AnchorStyles.Left;
+            aiDataLabel.AutoSize = true;
+            aiQueryTableLayout.SetColumnSpan(aiDataLabel, 2);
+            aiDataLabel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            aiDataLabel.Location = new Point(13, 452);
+            aiDataLabel.Name = "aiDataLabel";
+            aiDataLabel.Size = new Size(66, 15);
+            aiDataLabel.TabIndex = 7;
+            aiDataLabel.Text = "📊 Results:";
+            // 
+            // aiDataResultsTextBox
+            // 
+            aiDataResultsTextBox.BackColor = Color.FromArgb(255, 255, 255);
+            aiQueryTableLayout.SetColumnSpan(aiDataResultsTextBox, 2);
+            aiDataResultsTextBox.Dock = DockStyle.Fill;
+            aiDataResultsTextBox.Location = new Point(13, 470);
+            aiDataResultsTextBox.Multiline = true;
+            aiDataResultsTextBox.Name = "aiDataResultsTextBox";
+            aiDataResultsTextBox.ReadOnly = true;
+            aiDataResultsTextBox.ScrollBars = ScrollBars.Vertical;
+            aiDataResultsTextBox.Size = new Size(342, 225);
+            aiDataResultsTextBox.TabIndex = 8;
+            aiDataResultsTextBox.WordWrap = true;
+            // 
+            // responseModeLabel
+            // 
+            responseModeLabel.Anchor = AnchorStyles.Left;
+            responseModeLabel.AutoSize = true;
+            responseModeLabel.Font = new Font("Segoe UI", 9F);
+            responseModeLabel.Location = new Point(13, 32);
+            responseModeLabel.Name = "responseModeLabel";
+            responseModeLabel.Size = new Size(41, 15);
+            responseModeLabel.TabIndex = 1;
+            responseModeLabel.Text = "Mode:";
+            // 
+            // responseModeComboBox
+            // 
+            responseModeComboBox.Dock = DockStyle.Fill;
+            responseModeComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            responseModeComboBox.Font = new Font("Segoe UI", 9F);
+            responseModeComboBox.Items.AddRange(new object[] { "ToolOnly - Must use tools", "Conversational - Free responses" });
+            responseModeComboBox.Location = new Point(60, 28);
+            responseModeComboBox.Name = "responseModeComboBox";
+            responseModeComboBox.Size = new Size(295, 23);
+            responseModeComboBox.TabIndex = 2;
+            responseModeComboBox.SelectedIndexChanged += ResponseModeComboBox_SelectedIndexChanged;
             // 
             // notificationPanel
             // 
@@ -624,13 +569,46 @@ namespace SacksApp
             notificationPanel.Padding = new Padding(12, 8, 12, 8);
             notificationPanel.Size = new Size(1264, 41);
             notificationPanel.TabIndex = 3;
-            
+            // 
+            // notificationMessageLabel
+            // 
+            notificationMessageLabel.Dock = DockStyle.Fill;
+            notificationMessageLabel.Font = new Font("Segoe UI", 10F);
+            notificationMessageLabel.ForeColor = Color.FromArgb(13, 17, 23);
+            notificationMessageLabel.Location = new Point(44, 8);
+            notificationMessageLabel.Name = "notificationMessageLabel";
+            notificationMessageLabel.Size = new Size(1206, 23);
+            notificationMessageLabel.TabIndex = 1;
+            notificationMessageLabel.Text = "Status message";
+            notificationMessageLabel.TextAlign = ContentAlignment.MiddleLeft;
+            // 
+            // notificationTimeLabel
+            // 
+            notificationTimeLabel.AutoSize = true;
+            notificationTimeLabel.Font = new Font("Segoe UI", 8F);
+            notificationTimeLabel.ForeColor = Color.FromArgb(107, 114, 129);
+            notificationTimeLabel.Location = new Point(1050, 8);
+            notificationTimeLabel.Name = "notificationTimeLabel";
+            notificationTimeLabel.Size = new Size(49, 13);
+            notificationTimeLabel.TabIndex = 2;
+            notificationTimeLabel.Text = "12:34:56";
+            // 
+            // notificationStatusIcon
+            // 
+            notificationStatusIcon.AutoSize = true;
+            notificationStatusIcon.Dock = DockStyle.Left;
+            notificationStatusIcon.Font = new Font("Segoe UI", 12F);
+            notificationStatusIcon.Location = new Point(12, 8);
+            notificationStatusIcon.Margin = new Padding(0);
+            notificationStatusIcon.Name = "notificationStatusIcon";
+            notificationStatusIcon.Size = new Size(32, 21);
+            notificationStatusIcon.TabIndex = 0;
+            notificationStatusIcon.Text = "ℹ️";
             // 
             // notificationTimer
             // 
             notificationTimer.Interval = 5000;
             notificationTimer.Tick += NotificationTimer_Tick;
-            
             // 
             // MainForm
             // 
@@ -647,17 +625,15 @@ namespace SacksApp
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Sacks Product Management System";
             WindowState = FormWindowState.Maximized;
-            
-            // Resume layouts
             menuStrip.ResumeLayout(false);
             menuStrip.PerformLayout();
-            tableLayoutPanel1.ResumeLayout(false);
             panelButtuns.ResumeLayout(false);
             panelButtuns.PerformLayout();
+            tableLayoutPanel1.ResumeLayout(false);
+            panelAI.ResumeLayout(false);
+            aiQueryGroupBox.ResumeLayout(false);
             aiQueryTableLayout.ResumeLayout(false);
             aiQueryTableLayout.PerformLayout();
-            aiQueryGroupBox.ResumeLayout(false);
-            panelAI.ResumeLayout(false);
             notificationPanel.ResumeLayout(false);
             notificationPanel.PerformLayout();
             ResumeLayout(false);

@@ -42,6 +42,7 @@ namespace SacksApp
         {
             components = new System.ComponentModel.Container();
             DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle2 = new DataGridViewCellStyle();
             mainSplitContainer = new ModernWinForms.Controls.ModernSplitContainer();
             tableLayoutFilters = new ModernWinForms.Controls.ModernTableLayoutPanel();
             addFilterButton = new ModernWinForms.Controls.ModernButton();
@@ -78,6 +79,7 @@ namespace SacksApp
             // 
             // mainSplitContainer
             // 
+            mainSplitContainer.BackColor = Color.FromArgb(243, 242, 241);
             mainSplitContainer.Dock = DockStyle.Fill;
             mainSplitContainer.FixedPanel = FixedPanel.Panel1;
             mainSplitContainer.Location = new Point(3, 3);
@@ -105,6 +107,7 @@ namespace SacksApp
             // 
             // tableLayoutFilters
             // 
+            tableLayoutFilters.BackColor = Color.FromArgb(243, 243, 243);
             tableLayoutFilters.ColumnCount = 2;
             tableLayoutFilters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutFilters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50.0000076F));
@@ -115,6 +118,7 @@ namespace SacksApp
             tableLayoutFilters.Controls.Add(removeFilterButton, 1, 2);
             tableLayoutFilters.Controls.Add(filtersListBox, 0, 3);
             tableLayoutFilters.Dock = DockStyle.Fill;
+            tableLayoutFilters.ForeColor = Color.FromArgb(50, 49, 48);
             tableLayoutFilters.Location = new Point(5, 127);
             tableLayoutFilters.Margin = new Padding(5);
             tableLayoutFilters.Name = "tableLayoutFilters";
@@ -130,50 +134,69 @@ namespace SacksApp
             // addFilterButton
             // 
             addFilterButton.Anchor = AnchorStyles.Top;
-            addFilterButton.Location = new Point(188, 84);
+            addFilterButton.BackColor = Color.Transparent;
+            addFilterButton.FlatStyle = FlatStyle.Flat;
+            addFilterButton.Location = new Point(188, 85);
             addFilterButton.Name = "addFilterButton";
             addFilterButton.Size = new Size(215, 73);
             addFilterButton.TabIndex = 7;
             addFilterButton.Text = "Add";
+            addFilterButton.UseVisualStyleBackColor = false;
             addFilterButton.Click += AddFilterButton_Click;
             // 
             // filterOperatorComboBox
             // 
+            filterOperatorComboBox.BackColor = Color.FromArgb(255, 255, 255);
             filterOperatorComboBox.Dock = DockStyle.Top;
+            filterOperatorComboBox.DrawMode = DrawMode.OwnerDrawFixed;
             filterOperatorComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            filterOperatorComboBox.FlatStyle = FlatStyle.Flat;
+            filterOperatorComboBox.Font = new Font("Segoe UI", 9F);
+            filterOperatorComboBox.ForeColor = Color.FromArgb(50, 49, 48);
             filterOperatorComboBox.Location = new Point(594, 3);
             filterOperatorComboBox.Name = "filterOperatorComboBox";
-            filterOperatorComboBox.Size = new Size(587, 23);
+            filterOperatorComboBox.Size = new Size(587, 24);
             filterOperatorComboBox.TabIndex = 5;
             // 
             // filterColumnComboBox
             // 
+            filterColumnComboBox.BackColor = Color.FromArgb(255, 255, 255);
             filterColumnComboBox.Dock = DockStyle.Top;
+            filterColumnComboBox.DrawMode = DrawMode.OwnerDrawFixed;
             filterColumnComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            filterColumnComboBox.FlatStyle = FlatStyle.Flat;
+            filterColumnComboBox.Font = new Font("Segoe UI", 9F);
+            filterColumnComboBox.ForeColor = Color.FromArgb(50, 49, 48);
             filterColumnComboBox.Location = new Point(3, 3);
             filterColumnComboBox.Name = "filterColumnComboBox";
-            filterColumnComboBox.Size = new Size(585, 23);
+            filterColumnComboBox.Size = new Size(585, 24);
             filterColumnComboBox.TabIndex = 4;
             filterColumnComboBox.SelectedIndexChanged += FilterColumnComboBox_SelectedIndexChanged;
             // 
             // filterValueTextBox
             // 
+            filterValueTextBox.BackColor = Color.FromArgb(255, 255, 255);
             tableLayoutFilters.SetColumnSpan(filterValueTextBox, 2);
             filterValueTextBox.Dock = DockStyle.Fill;
-            filterValueTextBox.Location = new Point(3, 32);
+            filterValueTextBox.Location = new Point(3, 33);
             filterValueTextBox.Multiline = true;
             filterValueTextBox.Name = "filterValueTextBox";
+            filterValueTextBox.ScrollBars = ScrollBars.None;
             filterValueTextBox.Size = new Size(1178, 46);
             filterValueTextBox.TabIndex = 6;
+            filterValueTextBox.WordWrap = true;
             // 
             // removeFilterButton
             // 
             removeFilterButton.Anchor = AnchorStyles.Top;
-            removeFilterButton.Location = new Point(780, 84);
+            removeFilterButton.BackColor = Color.Transparent;
+            removeFilterButton.FlatStyle = FlatStyle.Flat;
+            removeFilterButton.Location = new Point(780, 85);
             removeFilterButton.Name = "removeFilterButton";
             removeFilterButton.Size = new Size(215, 73);
             removeFilterButton.TabIndex = 8;
             removeFilterButton.Text = "Remove";
+            removeFilterButton.UseVisualStyleBackColor = false;
             removeFilterButton.Click += RemoveFilterButton_Click;
             // 
             // filtersListBox
@@ -182,7 +205,7 @@ namespace SacksApp
             tableLayoutFilters.SetColumnSpan(filtersListBox, 2);
             filtersListBox.Dock = DockStyle.Fill;
             filtersListBox.FormattingEnabled = true;
-            filtersListBox.Location = new Point(3, 163);
+            filtersListBox.Location = new Point(3, 164);
             filtersListBox.Name = "filtersListBox";
             filtersListBox.Size = new Size(1178, 81);
             filtersListBox.TabIndex = 11;
@@ -190,23 +213,29 @@ namespace SacksApp
             // 
             // buttonHideFilters
             // 
+            buttonHideFilters.BackColor = Color.Transparent;
             buttonHideFilters.Dock = DockStyle.Top;
+            buttonHideFilters.FlatStyle = FlatStyle.Flat;
             buttonHideFilters.Location = new Point(5, 67);
             buttonHideFilters.Name = "buttonHideFilters";
             buttonHideFilters.Size = new Size(1184, 60);
             buttonHideFilters.TabIndex = 15;
             buttonHideFilters.Text = "Hide filters";
+            buttonHideFilters.UseVisualStyleBackColor = false;
             buttonHideFilters.Visible = false;
             buttonHideFilters.Click += ButtonHideFilters_Click;
             // 
             // buttonShowFilter
             // 
+            buttonShowFilter.BackColor = Color.Transparent;
             buttonShowFilter.Dock = DockStyle.Top;
+            buttonShowFilter.FlatStyle = FlatStyle.Flat;
             buttonShowFilter.Location = new Point(5, 5);
             buttonShowFilter.Name = "buttonShowFilter";
             buttonShowFilter.Size = new Size(1184, 62);
             buttonShowFilter.TabIndex = 15;
             buttonShowFilter.Text = "Show filters";
+            buttonShowFilter.UseVisualStyleBackColor = false;
             buttonShowFilter.Click += ButtonShowFilter_Click;
             // 
             // resultsGrid
@@ -223,14 +252,24 @@ namespace SacksApp
             resultsGrid.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableAlwaysIncludeHeaderText;
             resultsGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             resultsGrid.ContextMenuStrip = contextMenuStrip1;
+            dataGridViewCellStyle2.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle2.BackColor = SystemColors.Window;
+            dataGridViewCellStyle2.Font = new Font("Segoe UI", 9F);
+            dataGridViewCellStyle2.ForeColor = Color.FromArgb(50, 49, 48);
+            dataGridViewCellStyle2.SelectionBackColor = SystemColors.Highlight;
+            dataGridViewCellStyle2.SelectionForeColor = SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = DataGridViewTriState.False;
+            resultsGrid.DefaultCellStyle = dataGridViewCellStyle2;
             resultsGrid.Dock = DockStyle.Fill;
             resultsGrid.EditMode = DataGridViewEditMode.EditOnEnter;
-            resultsGrid.Location = new Point(0, 43);
+            resultsGrid.Font = new Font("Segoe UI", 9F);
+            resultsGrid.GridColor = Color.FromArgb(138, 136, 134);
+            resultsGrid.Location = new Point(0, 45);
             resultsGrid.MultiSelect = false;
             resultsGrid.Name = "resultsGrid";
             resultsGrid.SelectionMode = DataGridViewSelectionMode.CellSelect;
             resultsGrid.ShowEditingIcon = false;
-            resultsGrid.Size = new Size(1194, 576);
+            resultsGrid.Size = new Size(1194, 574);
             resultsGrid.TabIndex = 0;
             resultsGrid.CellEndEdit += ResultsGrid_CellEndEdit;
             resultsGrid.CellMouseUp += ResultsGrid_CellMouseUp;
@@ -267,63 +306,80 @@ namespace SacksApp
             // 
             editControlsPanel.AutoSize = true;
             editControlsPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            editControlsPanel.BackColor = Color.FromArgb(243, 243, 243);
             editControlsPanel.Controls.Add(editModeCheckBox);
             editControlsPanel.Controls.Add(saveChangesButton);
             editControlsPanel.Controls.Add(cancelAllButton);
             editControlsPanel.Dock = DockStyle.Top;
+            editControlsPanel.ForeColor = Color.FromArgb(50, 49, 48);
             editControlsPanel.Location = new Point(0, 0);
             editControlsPanel.Name = "editControlsPanel";
             editControlsPanel.Padding = new Padding(6);
-            editControlsPanel.Size = new Size(1194, 43);
+            editControlsPanel.Size = new Size(1194, 45);
             editControlsPanel.TabIndex = 18;
             // 
             // editModeCheckBox
             // 
             editModeCheckBox.AutoSize = true;
+            editModeCheckBox.BackColor = Color.Transparent;
+            editModeCheckBox.FlatStyle = FlatStyle.Flat;
             editModeCheckBox.Location = new Point(9, 14);
             editModeCheckBox.Margin = new Padding(3, 8, 12, 3);
             editModeCheckBox.Name = "editModeCheckBox";
-            editModeCheckBox.Size = new Size(80, 19);
+            editModeCheckBox.Size = new Size(77, 19);
             editModeCheckBox.TabIndex = 0;
             editModeCheckBox.Text = "Edit mode";
+            editModeCheckBox.UseVisualStyleBackColor = false;
             editModeCheckBox.CheckedChanged += EditModeCheckBox_CheckedChanged;
             // 
             // saveChangesButton
             // 
             saveChangesButton.AutoSize = true;
+            saveChangesButton.BackColor = Color.Transparent;
             saveChangesButton.Enabled = false;
-            saveChangesButton.Location = new Point(104, 9);
+            saveChangesButton.FlatStyle = FlatStyle.Flat;
+            saveChangesButton.Location = new Point(101, 9);
             saveChangesButton.Name = "saveChangesButton";
-            saveChangesButton.Size = new Size(88, 25);
+            saveChangesButton.Size = new Size(90, 27);
             saveChangesButton.TabIndex = 1;
             saveChangesButton.Text = "Save changes";
+            saveChangesButton.UseVisualStyleBackColor = false;
             saveChangesButton.Click += SaveChangesButton_Click;
             // 
             // cancelAllButton
             // 
             cancelAllButton.AutoSize = true;
+            cancelAllButton.BackColor = Color.Transparent;
             cancelAllButton.Enabled = false;
-            cancelAllButton.Location = new Point(201, 9);
+            cancelAllButton.FlatStyle = FlatStyle.Flat;
+            cancelAllButton.Location = new Point(200, 9);
             cancelAllButton.Margin = new Padding(6, 3, 3, 3);
             cancelAllButton.Name = "cancelAllButton";
-            cancelAllButton.Size = new Size(75, 25);
+            cancelAllButton.Size = new Size(75, 27);
             cancelAllButton.TabIndex = 2;
             cancelAllButton.Text = "Cancel All";
+            cancelAllButton.UseVisualStyleBackColor = false;
             cancelAllButton.Click += CancelAllButton_Click;
             // 
             // runQueryButton
             // 
+            runQueryButton.BackColor = Color.Transparent;
             runQueryButton.Dock = DockStyle.Bottom;
+            runQueryButton.FlatStyle = FlatStyle.Flat;
             runQueryButton.Location = new Point(0, 619);
             runQueryButton.Margin = new Padding(20);
             runQueryButton.Name = "runQueryButton";
             runQueryButton.Size = new Size(1194, 60);
             runQueryButton.TabIndex = 16;
             runQueryButton.Text = "Run Query";
+            runQueryButton.UseVisualStyleBackColor = false;
             runQueryButton.Click += RunQueryButton_Click;
             // 
             // statusStrip
             // 
+            statusStrip.BackColor = Color.FromArgb(243, 242, 241);
+            statusStrip.Font = new Font("Segoe UI", 9F);
+            statusStrip.ForeColor = Color.FromArgb(50, 49, 48);
             statusStrip.Items.AddRange(new ToolStripItem[] { statusLabel, progressBar });
             statusStrip.Location = new Point(0, 679);
             statusStrip.Name = "statusStrip";
@@ -362,7 +418,6 @@ namespace SacksApp
             ((System.ComponentModel.ISupportInitialize)mainSplitContainer).EndInit();
             mainSplitContainer.ResumeLayout(false);
             tableLayoutFilters.ResumeLayout(false);
-            tableLayoutFilters.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)resultsGrid).EndInit();
             contextMenuStrip1.ResumeLayout(false);
             editControlsPanel.ResumeLayout(false);
