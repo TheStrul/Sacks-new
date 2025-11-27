@@ -113,6 +113,7 @@ public sealed class AnimationEngine : IDisposable
     public void Dispose()
     {
         Stop();
+        _timer.Tick -= OnTimerTick;
         _timer.Dispose();
     }
 }

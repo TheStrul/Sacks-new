@@ -11,6 +11,7 @@ namespace ModernWinForms.Controls;
 [Description("Modern status strip control with theme support.")]
 public class ModernStatusStrip : StatusStrip
 {
+    private Font? _themeFont;
     /// <summary>
     /// Initializes a new instance of the ModernStatusStrip class.
     /// </summary>
@@ -50,11 +51,11 @@ public class ModernStatusStrip : StatusStrip
             RenderMode = ToolStripRenderMode.Professional;
         }
 
-        var themeFont = ThemeManager.CreateFont();
-        if (themeFont != null)
+        _themeFont?.Dispose();
+        _themeFont = ThemeManager.CreateFont();
+        if (_themeFont != null)
         {
-            Font = themeFont;
-            themeFont.Dispose();
+            Font = _themeFont;
         }
     }
 
@@ -74,6 +75,7 @@ public class ModernStatusStrip : StatusStrip
         if (disposing)
         {
             ThemeManager.ThemeChanged -= OnThemeChanged;
+            _themeFont?.Dispose();
         }
         base.Dispose(disposing);
     }

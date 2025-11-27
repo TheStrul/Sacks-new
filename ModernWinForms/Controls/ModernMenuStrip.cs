@@ -11,6 +11,7 @@ namespace ModernWinForms.Controls;
 [Description("Modern menu strip control with theme support.")]
 public class ModernMenuStrip : MenuStrip
 {
+    private Font? _themeFont;
     /// <summary>
     /// Initializes a new instance of the ModernMenuStrip class.
     /// </summary>
@@ -50,11 +51,11 @@ public class ModernMenuStrip : MenuStrip
             RenderMode = ToolStripRenderMode.Professional;
         }
 
-        var themeFont = ThemeManager.CreateFont();
-        if (themeFont != null)
+        _themeFont?.Dispose();
+        _themeFont = ThemeManager.CreateFont();
+        if (_themeFont != null)
         {
-            Font = themeFont;
-            themeFont.Dispose();
+            Font = _themeFont;
         }
 
         // Apply custom renderer for modern look
@@ -77,6 +78,7 @@ public class ModernMenuStrip : MenuStrip
         if (disposing)
         {
             ThemeManager.ThemeChanged -= OnThemeChanged;
+            _themeFont?.Dispose();
         }
         base.Dispose(disposing);
     }

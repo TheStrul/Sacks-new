@@ -173,7 +173,7 @@ public class ModernPanel : Panel
             return _cachedPath;
         }
 
-        _cachedPath?.Dispose();
+        GraphicsPathPool.Return(_cachedPath);
         _cachedPath = GraphicsHelper.CreateRoundedRectangle(rect, radius);
         _cachedRect = rect;
         _cachedRadius = radius;
@@ -187,7 +187,7 @@ public class ModernPanel : Panel
         if (disposing)
         {
             ThemeManager.ThemeChanged -= OnThemeChanged;
-            _cachedPath?.Dispose();
+            GraphicsPathPool.Return(_cachedPath);
             _cachedPath = null;
         }
         base.Dispose(disposing);

@@ -48,8 +48,8 @@ public class ModernTextBox : Control, IValidatable
         
         _textBox.Enter += OnInnerTextBoxEnter;
         _textBox.Leave += OnInnerTextBoxLeave;
-        _textBox.TextChanged += (s, e) => OnTextChanged(e);
-        _textBox.KeyDown += (s, e) => OnKeyDown(e);
+        _textBox.TextChanged += OnInnerTextBoxTextChanged;
+        _textBox.KeyDown += OnInnerTextBoxKeyDown;
 
         Controls.Add(_textBox);
         
@@ -68,6 +68,16 @@ public class ModernTextBox : Control, IValidatable
     private void OnInnerTextBoxLeave(object? sender, EventArgs e)
     {
         _focusAnimation?.Animate(0.0, 200, value => _focusProgress = value);
+    }
+
+    private void OnInnerTextBoxTextChanged(object? sender, EventArgs e)
+    {
+        OnTextChanged(e);
+    }
+
+    private void OnInnerTextBoxKeyDown(object? sender, KeyEventArgs e)
+    {
+        OnKeyDown(e);
     }
 
     private void OnThemeChanged(object? sender, EventArgs e)
@@ -622,6 +632,8 @@ public class ModernTextBox : Control, IValidatable
         {
             _textBox.Enter -= OnInnerTextBoxEnter;
             _textBox.Leave -= OnInnerTextBoxLeave;
+            _textBox.TextChanged -= OnInnerTextBoxTextChanged;
+            _textBox.KeyDown -= OnInnerTextBoxKeyDown;
             ThemeManager.ThemeChanged -= OnThemeChanged;
             _cachedPath?.Dispose();
             _cachedPath = null;

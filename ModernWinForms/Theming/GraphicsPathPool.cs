@@ -40,4 +40,16 @@ internal static class GraphicsPathPool
         path.Reset();
         _pool.Add(path);
     }
+
+    /// <summary>
+    /// Clears the pool and disposes all cached GraphicsPath instances.
+    /// Should be called during application shutdown to prevent resource leaks.
+    /// </summary>
+    public static void Clear()
+    {
+        while (_pool.TryTake(out var path))
+        {
+            path?.Dispose();
+        }
+    }
 }

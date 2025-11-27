@@ -17,12 +17,6 @@ public static class ThemeValidationTool
     private static readonly string[] RequiredStates = { "normal" };
 
     /// <summary>
-    /// Required color properties that MUST be defined in the 'normal' state.
-    /// ZERO TOLERANCE: Missing required colors = validation failure.
-    /// </summary>
-    private static readonly string[] RequiredNormalStateColors = { "backColor", "foreColor", "borderColor" };
-
-    /// <summary>
     /// All Modern controls that MUST have theme definitions.
     /// ZERO TOLERANCE: Missing control definitions = validation failure.
     /// </summary>
@@ -101,16 +95,68 @@ public static class ThemeValidationTool
 
         // Validate all theme files
         var themeFiles = Directory.GetFiles(skinsDirectory, "*.theme.json");
+        var themeNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        
         foreach (var themeFile in themeFiles)
         {
+            var themeName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(themeFile));
+            themeNames.Add(themeName);
             ValidateThemeFile(themeFile, result);
         }
 
         // Validate all skin files
         var skinFiles = Directory.GetFiles(skinsDirectory, "*.skin.json");
+        var skinNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        
         foreach (var skinFile in skinFiles)
         {
+            var skinName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(skinFile));
+            skinNames.Add(skinName);
             ValidateSkinFile(skinFile, result);
+        }
+
+        // Validate inheritance references for themes
+        foreach (var themeFile in themeFiles)
+        {
+            try
+            {
+                var json = File.ReadAllText(themeFile);
+                var theme = JsonSerializer.Deserialize<ThemeDefinition>(json);
+                if (theme != null && !string.IsNullOrWhiteSpace(theme.InheritsFrom))
+                {
+                    if (!themeNames.Contains(theme.InheritsFrom))
+                    {
+                        var themeName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(themeFile));
+                        result.AddError($"Theme '{themeName}' inherits from '{theme.InheritsFrom}' which does not exist");
+                    }
+                }
+            }
+            catch
+            {
+                // Already reported as parse error earlier
+            }
+        }
+
+        // Validate inheritance references for skins
+        foreach (var skinFile in skinFiles)
+        {
+            try
+            {
+                var json = File.ReadAllText(skinFile);
+                var skin = JsonSerializer.Deserialize<SkinDefinition>(json);
+                if (skin != null && !string.IsNullOrWhiteSpace(skin.InheritsFrom))
+                {
+                    if (!skinNames.Contains(skin.InheritsFrom))
+                    {
+                        var skinName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(skinFile));
+                        result.AddError($"Skin '{skinName}' inherits from '{skin.InheritsFrom}' which does not exist");
+                    }
+                }
+            }
+            catch
+            {
+                // Already reported as parse error earlier
+            }
         }
 
         // Validate that currentTheme exists
@@ -150,7 +196,7 @@ public static class ThemeValidationTool
 )
     {
         var themeName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(themeFile));
-        result.AddContext($"Validating theme: {themeName} ({Path.GetFileName(themeFile)})");
+        result.IncrementFilesValidated($"Validating theme: {themeName} ({Path.GetFileName(themeFile)})");
 
         try
         {
@@ -227,7 +273,7 @@ public static class ThemeValidationTool
         var skinName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(skinFile));
         var isBaseSkin = skinName.StartsWith("Base", StringComparison.OrdinalIgnoreCase);
         
-        result.AddContext($"Validating skin: {skinName} ({Path.GetFileName(skinFile)})");
+        result.IncrementFilesValidated($"Validating skin: {skinName} ({Path.GetFileName(skinFile)})");
 
         try
         {
@@ -252,14 +298,20 @@ public static class ThemeValidationTool
                 result.AddContext($"  Skin '{skinName}' inherits from '{skin.InheritsFrom}' (partial validation)");
             }
 
-            // Validate palette colors (if defined)
+            // Validate palette colors (if defined) - COMPLETE validation
             if (skin.Palette != null)
             {
+                ValidateColor(skin.Palette.Primary, "palette.primary", skinName, result);
+                ValidateColor(skin.Palette.Secondary, "palette.secondary", skinName, result);
                 ValidateColor(skin.Palette.Background, "palette.background", skinName, result);
                 ValidateColor(skin.Palette.Surface, "palette.surface", skinName, result);
                 ValidateColor(skin.Palette.Text, "palette.text", skinName, result);
-                ValidateColor(skin.Palette.Primary, "palette.primary", skinName, result);
                 ValidateColor(skin.Palette.Border, "palette.border", skinName, result);
+                ValidateColor(skin.Palette.Success, "palette.success", skinName, result);
+                ValidateColor(skin.Palette.Danger, "palette.danger", skinName, result);
+                ValidateColor(skin.Palette.Warning, "palette.warning", skinName, result);
+                ValidateColor(skin.Palette.Info, "palette.info", skinName, result);
+                ValidateColor(skin.Palette.Error, "palette.error", skinName, result);
             }
 
             // Base skins and standalone skins must have ALL controls
@@ -316,7 +368,7 @@ public static class ThemeValidationTool
 
         var normalState = controlStyle.States["normal"];
 
-        // ZERO TOLERANCE: normal state MUST have all required colors (if defined)
+        // ZERO TOLERANCE: normal state MUST have all required colors
         if (string.IsNullOrWhiteSpace(normalState.BackColor))
         {
             result.AddError($"  Skin '{skinName}' control '{controlName}' normal state missing required color: backColor");
@@ -397,7 +449,7 @@ public static class ThemeValidationTool
         if (result.IsValid)
         {
             MessageBox.Show(
-                $"? Theme validation PASSED!\n\n" +
+                $"[OK] Theme validation PASSED!\n\n" +
                 $"Validated: {result.FilesValidated} files\n" +
                 $"Warnings: {result.Warnings.Count}\n\n" +
                 (result.Warnings.Count > 0 ? "See log for warnings." : "No issues found."),
@@ -408,7 +460,7 @@ public static class ThemeValidationTool
         else
         {
             var sb = new StringBuilder();
-            sb.AppendLine("? THEME VALIDATION FAILED!");
+            sb.AppendLine("[FAIL] THEME VALIDATION FAILED!");
             sb.AppendLine();
             sb.AppendLine($"Errors found: {result.Errors.Count}");
             sb.AppendLine($"Warnings: {result.Warnings.Count}");
@@ -417,7 +469,7 @@ public static class ThemeValidationTool
             
             foreach (var error in result.Errors.Take(20)) // Show first 20 errors
             {
-                sb.AppendLine($"  • {error}");
+                sb.AppendLine($"  * {error}");
             }
 
             if (result.Errors.Count > 20)
@@ -487,9 +539,18 @@ public sealed class ThemeValidationResult
     }
 
     /// <summary>
-    /// Adds a context message.
+    /// Adds a context message (informational only).
     /// </summary>
     public void AddContext(string context)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(context);
+        Context.Add(context);
+    }
+
+    /// <summary>
+    /// Increments the file counter and adds a context message for file validation.
+    /// </summary>
+    internal void IncrementFilesValidated(string context)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(context);
         Context.Add(context);
@@ -502,11 +563,11 @@ public sealed class ThemeValidationResult
     public string GetFullReport()
     {
         var sb = new StringBuilder();
-        sb.AppendLine("???????????????????????????????????????????????");
+        sb.AppendLine("=====================================");
         sb.AppendLine("  THEME VALIDATION REPORT");
-        sb.AppendLine("???????????????????????????????????????????????");
+        sb.AppendLine("=====================================");
         sb.AppendLine();
-        sb.AppendLine($"Status: {(IsValid ? "? PASSED" : "? FAILED")}");
+        sb.AppendLine($"Status: {(IsValid ? "[PASS]" : "[FAIL]")}");
         sb.AppendLine($"Files Validated: {FilesValidated}");
         sb.AppendLine($"Errors: {Errors.Count}");
         sb.AppendLine($"Warnings: {Warnings.Count}");
@@ -527,7 +588,7 @@ public sealed class ThemeValidationResult
             sb.AppendLine("ERRORS:");
             foreach (var error in Errors)
             {
-                sb.AppendLine($"  ? {error}");
+                sb.AppendLine($"  * {error}");
             }
             sb.AppendLine();
         }
@@ -537,12 +598,12 @@ public sealed class ThemeValidationResult
             sb.AppendLine("WARNINGS:");
             foreach (var warning in Warnings)
             {
-                sb.AppendLine($"  ??  {warning}");
+                sb.AppendLine($"  ! {warning}");
             }
             sb.AppendLine();
         }
 
-        sb.AppendLine("???????????????????????????????????????????????");
+        sb.AppendLine("=====================================");
         return sb.ToString();
     }
 }

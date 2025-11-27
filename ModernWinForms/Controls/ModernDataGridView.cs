@@ -11,6 +11,9 @@ namespace ModernWinForms.Controls;
 [Description("Modern data grid view control with theme support.")]
 public class ModernDataGridView : DataGridView
 {
+    private Font? _headerFont;
+    private Font? _cellFont;
+    private Font? _themeFont;
     /// <summary>
     /// Initializes a new instance of the ModernDataGridView class.
     /// </summary>
@@ -60,14 +63,18 @@ public class ModernDataGridView : DataGridView
             ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(13, 17, 23);
             ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(246, 248, 250);
             ColumnHeadersDefaultCellStyle.SelectionForeColor = Color.FromArgb(13, 17, 23);
-            ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            _headerFont?.Dispose();
+            _headerFont = new Font("Segoe UI", 9F, FontStyle.Bold);
+            ColumnHeadersDefaultCellStyle.Font = _headerFont;
             ColumnHeadersDefaultCellStyle.Padding = new Padding(4, 8, 4, 8);
 
             DefaultCellStyle.BackColor = Color.White;
             DefaultCellStyle.ForeColor = Color.FromArgb(13, 17, 23);
             DefaultCellStyle.SelectionBackColor = Color.FromArgb(9, 105, 218);
             DefaultCellStyle.SelectionForeColor = Color.White;
-            DefaultCellStyle.Font = new Font("Segoe UI", 9F);
+            _cellFont?.Dispose();
+            _cellFont = new Font("Segoe UI", 9F);
+            DefaultCellStyle.Font = _cellFont;
             DefaultCellStyle.Padding = new Padding(4, 8, 4, 8);
 
             AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(246, 248, 250);
@@ -82,12 +89,12 @@ public class ModernDataGridView : DataGridView
             RowTemplate.Height = 35;
         }
 
-        var themeFont = ThemeManager.CreateFont();
-        if (themeFont != null)
+        _themeFont?.Dispose();
+        _themeFont = ThemeManager.CreateFont();
+        if (_themeFont != null)
         {
-            Font = themeFont;
-            DefaultCellStyle.Font = themeFont;
-            themeFont.Dispose();
+            Font = _themeFont;
+            DefaultCellStyle.Font = _themeFont;
         }
     }
 
@@ -107,6 +114,9 @@ public class ModernDataGridView : DataGridView
         if (disposing)
         {
             ThemeManager.ThemeChanged -= OnThemeChanged;
+            _headerFont?.Dispose();
+            _cellFont?.Dispose();
+            _themeFont?.Dispose();
         }
         base.Dispose(disposing);
     }

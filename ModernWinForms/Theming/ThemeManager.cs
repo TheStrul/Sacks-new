@@ -25,15 +25,35 @@ public static class ThemeManager
     /// </summary>
     public static string CurrentTheme
     {
-        get => _config.CurrentTheme;
+        get
+        {
+            _configLock.Wait();
+            try
+            {
+                return _config.CurrentTheme;
+            }
+            finally
+            {
+                _configLock.Release();
+            }
+        }
         set
         {
-            if (_config.CurrentTheme != value)
+            _configLock.Wait();
+            try
             {
-                _config.CurrentTheme = value;
-                SaveConfiguration();
-                ThemeChanged?.Invoke(null, EventArgs.Empty);
+                if (_config.CurrentTheme != value)
+                {
+                    _config.CurrentTheme = value;
+                    SaveConfiguration();
+                }
             }
+            finally
+            {
+                _configLock.Release();
+            }
+            // Invoke event outside lock to prevent deadlocks
+            ThemeChanged?.Invoke(null, EventArgs.Empty);
         }
     }
 
@@ -43,15 +63,35 @@ public static class ThemeManager
     /// </summary>
     public static string CurrentSkin
     {
-        get => _config.CurrentSkin;
+        get
+        {
+            _configLock.Wait();
+            try
+            {
+                return _config.CurrentSkin;
+            }
+            finally
+            {
+                _configLock.Release();
+            }
+        }
         set
         {
-            if (_config.CurrentSkin != value)
+            _configLock.Wait();
+            try
             {
-                _config.CurrentSkin = value;
-                SaveConfiguration();
-                ThemeChanged?.Invoke(null, EventArgs.Empty);
+                if (_config.CurrentSkin != value)
+                {
+                    _config.CurrentSkin = value;
+                    SaveConfiguration();
+                }
             }
+            finally
+            {
+                _configLock.Release();
+            }
+            // Invoke event outside lock to prevent deadlocks
+            ThemeChanged?.Invoke(null, EventArgs.Empty);
         }
     }
 
@@ -346,6 +386,61 @@ public static class ThemeManager
         {
             ApplyThemeToControls(control.Controls, skin);
         }
+    }
+
+    /// <summary>
+    /// Sets the current theme and skin using type-safe enums.
+    /// This is the recommended API for switching themes.
+    /// </summary>
+    /// <param name="theme">The theme to activate.</param>
+    /// <param name="skin">The skin/color variant to activate.</param>
+    /// <example>
+    /// <code>
+    /// ThemeManager.SetTheme(Theme.GitHub, Skin.Dracula);
+    /// ThemeManager.SetTheme(Theme.Material, Skin.Nord);
+    /// </code>
+    /// </example>
+    public static void SetTheme(Theme theme, Skin skin)
+    {
+        var themeName = theme.ToString();
+        var skinName = skin switch
+        {
+            Skin.BaseLight => "BaseLight",
+            Skin.BaseDark => "BaseDark",
+            Skin.SolarizedLight => "Solarized Light",
+            Skin.SolarizedDark => "Solarized Dark",
+            _ => skin.ToString()
+        };
+
+        _configLock.Wait();
+        try
+        {
+            bool changed = false;
+            
+            if (_config.CurrentTheme != themeName)
+            {
+                _config.CurrentTheme = themeName;
+                changed = true;
+            }
+            
+            if (_config.CurrentSkin != skinName)
+            {
+                _config.CurrentSkin = skinName;
+                changed = true;
+            }
+            
+            if (changed)
+            {
+                SaveConfiguration();
+            }
+        }
+        finally
+        {
+            _configLock.Release();
+        }
+        
+        // Invoke event outside lock to prevent deadlocks
+        ThemeChanged?.Invoke(null, EventArgs.Empty);
     }
 
     /// <summary>

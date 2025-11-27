@@ -407,7 +407,9 @@ public class ModernButton : Button
             currentRadius * 2, 
             currentRadius * 2);
         
+        // Restore clip and dispose old clip if it exists
         g.Clip = oldClip;
+        oldClip?.Dispose();
     }
 
     private static Color BlendColors(Color from, Color to, double progress)
