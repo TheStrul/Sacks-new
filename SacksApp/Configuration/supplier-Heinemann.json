@@ -1,0 +1,187 @@
+{
+  "Name": "Heinemann",
+  "Currency": "EUR",
+  "ParserConfig": {
+    "Settings": {
+      "StopOnFirstMatchPerColumn": false,
+      "DefaultCulture": "en-US"
+    },
+    "ColumnRules": [
+      {
+        "Column": "A",
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Ref",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ]
+      },
+      {
+        "Column": "B",
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.EAN",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ]
+      },
+      {
+        "Column": "C",
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.Brand",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": {
+              "Table": "Brand"
+            }
+          }
+        ]
+      },
+      {
+        "Column": "D",
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.Type 2",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ]
+      },
+      {
+        "Column": "E",
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Product.Name",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ]
+      },
+      {
+        "Column": "F",
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Description",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          },
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "ProductType",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "(?i)\\b(coffret|set|deodorant|body lotion)\\b",
+              "Options": "first,remove"
+            }
+          },
+          {
+            "Op": "Assign",
+            "Input": "ProductType",
+            "Output": "Product.Type 1",
+            "Assign": true,
+            "Condition": "ProductType.Valid==true",
+            "Parameters": null
+          },
+          {
+            "Op": "Find",
+            "Input": "ProductType.Clean",
+            "Output": "Concentrations",
+            "Assign": false,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "lookup:Concentration",
+              "Options": "first,ignorecase,remove"
+            }
+          },
+          {
+            "Op": "Map",
+            "Input": "Concentrations",
+            "Output": "Product.Concentration",
+            "Assign": true,
+            "Condition": "Concentrations.Valid==true",
+            "Parameters": {
+              "Table": "Concentration"
+            }
+          }
+        ]
+      },
+      {
+        "Column": "G",
+        "Actions": [
+          {
+            "Op": "Find",
+            "Input": "Text",
+            "Output": "Product.Size",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": {
+              "Pattern": "(?<num>\\d+(?:\\.\\d+)?)",
+              "Options": "first"
+            }
+          }
+        ]
+      },
+      {
+        "Column": "H",
+        "Actions": [
+          {
+            "Op": "Map",
+            "Input": "Text",
+            "Output": "Product.Units",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": {
+              "Table": "Unit"
+            }
+          }
+        ]
+      },
+      {
+        "Column": "I",
+        "Actions": [
+          {
+            "Op": "Assign",
+            "Input": "Text",
+            "Output": "Offer.Price",
+            "Assign": true,
+            "Condition": null,
+            "Parameters": null
+          }
+        ]
+      }
+    ]
+  },
+  "FileStructure": {
+    "DataStartRowIndex": 2,
+    "ExpectedColumnCount": 20,
+    "HeaderRowIndex": 1,
+    "Detection": {
+      "FileNamePatterns": [
+        "heinemann*.xls*"
+      ]
+    }
+  },
+  "SubtitleHandling": null
+}
