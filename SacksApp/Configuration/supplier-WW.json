@@ -4,8 +4,7 @@
   "ParserConfig": {
     "Settings": {
       "StopOnFirstMatchPerColumn": false,
-      "DefaultCulture": "en-GB",
-      "PreferFirstAssignment": true
+      "DefaultCulture": "en-GB"
     },
     "ColumnRules": [
       {

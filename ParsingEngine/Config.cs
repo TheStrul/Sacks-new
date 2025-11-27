@@ -65,7 +65,6 @@ public sealed class Settings
 {
     public bool StopOnFirstMatchPerColumn { get; set; } = false;
     public string DefaultCulture { get; set; } = "en-US";
-    public bool PreferFirstAssignment { get; set; } = false;
 }
 
 

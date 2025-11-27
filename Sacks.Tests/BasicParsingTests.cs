@@ -8,9 +8,9 @@ public class BasicParsingTests
         // DemoApp removed. Provide a minimal inline config for tests that still compile.
         var cfg = new ParserConfig
         {
-            Settings = new Settings { PreferFirstAssignment = true, DefaultCulture = "en-US" },
+            Settings = new Settings { DefaultCulture = "en-US" },
             Lookups = new(),
-            Columns = new()
+            ColumnRules = new()
         };
         return new ParserEngine(cfg);
     }

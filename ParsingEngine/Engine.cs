@@ -19,14 +19,14 @@ public sealed class ParserEngine
 
     /// <summary>
     /// Parse a row with optional initial assignments pre-seeded into the PropertyBag before rules execute.
-    /// Use this to provide defaults (e.g., subtitle-derived values) that should win when PreferFirstAssignment is enabled.
+    /// Use this to provide defaults (e.g., subtitle-derived values).
     /// </summary>
     public PropertyBag Parse(RowData row, IDictionary<string, object?>? initialAssignments)
     {
         ArgumentNullException.ThrowIfNull(row);
         var bag = new PropertyBag ();
 
-        // Pre-seed initial assignments (appear as first-writer if PreferFirstAssignment is true)
+        // Pre-seed initial assignments
         if (initialAssignments != null)
         {
             foreach (var kv in initialAssignments)

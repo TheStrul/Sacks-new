@@ -179,7 +179,7 @@ public class RuleBasedOfferNormalizer : IOfferNormalizer
                 }
             }
 
-            // Pre-seed; ParserEngine will respect PreferFirstAssignment when true
+            // Pre-seed initial assignments
             seed[map.TargetProperty] = valueToAssign;
         }
 

@@ -125,11 +125,10 @@ public static class ActionsFactory
                 ret = new ClearAction(input, output, assign, condition);
                 break;
             default:
-                ret = null;
-                break;
+                throw new ArgumentException($"Unknown operation: {op}", nameof(s));
         }
 
-        return ret!;
+        return ret;
     }
 
 }

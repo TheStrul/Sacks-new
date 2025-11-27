@@ -795,7 +795,6 @@ namespace ParsingEngine
             {
                 dst.Settings.StopOnFirstMatchPerColumn = src.Settings.StopOnFirstMatchPerColumn;
                 dst.Settings.DefaultCulture = src.Settings.DefaultCulture;
-                dst.Settings.PreferFirstAssignment = src.Settings.PreferFirstAssignment;
             }
 
             // Lookups: replace content in-place
